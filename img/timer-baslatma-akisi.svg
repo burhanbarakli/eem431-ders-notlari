@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 882" class="tba-svg" role="img" aria-labelledby="tba-title tba-desc">
+<title id="tba-title">Timer0A başlatma adımları</title>
+<desc id="tba-desc">On adım (datasheet §11.4.1 sırası + NVIC): 1 saat açma (RCGCTIMER, 0x400F.E604) ve hazır bekleme (PRTIMER), 2 zamanlayıcıyı durdurma (TAEN = 0), 3 GPTMCFG = 0x0, 4 GPTMTAMR TAMR alanı = 0x2 (periyodik, aşağı), 5 GPTMTAILR = N − 1, 6 GPTMICR ile bayrağı silme, 7 GPTMIMR maskesi, 8 NVIC EN0 bit 19, 9 global kesme (CPSIE I), 10 başlatma (TAEN = 1). Sağ sütunda TivaWare çağrıları; 2–4 tek TimerConfigure çağrısıdır. 6–9 yalnız kesmeli kullanımda gerekir; yoklamada GPTMRIS beklenir ve GPTMICR ile silinir.</desc>
+<defs>
+<marker id="tba-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tba-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.tba-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.tba-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.tba-svg .tba-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.tba-svg .tba-b{font-weight:700}
+.tba-svg .tba-s13{font-size:13px}
+.tba-svg .tba-s15{font-size:15px}
+.tba-svg .tba-mut{fill:var(--fig-muted,#76746c)}
+.tba-svg .tba-acc{fill:var(--fig-accent,#b4481f)}
+.tba-svg .tba-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.tba-svg .tba-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.tba-svg .tba-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.tba-svg .tba-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.tba-svg .tba-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.tba-svg .tba-hlb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.12;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.5}
+.tba-svg .tba-circ{fill:var(--fig-accent,#b4481f)}
+.tba-svg .tba-head{fill:var(--fig-stroke,#2b2b29)}
+.tba-svg .tba-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.tba-svg .tba-wad{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.6;stroke-dasharray:5 4}
+.tba-svg .tba-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+</style>
+<rect class="tba-pill" x="44" y="8" width="330" height="28" rx="14"/>
+<text class="tba-s15 tba-b" x="209" y="27" text-anchor="middle">API’siz — doğrudan register</text>
+<rect class="tba-pill" x="388" y="8" width="360" height="28" rx="14"/>
+<text class="tba-s15 tba-b" x="568" y="27" text-anchor="middle">API’li — TivaWare (driverlib)</text>
+<rect class="tba-box" x="44" y="46" width="330" height="76" rx="8"/>
+<circle class="tba-circ" cx="63" cy="65" r="12"/>
+<text class="tba-num" x="63" y="70" text-anchor="middle">1</text>
+<text class="tba-b" x="84" y="67">Saat aç + hazır bekle</text>
+<text class="tba-mono" x="84" y="83">SYSCTL_RCGCTIMER_R |= 0x01;</text>
+<text class="tba-mono" x="84" y="99">while(!(SYSCTL_PRTIMER_R &amp; 0x01)){}</text>
+<text x="84" y="115"><tspan class="tba-mono tba-mut">0x400F.E604</tspan><tspan class="tba-s13 tba-mut"> / </tspan><tspan class="tba-mono tba-mut">0x400F.EA04</tspan><tspan class="tba-s13 tba-mut"> · bit 0 = Timer0</tspan></text>
+<path class="tba-con" d="M374,63 L388,63"/>
+<rect class="tba-code" x="388" y="46" width="360" height="76" rx="8"/>
+<text class="tba-mono" x="400" y="67">SysCtlPeripheralEnable(</text>
+<text class="tba-mono" x="400" y="83" xml:space="preserve">    SYSCTL_PERIPH_TIMER0);</text>
+<text class="tba-mono" x="400" y="99">while(!SysCtlPeripheralReady(</text>
+<text class="tba-mono" x="400" y="115" xml:space="preserve">    SYSCTL_PERIPH_TIMER0)){}</text>
+<rect class="tba-box" x="44" y="130" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="149" r="12"/>
+<text class="tba-num" x="63" y="154" text-anchor="middle">2</text>
+<text class="tba-b" x="84" y="151">Durdur: GPTMCTL.TAEN = 0</text>
+<text class="tba-mono" x="84" y="167">TIMER0_CTL_R &amp;= ~0x01;</text>
+<text class="tba-s13 tba-mut" x="84" y="183">her ayar değişikliğinden önce</text>
+<path class="tba-con" d="M374,147 L388,147"/>
+<rect class="tba-box" x="44" y="198" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="217" r="12"/>
+<text class="tba-num" x="63" y="222" text-anchor="middle">3</text>
+<text class="tba-b" x="84" y="219">Yapılandırma: GPTMCFG</text>
+<text class="tba-mono" x="84" y="235">TIMER0_CFG_R = 0x0;</text>
+<text class="tba-s13 tba-mut" x="84" y="251">0x0 = 32-bit birleşik (16-bit için 0x4)</text>
+<path class="tba-con" d="M374,215 L388,215"/>
+<rect class="tba-box" x="44" y="266" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="285" r="12"/>
+<text class="tba-num" x="63" y="290" text-anchor="middle">4</text>
+<text class="tba-b" x="84" y="287">Kip: GPTMTAMR</text>
+<text class="tba-mono" x="84" y="303">TIMER0_TAMR_R = 0x2;</text>
+<text class="tba-s13 tba-mut" x="84" y="319">TAMR alanı = 0x2 periyodik, TACDIR = 0 aşağı</text>
+<path class="tba-con" d="M374,283 L388,283"/>
+<rect class="tba-code" x="388" y="130" width="360" height="196" rx="8"/>
+<text class="tba-mono" x="400" y="190">TimerConfigure(TIMER0_BASE,</text>
+<text class="tba-mono" x="400" y="207" xml:space="preserve">    TIMER_CFG_PERIODIC);</text>
+<text class="tba-s13 tba-mut" x="400" y="232">2–4 tek çağrıda: önce TAEN/TBEN’i siler,</text>
+<text x="400" y="249"><tspan class="tba-s13 tba-mut">sonra GPTMCFG = 0x0, </tspan><tspan class="tba-mono tba-mut">GPTMTAMR = 0x222</tspan></text>
+<text class="tba-s13 tba-mut" x="400" y="266">(TAMR alanı 0x2; TAMIE ve TAPWMIE de 1)</text>
+<rect class="tba-box" x="44" y="334" width="330" height="76" rx="8"/>
+<circle class="tba-circ" cx="63" cy="353" r="12"/>
+<text class="tba-num" x="63" y="358" text-anchor="middle">5</text>
+<text class="tba-b" x="84" y="355">Yükleme: GPTMTAILR</text>
+<text class="tba-mono" x="84" y="371">TIMER0_TAILR_R = N - 1;</text>
+<text class="tba-s13 tba-mut" x="84" y="387">N = f·T (16 MHz, 1 s → N − 1 = 15 999 999)</text>
+<text x="84" y="403"><tspan class="tba-s13 tba-mut">16-bit kipte ayrıca ön bölücü: </tspan><tspan class="tba-mono tba-mut">GPTMTAPR</tspan></text>
+<path class="tba-con" d="M374,351 L388,351"/>
+<rect class="tba-code" x="388" y="334" width="360" height="76" rx="8"/>
+<text class="tba-mono" x="400" y="355">TimerLoadSet(TIMER0_BASE, TIMER_A, N - 1);</text>
+<text x="400" y="371"><tspan class="tba-s13 tba-mut">16-bit kipte ön bölücü: </tspan><tspan class="tba-mono tba-mut">TimerPrescaleSet()</tspan></text>
+<rect class="tba-opt" x="44" y="418" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="437" r="12"/>
+<text class="tba-num" x="63" y="442" text-anchor="middle">6</text>
+<text class="tba-b" x="84" y="439">Bayrağı temizle: GPTMICR</text>
+<text class="tba-mono" x="84" y="455">TIMER0_ICR_R = 0x01;</text>
+<text class="tba-s13 tba-mut" x="84" y="471">TATOCINT = 1: önceden kalkmış bayrağı sil</text>
+<path class="tba-con" d="M374,435 L388,435"/>
+<rect class="tba-code" x="388" y="418" width="360" height="60" rx="8"/>
+<text class="tba-mono" x="400" y="439">TimerIntClear(TIMER0_BASE,</text>
+<text class="tba-mono" x="400" y="455" xml:space="preserve">    TIMER_TIMA_TIMEOUT);</text>
+<rect class="tba-opt" x="44" y="486" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="505" r="12"/>
+<text class="tba-num" x="63" y="510" text-anchor="middle">7</text>
+<text class="tba-b" x="84" y="507">Kesme maskesi: GPTMIMR</text>
+<text class="tba-mono" x="84" y="523">TIMER0_IMR_R |= 0x01;</text>
+<text class="tba-s13 tba-mut" x="84" y="539">TATOIM = 1: zaman aşımı kesmesine izin</text>
+<path class="tba-con" d="M374,503 L388,503"/>
+<rect class="tba-code" x="388" y="486" width="360" height="60" rx="8"/>
+<text class="tba-mono" x="400" y="507">TimerIntEnable(TIMER0_BASE,</text>
+<text class="tba-mono" x="400" y="523" xml:space="preserve">    TIMER_TIMA_TIMEOUT);</text>
+<rect class="tba-opt" x="44" y="554" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="573" r="12"/>
+<text class="tba-num" x="63" y="578" text-anchor="middle">8</text>
+<text class="tba-b" x="84" y="575">NVIC: kesme 19’u aç</text>
+<text class="tba-mono" x="84" y="591">NVIC_EN0_R |= 1 &lt;&lt; 19;</text>
+<text x="84" y="607"><tspan class="tba-s13 tba-mut">adres </tspan><tspan class="tba-mono tba-mut">0xE000.E100</tspan><tspan class="tba-s13 tba-mut"> · bit 19 = Timer0A</tspan></text>
+<path class="tba-con" d="M374,571 L388,571"/>
+<rect class="tba-code" x="388" y="554" width="360" height="60" rx="8"/>
+<text class="tba-mono" x="400" y="575" xml:space="preserve">IntEnable(INT_TIMER0A);    // 35</text>
+<rect class="tba-opt" x="44" y="622" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="641" r="12"/>
+<text class="tba-num" x="63" y="646" text-anchor="middle">9</text>
+<text class="tba-b" x="84" y="643">Global kesmeleri aç</text>
+<text class="tba-mono" x="84" y="659">__asm(" CPSIE I");</text>
+<text class="tba-s13 tba-mut" x="84" y="675">PRIMASK = 0</text>
+<path class="tba-con" d="M374,639 L388,639"/>
+<rect class="tba-code" x="388" y="622" width="360" height="60" rx="8"/>
+<text class="tba-mono" x="400" y="643">IntMasterEnable();</text>
+<rect class="tba-box" x="44" y="690" width="330" height="60" rx="8"/>
+<circle class="tba-circ" cx="63" cy="709" r="12"/>
+<text class="tba-num" x="63" y="714" text-anchor="middle">10</text>
+<text class="tba-b" x="84" y="711">Başlat: GPTMCTL.TAEN = 1</text>
+<text class="tba-mono" x="84" y="727">TIMER0_CTL_R |= 0x01;</text>
+<text class="tba-s13 tba-mut" x="84" y="743">sayaç ILR’den saymaya başlar</text>
+<path class="tba-con" d="M374,707 L388,707"/>
+<rect class="tba-code" x="388" y="690" width="360" height="60" rx="8"/>
+<text class="tba-mono" x="400" y="711">TimerEnable(TIMER0_BASE, TIMER_A);</text>
+<path class="tba-w" d="M209,122 L209,129" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,190 L209,197" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,258 L209,265" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,326 L209,333" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,410 L209,417" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,478 L209,485" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,546 L209,553" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,614 L209,621" marker-end="url(#tba-arr)"/>
+<path class="tba-w" d="M209,682 L209,689" marker-end="url(#tba-arr)"/>
+<path class="tba-wad" d="M38,418 L26,418 L26,682 L38,682"/>
+<text class="tba-s13 tba-b tba-acc" x="16" y="550" text-anchor="middle" transform="rotate(-90 16 550.0)">yalnız kesmeli kullanım</text>
+<rect class="tba-hlb" x="44" y="762" width="704" height="112" rx="8"/>
+<text x="58" y="783"><tspan class="tba-b">Yoklama (kesmesiz) kullanım: </tspan><tspan class="tba-s13">6–9 atlanır; 10’dan sonra döngüde bayrak beklenir</tspan></text>
+<text class="tba-mono" x="58" y="805">while(!(TIMER0_RIS_R &amp; 0x01));</text>
+<text class="tba-mono" x="58" y="821" xml:space="preserve">TIMER0_ICR_R = 0x01;   // TATOCINT</text>
+<text class="tba-s13 tba-mut" x="58" y="843">ICR: kesmeli kullanımda şart; yoklamada da</text>
+<text class="tba-s13 tba-mut" x="58" y="859">önerilir (önceden kalkmış RIS ilk beklemeyi geçirir).</text>
+<text class="tba-mono" x="392" y="805">while(!(TimerIntStatus(TIMER0_BASE,</text>
+<text class="tba-mono" x="392" y="821" xml:space="preserve">        false) &amp; TIMER_TIMA_TIMEOUT));</text>
+<text class="tba-mono" x="392" y="843">TimerIntClear(TIMER0_BASE,</text>
+<text class="tba-mono" x="392" y="859" xml:space="preserve">    TIMER_TIMA_TIMEOUT);</text>
+</svg>

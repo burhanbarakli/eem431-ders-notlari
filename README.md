@@ -8,6 +8,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 |---|---|
 | `index.html` | Konu listesi |
 | `gpio/` | 1. GPIO ders notu |
+| `timer/` | 6. Zamanlayıcılar (GPTM) ve kesmelere giriş |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 800" class="tki-svg" role="img" aria-labelledby="tki-title tki-desc">
+<title id="tki-title">Timer0A kesmesinin yolu</title>
+<desc id="tki-desc">Timer0A zaman aşımı GPTMRIS.TATORIS bayrağını kurar; GPTMIMR.TATOIM maskesi açıksa GPTMMIS üzerinden NVIC’e kesme 19 isteği gider; NVIC’te EN0 bit 19 etkin ve PRIMASK = 0 ise CPU bağlamı yığına kaydeder, vektör 35’ten (VTABLE + 0x08C) ISR adresini okur; ISR ilk iş GPTMICR.TATOCINT = 1 ile bayrağı silip sonra işini yapar ve dönüşte bağlam geri yüklenir. Sağ sütunda register (siyah) ve TivaWare (mavi) karşılıkları; ICR yazılmazsa ISR’ye hemen yeniden girildiği uyarısı.</desc>
+<defs>
+<marker id="tki-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tki-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="tki-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tki-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.tki-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.tki-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.tki-svg .tki-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.tki-svg .tki-b{font-weight:700}
+.tki-svg .tki-s13{font-size:13px}
+.tki-svg .tki-s16{font-size:16px}
+.tki-svg .tki-mut{fill:var(--fig-muted,#76746c)}
+.tki-svg .tki-acc{fill:var(--fig-accent,#b4481f)}
+.tki-svg .tki-blu{fill:var(--fig-blue,#1f5fa8)}
+.tki-svg .tki-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.tki-svg .tki-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.tki-svg .tki-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.tki-svg .tki-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tki-svg .tki-circ{fill:var(--fig-accent,#b4481f)}
+.tki-svg .tki-dot{fill:var(--fig-stroke,#2b2b29)}
+.tki-svg .tki-head{fill:var(--fig-stroke,#2b2b29)}
+.tki-svg .tki-heada{fill:var(--fig-accent,#b4481f)}
+.tki-svg .tki-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.tki-svg .tki-wad{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.6;stroke-dasharray:5 4}
+.tki-svg .tki-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.tki-svg .tki-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="tki-s16 tki-b" x="16" y="31">Bir kesmenin yolu (Timer0A)</text>
+<rect class="tki-dot" x="398" y="21" width="12" height="12" rx="2"/>
+<text x="416" y="31"><tspan class="tki-b">siyah</tspan><tspan class="tki-s13"> = register (API’siz)</tspan></text>
+<rect class="tki-blu" x="574" y="21" width="12" height="12" rx="2"/>
+<text x="592" y="31"><tspan class="tki-b tki-blu">mavi</tspan><tspan class="tki-s13"> = TivaWare (API’li)</tspan></text>
+<rect class="tki-box" x="44" y="72" width="288" height="51" rx="8"/>
+<circle class="tki-circ" cx="64" cy="91" r="12"/>
+<text class="tki-num" x="64" y="96" text-anchor="middle">1</text>
+<text class="tki-b" x="84" y="95">Olay: Timer0A zaman aşımı</text>
+<text x="84" y="112"><tspan class="tki-s13">ham bayrak: </tspan><tspan class="tki-mono">GPTMRIS.TATORIS</tspan><tspan class="tki-s13"> = 1</tspan></text>
+<rect class="tki-code" x="348" y="72" width="400" height="51" rx="8"/>
+<text class="tki-mono" x="360" y="95" xml:space="preserve">TIMER0_RIS_R &amp; 0x01         // yalnız oku</text>
+<text class="tki-mono tki-blu" x="360" y="112">TimerIntStatus(TIMER0_BASE, false)</text>
+<path class="tki-con" d="M332,90 L348,90"/>
+<rect class="tki-hl" x="44" y="137" width="288" height="51" rx="8"/>
+<circle class="tki-circ" cx="64" cy="156" r="12"/>
+<text class="tki-num" x="64" y="161" text-anchor="middle">2</text>
+<text class="tki-b" x="84" y="160">Geçit 1 — çevre birimi maskesi</text>
+<text x="84" y="177"><tspan class="tki-mono">GPTMIMR.TATOIM</tspan><tspan class="tki-s13"> (bit 0) = 1 mi?</tspan></text>
+<rect class="tki-code" x="348" y="137" width="400" height="51" rx="8"/>
+<text class="tki-mono" x="360" y="160">TIMER0_IMR_R |= 0x01;</text>
+<text class="tki-mono tki-blu" x="360" y="177">TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);</text>
+<path class="tki-con" d="M332,155 L348,155"/>
+<rect class="tki-box" x="44" y="202" width="288" height="51" rx="8"/>
+<circle class="tki-circ" cx="64" cy="221" r="12"/>
+<text class="tki-num" x="64" y="226" text-anchor="middle">3</text>
+<text class="tki-b" x="84" y="225">Kesme isteği NVIC’e (kesme 19)</text>
+<text x="84" y="242"><tspan class="tki-mono">GPTMMIS.TATOMIS</tspan><tspan class="tki-s13"> = RIS ve IMR</tspan></text>
+<rect class="tki-code" x="348" y="202" width="400" height="51" rx="8"/>
+<text class="tki-mono" x="360" y="225" xml:space="preserve">TIMER0_MIS_R &amp; 0x01         // yalnız oku</text>
+<text class="tki-mono tki-blu" x="360" y="242">TimerIntStatus(TIMER0_BASE, true)</text>
+<path class="tki-con" d="M332,220 L348,220"/>
+<rect class="tki-hl" x="44" y="303" width="288" height="68" rx="8"/>
+<circle class="tki-circ" cx="64" cy="322" r="12"/>
+<text class="tki-num" x="64" y="327" text-anchor="middle">4</text>
+<text class="tki-b" x="84" y="326">Geçit 2 — NVIC: kesme 19 etkin mi?</text>
+<text x="84" y="343"><tspan class="tki-mono">EN0</tspan><tspan class="tki-s13"> bit 19 · </tspan><tspan class="tki-mono">0xE000.E100</tspan></text>
+<text x="84" y="360"><tspan class="tki-s13">öncelik: </tspan><tspan class="tki-mono">PRI4</tspan><tspan class="tki-s13"> bit 31:29 (INTD)</tspan></text>
+<rect class="tki-code" x="348" y="303" width="400" height="68" rx="8"/>
+<text class="tki-mono" x="360" y="326">NVIC_EN0_R |= 1 &lt;&lt; 19;</text>
+<text class="tki-mono tki-blu" x="360" y="343" xml:space="preserve">IntEnable(INT_TIMER0A);  // 35 = 19 + 16</text>
+<text x="360" y="360"><tspan class="tki-s13 tki-mut">öncelik: </tspan><tspan class="tki-mono tki-mut">NVIC_PRI4_R</tspan><tspan class="tki-s13 tki-mut"> </tspan><tspan class="tki-mono tki-mut">(0xE000.E410)</tspan><tspan class="tki-s13 tki-mut"> · </tspan><tspan class="tki-mono tki-mut">IntPrioritySet()</tspan></text>
+<path class="tki-con" d="M332,321 L348,321"/>
+<rect class="tki-hl" x="44" y="421" width="288" height="51" rx="8"/>
+<circle class="tki-circ" cx="64" cy="440" r="12"/>
+<text class="tki-num" x="64" y="445" text-anchor="middle">5</text>
+<text class="tki-b" x="84" y="444">Geçit 3 — global maske</text>
+<text x="84" y="461"><tspan class="tki-mono">PRIMASK</tspan><tspan class="tki-s13"> = 0 mı? (1 iken hepsi bekler)</tspan></text>
+<rect class="tki-code" x="348" y="421" width="400" height="51" rx="8"/>
+<text class="tki-mono" x="360" y="444" xml:space="preserve">__asm(" CPSIE I");          // PRIMASK = 0</text>
+<text class="tki-mono tki-blu" x="360" y="461">IntMasterEnable();</text>
+<path class="tki-con" d="M332,439 L348,439"/>
+<rect class="tki-box" x="44" y="486" width="288" height="85" rx="8"/>
+<circle class="tki-circ" cx="64" cy="505" r="12"/>
+<text class="tki-num" x="64" y="510" text-anchor="middle">6</text>
+<text class="tki-b" x="84" y="509">CPU kesmeyi kabul eder</text>
+<text class="tki-s13" x="84" y="526">öncelik yeterliyse bağlamı yığına iter:</text>
+<text class="tki-s13" x="84" y="543">8 kelime (R0–R3, R12, LR, PC, xPSR);</text>
+<text class="tki-s13" x="84" y="560">FPU bağlamı varsa 26 kelime</text>
+<rect class="tki-code" x="348" y="486" width="400" height="85" rx="8"/>
+<text class="tki-s13 tki-mut" x="360" y="509">Donanım yapar — kod gerekmez; aynı anda</text>
+<text x="360" y="526"><tspan class="tki-s13 tki-mut">ISR adresi okunur: </tspan><tspan class="tki-mono tki-mut">VTABLE + 0x08C</tspan></text>
+<text x="360" y="543"><tspan class="tki-s13 tki-mut">(reset sonrası </tspan><tspan class="tki-mono tki-mut">0x0000.008C</tspan><tspan class="tki-s13 tki-mut">)</tspan></text>
+<text x="360" y="560"><tspan class="tki-mono tki-mut">LR</tspan><tspan class="tki-s13 tki-mut"> ← </tspan><tspan class="tki-mono tki-mut">EXC_RETURN</tspan><tspan class="tki-s13 tki-mut"> (dönüş kodu)</tspan></text>
+<path class="tki-con" d="M332,504 L348,504"/>
+<rect class="tki-box" x="44" y="585" width="288" height="68" rx="8"/>
+<circle class="tki-circ" cx="64" cy="604" r="12"/>
+<text class="tki-num" x="64" y="609" text-anchor="middle">7</text>
+<text x="84" y="608"><tspan class="tki-b">ISR: </tspan><tspan class="tki-mono">Timer0IntHandler()</tspan></text>
+<text x="84" y="625"><tspan class="tki-s13">1) ilk iş: </tspan><tspan class="tki-mono">GPTMICR.TATOCINT = 1</tspan></text>
+<text class="tki-s13" x="84" y="642">2) sonra işi yapar (ör. LED’i tersler)</text>
+<rect class="tki-code" x="348" y="585" width="400" height="68" rx="8"/>
+<text class="tki-mono" x="360" y="608" xml:space="preserve">TIMER0_ICR_R = 0x01;        // 1 yaz → sil</text>
+<text class="tki-mono tki-blu" x="360" y="625">TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);</text>
+<text class="tki-s13 tki-mut" x="360" y="642">… LED’i tersle …</text>
+<path class="tki-con" d="M332,603 L348,603"/>
+<rect class="tki-box" x="44" y="667" width="288" height="51" rx="8"/>
+<circle class="tki-circ" cx="64" cy="686" r="12"/>
+<text class="tki-num" x="64" y="691" text-anchor="middle">8</text>
+<text class="tki-b" x="84" y="690">Dönüş</text>
+<text class="tki-s13" x="84" y="707">bağlam geri yüklenir, koda devam edilir</text>
+<rect class="tki-code" x="348" y="667" width="400" height="51" rx="8"/>
+<text x="360" y="690"><tspan class="tki-s13 tki-mut">dönüş komutu (ör. </tspan><tspan class="tki-mono tki-mut">BX LR</tspan><tspan class="tki-s13 tki-mut"> ya da </tspan><tspan class="tki-mono tki-mut">POP {…, PC}</tspan><tspan class="tki-s13 tki-mut">)</tspan></text>
+<text x="360" y="707"><tspan class="tki-mono tki-mut">EXC_RETURN</tspan><tspan class="tki-s13 tki-mut"> değerini PC’ye yükler</tspan></text>
+<path class="tki-con" d="M332,685 L348,685"/>
+<rect class="tki-zone" x="32" y="48" width="724" height="213" rx="10"/>
+<text class="tki-s13 tki-b tki-mut" x="746" y="65" text-anchor="end">Çevre birimi · GPTM Timer0 (0x4003.0000)</text>
+<rect class="tki-zone" x="32" y="279" width="724" height="100" rx="10"/>
+<text class="tki-s13 tki-b tki-mut" x="746" y="296" text-anchor="end">NVIC (0xE000.E100 …)</text>
+<rect class="tki-zone" x="32" y="397" width="724" height="329" rx="10"/>
+<text class="tki-s13 tki-b tki-mut" x="746" y="414" text-anchor="end">Cortex-M4F çekirdeği</text>
+<path class="tki-w" d="M188,123 L188,136" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,188 L188,201" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,253 L188,302" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,371 L188,420" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,472 L188,485" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,571 L188,584" marker-end="url(#tki-arr)"/>
+<path class="tki-w" d="M188,653 L188,666" marker-end="url(#tki-arr)"/>
+<path class="tki-wad" d="M44,692.5 L10,692.5 L10,227.5 L43,227.5" marker-end="url(#tki-arra)"/>
+<text class="tki-s13 tki-b tki-acc" x="25" y="460" text-anchor="middle" transform="rotate(-90 25 460.0)">ICR yazılmazsa</text>
+<rect class="tki-hl" x="32" y="734" width="724" height="58" rx="8"/>
+<circle class="tki-circ" cx="52" cy="754" r="10"/>
+<text class="tki-num" x="52" y="759" text-anchor="middle">!</text>
+<text x="70" y="758"><tspan class="tki-b tki-acc">Bayrak temizlenmezse ISR’ye hemen tekrar girilir: </tspan><tspan class="tki-mono">TATORIS</tspan> = 1 kalır → <tspan class="tki-mono">TATOMIS</tspan> = 1</text>
+<text class="tki-s13" x="70" y="778">NVIC kesmeyi yeniden bekletir; ISR’den dönülür dönülmez yeniden girilir, ana program ilerleyemez.</text>
+</svg>

@@ -1,0 +1,1110 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zamanlayıcılar (GPTM) — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad üzerinde kesmelere (NVIC) giriş ve genel amaçlı zamanlayıcılar (GPTM): vektör tablosu, kipler, register'lar, süre hesabı, ön bölücü, başlatma adımları, kesmeli ve kesmesiz örnekler (API'siz ve TivaWare API'li).">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 6. Zamanlayıcılar</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#neden">1. Neden zamanlayıcı?</a></li>
+<li><a href="#kesme">2. Kesmelere giriş</a><ol>
+  <li><a href="#kesme-kavram">İstisna ve kesme</a></li>
+  <li><a href="#yoklama">Yoklama (polling) ve kesme</a></li>
+  <li><a href="#nvic">NVIC ve bir kesmenin yolu</a></li>
+  <li><a href="#vektor">Vektör tablosu ve startup dosyası</a></li>
+  <li><a href="#bayrak">Kesme bayrağı ve temizleme</a></li>
+  <li><a href="#oncelik">Öncelik</a></li>
+  <li><a href="#isr-kurallari">ISR yazma kuralları</a></li></ol></li>
+<li><a href="#gptm">3. GPTM modülü</a><ol>
+  <li><a href="#gptm-yapi">Yapı: 16/32 ve 32/64-bit bloklar</a></li>
+  <li><a href="#kipler">Kipler ve kip seçimi</a></li></ol></li>
+<li><a href="#registerlar">4. Register'lar ve taban adresler</a><ol>
+  <li><a href="#taban">Taban adresler ve saat register'ları</a></li>
+  <li><a href="#register-tablosu">GPTM register tablosu</a></li>
+  <li><a href="#bitler">Sık kullanılan bitler</a></li></ol></li>
+<li><a href="#sure">5. Süre hesabı</a><ol>
+  <li><a href="#saat">Saat frekansı</a></li>
+  <li><a href="#ilr-hesap">Yükleme değeri: ILR = f·T − 1</a></li>
+  <li><a href="#onbolucu">16-bit sınırı ve ön bölücü</a></li>
+  <li><a href="#zaman-diyagrami">Zaman diyagramı</a></li></ol></li>
+<li><a href="#baslatma">6. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">Adım adım</a></li>
+  <li><a href="#apisiz-apili">API'siz ve API'li kesme kurulumu</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#ornekler">7. Örnekler</a><ol>
+  <li><a href="#ornek-yoklama">7.1 32-bit, kesmesiz (yoklama), API'siz</a></li>
+  <li><a href="#ornek-kesme-apisiz">7.2 32-bit, kesmeli, API'siz</a></li>
+  <li><a href="#ornek-kesme-apili">7.3 32-bit, kesmeli, API'li</a></li>
+  <li><a href="#ornek-16bit">7.4 16-bit kip ve ön bölücü</a></li>
+  <li><a href="#ornek-sayac">7.5 Sayaç değerini okuma ve kenar sayma</a></li>
+  <li><a href="#ornek-match">7.6 Eşleşme (match) kesmesi</a></li>
+  <li><a href="#ornek-tek">7.7 Tek seferlik kip</a></li></ol></li>
+<li><a href="#lab4">8. TI Lab 4 uyarlaması</a></li>
+<li><a href="#exp11">9. Experiment 11 uygulama görevi</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>Zamanlayıcılar (GPTM) ve Kesmelere Giriş</h1>
+<p class="lead">GPIO notunda LED'i yakıp söndürürken süreyi boş bir döngüyle ayarladık. Bu notta aynı işi donanımdaki zamanlayıcılarla yapacağız: işlemci beklemek yerine başka işle uğraşırken zamanlayıcı süreyi kendisi ölçecek ve süre dolunca haber verecek. Bu haberi almanın en verimli yolu <b>kesme</b> olduğu için not, kesme altyapısıyla (NVIC, vektör tablosu, ISR) başlıyor.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Yazılım gecikmesi (<code>SysCtlDelay</code>, boş döngü) ile donanım zamanlayıcısı arasındaki farkı açıklayabilir; yoklama (polling) ile kesme yaklaşımlarını karşılaştırabilir.</li>
+<li>Bir kesmenin yolunu (çevre birimi bayrağı → GPTMIMR → NVIC EN0 → PRIMASK → vektör tablosu → ISR) izleyebilir, kesme numarası ile vektör numarasını ayırt edebilir ve ISR'yi <code>startup_ccs.c</code> dosyasındaki vektör tablosuna ekleyebilir.</li>
+<li>Kısa, bayrağını en başta temizleyen ve paylaşılan değişkenleri <code>volatile</code> tanımlayan bir kesme servis programı (ISR) yazabilir.</li>
+<li>GPTM'nin yapısını (6 adet 16/32-bit, 6 adet 32/64-bit blok; Timer A/B), kiplerini (tek seferlik, periyodik, kenar sayma/zamanlama, PWM) ve temel register'larını açıklayabilir.</li>
+<li>Verilen saat frekansı ve süre için yükleme (ILR) ve gerekirse ön bölücü (PR) değerini hesaplayabilir; 16-bit sınırını bilir.</li>
+<li>Bir zamanlayıcıyı şu sırayla başlatabilir: RCGCTIMER (+ PRTIMER bekle) → TnEN = 0 (GPTMCTL) → GPTMCFG → GPTMTnMR → GPTMTnILR (+ GPTMTnPR) → GPTMICR temizle → GPTMIMR → NVIC EN0 → global kesme izni → TnEN = 1.</li>
+<li>Aynı uygulamayı doğrudan register erişimiyle ve TivaWare fonksiyonlarıyla (<code>TimerConfigure</code>, <code>TimerLoadSet</code>, <code>TimerIntEnable</code>, <code>IntEnable</code>, <code>IntMasterEnable</code>…) yazabilir.</li>
+</ol></div>
+
+<h2 id="neden">1. Neden zamanlayıcı?</h2>
+<p>GPIO notundaki örneklerde gecikme için ya boş bir <code>for</code> döngüsü ya da TivaWare'in <code>SysCtlDelay(n)</code> fonksiyonu kullanıldı. <code>SysCtlDelay</code>'in her turu 3 saat çevrimi sürer, yani süre ≈ 3·n / f<sub>sys</sub> olur (<a href="../gpio/#api-tablosu">GPIO notu, TivaWare karşılıkları</a>). Bu yöntem basittir ama üç önemli kusuru vardır:</p>
+<ul>
+<li><b>İşlemci meşgul kalır.</b> Gecikme süresince CPU sadece sayar; buton okuyamaz, veri işleyemez.</li>
+<li><b>Süre kesin değildir.</b> Boş döngünün süresi derleyiciye ve optimizasyon ayarına bağlıdır. Araya bir kesme girerse gecikme o kadar uzar.</li>
+<li><b>Birden çok zamanlama yönetilemez.</b> Biri 0,5 s, diğeri 0,2 s aralıkla yanıp sönen iki LED'i tek bir gecikme döngüsüyle düzgün sürmek zordur.</li>
+</ul>
+<p><b>Donanım zamanlayıcısı</b> (timer), sistem saatiyle kendi kendine sayan bir sayaçtır. Yazılım sayacı bir kez kurar, sonra işine bakar. Sayaç belirlenen değere ulaştığında bir <b>bayrak</b> kalkar; yazılım bu bayrağı ya ara ara kontrol eder (yoklama) ya da bayrak bir <b>kesme</b> üreterek işlemciyi kendisi çağırır. Süre sistem saatinden türetilir ve işlemcinin o sırada ne yaptığından etkilenmez. Saat kristal + PLL'den geliyorsa (40 MHz örnekler) çok kesindir; varsayılan 16 MHz PIOSC'de doğruluk kalibrasyonla ±%1, sıcaklık aralığında ±%3 mertebesindedir (datasheet s. 224).</p>
+<table>
+<thead><tr><th>Özellik</th><th><code>SysCtlDelay</code> / boş döngü</th><th>Donanım zamanlayıcısı (GPTM)</th></tr></thead>
+<tbody>
+<tr><td>CPU bekleme sırasında</td><td>Meşgul (sadece sayar)</td><td>Serbest; başka iş yapabilir ya da uyuyabilir</td></tr>
+<tr><td>Süre doğruluğu</td><td>Derleyiciye, kesmelere bağlı</td><td>Saat frekansıyla belirlenir, çevrim düzeyinde kesin</td></tr>
+<tr><td>Aynı anda birden çok süre</td><td>Zor</td><td>Her zamanlayıcı ayrı (TM4C123'te 12 blok, 24 sayaç)</td></tr>
+<tr><td>Ek işlevler</td><td>Yok</td><td>Dış olay sayma, kenar zamanı yakalama, PWM, ADC tetikleme</td></tr>
+</tbody></table>
+<p>TM4C123GH6PM'de başka zamanlama kaynakları da vardır: Cortex-M4 çekirdeğindeki 24-bit <b>SysTick</b> sayacı (datasheet s. 123) ve PWM modüllerinin kendi sayaçları. Bu notun konusu genel amaçlı zamanlayıcı modülü <b>GPTM</b>'dir (General-Purpose Timer Module).</p>
+
+<h2 id="kesme">2. Kesmelere giriş</h2>
+<p>Zamanlayıcı örneklerinin yarısı kesmeli olduğu için önce kesme altyapısını kuralım. GPIO kesmeleri (buton kenarlarının algılanması) ayrı bir notta ayrıntılı işlenecek; burada yalnız tüm çevre birimleri için ortak olan mekanizmayı, kaynak örneği olarak Timer0A ile görüyoruz. Register düzeyindeki kurulum satırları <a href="#adimlar">Bölüm 6</a>'dadır.</p>
+
+<h3 id="kesme-kavram">İstisna ve kesme</h3>
+<p>ARM terminolojisinde programın normal akışını kesen her olaya <b>istisna</b> (exception) denir. Bunlar iki gruba ayrılır (datasheet §2.5, s. 101–103):</p>
+<ul>
+<li><b>Sistem istisnaları</b> (vektör no 1–15): Reset, NMI, Hard Fault, bellek/veri yolu/kullanım hataları, SVCall, PendSV, SysTick. Çekirdeğin kendisinden gelir.</li>
+<li><b>Kesmeler</b> (IRQ, vektör no 16 ve üstü): Çevre birimlerinden (GPIO, UART, ADC, Timer…) gelen isteklerdir. TM4C123GH6PM'de 78 kesme kaynağı vardır.</li>
+</ul>
+<p>Bir istisna kabul edildiğinde işlemci o anki işi bırakır, durumunu yığına (stack) kaydeder, ilgili <b>kesme servis programını</b> (ISR, Interrupt Service Routine) çalıştırır ve ISR bitince kaldığı yerden devam eder. Cortex-M4'te bu kaydetme ve geri yükleme donanımla yapılır: R0–R3, R12, LR, PC ve xPSR otomatik olarak yığına itilir (FPU bağlamı etkinse S0–S15 ve FPSCR de yığına alınır, datasheet s. 109–110); aynı anda ISR'nin adresi vektör tablosundan okunur. TI kitapçığına göre bu giriş 12 çevrim sürer; arka arkaya iki kesme varsa ikincisine "kuyruk zincirleme" (tail-chaining) ile 6 çevrimde geçilir. Sonuç olarak ISR, özel bir anahtar sözcük gerektirmeyen <b>sıradan bir C fonksiyonudur</b>: <code>void Ad(void)</code> biçiminde, parametresiz ve dönüş değersiz.</p>
+
+<h3 id="yoklama">Yoklama (polling) ve kesme</h3>
+<p>Zamanlayıcının "süre doldu" bayrağını öğrenmenin iki yolu vardır:</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">yoklama (kesmesiz)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">while(1)
+{
+    if (TIMER0_RIS_R &amp; 0x01)      // bayrak kalktı mı? (sürekli sor)
+    {
+        TIMER0_ICR_R = 0x01;      // bayrağı temizle
+        GPIO_PORTF_DATA_R ^= 0x02;// işi yap
+    }
+    /* başka iş yapılabilir ama bayrağı sık sık kontrol etmek gerekir */
+}</code></pre>
+</div><div>
+<div class="code-head"><span class="file">kesme</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">void Timer0A_ISR(void)            // donanım çağırır
+{
+    TIMER0_ICR_R = 0x01;          // bayrağı temizle
+    GPIO_PORTF_DATA_R ^= 0x02;    // işi yap
+}
+
+while(1)
+{
+    /* ana döngü tamamen serbest */
+}</code></pre>
+</div></div>
+<p><b>Yoklamada</b> CPU bayrağı kendisi sorar. Kurulumu basittir, ama döngü başka bir işte uzun süre kalırsa olay geç fark edilir. <b>Kesmede</b> ise olay olduğu anda donanım ISR'yi çağırır; tepki süresi kısadır ve ana döngü olayı beklemek zorunda değildir. Bunun bedeli birkaç ek ayar (çevre birimi maskesi, NVIC, vektör tablosu) ve ISR yazarken dikkat edilmesi gereken kurallardır.</p>
+
+<h3 id="nvic">NVIC ve bir kesmenin yolu</h3>
+<p>Cortex-M4'teki kesme denetleyicisine <b>NVIC</b> (Nested Vectored Interrupt Controller, iç içe vektörlü kesme denetleyicisi) denir. "İç içe" (nested) çünkü yüksek öncelikli bir kesme düşük öncelikli bir ISR'yi kesebilir; "vektörlü" (vectored) çünkü her kaynağın ISR adresi doğrudan tablodan alınır, ortak bir dağıtıcı fonksiyona gerek kalmaz. Bir zamanlayıcı olayı önce bir bayrak kaldırır; bu bayrağın ISR'ye ulaşması için yol üzerindeki <b>üç geçidin</b> (GPTMIMR, NVIC EN0, PRIMASK) de açık olması gerekir (Şekil 1):</p>
+<figure><img class="fig" src="../img/timer-kesme-akisi.svg" alt="Bir kesmenin yolu: GPTMRIS bayrağı, GPTMIMR maskesi, GPTMMIS, NVIC EN0 ve öncelik, PRIMASK, vektör tablosu, ISR ve GPTMICR ile temizleme"><figcaption><b>Şekil 1.</b> Bir kesmenin yolu: çevre birimi olayı (GPTMRIS.TATORIS) → çevre birimi maskesi (GPTMIMR) → GPTMMIS → NVIC (EN0, öncelik) → global maske (PRIMASK, <code>IntMasterEnable</code>) → CPU vektör tablosundan ISR adresini alır → ISR önce bayrağı GPTMICR ile temizler, sonra işini yapar (ör. LED'i tersler) → dönüş. Yanında karşılık gelen TivaWare çağrıları.</figcaption></figure>
+<p><b>Olay ve ham bayrak:</b> Sayaç sıfıra ulaşınca GPTMRIS register'ının <b>TATORIS</b> biti (bit0) 1 olur. Bu bit geçitler kapalı olsa bile kalkar; yoklama bu biti okur. Bayrak register'larının ayrıntısı <a href="#bayrak">aşağıdadır</a>. Ardından üç geçit gelir:</p>
+<ol>
+<li><b>Geçit 1, çevre birimi maskesi:</b> GPTMIMR'nin <b>TATOIM</b> biti (bit0) 1 ise olay kesme isteğine dönüşür ve GPTMMIS'te (maskeli durum) de görünür. TivaWare: <code>TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT)</code>.</li>
+<li><b>Geçit 2, NVIC:</b> Timer0A'nın kesme numarası 19'dur; NVIC'in <b>EN0</b> register'ının (0xE000E100) bit19'u 1 olmalıdır. TivaWare: <code>IntEnable(INT_TIMER0A)</code>.</li>
+<li><b>Geçit 3, global maske:</b> Çekirdekteki <b>PRIMASK</b> biti 0 olmalıdır. PRIMASK = 1 iken (Reset, NMI ve Hard Fault dışında) hiçbir istisna kabul edilmez. TivaWare: <code>IntMasterEnable()</code>, bu da <code>CPSIE I</code> komutunu çalıştırır. PRIMASK'ın açılış değeri 0'dır, yani kesmeler açılışta genel olarak açıktır (datasheet s. 85). Bu yüzden API'siz örneklerde bu adım çoğu zaman yazılmaz; ama kodun bir yerinde <code>IntMasterDisable()</code> / <code>CPSID I</code> ile kesmeler kapatıldıysa, bu geçit yeniden açılmadıkça hiçbir kesme gelmez.</li>
+</ol>
+<p>Üç geçit de açıksa CPU, vektör tablosunun 35 numaralı girişinden (ofset 0x08C) ISR adresini alır ve ISR'ye dallanır. ISR'nin ilk işi kaynağın bayrağını <b>GPTMICR</b>'ye 1 yazarak temizlemektir. Temizlenmezse ISR'den döner dönmez aynı kesme yeniden gelir.</p>
+
+<h3 id="vektor">Vektör tablosu ve startup dosyası</h3>
+<p><b>Vektör tablosu</b>, her istisna için ISR'nin başlangıç adresini tutan 32-bit'lik bir dizidir. Açılışta 0x0000.0000 adresindedir (datasheet s. 106–107). İlk eleman yığın işaretçisinin başlangıç değeri, ikincisi Reset ISR'sinin adresidir; sonra sistem istisnaları ve çevre birimi kesmeleri gelir (Şekil 2). Her giriş 4 bayt olduğu için:</p>
+<p style="text-align:center"><b>vektör no = kesme no + 16</b> &nbsp;·&nbsp; <b>ofset = 4 × vektör no</b> &nbsp;·&nbsp; Timer0A: 19 + 16 = 35, 4 × 35 = 140 = <code>0x08C</code></p>
+<figure><img class="fig" src="../img/timer-vektor-tablosu.svg" alt="Vektör tablosu: 0x000 ilk SP, 0x004 Reset, Timer0A kesme 19 vektör 35 ofset 0x08C; startup_ccs.c içinde g_pfnVectors dizisi"><figcaption><b>Şekil 2.</b> Vektör tablosu: 0x000 ilk yığın işaretçisi, 0x004 Reset, …; Timer0A = kesme no 19 (vektör no 35, ofset 0x08C). <code>startup_ccs.c</code> içindeki <code>g_pfnVectors</code> dizisinde <code>IntDefaultHandler</code> yerine ISR adı yazılır ve dosyanın başına <code>extern void Timer0IntHandler(void);</code> bildirimi eklenir (aşağıdaki <code>bb3</code> örneğinde ISR'nin adı <code>timer0akesmesi</code>).</figcaption></figure>
+<table>
+<thead><tr><th>Kaynak</th><th>Kesme no (EN biti)</th><th>Vektör no</th><th>Ofset</th><th>TivaWare sabiti</th></tr></thead>
+<tbody>
+<tr><td>İlk yığın işaretçisi (SP)</td><td>–</td><td>0</td><td><code>0x000</code></td><td>–</td></tr>
+<tr><td>Reset</td><td>–</td><td>1</td><td><code>0x004</code></td><td>–</td></tr>
+<tr><td>NMI / Hard Fault</td><td>–</td><td>2 / 3</td><td><code>0x008</code> / <code>0x00C</code></td><td><code>FAULT_NMI</code> / <code>FAULT_HARD</code></td></tr>
+<tr><td>SysTick</td><td>–</td><td>15</td><td><code>0x03C</code></td><td><code>FAULT_SYSTICK</code></td></tr>
+<tr><td>GPIO Port A</td><td>0 (EN0 bit0)</td><td>16</td><td><code>0x040</code></td><td><code>INT_GPIOA</code></td></tr>
+<tr><td><b>16/32-bit Timer 0A</b></td><td><b>19 (EN0 bit19)</b></td><td><b>35</b></td><td><b><code>0x08C</code></b></td><td><b><code>INT_TIMER0A</code></b></td></tr>
+<tr><td>16/32-bit Timer 0B</td><td>20 (EN0 bit20)</td><td>36</td><td><code>0x090</code></td><td><code>INT_TIMER0B</code></td></tr>
+<tr><td>16/32-bit Timer 1A</td><td>21 (EN0 bit21)</td><td>37</td><td><code>0x094</code></td><td><code>INT_TIMER1A</code></td></tr>
+<tr><td>16/32-bit Timer 2A</td><td>23 (EN0 bit23)</td><td>39</td><td><code>0x09C</code></td><td><code>INT_TIMER2A</code></td></tr>
+<tr><td>GPIO Port F</td><td>30 (EN0 bit30)</td><td>46</td><td><code>0x0B8</code></td><td><code>INT_GPIOF</code></td></tr>
+<tr><td>16/32-bit Timer 3A</td><td>35 (EN1 bit3)</td><td>51</td><td><code>0x0CC</code></td><td><code>INT_TIMER3A</code></td></tr>
+<tr><td>32/64-bit Wide Timer 0A</td><td>94 (EN2 bit30)</td><td>110</td><td><code>0x1B8</code></td><td><code>INT_WTIMER0A</code></td></tr>
+</tbody></table>
+<p>Değerler datasheet Tablo 2-8 ve 2-9'dan (s. 103–104) alınmıştır. <b>Dikkat:</b> NVIC register'larında bit konumu olarak <b>kesme numarası</b> (19), TivaWare'in <code>INT_TIMER0A</code> sabitinde ise <b>vektör numarası</b> (35) kullanılır. <code>IntEnable(INT_TIMER0A)</code> içeride 35 − 16 = 19 hesabını kendisi yapar; elle yazarken <code>NVIC_EN0_R = 1 &lt;&lt; 19;</code> yazılır, <code>1 &lt;&lt; 35</code> değil.</p>
+
+<h4>Yöntem 1: ISR'yi startup dosyasına yazmak (statik)</h4>
+<p>CCS projesindeki <code>tm4c123gh6pm_startup_ccs.c</code> (TI kitapçığında kısaca <code>startup_ccs.c</code>) dosyası vektör tablosunu <code>g_pfnVectors</code> adlı bir dizi olarak tanımlar. Bu dizi bağlayıcı (linker) komut dosyasıyla flash'ın 0x0000.0000 adresine yerleştirilir. Kullanılmayan bütün girişlerde <code>IntDefaultHandler</code> yazar; bu fonksiyon sonsuz bir döngüdür. Kendi ISR'mizi bağlamak için iki değişiklik yapılır (derste kullanılan <code>bb3</code> projesinden):</p>
+<div class="code-head"><span class="file">bb3/tm4c123gh6pm_startup_ccs.c (parça)</span><span class="tag reg">startup</span></div><pre><code class="language-c">extern void _c_int00(void);
+extern void timer0akesmesi(void);           // (1) EKLENDİ: ISR başka dosyada tanımlı
+
+#pragma DATA_SECTION(g_pfnVectors, ".intvecs")   // tablo flash'ta 0x0000.0000'a yerleşir
+void (* const g_pfnVectors[])(void) =
+{
+    (void (*)(void))((uint32_t)&amp;__STACK_TOP), // vektör 0,  0x000: ilk yığın işaretçisi
+    ResetISR,                               // vektör 1,  0x004: Reset
+    NmiSR,                                  // vektör 2,  0x008: NMI
+    FaultISR,                               // vektör 3,  0x00C: Hard Fault
+    /* ... sistem istisnaları ve kesme 0-17 ... */
+    IntDefaultHandler,                      // vektör 34, 0x088: Watchdog timer   (kesme 18)
+    timer0akesmesi,                         // vektör 35, 0x08C: Timer 0 subtimer A (kesme 19)  (2) DEĞİŞTİ
+    IntDefaultHandler,                      // vektör 36, 0x090: Timer 0 subtimer B (kesme 20)
+    /* ... */
+};</code></pre>
+<p>Girişin yeri yorum satırındaki adla ("Timer 0 subtimer A") bulunur. Satır sayarak bulmaya çalışmak hataya açıktır; bir satır kayarsa ISR başka bir kesmeye bağlanır. ISR adı startup dosyasında <code>extern</code> ile bildirilmezse derleyici adı tanımaz ve derleme hata verir.</p>
+
+<h4>Yöntem 2: ISR'yi çalışma anında kaydetmek (dinamik)</h4>
+<p>TivaWare'in <code>TimerIntRegister(TIMER0_BASE, TIMER_A, Fonksiyon)</code> çağrısı startup dosyasına dokunmadan aynı işi yapar. İçeride <code>IntRegister()</code> fonksiyonu flash'taki tabloyu SRAM'deki <code>g_pfnRAMVectors</code> dizisine kopyalar, NVIC'in <b>VTABLE</b> register'ını (0xE000ED08, s. 163) bu RAM tablosunu gösterecek şekilde değiştirir ve 35. girişe verilen fonksiyonu yazar. <code>TimerIntRegister</code> ardından <code>IntEnable(INT_TIMER0A)</code>'yı da çağırır. RAM tablosu 1 KB sınırına hizalı olmalıdır; ders projelerinin <code>tm4c123gh6pm.cmd</code> dosyasında bunun için <code>.vtable : &gt; 0x20000000</code> satırı vardır.</p>
+<div class="box"><span class="box-title">Hangisini kullanmalı?</span>
+<p>İkisi de doğrudur. Ders kodlarındaki API'li örnekler (<code>hafta06TimerKesmeliApili</code>, <code>bb4</code>, <code>drive_2017_timer</code>) ikinci yolu, API'siz <code>bb3</code> örneği ve TI Lab 4 ise birinci yolu kullanır. Statik yol flash'ta kalır ve RAM harcamaz; dinamik yol esnektir ama tabloya 155 × 4 bayt RAM ayırır ve tablo SRAM'den okunduğu için kesme tepkisine küçük bir ek gecikme getirir (SPMU298E s. 353). <b>Hiçbiri yapılmazsa</b> kesme geldiğinde işlemci <code>IntDefaultHandler</code>'daki sonsuz döngüye düşer ve program "donmuş" görünür.</p></div>
+
+<h3 id="bayrak">Kesme bayrağı ve temizleme</h3>
+<p>Tüm çevre birimlerinde aynı düzen vardır: bir olay için dört register görevi paylaşır. Kaynak örneği olarak Timer0A (ofsetler ve bit adları <a href="#register-tablosu">Bölüm 4</a>'te):</p>
+<table>
+<thead><tr><th>Register</th><th>Görev</th><th>Timer0A zaman aşımı için</th></tr></thead>
+<tbody>
+<tr><td>RIS (Raw Interrupt Status)</td><td>Ham durum: olay olduysa bit 1'dir, maske ne olursa olsun. Yoklama bunu okur.</td><td>GPTMRIS.TATORIS</td></tr>
+<tr><td>IMR (Interrupt Mask)</td><td>Geçit 1: 1 olan bitlerin olayı kesme isteğine dönüşür.</td><td>GPTMIMR.TATOIM</td></tr>
+<tr><td>MIS (Masked Interrupt Status)</td><td>RIS AND IMR: kesmeye yol açan kaynak. ISR'de "hangi olay geldi?" sorusu buradan cevaplanır.</td><td>GPTMMIS.TATOMIS</td></tr>
+<tr><td>ICR (Interrupt Clear)</td><td><b>W1C</b> (write-1-to-clear): bir bite 1 yazmak RIS ve MIS'teki aynı biti 0 yapar; 0 yazmanın etkisi yoktur.</td><td>GPTMICR.TATOCINT</td></tr>
+</tbody></table>
+<p>Bayrak donanım tarafından otomatik silinmez (datasheet s. 709). Bu yüzden <code>TIMER0_ICR_R = 0x01;</code> (ya da <code>TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);</code>) satırı hem yoklamada hem ISR'de zorunludur. Ders örneklerinde <code>TIMER0_ICR_R |= 0x01;</code> yazımı da görülür. W1C register'ını okumak datasheet'e göre anlamlı bir değer döndürmez (register türleri, s. 43). <code>|=</code> önce okuyup sonra yazdığı için okunan değerdeki başka bitler de yazılabilir ve istenmeyen bayraklar silinebilir. Ders kodlarındaki tek bayraklı örneklerde sorun görülmez, ama doğru yazım <code>=</code>'dir; TivaWare de <code>=</code> kullanır.</p>
+
+<h3 id="oncelik">Öncelik</h3>
+<p>Her kesmenin 3 bitlik bir öncelik seviyesi vardır: <b>0 en yüksek, 7 en düşük</b>. Açılışta hepsi 0'dır. Aynı anda iki kesme bekliyorsa önce önceliği yüksek olan, öncelikler eşitse numarası küçük olan çalışır. Bir ISR çalışırken daha yüksek öncelikli bir kesme gelirse çalışan ISR kesilir (iç içe kesme); eşit ya da düşük öncelikli olan bekler (datasheet s. 107–108).</p>
+<p>Öncelikler NVIC'in <b>PRIn</b> register'larında tutulur; her register dört kesmenin önceliğini taşır ve kesme <i>k</i> için alan <code>PRI(k/4)</code> register'ındadır (s. 152). Timer0A (kesme 19 = 4·4 + 3) için PRI4'ün (0xE000E410) bit31:29 alanı kullanılır:</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">öncelik = 2</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">NVIC_PRI4_R = (NVIC_PRI4_R &amp; 0x1FFFFFFF)   // bit31:29'u temizle
+            | (2 &lt;&lt; 29);                   // Timer0A önceliği = 2</code></pre>
+</div><div>
+<div class="code-head"><span class="file">öncelik = 2</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">IntPrioritySet(INT_TIMER0A, 0x40);   // üst 3 bit anlamlı: 2 &lt;&lt; 5 = 0x40</code></pre>
+</div></div>
+<p>Tek kesmeli uygulamalarda öncelik ayarına gerek yoktur. İki zamanlayıcı ya da zamanlayıcı + buton kesmesi birlikte kullanıldığında hangisinin bekleyebileceğine göre öncelik verilir.</p>
+
+<h3 id="isr-kurallari">ISR yazma kuralları</h3>
+<ol>
+<li><b>Kısa tutun.</b> ISR çalışırken eşit ve düşük öncelikli kesmeler bekler. ISR içinde <code>SysCtlDelay</code>, uzun döngü ya da bir butonun bırakılmasını bekleme gibi işler yapılmaz. Uzun iş gerekiyorsa ISR yalnız bir bayrak kaldırır, işi ana döngü yapar.</li>
+<li><b>Bayrağı temizleyin, mümkünse en başta.</b> Cortex-M'de yazmalar bir yazma tamponundan geçer; GPTMICR'ye yapılan yazmanın NVIC'e ulaşması birkaç çevrim sürebilir. Temizleme ISR'nin son satırıysa ISR, NVIC hâlâ isteği görürken bitebilir ve ISR <b>gereksiz yere bir kez daha</b> çalışır. Datasheet (s. 101) iki çözüm verir: bayrağı ISR'nin başında temizlemek ya da temizledikten sonra, dönmeden önce bir okuma veya yazma daha yapmak. TivaWare kılavuzu (<code>TimerIntClear</code> açıklaması) bayrağı ISR'nin başında temizlemeyi önerir.</li>
+<li><b>Paylaşılan değişkenleri <code>volatile</code> tanımlayın.</b> ISR'nin değiştirip ana döngünün okuduğu (ya da tersi) global değişkenler <code>volatile</code> olmalıdır. Aksi halde derleyici, ana döngüdeki değişkenin "hiç değişmediğini" varsayıp değerini bir yazmaçta tutabilir ve ISR'nin yaptığı değişikliği hiç görmez.</li>
+<li><b>Paylaşılan veriye dikkat edin.</b> Ana döngü bir değişkeni oku-değiştir-yaz ile güncellerken araya ISR girip aynı değişkeni değiştirirse güncelleme kaybolabilir. Kısa kritik bölgeler <code>IntMasterDisable()</code> … <code>IntMasterEnable()</code> arasına alınabilir.</li>
+<li><b>Birden çok kaynak varsa MIS'i okuyun.</b> Aynı ISR hem zaman aşımı hem eşleşme olayına bağlıysa <code>TimerIntStatus(base, true)</code> (GPTMMIS) ile hangisinin geldiğine bakılır ve yalnız gelen bayrak temizlenir.</li>
+<li><b>İmza <code>void Ad(void)</code> olmalıdır.</b> ISR'ye parametre geçirilemez, ISR değer döndüremez; iletişim global (<code>volatile</code>) değişkenlerle kurulur.</li>
+</ol>
+
+<h2 id="gptm">3. GPTM modülü</h2>
+<h3 id="gptm-yapi">Yapı: 16/32 ve 32/64-bit bloklar</h3>
+<p>TM4C123GH6PM'nin GPTM modülünde <b>6 adet 16/32-bit</b> (Timer0–Timer5) ve <b>6 adet 32/64-bit "wide"</b> (WTimer0–WTimer5) blok vardır (datasheet s. 704). Her blokta <b>Timer A</b> ve <b>Timer B</b> adlı iki sayaç bulunur (Şekil 3):</p>
+<ul>
+<li><b>16/32-bit blok:</b> A ve B ayrı ayrı (ayrık, <i>split</i>) kullanılırsa her biri <b>16-bit</b> sayaçtır ve 8-bit ön bölücü kullanabilir. Birleştirilirse (<i>concatenated</i>) tek bir <b>32-bit</b> sayaç olur; bu durumda yalnız Timer A'nın register'ları kullanılır ve ön bölücü yoktur.</li>
+<li><b>32/64-bit wide blok:</b> Ayrık kipte her biri <b>32-bit</b> (16-bit ön bölücülü), birleşik kipte tek bir <b>64-bit</b> sayaç.</li>
+</ul>
+<figure><img class="fig" src="../img/timer-gptm-blok.svg" alt="GPTM blok şeması: Timer A ve Timer B, ön bölücü, yükleme register'ı, sayaç, eşleşme, kesme çıkışı, CCP pinleri ve ADC tetikleme"><figcaption><b>Şekil 3.</b> GPTM modülünün sadeleştirilmiş blok şeması (datasheet Şekil 11-1'den). 6 adet 16/32-bit ve 6 adet 32/64-bit (wide) bloğun her birinde Timer A/B, ön bölücü (prescaler), yükleme (GPTMTnILR), sayaç, eşleşme, kesme çıkışı, CCP pinleri ve ADC tetikleme bulunur.</figcaption></figure>
+<p>Şekil 3'teki parçaların görevleri:</p>
+<ul>
+<li><b>Saat girişi:</b> Periyodik ve tek seferlik kiplerde sayaç <b>sistem saatiyle</b> sayar. Kenar sayma/zamanlama kiplerinde ise sayacı CCP pinindeki dış sinyalin kenarları ilerletir.</li>
+<li><b>Yükleme register'ı (GPTMTnILR):</b> Aşağı saymada başlangıç değeri, yukarı saymada üst sınırdır.</li>
+<li><b>Ön bölücü (GPTMTnPR):</b> Yalnız ayrık kipte; aşağı sayan periyodik/tek seferlik kipte gerçek bir frekans bölücü gibi çalışır (<a href="#onbolucu">Bölüm 5</a>).</li>
+<li><b>Eşleşme (GPTMTnMATCHR):</b> Sayaç bu değere eşit olunca ek bir olay (eşleşme kesmesi, PWM kenarı) üretilir.</li>
+<li><b>Kesme çıkışı:</b> Zaman aşımı, eşleşme ve yakalama olayları GPTMRIS/IMR/MIS/ICR üzerinden NVIC'e gider. Her blokta A ve B'nin ayrı kesme hatları vardır (Timer0A = 19, Timer0B = 20).</li>
+<li><b>CCP pinleri</b> (Capture/Compare/PWM): Her sayacın bir pini vardır; dış olay girişi ya da PWM çıkışı olarak kullanılır. Örn. PF4 = T2CCP0 (Timer2 A), PB6 = T0CCP0 (Timer0 A), PF1 = T0CCP1, PF2 = T1CCP0, PF3 = T1CCP1 (datasheet Tablo 11-2, s. 706–707).</li>
+<li><b>ADC tetikleme:</b> Zaman aşımında ADC örneklemesi başlatılabilir (GPTMCTL.TnOTE). Tüm zamanlayıcıların tetik sinyalleri ADC'ye VEYA'lanarak gittiği için bu iş için tek bir zamanlayıcı kullanılmalıdır.</li>
+</ul>
+
+<h3 id="kipler">Kipler ve kip seçimi</h3>
+<p>Bir zamanlayıcının nasıl çalışacağını iki register belirler (Şekil 4): blok düzeyinde <b>GPTMCFG</b> (32-bit birleşik mi, 16-bit ayrık mı?) ve her sayaç için <b>GPTMTnMR</b> (hangi kip, hangi yön?).</p>
+<figure><img class="fig" src="../img/timer-kip-secimi.svg" alt="Kip seçimi: GPTMCFG 0x0 veya 0x4, GPTMTnMR TnMR alanı 0x1 tek seferlik, 0x2 periyodik, 0x3 yakalama, TnCDIR sayma yönü ve 8-bit ön bölücü"><figcaption><b>Şekil 4.</b> Kip seçimi: GPTMCFG (0x0 = 32-bit birleşik, 0x1 = RTC, 0x4 = 16-bit ayrık) × GPTMTnMR'nin TnMR alanı (0x1 tek seferlik, 0x2 periyodik, 0x3 yakalama) + sayma yönü (TnCDIR) + 16-bit kipte 8-bit ön bölücü (aşağı saymada gerçek bölücü, s. 707). Şekilde kiplerin ulaşabildiği en uzun süreler de verilmiştir (<a href="#onbolucu">Bölüm 5</a>).</figcaption></figure>
+<table>
+<thead><tr><th>GPTMCFG</th><th>16/32-bit blokta anlamı</th><th>32/64-bit blokta anlamı</th></tr></thead>
+<tbody>
+<tr><td><code>0x0</code></td><td>32-bit zamanlayıcı (A ve B birleşik)</td><td>64-bit zamanlayıcı</td></tr>
+<tr><td><code>0x1</code></td><td>32-bit gerçek zaman saati (RTC, 32,768 kHz girişle)</td><td>64-bit RTC</td></tr>
+<tr><td><code>0x4</code></td><td>16-bit zamanlayıcılar (A ve B ayrık)</td><td>32-bit zamanlayıcılar</td></tr>
+</tbody></table>
+<p>GPTMTnMR'nin <b>TnMR</b> alanı (bit1:0) ve ilgili bitleri:</p>
+<table>
+<thead><tr><th>Kip</th><th>TnMR</th><th>Diğer bitler</th><th>Kullanım</th></tr></thead>
+<tbody>
+<tr><td>Tek seferlik (one-shot)</td><td><code>0x1</code></td><td>TnCDIR</td><td>Bir kez sayar, zaman aşımında durur ve TnEN'i kendisi 0 yapar. Gecikme, zaman aşımı denetimi.</td></tr>
+<tr><td>Periyodik (periodic)</td><td><code>0x2</code></td><td>TnCDIR</td><td>Zaman aşımında yeniden yüklenip saymaya devam eder. Düzenli aralıkla olay üretme (LED yakıp söndürme, örnekleme).</td></tr>
+<tr><td>Kenar sayma (edge-count)</td><td><code>0x3</code></td><td>TnCMR = 0</td><td>CCP pinindeki kenarları sayar (yalnız ayrık kip).</td></tr>
+<tr><td>Kenar zamanlama (edge-time)</td><td><code>0x3</code></td><td>TnCMR = 1</td><td>Kenar anındaki sayaç değerini yakalar; periyot/darbe genişliği ölçme.</td></tr>
+<tr><td>PWM</td><td><code>0x1</code> / <code>0x2</code></td><td>TnAMS = 1, TnCMR = 0</td><td>CCP pininden PWM çıkışı (yalnız ayrık kip, aşağı sayma).</td></tr>
+</tbody></table>
+<p><b>Sayma yönü:</b> TnCDIR (bit4) = 0 ise sayaç ILR'den 0'a <b>aşağı</b>, 1 ise 0'dan ILR'ye <b>yukarı</b> sayar. Zaman aşımı olayı aşağı saymada 0'a ulaşınca, yukarı saymada ILR değerine ulaşınca oluşur (s. 709). Bu notun örneklerinin çoğu aşağı sayan periyodik kipi kullanır.</p>
+
+<h2 id="registerlar">4. Register'lar ve taban adresler</h2>
+<h3 id="taban">Taban adresler ve saat register'ları</h3>
+<p>Her blok kendi 4 KB'lık adres penceresine sahiptir; register adresi <b>taban + ofset</b> olarak hesaplanır (datasheet §11.5, s. 725). TivaWare'deki adlar <code>inc/hw_memmap.h</code> dosyasındadır.</p>
+<table>
+<thead><tr><th>Blok</th><th>Taban adres</th><th>TivaWare adı</th><th>Blok</th><th>Taban adres</th><th>TivaWare adı</th></tr></thead>
+<tbody>
+<tr><td>16/32-bit Timer 0</td><td><code>0x40030000</code></td><td><code>TIMER0_BASE</code></td><td>32/64-bit Wide Timer 0</td><td><code>0x40036000</code></td><td><code>WTIMER0_BASE</code></td></tr>
+<tr><td>16/32-bit Timer 1</td><td><code>0x40031000</code></td><td><code>TIMER1_BASE</code></td><td>32/64-bit Wide Timer 1</td><td><code>0x40037000</code></td><td><code>WTIMER1_BASE</code></td></tr>
+<tr><td>16/32-bit Timer 2</td><td><code>0x40032000</code></td><td><code>TIMER2_BASE</code></td><td>32/64-bit Wide Timer 2</td><td><code>0x4004C000</code></td><td><code>WTIMER2_BASE</code></td></tr>
+<tr><td>16/32-bit Timer 3</td><td><code>0x40033000</code></td><td><code>TIMER3_BASE</code></td><td>32/64-bit Wide Timer 3</td><td><code>0x4004D000</code></td><td><code>WTIMER3_BASE</code></td></tr>
+<tr><td>16/32-bit Timer 4</td><td><code>0x40034000</code></td><td><code>TIMER4_BASE</code></td><td>32/64-bit Wide Timer 4</td><td><code>0x4004E000</code></td><td><code>WTIMER4_BASE</code></td></tr>
+<tr><td>16/32-bit Timer 5</td><td><code>0x40035000</code></td><td><code>TIMER5_BASE</code></td><td>32/64-bit Wide Timer 5</td><td><code>0x4004F000</code></td><td><code>WTIMER5_BASE</code></td></tr>
+</tbody></table>
+<p>Saat kapısı ve hazır durumu Sistem Kontrol (SYSCTL) bloğundadır:</p>
+<table>
+<thead><tr><th>Register</th><th>Adres</th><th>Görev</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>RCGCTIMER</td><td><code>0x400FE604</code> (SYSCTL + 0x604)</td><td>16/32-bit blokların saatini açar: bit0 = Timer0 … bit5 = Timer5.</td><td>s. 338</td></tr>
+<tr><td>RCGCWTIMER</td><td><code>0x400FE65C</code> (SYSCTL + 0x65C)</td><td>Wide blokların saatini açar: bit0 = WTimer0 … bit5 = WTimer5.</td><td>s. 357</td></tr>
+<tr><td>PRTIMER</td><td><code>0x400FEA04</code> (SYSCTL + 0xA04)</td><td>Salt okunur; bit = 1 ise Timer bloğu erişime hazır.</td><td>s. 404</td></tr>
+<tr><td>PRWTIMER</td><td><code>0x400FEA5C</code> (SYSCTL + 0xA5C)</td><td>Wide bloklar için hazır durumu.</td><td>s. 423</td></tr>
+</tbody></table>
+<p>Datasheet, saat açıldıktan sonra Timer register'larına erişmeden önce <b>3 sistem saati</b> beklenmesini ister (s. 725). Saati kapalı bir bloğun register'ına erişmek <b>bus fault</b> üretir (s. 338). Bus fault istisnası açılışta etkin olmadığından hard fault'a yükselir ve CCS'in startup dosyasındaki <code>FaultISR</code>'ye (sonsuz döngü) düşülür.</p>
+
+<h3 id="register-tablosu">GPTM register tablosu</h3>
+<p>Ofsetler blok taban adresine eklenir (datasheet Tablo 11-12, s. 726). Birleşik (32-bit) kipte yalnız Timer A register'ları kullanılır.</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Görev</th><th><code>tm4c123gh6pm.h</code> (Timer0)</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>GPTMCFG</td><td><code>0x000</code></td><td>Blok yapılandırması: 0x0 = 32-bit, 0x1 = RTC, 0x4 = 16-bit. Yalnız TAEN = TBEN = 0 iken değiştirilir.</td><td><code>TIMER0_CFG_R</code></td><td>s. 727</td></tr>
+<tr><td>GPTMTAMR</td><td><code>0x004</code></td><td>Timer A kipi: TAMR (bit1:0), TACMR, TAAMS, TACDIR, TAMIE… Yalnız TAEN = 0 iken değiştirilir.</td><td><code>TIMER0_TAMR_R</code></td><td>s. 729</td></tr>
+<tr><td>GPTMTBMR</td><td><code>0x008</code></td><td>Timer B kipi (birleşik kipte yok sayılır).</td><td><code>TIMER0_TBMR_R</code></td><td>s. 733</td></tr>
+<tr><td>GPTMCTL</td><td><code>0x00C</code></td><td>Denetim: TAEN/TBEN (çalıştır), TnEVENT (kenar türü), TnSTALL, TnOTE (ADC tetik).</td><td><code>TIMER0_CTL_R</code></td><td>s. 737</td></tr>
+<tr><td>GPTMIMR</td><td><code>0x018</code></td><td>Kesme maskesi: 1 olan olay kesme üretir.</td><td><code>TIMER0_IMR_R</code></td><td>s. 745</td></tr>
+<tr><td>GPTMRIS</td><td><code>0x01C</code></td><td>Ham kesme durumu (salt okunur).</td><td><code>TIMER0_RIS_R</code></td><td>s. 748</td></tr>
+<tr><td>GPTMMIS</td><td><code>0x020</code></td><td>Maskeli kesme durumu (salt okunur).</td><td><code>TIMER0_MIS_R</code></td><td>s. 751</td></tr>
+<tr><td>GPTMICR</td><td><code>0x024</code></td><td>Kesme temizleme (1 yaz → temizle).</td><td><code>TIMER0_ICR_R</code></td><td>s. 754</td></tr>
+<tr><td>GPTMTAILR</td><td><code>0x028</code></td><td>Timer A yükleme değeri (aşağı saymada başlangıç, yukarı saymada üst sınır). 16-bit kipte üst 16 bit yok sayılır.</td><td><code>TIMER0_TAILR_R</code></td><td>s. 756</td></tr>
+<tr><td>GPTMTBILR</td><td><code>0x02C</code></td><td>Timer B yükleme değeri.</td><td><code>TIMER0_TBILR_R</code></td><td>s. 757</td></tr>
+<tr><td>GPTMTAMATCHR</td><td><code>0x030</code></td><td>Timer A eşleşme değeri.</td><td><code>TIMER0_TAMATCHR_R</code></td><td>s. 758</td></tr>
+<tr><td>GPTMTAPR</td><td><code>0x038</code></td><td>Timer A ön bölücüsü (16/32-bit blokta 8 bit; yalnız ayrık kipte).</td><td><code>TIMER0_TAPR_R</code></td><td>s. 760</td></tr>
+<tr><td>GPTMTBPR</td><td><code>0x03C</code></td><td>Timer B ön bölücüsü.</td><td><code>TIMER0_TBPR_R</code></td><td>s. 761</td></tr>
+<tr><td>GPTMTAR</td><td><code>0x048</code></td><td>Timer A değeri (salt okunur): periyodik kipte o anki sayım, yakalama kiplerinde yakalanan değer/sayılan kenar.</td><td><code>TIMER0_TAR_R</code></td><td>s. 764</td></tr>
+<tr><td>GPTMTAV</td><td><code>0x050</code></td><td>Timer A serbest çalışan sayaç değeri (yazılabilir).</td><td><code>TIMER0_TAV_R</code></td><td>s. 766</td></tr>
+</tbody></table>
+
+<h3 id="bitler">Sık kullanılan bitler</h3>
+<table>
+<thead><tr><th>Register</th><th>Bit</th><th>Ad</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">GPTMCTL</td><td>bit0</td><td>TAEN</td><td>1 = Timer A çalışır. Ayar yapılırken 0 olmalı.</td></tr>
+<tr><td>bit1</td><td>TASTALL</td><td>1 = hata ayıklayıcı CPU'yu durdurunca sayaç da durur.</td></tr>
+<tr><td>bit3:2</td><td>TAEVENT</td><td>Yakalama kiplerinde kenar: 0x0 yükselen, 0x1 düşen, 0x3 her iki kenar.</td></tr>
+<tr><td>bit8</td><td>TBEN</td><td>1 = Timer B çalışır.</td></tr>
+<tr><td rowspan="5">GPTMTAMR</td><td>bit1:0</td><td>TAMR</td><td>0x1 tek seferlik, 0x2 periyodik, 0x3 yakalama.</td></tr>
+<tr><td>bit2</td><td>TACMR</td><td>Yakalama türü: 0 kenar sayma, 1 kenar zamanlama.</td></tr>
+<tr><td>bit3</td><td>TAAMS</td><td>1 = PWM kipi.</td></tr>
+<tr><td>bit4</td><td>TACDIR</td><td>0 = aşağı say, 1 = yukarı say.</td></tr>
+<tr><td>bit5</td><td>TAMIE</td><td>1 = periyodik/tek seferlik kipte eşleşme kesmesi etkin. Bu bit 0 iken TAMRIS hiç kalkmaz (s. 710).</td></tr>
+<tr><td rowspan="5">GPTMIMR / RIS / MIS / ICR</td><td>bit0</td><td>TATO…</td><td>Timer A zaman aşımı (IMR: TATOIM, RIS: TATORIS, ICR: TATOCINT). TivaWare: <code>TIMER_TIMA_TIMEOUT</code>.</td></tr>
+<tr><td>bit1</td><td>CAM…</td><td>Timer A yakalama kipi eşleşmesi (kenar sayma). <code>TIMER_CAPA_MATCH</code>.</td></tr>
+<tr><td>bit2</td><td>CAE…</td><td>Timer A yakalama kipi olayı (kenar zamanlama). <code>TIMER_CAPA_EVENT</code>.</td></tr>
+<tr><td>bit4</td><td>TAM…</td><td>Timer A eşleşmesi (periyodik/tek seferlik). <code>TIMER_TIMA_MATCH</code>.</td></tr>
+<tr><td>bit8</td><td>TBTO…</td><td>Timer B zaman aşımı. <code>TIMER_TIMB_TIMEOUT</code>.</td></tr>
+</tbody></table>
+<p>NVIC register'ları çekirdek çevre birimleri bölgesindedir (taban 0xE000E000, datasheet Tablo 3-8, s. 134): <b>EN0</b> <code>0xE000E100</code> (kesme 0–31 izin, s. 142), <b>EN1</b> <code>0xE000E104</code> (kesme 32–63), <b>DIS0</b> <code>0xE000E180</code>, <b>PRI4</b> <code>0xE000E410</code> (kesme 16–19 önceliği, s. 152), <b>VTABLE</b> <code>0xE000ED08</code> (s. 163).</p>
+
+<h2 id="sure">5. Süre hesabı</h2>
+<h3 id="saat">Saat frekansı</h3>
+<p>Periyodik ve tek seferlik kiplerde sayaç sistem saatiyle sayar; bu yüzden ilk iş saat frekansını bilmektir.</p>
+<ul>
+<li><b>16 MHz (varsayılan):</b> <code>SysCtlClockSet</code> çağrılmazsa işlemci iç hassas osilatörden (PIOSC) çalışır ve f = 16 MHz olur (datasheet RCC, s. 254). Derste kullanılan <b>API'siz</b> örneklerin hepsi bu frekansı varsayar.</li>
+<li><b>40 MHz:</b> Ders kodlarındaki <b>API'li</b> örneklerin tamamı ve TI Lab 4 <code>SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN)</code> çağırır: 16 MHz kristal → 400 MHz PLL → sabit /2 → /5 = <b>40 MHz</b>. <code>SysCtlClockGet()</code> bu durumda 40 000 000 döndürür.</li>
+</ul>
+
+<h3 id="ilr-hesap">Yükleme değeri: ILR = f·T − 1</h3>
+<p>Aşağı sayan periyodik kipte sayaç ILR, ILR−1, …, 1, 0 değerlerinden geçer ve 0'dan sonraki çevrimde yeniden ILR yüklenir (datasheet s. 709). Bir periyotta <b>ILR + 1</b> saat çevrimi vardır:</p>
+<p style="text-align:center"><b>T = (ILR + 1) / f</b> &nbsp;&nbsp;⇒&nbsp;&nbsp; <b>ILR = f · T − 1</b></p>
+<p>TI kitapçığı da Lab 4'te "kesme sıfırda geldiği için periyottan bir çıkarılır" der. <code>TimerLoadSet(base, TIMER_A, değer)</code> fonksiyonu verilen değeri <b>olduğu gibi</b> GPTMTnILR'ye yazar (<code>driverlib/timer.c</code>); −1 işlemini yapmaz, bunu programcı yapmalıdır. Ders örneklerinin bazılarında <code>TimerLoadSet(..., SysCtlClockGet())</code> ya da <code>TIMER0_TAILR_R = 0x00F42400</code> (16 000 000) yazılmıştır; periyot 1 çevrim uzun olur (40 MHz'te 25 ns, 16 MHz'te 62,5 ns). LED için fark edilmez, ama hassas zamanlamada ve sınav sorularında −1 unutulmamalıdır.</p>
+<table>
+<thead><tr><th>f</th><th>İstenen T</th><th>f·T</th><th>ILR (ondalık)</th><th>ILR (onaltılık)</th><th>Kip</th></tr></thead>
+<tbody>
+<tr><td>16 MHz</td><td>1 s</td><td>16 000 000</td><td>15 999 999</td><td><code>0x00F423FF</code></td><td>32-bit</td></tr>
+<tr><td>16 MHz</td><td>1 ms</td><td>16 000</td><td>15 999</td><td><code>0x3E7F</code></td><td>16-bit yeter</td></tr>
+<tr><td>40 MHz</td><td>1 s</td><td>40 000 000</td><td>39 999 999</td><td><code>0x026259FF</code></td><td>32-bit</td></tr>
+<tr><td>40 MHz</td><td>50 ms (Lab 4)</td><td>2 000 000</td><td>1 999 999</td><td><code>0x001E847F</code></td><td>32-bit</td></tr>
+<tr><td>40 MHz</td><td>1,25 ms</td><td>50 000</td><td>49 999</td><td><code>0xC34F</code></td><td>16-bit yeter</td></tr>
+</tbody></table>
+<p>32-bit kipte en uzun periyot 2<sup>32</sup> / f'dir: 16 MHz'te ≈ 268,4 s, 40 MHz'te ≈ 107,4 s. Daha uzun süreler için ISR'de yazılımla sayılır ya da 64-bit wide zamanlayıcı kullanılır.</p>
+
+<h3 id="onbolucu">16-bit sınırı ve ön bölücü</h3>
+<p>16-bit (ayrık) kipte GPTMTnILR'nin yalnız alt 16 biti geçerlidir; üst 16 bit yok sayılır (s. 756). En büyük yükleme değeri 65 535'tir, yani ön bölücüsüz en uzun periyot <b>65 536 / f</b> olur: 16 MHz'te 4,096 ms, 40 MHz'te 1,6384 ms. Daha büyük bir değer yazılırsa hata vermez, sessizce kesilir: <code>TimerLoadSet(..., 100000)</code> 16-bit kipte 100 000 &amp; 0xFFFF = 34 464 olarak çalışır.</p>
+<p>Süreyi uzatmanın iki yolu vardır:</p>
+<ol>
+<li><b>Yazılımla saymak:</b> Kısa periyotlu zamanlayıcının her zaman aşımında bir sayaç artırılır, belirli bir sayıya ulaşınca iş yapılır. Ders kodlarındaki 16-bit örneklerin hepsi bu yolu kullanır (<a href="#ornek-16bit">7.4</a>): 16 MHz'te 50 000 çevrim × 320 = 1 s.</li>
+<li><b>Ön bölücü (prescaler):</b> GPTMTnPR register'ına 0–255 arası bir değer yazılır. Datasheet'e göre aşağı sayan periyodik ve tek seferlik kiplerde ön bölücü <b>gerçek bir frekans bölücü</b> gibi davranır: kendi içinde PR'den 0'a sayar ve her turda ana sayaç bir adım ilerler (s. 707, s. 760). Yukarı saymada ve yakalama/PWM kiplerinde ise ön bölücü sayacın <b>üst 8 bitini</b> tutan bir uzantıdır (24-bit sayaç).</li>
+</ol>
+<p>Aşağı sayan periyodik kipte ön bölücüyle periyot şöyle olur (datasheet Tablo 11-5, s. 710 ile uyumlu):</p>
+<p style="text-align:center"><b>T = (PR + 1) · (ILR + 1) / f</b> &nbsp;&nbsp; (PR ≤ 255, ILR ≤ 65 535)</p>
+<p>En uzun periyot 256 · 65 536 / f = 2<sup>24</sup> / f'dir: 16 MHz'te ≈ 1,049 s, 40 MHz'te ≈ 0,419 s. <b>Hesap yöntemi:</b> N = f·T bulunur. N ≤ 65 536 ise PR = 0, ILR = N − 1. Değilse PR + 1 ≥ N / 65 536 olacak şekilde, N'yi tam bölen bir değer seçilir; ILR = N / (PR + 1) − 1.</p>
+<table>
+<thead><tr><th>f</th><th>T</th><th>N = f·T</th><th>PR + 1</th><th>ILR + 1</th><th>Yazılacak değerler</th></tr></thead>
+<tbody>
+<tr><td>16 MHz</td><td>1 s</td><td>16 000 000</td><td>250</td><td>64 000</td><td>PR = 249, ILR = 63 999</td></tr>
+<tr><td>40 MHz</td><td>0,25 s</td><td>10 000 000</td><td>250</td><td>40 000</td><td>PR = 249, ILR = 39 999</td></tr>
+<tr><td>40 MHz</td><td>0,1 s</td><td>4 000 000</td><td>64</td><td>62 500</td><td>PR = 63, ILR = 62 499</td></tr>
+<tr><td>40 MHz</td><td>0,5 s</td><td>20 000 000</td><td colspan="3">2<sup>24</sup> = 16 777 216'dan büyük: 16-bit kipte <b>yapılamaz</b>; 32-bit kip ya da yazılım sayacı gerekir.</td></tr>
+</tbody></table>
+<p>Ön bölücü <b>yalnız ayrık kipte</b> (GPTMCFG = 0x4) vardır; 32-bit birleşik kipte GPTMTnPR kullanılmaz. TivaWare'de karşılığı <code>TimerPrescaleSet(base, TIMER_A, PR)</code>'dir.</p>
+
+<h3 id="zaman-diyagrami">Zaman diyagramı</h3>
+<figure><img class="fig" src="../img/timer-sayma-zamanlama.svg" alt="Periyodik aşağı sayma: sayaç ILR'den 0'a testere dişi, her sıfırda zaman aşımı, RIS bayrağı, ISR'de temizleme, LED tersleme; tek seferlik kip farkı"><figcaption><b>Şekil 5.</b> Periyodik aşağı sayma: sayaç ILR'den 0'a testere dişi biçiminde iner; her sıfırda zaman aşımı olayı olur, RIS bayrağı kalkar, ISR önce bayrağı temizler, sonra LED'i tersler. Periyot = (ILR+1)/f<sub>saat</sub>. Tek seferlik kipte sayaç ilk sıfırdan sonra durur.</figcaption></figure>
+<p>Şekil 5'te dikkat edilecek noktalar:</p>
+<ul>
+<li>Sayaç TnEN = 1 yapıldığı anda ILR değerinden başlar (s. 709, Tablo 11-4).</li>
+<li>TATORIS bayrağı sıfır anında kalkar ve <b>yazılım temizleyene kadar</b> 1 kalır. Yoklamada bayrağın ne kadar geç fark edildiği ana döngünün hızına, kesmede ise yalnız kesme gecikmesine bağlıdır.</li>
+<li>LED her zaman aşımında terslendiği için LED'in yanıp sönme periyodu zamanlayıcı periyodunun <b>iki katıdır</b>. Lab 4'te 10 Hz yanıp sönme için zamanlayıcı 20 Hz'e (50 ms) kurulur.</li>
+<li>Periyodik kipte sayaç ISR'den bağımsız olarak saymaya devam eder; ISR'nin ne kadar sürdüğü periyodu kaydırmaz (ISR periyottan kısa olduğu sürece).</li>
+<li>Tek seferlik kipte zaman aşımından sonra sayaç durur ve donanım TnEN'i 0 yapar; yeniden saymak için TnEN tekrar 1 yapılır.</li>
+</ul>
+
+<h2 id="baslatma">6. Başlatma adımları</h2>
+<p>Datasheet §11.4 (s. 722–723), tek seferlik ve periyodik kip için bir başlatma sırası verir. Kesmeli kullanım için NVIC bölümündeki adımlar (§2.5, §3) bu sıraya eklenir. Şekil 6 iki yolu yan yana gösterir:</p>
+<figure><img class="fig" src="../img/timer-baslatma-akisi.svg" alt="Zamanlayıcı başlatma akışı: API'siz register adımları ve TivaWare karşılıkları yan yana"><figcaption><b>Şekil 6.</b> Başlatma akışı, API'siz ↔ API'li yan yana (datasheet §11.4 + kesme adımları): 1 saat (RCGCTIMER) + PRTIMER bekle → 2 TnEN=0 (GPTMCTL) → 3 GPTMCFG → 4 GPTMTnMR → 5 GPTMTnILR (+ GPTMTnPR) → 6 GPTMICR → 7 GPTMIMR → 8 NVIC EN0 → 9 global izin → 10 TnEN=1. 6–9. adımlar yalnız kesmeli kullanımda gerekir.</figcaption></figure>
+<h3 id="adimlar">Adım adım</h3>
+<ol>
+<li><b>Saati aç (RCGCTIMER):</b> Timer0 için bit0'ı 1 yap (<code>SYSCTL_RCGCTIMER_R |= 0x01;</code>). Register'lara erişmeden önce en az 3 saat çevrimi geçmeli: PRTIMER'ın bit0'ı 1 olana kadar bekle (<code>while((SYSCTL_PRTIMER_R &amp; 0x01) == 0) {}</code>). Kenar sayma gibi CCP pini kullanan kiplerde ilgili GPIO portunun saati de açılır ve pin AFSEL/PCTL ile zamanlayıcıya verilir.</li>
+<li><b>Zamanlayıcıyı durdur (TnEN = 0, GPTMCTL):</b> GPTMCFG ve GPTMTnMR yalnız sayaç kapalıyken değiştirilmelidir. <code>TIMER0_CTL_R &amp;= ~0x01;</code></li>
+<li><b>Blok yapılandırması (GPTMCFG):</b> 32-bit için <code>0x0</code>, 16-bit (ayrık) için <code>0x4</code>.</li>
+<li><b>Kip (GPTMTnMR):</b> TnMR = 0x1 tek seferlik ya da 0x2 periyodik; isteğe bağlı olarak TnCDIR (yön), TnMIE (eşleşme kesmesi), TnSNAPS, TnWOT. <code>TIMER0_TAMR_R = 0x02;</code> (periyodik, aşağı)</li>
+<li><b>Yükleme değeri (GPTMTnILR, + GPTMTnPR):</b> ILR = f·T − 1; 16-bit kipte gerekirse ön bölücü de yazılır.</li>
+<li><b>Bekleyen bayrağı temizle (GPTMICR):</b> Önceden kalkmış bir bayrak, kesme açılır açılmaz istenmeyen bir ISR çağrısına yol açmasın. <code>TIMER0_ICR_R = 0x01;</code></li>
+<li><b>Çevre birimi maskesi (GPTMIMR):</b> Zaman aşımı kesmesi için TATOIM (bit0) = 1.</li>
+<li><b>NVIC (EN0, isteğe bağlı PRIn):</b> Timer0A için EN0 bit19 = 1; öncelik gerekiyorsa PRI4 bit31:29. ISR'nin vektör tablosuna bağlı olduğundan emin olun (<a href="#vektor">Bölüm 2</a>). <code>TimerIntRegister</code> kullanılıyorsa 7. adımdan önce çağrılır; TivaWare kılavuzu, ISR kaydedilmeden kesme kaynağının açılmamasını ister (SPMU298E s. 354).</li>
+<li><b>Global kesme izni:</b> <code>IntMasterEnable()</code> (PRIMASK = 0).</li>
+<li><b>Başlat (TnEN = 1):</b> <code>TIMER0_CTL_R |= 0x01;</code> Bundan sonra ya GPTMRIS yoklanır ya da ISR beklenir. Her iki durumda da bayrak GPTMICR'ye 1 yazılarak temizlenir (datasheet adım 8).</li>
+</ol>
+<p><b>Kesmesiz (yoklama) kullanımda</b> 6–9. adımlar atlanır. Datasheet'in §11.4.1 listesinde 6. adım (ICR temizleme), 8. ve 9. adımlar yoktur; bunlar kesme altyapısından gelir. Datasheet'in GPTMIMR adımı bu listedeki 7. adımdır.</p>
+
+<h3 id="apisiz-apili">API'siz ve API'li kesme kurulumu</h3>
+<p>Şekil 1'deki geçitlerin her biri bir satırla açılır. Aşağıdaki iki sütun, yukarıdaki listenin 6–10. adımlarıyla Timer0A zaman aşımı kesmesini kurar (1–5. adımlar kesmesiz kullanımla aynıdır):</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">kesme kurulumu (Timer0A)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">TIMER0_ICR_R  = 0x01;          // 6) bekleyen bayrağı temizle
+TIMER0_IMR_R |= 0x01;          // 7) TATOIM: çevre birimi maskesi
+NVIC_EN0_R    = 1 &lt;&lt; 19;       // 8) NVIC: kesme 19 (0xE000E100)
+__asm("    cpsie   i");        // 9) global izin: PRIMASK = 0
+TIMER0_CTL_R |= 0x01;          // 10) TAEN = 1: başlat
+/* + ISR adı startup dosyasında vektör 35'e yazılır */</code></pre>
+</div><div>
+<div class="code-head"><span class="file">kesme kurulumu (Timer0A)</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);  // 6)
+TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT); // 7)
+IntEnable(INT_TIMER0A);                          // 8) INT_TIMER0A = 35
+IntMasterEnable();                               // 9)
+TimerEnable(TIMER0_BASE, TIMER_A);               // 10)
+/* + startup'a yaz ya da TimerIntRegister(...) çağır */</code></pre>
+</div></div>
+<p>EN0 register'ına 0 yazmanın etkisi yoktur; bir kesmeyi kapatmak için ayrı bir <b>DIS0</b> register'ı (0xE000E180) vardır. Bu yüzden <code>NVIC_EN0_R = 1 &lt;&lt; 19;</code> yazmak daha önce açılmış diğer kesmeleri kapatmaz (s. 142). 9. adımın neden çoğu API'siz örnekte bulunmadığı <a href="#nvic">Bölüm 2</a>'de (Geçit 3) açıklanmıştır.</p>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<p>Fonksiyon davranışları TivaWare 2.1.4 kaynak kodundan (<code>driverlib/timer.c</code>, <code>interrupt.c</code>) doğrulanmıştır.</p>
+<table>
+<thead><tr><th>TivaWare çağrısı</th><th>Ne yapar (register düzeyinde)</th></tr></thead>
+<tbody>
+<tr><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0)</code></td><td>RCGCTIMER bit0 = 1 (adım 1). <code>SysCtlPeripheralReady(...)</code> PRTIMER bitini döndürür.</td></tr>
+<tr><td><code>TimerConfigure(TIMER0_BASE, cfg)</code></td><td>Adım 2–4'ü birlikte yapar: TAEN = TBEN = 0, GPTMCFG = cfg &gt;&gt; 24, GPTMTAMR = cfg'nin alt baytı (ve GPTMTBMR). Yalnız PWM kipinde anlamlı olan TnPWMIE bitini de 1 yapar.</td></tr>
+<tr><td><code>TIMER_CFG_PERIODIC</code> (0x22)</td><td>GPTMCFG = 0x0 (32-bit), TAMR = 0x2 (periyodik) + TAMIE (bit5). <code>TIMER_CFG_A_PERIODIC</code> da aynı değerdir (0x22); <code>TIMER_CFG_SPLIT_PAIR</code> olmadan kullanılırsa yine 32-bit kip seçilir.</td></tr>
+<tr><td><code>TIMER_CFG_ONE_SHOT</code> (0x21), <code>TIMER_CFG_PERIODIC_UP</code> (0x32)</td><td>Tek seferlik; yukarı sayan periyodik (TACDIR = 1).</td></tr>
+<tr><td><code>TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC</code></td><td>GPTMCFG = 0x4 (16-bit ayrık), Timer A periyodik.</td></tr>
+<tr><td><code>TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_CAP_COUNT</code> / <code>_CAP_COUNT_UP</code></td><td>16-bit, kenar sayma (TAMR = 0x3, TACMR = 0), aşağı / yukarı.</td></tr>
+<tr><td><code>TimerLoadSet(base, TIMER_A, v)</code></td><td><code>GPTMTAILR = v</code>. Değeri değiştirmez: <b>−1'i siz yaparsınız.</b></td></tr>
+<tr><td><code>TimerPrescaleSet(base, TIMER_A, p)</code></td><td><code>GPTMTAPR = p</code> (p &lt; 256).</td></tr>
+<tr><td><code>TimerMatchSet(base, TIMER_A, m)</code></td><td><code>GPTMTAMATCHR = m</code>.</td></tr>
+<tr><td><code>TimerControlEvent(base, TIMER_A, TIMER_EVENT_NEG_EDGE)</code></td><td>GPTMCTL'nin TAEVENT alanı: hangi kenarlar sayılacak/yakalanacak.</td></tr>
+<tr><td><code>TimerIntClear(base, TIMER_TIMA_TIMEOUT)</code></td><td><code>GPTMICR = bayraklar</code> (adım 6 ve ISR içinde).</td></tr>
+<tr><td><code>TimerIntEnable(base, TIMER_TIMA_TIMEOUT)</code></td><td><code>GPTMIMR |= bayraklar</code> (adım 7).</td></tr>
+<tr><td><code>IntEnable(INT_TIMER0A)</code></td><td>NVIC EN0'da bit (35 − 16) = bit19 (adım 8).</td></tr>
+<tr><td><code>IntPrioritySet(INT_TIMER0A, 0x40)</code></td><td>PRI4 bit31:29 = 2 (değerin üst 3 biti kullanılır).</td></tr>
+<tr><td><code>TimerIntRegister(base, TIMER_A, f)</code></td><td>Vektör tablosunu RAM'e kopyalar, VTABLE'ı ayarlar, ilgili girişe (Timer0A için 35.) <code>f</code>'yi yazar ve <code>IntEnable(INT_TIMER0A)</code>'yı çağırır.</td></tr>
+<tr><td><code>IntMasterEnable()</code></td><td><code>CPSIE I</code>: PRIMASK = 0 (adım 9).</td></tr>
+<tr><td><code>TimerEnable(base, TIMER_A)</code></td><td><code>GPTMCTL |= TAEN</code> (adım 10).</td></tr>
+<tr><td><code>TimerValueGet(base, TIMER_A)</code></td><td>GPTMTAR'ı okur.</td></tr>
+<tr><td><code>TimerIntStatus(base, true)</code></td><td>GPTMMIS'i (false ise GPTMRIS'i) okur.</td></tr>
+</tbody></table>
+
+<h2 id="ornekler">7. Örnekler</h2>
+<p>Bu bölümdeki kodlar derste kullanılan örnek projelerden alınmıştır; her kodun üstünde kaynak dosya yazar. Mantık değiştirilmemiştir. Kodlardaki datasheet'ten kopyalanmış uzun İngilizce yorum blokları ve yoruma alınmış satırlar atılmış, açıklamalar Türkçeleştirilmiş ve kısaltılmıştır; yorumlardaki adım numaraları <a href="#adimlar">Bölüm 6</a>'daki listeye göredir. Atılan kısımlar her örnekte belirtilmiştir. "Bu not için hazırlandı" diye işaretlenen kodlar ders klasöründe yoktur.</p>
+<div class="box"><span class="box-title">Proje ayarı hatırlatması</span>
+<ul>
+<li>API'siz örnekler: <code>#include &lt;stdint.h&gt;</code> ve ardından <code>#include "inc/tm4c123gh6pm.h"</code>; include yoluna TivaWare kökü eklenir. TivaWare başlığı <code>uint32_t</code> kullandığı için <code>stdint.h</code> önce gelmelidir.</li>
+<li>API'li örnekler: <code>stdint.h</code> ve <code>stdbool.h</code> önce; <code>driverlib.lib</code> projeye bağlanır. <code>inc/hw_ints.h</code>'deki <code>INT_TIMER0A</code> gibi sabitlerin çözülmesi için projede <code>PART_TM4C123GH6PM</code> öntanımlı sembolü bulunmalıdır (TI Lab 4, adım 14). Aynı sembol <code>driverlib/pin_map.h</code> için de gereklidir.</li>
+<li>Ders kodlarındaki API'li projelerin bazıları hem <code>inc/hw_ints.h</code>'yi hem <code>inc/tm4c123gh6pm.h</code>'yi eklediği için <code>INT_*</code> gibi makrolar iki kez tanımlanır ve uyarı çıkar. API'li kodda <code>tm4c123gh6pm.h</code> gerekmez. Bu projelerin eklediği <code>driverlib/timer.c</code> ve <code>driverlib/sysctl.c</code> gibi <code>.c</code> dosyaları ise kütüphane bağlıyken gereksizdir (bkz. <a href="../gpio/#ornek-buton">GPIO notu 6.3</a>).</li>
+</ul></div>
+
+<h3 id="ornek-yoklama">7.1 32-bit, kesmesiz (yoklama), API'siz</h3>
+<p><b>Amaç:</b> Timer0A'yı 32-bit periyodik kipte kurup zaman aşımı bayrağını yoklayarak LED'i yaklaşık her 1 saniyede tersleme. <b>Donanım:</b> PF1 (kırmızı) ve PF2 (mavi) birlikte; saat 16 MHz (PIOSC). Butonlar için yapılan ayarlar (PF0 kilidi, pull-up) bu örnekte kullanılmaz ama dosyada vardır.</p>
+<p>Orijinal dosyada her satırın üstünde datasheet §11.4.1'den kopyalanmış İngilizce adım metinleri ve yoruma alınmış iki alternatif satır vardı; bunlar atılmıştır.</p>
+<div class="code-head"><span class="file">hafta06TimerKesmesizApisiz/main.c</span><span class="tag reg">API&#x27;siz · kesmesiz</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"
+
+int main(void)
+{
+    // --- GPIO: PF1-PF3 çıkış (LED), PF0/PF4 giriş (buton) ---
+    SYSCTL_RCGCGPIO_R |= 0x20;          // Port F saatini aç
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;     // GPIOCR kilidini aç
+    GPIO_PORTF_CR_R = 0x01;             // PF0 artık yapılandırılabilir
+    GPIO_PORTF_DIR_R |= 0x0E;           // 0000 1110: PF1-3 çıkış
+    GPIO_PORTF_DEN_R |= 0x1F;           // 0001 1111: PF0-4 dijital etkin
+    GPIO_PORTF_PUR_R = 0x11;            // 0001 0001: PF0 ve PF4 iç pull-up
+
+    // --- Timer0A: 32-bit, periyodik, aşağı sayma ---
+    SYSCTL_RCGCTIMER_R |= 0x01;         // 1) Timer0 saatini aç (RCGCTIMER bit0)
+    TIMER0_CTL_R &amp;= 0xFE;               // 2) TAEN (bit0) = 0: ayar yaparken zamanlayıcı kapalı
+    TIMER0_CFG_R = 0x00;                // 3) GPTMCFG = 0x0: 32-bit (birleşik) kip
+    TIMER0_TAMR_R |= 0x02;              // 4) TAMR alanı = 0x2: periyodik kip
+    TIMER0_TAMR_R &amp;= 0xEF;              //    TACDIR (bit4) = 0: aşağı sayma
+    TIMER0_TAILR_R = 0x00F42400;        // 5) ILR = 16 000 000 (16 MHz'te ~1 s)
+    TIMER0_CTL_R |= 0x01;               // 10) TAEN = 1: saymaya başla
+
+    while(1)
+    {
+        if ((TIMER0_RIS_R &amp; 0x01) == 1) // TATORIS (bit0) = 1 mi? Zaman aşımı oldu mu?
+        {
+            TIMER0_ICR_R |= 0x01;       // TATOCINT'e 1 yaz: bayrağı temizle
+            GPIO_PORTF_DATA_R ^= 0x02;  // kırmızıyı tersle
+            GPIO_PORTF_DATA_R ^= 0x04;  // maviyi tersle (ikisi birlikte: mor)
+        }
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Sayaç 16 000 000'dan 0'a iner; her sıfırda TATORIS kalkar. Döngü bayrağı görünce önce temizler, sonra iki LED'i tersler. LED'ler yaklaşık 1 s yanık, 1 s sönük kalır (mor renk). Kesme kullanılmadığı için GPTMIMR, NVIC ve vektör tablosu ayarlanmaz.</p>
+<div class="box warn"><span class="box-title">Kodda dikkat edilecekler</span>
+<ul>
+<li><b>Bekleme yok:</b> <code>SYSCTL_RCGCTIMER_R |= 0x01;</code> satırından hemen sonra Timer0 register'ına erişiliyor. Datasheet 3 çevrim bekleme ister; kendi kodunuzda <code>while((SYSCTL_PRTIMER_R &amp; 0x01) == 0) {}</code> ekleyin. Aynı durum Port F için de geçerlidir.</li>
+<li><code>TIMER0_CTL_R &amp;= 0xFE;</code> yalnız bit0'ı değil, bit8 ve üstünü (TBEN dahil) de sıfırlar; çünkü 0xFE = 0x000000FE'dir. Açılışta zaten hepsi 0 olduğu için sorun çıkmaz, ama yalnız TAEN'i temizlemenin güvenli yazımı <code>&amp;= ~0x01</code>'dir. <code>TIMER0_TAMR_R &amp;= 0xEF;</code> için de aynısı geçerlidir.</li>
+<li><code>TIMER0_TAMR_R |= 0x02;</code> TAMR alanı önceden 0 olduğu için doğrudur. Register'da daha önce 0x1 (tek seferlik) kalmış olsaydı VEYA işlemi 0x3 (yakalama kipi) üretirdi; <code>= 0x02</code> yazmak daha güvenlidir.</li>
+<li><code>0x00F42400</code> = 16 000 000'dur; tam 1 s için 15 999 999 (<code>0x00F423FF</code>) yazılmalıdır (<a href="#ilr-hesap">Bölüm 5</a>).</li>
+</ul></div>
+<p><b>Benzer dosya:</b> <code>bb2/main.c</code> aynı kurulumu yapar, yalnız kırmızıyı tersler ve <code>AFSEL = 0</code> satırını ekler. O dosyadaki koşul birebir <code>if (TIMER0_RIS_R &amp; 0x01 == 1 )</code> biçimindedir. C'de <code>==</code> işlecinin önceliği <code>&amp;</code>'den yüksek olduğu için önce <code>0x01 == 1</code> (sonuç 1) hesaplanır ve ifade <code>TIMER0_RIS_R &amp; 1</code>'e dönüşür. Kod bu yüzden <b>tesadüfen</b> doğru çalışır; doğru yazım <code>(TIMER0_RIS_R &amp; 0x01) == 1</code>'dir. Bit1'i (0x02) sınamaya kalkarsanız aynı hata yanlış sonuç verir.</p>
+<h4>API'li yoklama (bu not için hazırlandı)</h4>
+<p>Ders kodlarında API'li ve kesmesiz bir zaman aşımı örneği yoktur. Kurulum 7.3'teki gibidir (40 MHz, <code>TimerConfigure</code>, <code>TimerLoadSet</code>, <code>TimerEnable</code>); yalnız <code>TimerIntEnable</code>, <code>IntEnable</code> ve <code>IntMasterEnable</code> çağrılmaz. Ana döngü ham bayrağı TivaWare ile okur:</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: yoklama (ana döngü)</span><span class="tag api">API&#x27;li · kesmesiz</span></div><pre><code class="language-c">while(1)
+{
+    if (TimerIntStatus(TIMER0_BASE, false) &amp; TIMER_TIMA_TIMEOUT)   // false: GPTMRIS okunur (TATORIS)
+    {
+        TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);              // bayrağı temizle
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,
+                     GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2) ^ GPIO_PIN_2); // maviyi tersle
+    }
+}</code></pre>
+
+<h3 id="ornek-kesme-apisiz">7.2 32-bit, kesmeli, API'siz</h3>
+<p><b>Amaç:</b> 7.1'deki işi kesmeyle yapmak: zaman aşımı GPTMIMR ve NVIC üzerinden ISR'yi çağırır, ana döngü boş kalır. <b>Donanım:</b> PF1 (kırmızı); saat 16 MHz. ISR'nin vektör tablosuna bağlanışı <a href="#vektor">Bölüm 2</a>'deki startup parçasında gösterilmiştir. Orijinal dosyadaki uzun İngilizce yorumlar ve yoruma alınmış yoklama bloğu atılmıştır.</p>
+<div class="code-head"><span class="file">bb3/main.c</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"
+
+void timer0akesmesi(void)               // Timer0A ISR: adı startup dosyasında vektör 35'e yazıldı
+{
+    TIMER0_ICR_R |= 0x01;               // önce bayrağı temizle (TATOCINT)
+    GPIO_PORTF_DATA_R ^= 0x02;          // kırmızıyı tersle
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;          // Port F saatini aç
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;     // GPIOCR kilidini aç
+    GPIO_PORTF_CR_R = 0x01;             // PF0 yapılandırılabilir
+    GPIO_PORTF_AFSEL_R = 0x00;          // alternatif işlev yok
+    GPIO_PORTF_DIR_R |= 0x0E;           // PF1-3 çıkış
+    GPIO_PORTF_DEN_R |= 0x1F;           // PF0-4 dijital etkin
+    GPIO_PORTF_PUR_R = 0x11;            // PF0, PF4 pull-up
+
+    SYSCTL_RCGCTIMER_R |= 0x01;         // 1) Timer0 saati
+    TIMER0_CTL_R &amp;= 0xFE;               // 2) TAEN = 0
+    TIMER0_CFG_R = 0x00;                // 3) 32-bit kip
+    TIMER0_TAMR_R |= 0x02;              // 4) periyodik
+    TIMER0_TAMR_R &amp;= 0xEF;              //    aşağı sayma
+    TIMER0_TAILR_R = 0x00F42400;        // 5) 16 000 000 -&gt; 16 MHz'te ~1 s
+    TIMER0_IMR_R |= 0x01;               // 7) TATOIM (bit0): zaman aşımı kesmesine izin
+    NVIC_EN0_R = 0x00080000;            // 8) EN0 bit19 = 1: Timer0A (kesme 19, vektör 35)
+    TIMER0_CTL_R |= 0x01;               // 10) TAEN = 1: başlat
+
+    while(1)
+    {
+        // boş: LED'i ISR tersliyor
+    }
+}</code></pre>
+<p><b>Açıklama:</b> 6. adım (ICR temizleme) yazılmamıştır; açılıştan sonra bayrak zaten 0 olduğu için sorun çıkmaz. 9. adım (global izin) da yoktur; nedeni <a href="#nvic">Bölüm 2</a>'de (Geçit 3) açıklanmıştır. <code>0x00080000</code> = 1 &lt;&lt; 19: yalnız bit19. ISR bayrağı ilk satırda temizler; ardından gelen GPIO yazması da yazma tamponunun boşalmasına zaman tanır. LED ~1 s yanık, ~1 s sönük kalır.</p>
+<div class="box warn"><span class="box-title">Not</span>
+<p>Startup dosyasında ISR adı yazılmazsa bu program ilk zaman aşımında <code>IntDefaultHandler</code>'a düşer ve LED bir daha değişmez. Ders kodlarındaki diğer API'siz projelerin (<code>hafta06TimerKesmesizApisiz</code>, <code>bb2</code> vb.) startup dosyalarında Timer girişi değiştirilmemiştir; kesmeli yapmak için oraya da ekleme yapılmalıdır.</p></div>
+
+<h3 id="ornek-kesme-apili">7.3 32-bit, kesmeli, API'li</h3>
+<p><b>Amaç:</b> Aynı işi TivaWare ile yapmak ve ISR'yi <code>TimerIntRegister</code> ile kaydetmek. <b>Donanım:</b> PF2 (mavi); saat 40 MHz. Ana döngüde sayaç değeri okunur (hata ayıklayıcıda izlemek için). Orijinal İngilizce yorumlar Türkçeleştirilmiştir.</p>
+<div class="code-head"><span class="file">bb4/main.c</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">#include "stdbool.h"
+#include "stdint.h"
+#include "inc/hw_ints.h"                // INT_TIMER0A
+#include "inc/hw_memmap.h"              // TIMER0_BASE, GPIO_PORTF_BASE
+#include "inc/hw_types.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/interrupt.h"        // IntEnable, IntMasterEnable
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"            // TimerConfigure, TimerLoadSet, ...
+#include "driverlib/timer.c"            // kütüphane kaynağı (gereksiz, bkz. proje ayarı)
+
+void Timer0IntHandler(void);
+
+int main(void)
+{
+  unsigned long ulPeriod;
+  int counter;
+  SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);                               // Port F saati
+  GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);  // LED'ler çıkış
+
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);       // 1) Timer0 saati
+  TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);  // 2-4) TAEN=0, 32-bit, periyodik, aşağı sayma
+
+  ulPeriod = (SysCtlClockGet());                      // 40 000 000 çevrim = 1 s
+  TimerLoadSet(TIMER0_BASE, TIMER_A, ulPeriod-1);     // 5) ILR = f*T - 1
+
+  TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);    // 7) GPTMIMR.TATOIM = 1
+  IntMasterEnable();                                  // 9) global izin (PRIMASK = 0)
+  TimerIntRegister(TIMER0_BASE, TIMER_A, Timer0IntHandler); // ISR'yi RAM tablosuna yaz + IntEnable
+  TimerIntClear(TIMER0_BASE,TIMER_TIMA_TIMEOUT);      // 6) bekleyen bayrağı temizle
+  IntEnable(INT_TIMER0A);                             // 8) NVIC EN0 bit19 (TimerIntRegister zaten yaptı; zararsız tekrar)
+  TimerEnable(TIMER0_BASE, TIMER_A);                  // 10) TAEN = 1: başlat
+
+  while(1)
+  {
+      counter=TimerValueGet(TIMER0_BASE,TIMER_A);     // GPTMTAR: o anki sayaç değeri
+  }
+}
+
+void Timer0IntHandler(void)
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);   // bayrağı ilk iş temizle
+    if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2))      // mavi yanıyor mu?
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // hepsini söndür
+    }
+    else
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4); // maviyi yak (bit2 -&gt; 4)
+    }
+}</code></pre>
+<p id="api-sira"><b>Açıklama:</b> Mavi LED 1 s yanık, 1 s sönük. Çağrıların sırası Bölüm 6'daki listeden farklıdır (global izin önce, bayrak temizleme sonra), ama TAEN en son satırda 1 yapıldığı için o ana kadar hiç zaman aşımı oluşmaz ve sonuç değişmez. TivaWare kılavuzu yine de ISR kaydedilmeden kesme kaynağının açılmamasını önerir; kendi kodunuzda <code>TimerIntRegister</code>'ı <code>TimerIntEnable</code>'dan önce çağırın. <code>counter</code> değişkeni <code>volatile</code> olmadığı için optimizasyon açıkken atama optimize edilebilir ve hata ayıklayıcıda değer görünmeyebilir; izlemek için <code>volatile int counter;</code> yazın.</p>
+<div class="box warn"><span class="box-title">Aynı kurulumun diğer sürümleri</span>
+<ul>
+<li><code>hafta06TimerKesmeliApili/main.c</code> aynı kurulumu <code>TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC)</code> ve <code>TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet())</code> ile yapar (−1 yok). Ancak ISR'si yalnız bayrağı temizler: <code>TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);</code>. LED'i değiştiren satır olmadığı için program çalışır ama <b>görünür bir şey yapmaz</b>; derste ISR gövdesi sonradan doldurulmak üzere bırakılmış bir iskelettir. Ayrıca PF0 kilidini açıp butonları giriş yapar ama butonları kullanmaz.</li>
+<li><code>drive_2017_timer/timer1.c</code> TI Lab 4'ün <code>TimerIntRegister</code>'lı biçimidir: <code>TimerLoadSet(TIMER0_BASE, TIMER_A, 40000000)</code> (−1 yok), bayrak temizleme adımı yok; <code>ui32Period</code> değişkeni tanımlanmış ama kullanılmamış.</li>
+</ul></div>
+
+<h3 id="ornek-16bit">7.4 16-bit kip ve ön bölücü</h3>
+<p><b>Amaç:</b> Timer0A'yı 16-bit (ayrık) kipte kullanmak, 16-bit sınırını görmek ve süreyi uzatmanın iki yolunu (yazılım sayacı, ön bölücü) karşılaştırmak. <b>Donanım:</b> PF1 + PF2 (API'siz), PF2 (API'li).</p>
+<h4>Yazılım sayacıyla (derste kullanılan)</h4>
+<p>Kesmesiz API'siz sürümde GPIO ayarları 7.1 ile aynıdır ve burada gösterilmemiştir. Tek fark GPTMCFG = 0x4 ve 16 bite sığan bir yükleme değeridir: 50 000 çevrim = 3,125 ms. Her zaman aşımında <code>a</code> sayacı artar, 320'ye ulaşınca (320 × 3,125 ms = 1 s) LED'ler terslenir.</p>
+<div class="code-head"><span class="file">TimerKesmesizApisiz16bit/main.c (parça)</span><span class="tag reg">API&#x27;siz · kesmesiz</span></div><pre><code class="language-c">long a=0;                               // zaman aşımı sayacı
+
+    /* ... GPIO ayarları 7.1 ile aynı ... */
+    SYSCTL_RCGCTIMER_R |= 0x01;         // 1) Timer0 saati
+    TIMER0_CTL_R &amp;= 0xFE;               // 2) TAEN = 0
+    TIMER0_CFG_R = 0x04;                // 3) GPTMCFG = 0x4: 16-bit (ayrık) kip
+    TIMER0_TAMR_R |= 0x02;              // 4) periyodik
+    TIMER0_TAMR_R &amp;= 0xEF;              //    aşağı sayma
+    TIMER0_TAILR_R = 49999;             // 5) 50 000 çevrim = 3,125 ms (16 MHz); en çok 65 535
+    TIMER0_CTL_R |= 0x01;               // 10) başlat
+
+    while(1)
+    {
+        if ((TIMER0_RIS_R &amp; 0x01) == 1) // her 3,125 ms'de bir zaman aşımı
+        {
+            a++;
+            TIMER0_ICR_R |= 0x01;       // bayrağı temizle
+            if(a==320)                  // 320 x 3,125 ms = 1 s
+            {
+                GPIO_PORTF_DATA_R ^= 0x02;  // kırmızıyı tersle
+                GPIO_PORTF_DATA_R ^= 0x04;  // maviyi tersle
+                a=0;
+            }
+        }
+    }</code></pre>
+<p>Orijinal dosyada <code>TIMER0_TAILR_R= 49999;</code> satırının yanında 7.1'den kopyalanmış "16000000 1 sn istedim" yorumu kalmıştı; bu yorum yanlıştır ve yukarıda düzeltilmiştir. <code>a</code> yalnız <code>main</code> içinde kullanıldığı için <code>volatile</code> gerekmez.</p>
+<p>API'li kesmeli sürüm 40 MHz'te çalışır: 50 000 çevrim = 1,25 ms, 800 kesme = 1 s. GPIO kısmı 7.3'e benzer (ek olarak PF0 kilidi açılır, PF0/PF4 pull-up'lı giriş yapılır); burada zamanlayıcı kısmı ve ISR verilmiştir. Yoruma alınmış API'siz kilit satırları atılmıştır; <code>TimerLoadSet</code> satırının yanındaki yanlış "40 000 000 1 sn için" yorumu doğrusuyla değiştirilmiştir. Çağrı sırası 7.3'teki gibi listeden farklıdır; neden sorun çıkmadığı <a href="#api-sira">7.3'teki açıklamada</a> anlatılmıştır.</p>
+<div class="code-head"><span class="file">TimerKesmeliApili16bit/main.c (parça)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">long a=0;                                          // ISR'de sayılan kesme sayısı
+
+    // timer ayarları (SetInitSettings içinden)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);                            // 1) Timer0 saati
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR|TIMER_CFG_A_PERIODIC);  // 2-4) GPTMCFG=0x4, A periyodik
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 49999);     // 5) 50 000 çevrim = 1,25 ms (40 MHz)
+
+    IntMasterEnable();                             // 9) global izin
+    IntEnable(INT_TIMER0A);                        // 8) NVIC EN0 bit19
+
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);  // 7) GPTMIMR
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);   // 6) bayrağı temizle
+    TimerIntRegister(TIMER0_BASE, TIMER_A, timerkesmefonksiyonu); // ISR'yi kaydet
+
+    TimerEnable(TIMER0_BASE, TIMER_A);             // 10) başlat
+}
+
+void timerkesmefonksiyonu()
+{
+    a++;
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);   // bayrağı temizle
+    if(a==800)                                        // 800 x 1,25 ms = 1 s
+    {
+        if (GPIOPinRead(GPIO_PORTF_BASE,GPIO_PIN_2))  // mavi yanıyorsa
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_2,0);  // söndür
+        }
+        else
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_2,4);  // yak
+        }
+        a=0;
+    }
+}</code></pre>
+<p><code>hafta07TimerKesmesizApisiz216bit</code> ve <code>hafta07TimerKesmeliApili16bit</code> projeleri aynı kodun 24 999 yükleme değerli sürümleridir: 16 MHz'te 1,5625 ms × 320 = 0,5 s, 40 MHz'te 0,625 ms × 800 = 0,5 s; yani LED yarım saniyede bir terslenir. Kesmesiz olanı yalnız maviyi (0x04) tersler ve sayacı <code>main</code> içinde yerel <code>int a</code> olarak tanımlar. Bu dosyalardaki "40 000 000 1 sn için" ve "16000000 1 sn istedim" yorumları da önceki örnekten kalmadır ve yanlıştır.</p>
+<div class="box warn"><span class="box-title">Not</span>
+<p>ISR'de değiştirilen <code>a</code> değişkeni <code>volatile</code> değildir. Burada yalnız ISR kullandığı için sorun çıkmaz; ama ana döngü de <code>a</code>'yı okusaydı <code>volatile long a;</code> yazmak gerekirdi (<a href="#isr-kurallari">ISR kuralları</a>).</p></div>
+<h4>Ön bölücüyle (bu not için hazırlandı)</h4>
+<p>Ders örneklerindeki 16-bit kodların hiçbiri ön bölücü kullanmaz. Aynı işi GPTMTAPR ile yapmak için yalnız yükleme satırları değişir. 16 MHz'te 250 × 64 000 = 16 000 000 çevrim = 1 s olduğundan yazılım sayacına gerek kalmaz:</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">16-bit + ön bölücü, 1 s (16 MHz)</span><span class="tag reg">API&#x27;siz · kesmesiz</span></div><pre><code class="language-c">TIMER0_CTL_R  &amp;= ~0x01;     // 2) TAEN = 0
+TIMER0_CFG_R   = 0x04;      // 3) 16-bit kip (ön bölücü yalnız burada)
+TIMER0_TAMR_R  = 0x02;      // 4) periyodik, aşağı sayma
+TIMER0_TAPR_R  = 249;       // 5) ön bölücü: 250'ye böl
+TIMER0_TAILR_R = 63999;     //    64 000 adım: 250 x 64 000 / 16 MHz = 1 s
+TIMER0_CTL_R  |= 0x01;      // 10) başlat
+
+while(1)
+{
+    if (TIMER0_RIS_R &amp; 0x01)            // her 1 s'de bir
+    {
+        TIMER0_ICR_R = 0x01;            // bayrağı temizle
+        GPIO_PORTF_DATA_R ^= 0x06;      // kırmızı + mavi tersle
+    }
+}</code></pre>
+</div><div>
+<div class="code-head"><span class="file">16-bit + ön bölücü, 0,25 s (40 MHz)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">volatile uint32_t sayac = 0;
+
+void Timer0A_ISR(void)
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    if (++sayac == 4)                   // 4 x 0,25 s = 1 s
+    {
+        sayac = 0;
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,
+            GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2) ^ GPIO_PIN_2); // maviyi tersle
+    }
+}
+
+/* main içinde: */
+TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR|TIMER_CFG_A_PERIODIC);
+TimerPrescaleSet(TIMER0_BASE, TIMER_A, 249);   // 250'ye böl
+TimerLoadSet(TIMER0_BASE, TIMER_A, 39999);     // 250 x 40 000 / 40 MHz = 0,25 s</code></pre>
+</div></div>
+<p>40 MHz'te 16-bit kipin ön bölücüyle bile en uzun periyodu ≈ 0,419 s olduğu için 1 s doğrudan elde edilemez; sağdaki kodda 0,25 s'lik kesmeler ISR'de 4'e kadar sayılır. Kesme kurulumunun geri kalanı 7.3'teki gibidir.</p>
+
+<h3 id="ornek-sayac">7.5 Sayaç değerini okuma ve kenar sayma</h3>
+<p><b>Amaç:</b> Zamanlayıcıyı sistem saati yerine bir pindeki kenarları sayacak şekilde kurmak ve sayaç değerini <code>TimerValueGet</code> ile okumak. <b>Donanım:</b> PF4 = SW1 = <b>T2CCP0</b> (Timer2 A'nın CCP girişi); saat 40 MHz. Sayılan değer hata ayıklayıcıda <code>i</code> değişkeni izlenerek görülür.</p>
+<p>Orijinal dosyadaki boş <code>timerkesmefonksiyonu()</code> ve yoruma alınmış satırlar atılmıştır.</p>
+<div class="code-head"><span class="file">Timksmsizcountrapi/main.c</span><span class="tag api">API&#x27;li · kesmesiz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_ints.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.c"
+#include "driverlib/timer.h"
+#include "driverlib/timer.c"
+#include "driverlib/interrupt.h"
+#include "driverlib/pin_map.h"          // GPIO_PF4_T2CCP0
+#include "inc/tm4c123gh6pm.h"
+
+void SetInitSettings();
+
+int main(void)
+{
+    SetInitSettings();
+    int i=0;
+    while(1)
+    {
+        i=TimerValueGet(TIMER2_BASE,TIMER_A);   // GPTMTAR: sayılan kenar sayısı
+    }
+}
+
+void SetInitSettings()
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);      // Timer2 saati
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);       // Port F saati
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3); // LED'ler çıkış
+
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;   // PF0 kilidini aç (burada PF0 kullanılmıyor)
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;
+
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE,GPIO_PIN_4);             // PF4 giriş
+    GPIODirModeSet(GPIO_PORTF_BASE,GPIO_PIN_4, GPIO_DIR_MODE_HW); // PF4 donanım işlevinde (AFSEL = 1)
+
+    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3,0); // LED'ler sönük
+
+    // timer ayarları
+    GPIOPinTypeTimer(GPIO_PORTF_BASE, GPIO_PIN_4);     // PF4: AFSEL = 1, 2 mA standart pad
+    GPIOPinConfigure(GPIO_PF4_T2CCP0);                 // GPIOPCTL: PF4 = T2CCP0
+
+    TimerConfigure(TIMER2_BASE, (TIMER_CFG_SPLIT_PAIR|TIMER_CFG_A_CAP_COUNT_UP)); // 16-bit, kenar sayma, yukarı
+    TimerControlEvent(TIMER2_BASE,TIMER_A, TIMER_EVENT_NEG_EDGE); // TAEVENT: düşen kenar (basış)
+    TimerLoadSet(TIMER2_BASE, TIMER_A, 3);             // GPTMTAILR = 3 (bkz. not)
+    TimerEnable(TIMER2_BASE,TIMER_A);                  // saymaya başla
+}</code></pre>
+<p><b>Açıklama:</b> SW1'e her basışta PF4'te düşen bir kenar oluşur ve Timer2A sayacı bir artar. Ana döngü GPTMTAR'ı sürekli okuyup <code>i</code>'ye yazar. Mekanik buton titreştiği için (bounce) bir basış birden çok kenar olarak sayılabilir; bu deneyde gözlenmesi öğreticidir.</p>
+<div class="box warn"><span class="box-title">Kodda dikkat edilecekler</span>
+<ul>
+<li><b>Pull-up yok:</b> <code>GPIOPinTypeTimer</code> pad'i <code>GPIO_PIN_TYPE_STD</code> ile ayarlar; bu, PF4'ün iç pull-up'ını kapatır. Orijinal dosyada pull-up açan <code>GPIOPadConfigSet(...)</code> satırı yoruma alınmıştır. SW1 açıkken pin boşta kalır ve rastgele kenarlar sayılabilir. <code>GPIOPinTypeTimer</code>'dan sonra <code>GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);</code> eklenmelidir.</li>
+<li><b>Yükleme değeri:</b> Datasheet'e göre yukarı sayan kenar sayma kipinde sayaç 0'dan <b>GPTMTAMATCHR</b> değerine kadar sayar ve GPTMTAILR'nin bu değerden büyük olması gerekir (s. 712–713). Burada MATCH açılış değerinde (16-bit kipte 0xFFFF) bırakılmış, ILR ise 3 yapılmıştır; bu koşul sağlanmadığı için sayacın hangi değerde döneceği datasheet'te tanımlı değildir. Belirli bir sayıda (ör. 4 basışta) sıfırlanma isteniyorsa <code>TimerMatchSet</code> ile MATCH ayarlanmalı ve ILR ondan büyük seçilmelidir.</li>
+<li><code>GPIOPinTypeGPIOInput</code> ve <code>GPIODirModeSet</code> satırları, ardından gelen <code>GPIOPinTypeTimer</code>'ın zaten yaptığı işi yapar; gereksizdir.</li>
+<li><code>i</code> <code>volatile</code> olmadığı için optimizasyon açıkken atama optimize edilebilir ve hata ayıklayıcıda değer görünmeyebilir.</li>
+</ul></div>
+<h4>Aşağı sayan kenar sayma ve yakalama eşleşme kesmesi</h4>
+<p>Aşağıdaki örnek PB6'daki (T0CCP0) düşen kenarları 99'dan aşağı doğru sayar; sayaç 90'a ulaşınca (99 − 90 = 9 kenar) yakalama eşleşme kesmesi (CAMRIS, bit1) gelir. Datasheet'e göre aşağı saymada eşleşmeden sonra sayaç ILR ile yeniden yüklenir ve donanım TAEN'i 0 yaparak sayımı durdurur (s. 713); sonraki kenarlar yazılım TAEN'i tekrar 1 yapana kadar sayılmaz. Yoruma alınmış bir satır atılmıştır.</p>
+<div class="code-head"><span class="file">drive_2017_timer/timer3.c (main ve ISR)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">int a;                                   // ISR'de okunan sayaç değeri
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);    // Timer0 saati
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);     // Port B saati (PB6)
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_CAP_COUNT); // 16-bit, kenar sayma, aşağı
+    GPIOPinConfigure(GPIO_PB6_T0CCP0);               // GPIOPCTL: PB6 = T0CCP0
+    GPIOPinTypeTimer(GPIO_PORTB_BASE, GPIO_PIN_6);   // PB6 zamanlayıcı işlevinde
+    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE); // düşen kenarları say
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 99);          // başlangıç değeri 99
+    TimerMatchSet(TIMER0_BASE, TIMER_A, 90);         // 90'da eşleşme: 9 kenar sonra
+
+    TimerIntRegister(TIMER0_BASE, TIMER_A,Timer0IntHandler);  // ISR'yi kaydet (+ IntEnable)
+    TimerIntEnable(TIMER0_BASE, TIMER_CAPA_MATCH);   // GPTMIMR.CAMIM (bit1)
+    IntEnable(INT_TIMER0A);                          // NVIC (TimerIntRegister zaten yaptı)
+    IntMasterEnable();                               // global izin
+    TimerEnable(TIMER0_BASE, TIMER_A);               // saymaya başla
+
+    while(1)
+    {
+    }
+}
+
+void Timer0IntHandler(void)
+{
+    a=TimerValueGet(TIMER0_BASE, TIMER_A);           // sayaç değerini oku
+    TimerIntClear(TIMER1_BASE, TIMER_CAPA_MATCH);    // orijinal satır: TIMER0_BASE olmalıydı (bkz. not)
+}</code></pre>
+<div class="box warn"><span class="box-title">Orijinal dosyadaki hata</span>
+<p>ISR'deki satır birebir <code>TimerIntClear(TIMER1_BASE, TIMER_CAPA_MATCH);//clear the interrupt</code> biçimindedir. Kesmeyi Timer0 ürettiği halde Timer1'in ICR register'ına yazılır. Timer1'in saati açılmadığı için bu erişim bir <b>bus fault</b> üretir ve program <code>FaultISR</code>'de takılır. Timer1'in saati açık olsaydı bile Timer0'ın CAMRIS bayrağı temizlenmezdi ve ISR durmadan yeniden çağrılırdı. Doğrusu <code>TimerIntClear(TIMER0_BASE, TIMER_CAPA_MATCH);</code> olmalı ve ISR'nin başına alınmalıdır. Ayrıca PB6'ya dışarıdan bir sinyal bağlanmalıdır (kartta bu pine bağlı buton yoktur; <code>GPIOPinTypeTimer</code> pull-up açmaz) ve <code>a</code> ana programda okunacaksa <code>volatile</code> tanımlanmalıdır.</p></div>
+<p><b>Ayrıca:</b> <code>drive_timer_tekrari/örnek external clock reference.txt</code> dosyası aynı fikri PF4/Timer2 ile her iki kenarı sayarak dener; ancak <code>TIMER_CFG_32_BIT_PER | TIMER_CFG_A_CAP_COUNT</code> birleşimini kullanır. <code>TIMER_CFG_32_BIT_PER</code> eski StellarisWare adıdır, TivaWare 2.1.4'te tanımlı değildir; kenar sayma kipi de yalnız ayrık kipte (GPTMCFG = 0x4) çalışır. Bu yüzden o dosya bu notta örnek olarak kullanılmamıştır.</p>
+
+<h3 id="ornek-match">7.6 Eşleşme (match) kesmesi</h3>
+<p><b>Amaç:</b> Periyodik zamanlayıcıda zaman aşımına ek olarak periyodun ortasında bir eşleşme kesmesi üretmek. <b>Donanım:</b> PF2 (mavi); saat 40 MHz.</p>
+<div class="code-head"><span class="file">drive_2017_timer/timer2.c (main ve ISR)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">int main(void)
+{
+    uint32_t ui32Period;
+    int counter=2;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);   // 32-bit periyodik; 0x22 TAMIE'yi de açar
+
+    ui32Period = SysCtlClockGet() ;                    // 40 000 000
+    TimerLoadSet(TIMER0_BASE, TIMER_A, ui32Period -1); // periyot 1 s
+    TimerMatchSet(TIMER0_BASE,TIMER_A,ui32Period/2);   // GPTMTAMATCHR = 20 000 000: periyodun ortası
+    TimerIntRegister(TIMER0_BASE, TIMER_A,Timer0IntHandler);
+    IntEnable(INT_TIMER0A);
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT|TIMER_TIMA_MATCH); // iki olay da kesme üretir
+    IntMasterEnable();
+
+    TimerEnable(TIMER0_BASE, TIMER_A);
+
+    while(1)
+    {
+        counter=TimerValueGet(TIMER0_BASE,TIMER_A);   // sayacı izlemek için
+    }
+}
+
+void Timer0IntHandler(void)
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_MATCH|TIMER_TIMA_TIMEOUT); // iki bayrağı birden temizle
+    if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2))      // mavi yanıyorsa
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // söndür
+    }
+    else
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4); // yak
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Sayaç 39 999 999'dan aşağı sayarken 20 000 000'a gelince eşleşme (TAMRIS, bit4), 0'a gelince zaman aşımı (TATORIS, bit0) olur; iki olay da aynı ISR'yi çağırır. ISR yarım saniyede bir çalıştığı için mavi LED 0,5 s yanık, 0,5 s sönük kalır. Periyodik kipte eşleşme kesmesinin çalışması için GPTMTAMR'deki <b>TAMIE</b> (bit5) 1 olmalıdır; TivaWare'de <code>TIMER_CFG_PERIODIC</code> değeri (0x22) bu biti zaten içerir. API'siz yazarken bu bit unutulursa TAMRIS hiç kalkmaz (s. 710).</p>
+<p>ISR iki bayrağı birden temizler. Hangi olayın geldiğine göre farklı iş yapılacaksa önce <code>TimerIntStatus(TIMER0_BASE, true)</code> okunur ve yalnız gelen bayrak temizlenir. <code>drive_timer_tekrari/timer 2 ornek.txt</code> dosyası aynı fikrin eski bir sürümüdür; MATCH = 0 olduğu için iki olay aynı anda gelir; dosyada ISR kaydı (<code>TimerIntRegister</code>) yoktur ve startup dosyası klasörde bulunmuyor; ayrıca <code>TIMER_CFG_32_BIT_PER</code> TivaWare 2.x'te tanımlı değildir.</p>
+
+<h3 id="ornek-tek">7.7 Tek seferlik kip</h3>
+<p><b>Amaç:</b> SW1'e basılınca kırmızı LED'i yakmak ve Timer1A tek seferlik kipte 2 s saydıktan sonra LED'i söndürmek. Buton yoklama ile, süre kesme ile izlenir. <b>Donanım:</b> PF4 (SW1, pull-up), PF1 (kırmızı); saat 40 MHz. Ders örneklerinde tek seferlik kip yoktur; bu kod not için hazırlanmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: tek_seferlik.c</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_ints.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"
+#include "driverlib/interrupt.h"
+
+void Timer1A_ISR(void)
+{
+    TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);   // bayrağı en başta temizle
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);     // süre doldu: LED'i söndür
+}
+
+int main(void)
+{
+    uint32_t sure;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER1)) {}   // 1) saat + hazır bekle
+
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);      // PF1 çıkış
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);       // PF4 giriş
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU); // pull-up
+
+    sure = 2 * SysCtlClockGet() - 1;                         // 2 s = 80 000 000 çevrim
+    TimerConfigure(TIMER1_BASE, TIMER_CFG_ONE_SHOT);         // 2-4) 32-bit, tek seferlik, aşağı sayma
+    TimerLoadSet(TIMER1_BASE, TIMER_A, sure);                // 5)
+    TimerIntRegister(TIMER1_BASE, TIMER_A, Timer1A_ISR);     // ISR'yi kaydet (+ IntEnable: adım 8)
+    TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);          // 6)
+    TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);         // 7)
+    IntMasterEnable();                                       // 9)
+
+    while(1)
+    {
+        if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0)    // SW1 basılı (aktif-düşük)
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1); // LED'i yak
+            TimerLoadSet(TIMER1_BASE, TIMER_A, sure);        // sayım sürüyorsa baştan başlat
+            TimerEnable(TIMER1_BASE, TIMER_A);               // 10) TAEN = 1
+        }
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Tek seferlik kipte zaman aşımından sonra donanım TAEN'i 0 yapar; her basışta <code>TimerEnable</code> sayımı yeniden başlatır. Buton basılı tutulduğu sürece sayaç sürekli yeniden yüklenir (aşağı sayarken ILR'ye yazılan değer bir sonraki çevrimde sayaca alınır, s. 710); LED butonu bıraktıktan 2 s sonra söner. ISR'yi startup dosyasına yazmak tercih edilirse <code>TimerIntRegister</code> yerine <code>IntEnable(INT_TIMER1A)</code> çağrılır ve vektör 37'ye (Timer 1 subtimer A) ISR adı yazılır.</p>
+
+<h2 id="lab4">8. TI Lab 4 uyarlaması <span class="tag ti">TI Lab 4</span></h2>
+<p><b>Amaç:</b> Timer0A periyodik kesmesiyle (50 ms'de bir) mavi LED'i 10 Hz'te yakıp söndürmek ve ISR'yi startup dosyasına bağlamak.</p>
+<p>TI'nın <em>TM4C123G LaunchPad Workshop</em> kitapçığının 4. bölümü ("Interrupts and the Timers") önce NVIC'i, istisna türlerini ve vektör tablosunu tanıtır, sonra GPTM'nin özelliklerini özetler. Lab 4'te Timer0A ile periyodik kesme üretilip mavi LED yakıp söndürülür. Adımların özeti:</p>
+<ol>
+<li><b>Proje:</b> Hazır Lab4 projesi CCS'e aktarılır (boş <code>main.c</code>, startup dosyası ve derleme ayarları hazırdır).</li>
+<li><b>Başlıklar:</b> <code>stdint.h</code>, <code>stdbool.h</code>, <code>tm4c123gh6pm.h</code>, <code>hw_memmap.h</code>, <code>hw_types.h</code>, <code>sysctl.h</code>, <code>interrupt.h</code>, <code>gpio.h</code>, <code>timer.h</code>. <code>interrupt.h</code> NVIC fonksiyonlarını, <code>timer.h</code> zamanlayıcı fonksiyonlarını getirir.</li>
+<li><b>Saat ve GPIO:</b> Lab 3'teki gibi 40 MHz; Port F açılır, PF1–PF3 çıkış.</li>
+<li><b>Zamanlayıcı:</b> Timer0'ın saati açılır ve <code>TIMER_CFG_PERIODIC</code> ile 32-bit periyodik kipe alınır. Kitapçık, saati açmadan sürücü fonksiyonu çağırmanın bir hata kesmesine yol açacağını hatırlatır.</li>
+<li><b>Süre:</b> 10 Hz, %50 görev oranlı yanıp sönme için kesme yarım periyotta gelmelidir: <code>(SysCtlClockGet() / 10) / 2</code> = 2 000 000 çevrim (50 ms). Kesme sıfırda geldiği için <code>TimerLoadSet</code>'e bu değerin bir eksiği verilir.</li>
+<li><b>Kesmeler:</b> <code>IntEnable(INT_TIMER0A)</code> (NVIC), <code>TimerIntEnable(..., TIMER_TIMA_TIMEOUT)</code> (çevre birimi), <code>IntMasterEnable()</code> (global).</li>
+<li><b>Başlat ve bekle:</b> <code>TimerEnable</code>; ana döngü boştur.</li>
+<li><b>ISR:</b> <code>Timer0IntHandler</code> önce bayrağı temizler, sonra PF2'yi okuyup tersini yazar.</li>
+<li><b>Vektör tablosu:</b> <code>tm4c123gh6pm_startup_ccs.c</code>'de "Timer 0 subtimer A" girişindeki <code>IntDefaultHandler</code> yerine <code>Timer0IntHandler</code> yazılır, dosyanın başına <code>extern void Timer0IntHandler(void);</code> eklenir (<a href="#vektor">Bölüm 2</a>, Yöntem 1).</li>
+<li><b>Öntanımlı sembol:</b> Proje özelliklerinde <code>PART_TM4C123GH6PM</code> tanımlı olmalıdır; kesme numaralarının doğru çözülmesi buna bağlıdır.</li>
+<li><b>Çalıştırma:</b> Debug ve Resume; mavi LED hızlıca (10 Hz) yanıp söner.</li>
+<li><b>İstisna deneyi:</b> <code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF)</code> satırı yoruma alınır. İlk denemede program yine çalışır, çünkü port önceki çalıştırmadan açık kalmıştır; kart kapatılıp açıldıktan sonra LED yanmaz ve Suspend ile durdurulduğunda programın <code>FaultISR</code>'de takıldığı görülür.</li>
+</ol>
+<div class="code-head"><span class="file">Lab 4 – main.c (TI Workshop, Türkçe yorumlu)</span><span class="tag ti">TI Lab 4</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/tm4c123gh6pm.h"         // INT_TIMER0A dahil kesme numaraları
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/interrupt.h"      // IntEnable, IntMasterEnable
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"          // TimerConfigure, TimerLoadSet, ...
+
+int main(void)
+{
+    uint32_t ui32Period;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);       // 32-bit periyodik
+
+    ui32Period = (SysCtlClockGet() / 10) / 2;              // 2 000 000 çevrim = 50 ms
+    TimerLoadSet(TIMER0_BASE, TIMER_A, ui32Period -1);     // kesme sıfırda: -1
+
+    IntEnable(INT_TIMER0A);                                // NVIC
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);       // çevre birimi maskesi
+    IntMasterEnable();                                     // global izin
+
+    TimerEnable(TIMER0_BASE, TIMER_A);                     // başlat
+
+    while(1)
+    {
+    }
+}
+
+void Timer0IntHandler(void)                // startup dosyasında vektör 35'e yazılır
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);        // bayrağı temizle
+    if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2))           // mavi yanıyorsa
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // söndür
+    }
+    else
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4);      // yak
+    }
+}</code></pre>
+<div class="box"><span class="box-title">Kitapçıktan notlar</span>
+<ul>
+<li>Derste kullanılan <code>bb4</code> ve <code>drive_2017_timer/timer1.c</code> bu labın uyarlamalarıdır; fark, ISR'nin startup dosyası yerine <code>TimerIntRegister</code> ile kaydedilmesidir.</li>
+<li>Kitapçık, <code>IntDefaultHandler</code> ve hata ISR'lerinin sonsuz döngü olduğunu, gerçek bir üründe bunların değiştirilmesi gerektiğini hatırlatır.</li>
+<li>Ev ödevi önerisi: zamanlayıcının PWM özelliğini kullanarak LED'i gözün fark edemeyeceği kadar hızlı (30 Hz üstü) yakıp söndürmek ve darbe genişliğini değiştirerek parlaklığı periyodik olarak artırıp azaltmak.</li>
+</ul></div>
+
+<h2 id="exp11">9. Experiment 11 uygulama görevi</h2>
+<p>"Experiment 11: External/Internal Interrupts and ISR Programming" föyünün amacı Cortex-M4'te kesme kurmayı öğrenmektir. Föy LM4F120 (Stellaris LaunchPad) için yazılmıştır; register adresleri TM4C123GH6PM ile aynıdır.</p>
+<h4>Föyün özeti</h4>
+<ul>
+<li>NVIC tüm istisnaları "handler" kipinde işler; işlemci durumunu yığına otomatik kaydeder ve geri yükler; vektör okuma ile durum kaydetme paralel yapılır.</li>
+<li>Öncelik seviyeleri 0–7'dir; küçük sayı yüksek önceliktir. (Föydeki "65 kesme" sayısı LM4F120 içindir; TM4C123GH6PM'de 78'dir.)</li>
+<li>Vektör tablosu 0x0000.0000'dadır; her istisnanın adresi, numarası × 4'tür (Reset: 1 × 4 = 0x04, NMI: 2 × 4 = 0x08).</li>
+<li>Bir kesme kaynağını açmanın iki adımı: kaynağın NVIC izin bitini (ENn) 1 yapmak ve önceliğini (PRIn) ayarlamak. Port F örneğinde kesme no 30 → EN0 bit30; öncelik PRI7'nin bit23:21 alanında, örneğin 5 için <code>NVIC_PRI7_R = (NVIC_PRI7_R &amp; 0xFF00FFFF) | 0x00A00000;</code>.</li>
+<li>Föydeki kod PF4 butonunun düşen kenarında kesme üretir (GPIOIS, GPIOIBE, GPIOIEV, GPIOICR, GPIOIM) ve ISR içinde LED'leri sırayla yakar. Kodda bazı sabitler öğrencinin doldurması için boş bırakılmıştır.</li>
+</ul>
+<div class="box warn"><span class="box-title">Föydeki ISR hakkında</span>
+<p>Föydeki <code>GPIOPortF_Handler</code> içinde <code>Delay(1000000)</code> çağıran bir döngü vardır. Bu, <a href="#isr-kurallari">ISR kurallarındaki</a> "kısa tut" ilkesine aykırıdır: ISR yaklaşık bir saniye boyunca diğer eşit ve düşük öncelikli kesmeleri bekletir. Ayrıca <code>Delay</code> içindeki sayaç <code>volatile</code> değildir. Aşağıdaki görevde bu gecikme işi zamanlayıcıya devredilir.</p></div>
+<h4>Uygulama görevi</h4>
+<p>Föyde Timer ile ilgili bir görev yoktur; aşağıdaki görevler bu not için hazırlanmıştır.</p>
+<ol>
+<li>Föydeki boş bırakılan sabitleri doldurun: <code>PORTF_CLK_EN</code> = 0x20, <code>LEDs</code> = 0x0E, <code>SW1</code> = <code>INT_PF4</code> = 0x10, <code>NVIC_EN0_INT30</code> = 0x40000000, DIR = 0x0E, PRI7 satırı yukarıdaki gibi.</li>
+<li>ISR'deki <code>Delay</code> döngüsünü kaldırın. LED'i Timer0A periyodik kesmesi (0,5 s) yaksın/söndürsün; SW1 kesmesi yalnız rengi değiştirsin (kırmızı → mavi → yeşil).</li>
+<li>Timer0A'ya öncelik 2, Port F'ye öncelik 1 verin; hangisinin diğerini kesebileceğini açıklayın.</li>
+<li>Startup dosyasına iki ISR'yi de ekleyin: vektör 35 (Timer 0 subtimer A) ve vektör 46 (GPIO Port F).</li>
+<li>İsteğe bağlı: aynı programı TivaWare ile yazın (<code>TimerIntRegister</code>, <code>GPIOIntRegister</code>, <code>IntPrioritySet</code>).</li>
+</ol>
+<p>İskelet, föydeki GPIO kesme register'larını kullanır. GPIO kesmeleri ayrı notta ayrıntılı işlenecektir; burada yalnız görevleri (Port F, ofsetler taban 0x40025000'e eklenir):</p>
+<table>
+<thead><tr><th>GPIOIS (0x404)</th><th>GPIOIBE (0x408)</th><th>GPIOIEV (0x40C)</th><th>GPIOIM (0x410)</th><th>GPIOICR (0x41C)</th></tr></thead>
+<tbody><tr><td>0 = kenar, 1 = seviye duyarlı</td><td>1 = her iki kenar</td><td>0 = düşen kenar / düşük seviye, 1 = yükselen / yüksek</td><td>1 = pin kesmesine izin (geçit 1)</td><td>1 yaz: bayrağı temizle (W1C)</td></tr></tbody></table>
+<div class="code-head"><span class="file">Experiment 11 görevi – Timer0A + Port F kesmesi (iskelet)</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;               // tm4c123gh6pm.h uint32_t kullanır; önce eklenmeli
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t renk = 0x02;      // iki ISR'nin paylaştığı değişken: volatile
+
+void GPIOPortF_Handler(void)        // kesme 30 (vektör 46): SW1 düşen kenar
+{
+    GPIO_PORTF_ICR_R = 0x10;        // PF4 bayrağını temizle
+    renk = (renk == 0x08) ? 0x02 : (renk &lt;&lt; 1);   // kırmızı -&gt; mavi -&gt; yeşil
+}
+
+void Timer0A_Handler(void)          // kesme 19 (vektör 35): 0,5 s zaman aşımı
+{
+    TIMER0_ICR_R = 0x01;            // TATOCINT: bayrağı temizle
+    if (GPIO_PORTF_DATA_R &amp; 0x0E)   // bir LED yanıyorsa
+        GPIO_PORTF_DATA_R &amp;= ~0x0E; //   hepsini söndür
+    else
+        GPIO_PORTF_DATA_R |= renk;  //   değilse seçili rengi yak
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R  |= 0x20;                 // Port F saati
+    SYSCTL_RCGCTIMER_R |= 0x01;                 // 1) Timer0 saati
+    while((SYSCTL_PRGPIO_R  &amp; 0x20) == 0) {}    //    Port F hazır
+    while((SYSCTL_PRTIMER_R &amp; 0x01) == 0) {}    //    Timer0 hazır
+
+    GPIO_PORTF_DIR_R = 0x0E;        // PF1-3 çıkış, PF4 giriş
+    GPIO_PORTF_DEN_R = 0x1E;        // PF1-4 dijital
+    GPIO_PORTF_PUR_R = 0x10;        // PF4 pull-up
+    GPIO_PORTF_IS_R  &amp;= ~0x10;      // PF4 kenar duyarlı
+    GPIO_PORTF_IBE_R &amp;= ~0x10;      // tek kenar
+    GPIO_PORTF_IEV_R &amp;= ~0x10;      // düşen kenar
+    GPIO_PORTF_ICR_R  =  0x10;      // bekleyen bayrağı temizle
+    GPIO_PORTF_IM_R  |=  0x10;      // PF4 kesmesine izin
+
+    TIMER0_CTL_R  &amp;= ~0x01;         // 2) TAEN = 0
+    TIMER0_CFG_R   = 0x00;          // 3) 32-bit
+    TIMER0_TAMR_R  = 0x02;          // 4) periyodik, aşağı
+    TIMER0_TAILR_R = 8000000 - 1;   // 5) 0,5 s (16 MHz)
+    TIMER0_ICR_R   = 0x01;          // 6) bayrağı temizle
+    TIMER0_IMR_R  |= 0x01;          // 7) TATOIM
+
+    NVIC_PRI4_R = (NVIC_PRI4_R &amp; 0x1FFFFFFF) | (2 &lt;&lt; 29);  // kesme 19 önceliği = 2
+    NVIC_PRI7_R = (NVIC_PRI7_R &amp; 0xFF1FFFFF) | (1 &lt;&lt; 21);  // kesme 30 önceliği = 1
+    NVIC_EN0_R  = (1 &lt;&lt; 19) | (1 &lt;&lt; 30);                   // 8) Timer0A ve Port F
+    /* 9) gerekirse (bkz. Bölüm 2, Geçit 3): __asm("    cpsie   i"); */
+    TIMER0_CTL_R |= 0x01;           // 10) başlat
+
+    while(1)
+    {
+        /* boş: işi ISR'ler yapıyor */
+    }
+}</code></pre>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>ISR'yi vektör tablosuna eklememek.</b> Startup dosyasında ilgili girişte hâlâ <code>IntDefaultHandler</code> yazıyorsa ve <code>TimerIntRegister</code> da çağrılmadıysa, ilk kesmede program sonsuz döngüye düşer. Doğru satır (adıyla) seçilmeli ve ISR <code>extern</code> ile bildirilmelidir (<a href="#vektor">Bölüm 2</a>).</li>
+<li><b>Bayrağı temizlememek.</b> GPTMICR'ye yazılmazsa ISR'den dönülür dönülmez aynı kesme yeniden gelir; ISR durmadan tekrar girer ve ana program hiç çalışmaz. Yoklamada ise bayrak hep 1 kalır ve koşul her turda doğru olur.</li>
+<li><b>Bayrağı ISR'nin son satırında temizlemek.</b> Yazma tamponu nedeniyle ISR bir kez fazladan çalışabilir. Temizlemeyi başa alın.</li>
+<li><b>Kesme numarası ile vektör numarasını karıştırmak.</b> NVIC EN0'da Timer0A bit19'dur; <code>INT_TIMER0A</code> ise 35'tir. <code>NVIC_EN0_R = INT_TIMER0A;</code> ya da <code>1 &lt;&lt; 35</code> yanlıştır.</li>
+<li><b>Geçitlerden birini unutmak (özellikle <code>IntMasterEnable</code>).</b> Üç geçidin üçü de gereklidir: GPTMIMR (<code>TimerIntEnable</code>), NVIC EN0 (<code>IntEnable</code>) ve PRIMASK (<code>IntMasterEnable</code>). Global izni unutmak çoğu zaman fark edilmez, ama kesmeler bir yerde kapatıldıysa hiçbir kesme gelmez (<a href="#nvic">Geçit 3</a>). Açıkça çağırmayı alışkanlık edinin.</li>
+<li><b>TnEN = 1 iken yapılandırma.</b> GPTMCFG ve GPTMTnMR yalnız TnEN = 0 iken değiştirilmelidir (s. 727, 729). <code>TimerConfigure</code> bunu kendisi yapar; API'siz kodda 2. adım atlanmamalıdır.</li>
+<li><b>16-bit kipte taşma.</b> 16-bit kipte ILR'nin üst 16 biti yok sayılır: 65 535'ten büyük değer sessizce kesilir ve periyot beklenenden çok kısa çıkar. Ön bölücü ya da 32-bit kip kullanın (<a href="#onbolucu">Bölüm 5</a>).</li>
+<li><b>ILR'de −1'i unutmak.</b> Periyot ILR + 1 çevrimdir. <code>TimerLoadSet</code> −1 yapmaz.</li>
+<li><b>Saati açmadan erişim.</b> RCGCTIMER'daki ilgili bit 1 yapılmadan Timer register'ına erişmek bus fault üretir ve program <code>FaultISR</code>'de takılır (TI Lab 4 istisna deneyi). Saati açtıktan sonra PRTIMER'ı bekleyin. Kartın önceki programdan açık kalan saatleri bu hatayı gizleyebilir; kartı kapatıp açarak deneyin.</li>
+<li><b><code>volatile</code> eksikliği.</b> ISR ile ana program arasında paylaşılan değişkenler <code>volatile</code> olmalıdır; yoksa ana döngü değişikliği hiç görmeyebilir.</li>
+<li><b>Yanlış saat frekansı varsaymak.</b> <code>SysCtlClockSet</code> yoksa f = 16 MHz, Lab ayarıyla 40 MHz'tir. Kod kopyalanırken ILR değerleri ve yorumlar buna göre güncellenmelidir (ders kodlarındaki 16-bit örneklerde kalan yanlış yorumlar bu hatadandır).</li>
+<li><b>Yanlış modülün bayrağını temizlemek.</b> <code>TimerIntClear</code>'a verilen taban adresi kesmeyi üreten blokla aynı olmalıdır (<a href="#ornek-sayac">7.5</a>'teki <code>timer3.c</code> hatası).</li>
+<li><b>Eşleşme kesmesinde TnMIE'yi unutmak.</b> Periyodik/tek seferlik kipte eşleşme kesmesi için GPTMTnMR.TnMIE = 1 olmalıdır.</li>
+<li><b>ISR'de bekleme.</b> ISR içinde <code>SysCtlDelay</code>, uzun döngü ya da buton bırakılmasını bekleme gibi işler diğer kesmeleri geciktirir.</li>
+<li><b>CCP pininde pull-up'ı unutmak.</b> <code>GPIOPinTypeTimer</code> pull-up açmaz; butonla kenar sayılacaksa <code>GPIOPadConfigSet(..., GPIO_PIN_TYPE_STD_WPU)</code> eklenmelidir.</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>Yükleme değeri:</b> f = 40 MHz, 32-bit periyodik kipte 250 ms periyot için GPTMTAILR'ye yazılacak değeri ondalık ve onaltılık olarak bulun. (Cevap: 9 999 999 = 0x0098967F.)</li>
+<li><b>Ön bölücü:</b> f = 16 MHz, 16-bit kipte 10 ms periyot için PR ve ILR değerlerini bulun. Ön bölücüsüz neden yapılamaz? (Cevap: N = 160 000 &gt; 65 536; örneğin PR + 1 = 4 → PR = 3, ILR = 39 999.)</li>
+<li><b>Sınır:</b> f = 40 MHz'te 16-bit kipte ön bölücüyle ulaşılabilecek en uzun periyot nedir? 0,5 s'lik periyot için hangi seçenekleriniz vardır? (Cevap: 2<sup>24</sup> / 40 MHz ≈ 0,419 s; 32-bit kip, yazılım sayacı ya da wide zamanlayıcı.)</li>
+<li><b>Ters hesap:</b> 16 MHz'te <code>TIMER0_TAILR_R = 0x00F42400</code> yazıldığında periyot tam olarak kaç saniyedir? 40 MHz'e geçildiğinde aynı değer hangi periyodu verir? (Cevap: 16 000 001 / 16 MHz = 1,0000000625 s; 40 MHz'te 0,400000025 s.)</li>
+<li><b>Vektör hesabı:</b> 16/32-bit Timer 1B'nin kesme numarası 22'dir. Vektör numarasını, tablodaki ofsetini, EN0'daki bitini ve öncelik alanının hangi PRIn register'ının hangi bitlerinde olduğunu bulun. (Cevap: 38; 0x098; bit22; PRI5, bit23:21.)</li>
+<li><b>Farklı hızlarda iki LED:</b> Timer0A kırmızı LED'i 0,5 s'de bir, Timer1A mavi LED'i 0,2 s'de bir terslesin. İki ayrı ISR yazın; önce startup dosyasını düzenleyerek (API'siz), sonra <code>TimerIntRegister</code> ile (API'li). İki zamanlayıcının aynı anda kesme ürettiği durumda hangisinin önce çalışacağını açıklayın.</li>
+<li><b>(Ödev) Yanma süresini butonlarla ayarlamak, Timer kesmeli sürüm:</b> GPIO notundaki ödevde (<a href="../gpio/#alistirmalar">GPIO alıştırma 1</a>) süre <code>SysCtlDelay</code> ile ayarlanıyordu. Şimdi kırmızı LED'i Timer0A periyodik kesmesi yakıp söndürsün. SW1'e (PF4) her basışta yanma süresi 100 ms <b>artsın</b>, SW2'ye (PF0) her basışta 100 ms <b>azalsın</b>; süre 100 ms ile 2 s arasında sınırlansın. İpuçları: süreyi <code>volatile uint32_t sure_ms</code> değişkeninde tutun; yeni değeri <code>TimerLoadSet(TIMER0_BASE, TIMER_A, sure_ms * (SysCtlClockGet()/1000) - 1)</code> ile yükleyin; periyodik kipte sayım sürerken ILR'ye yazılan yeni değer bir sonraki çevrimde alınır (s. 710, TnILD = 0), zamanlayıcıyı durdurmanız gerekmez; PF0 kilidini açmayı unutmayın (<a href="../gpio/#kilit">GPIO notu</a>). Butonları önce yoklamayla, sonra Port F kesmesiyle okuyun.</li>
+<li><b>Tek seferlik yeniden tetikleme:</b> <a href="#ornek-tek">7.7</a>'deki programı, butona her basışta 2 s'nin baştan başlaması yerine 2 s <b>eklenecek</b> şekilde değiştirin (ipucu: <code>TimerValueGet</code> ile kalan süreyi okuyun).</li>
+<li><b>Kenar sayma:</b> Timer2A'yı PF4 (T2CCP0) üzerinden aşağı sayan kenar sayma kipinde kurun; SW1'e 5 kez basılınca yakalama eşleşme kesmesi yeşil LED'i yaksın. Pull-up'ı ve eşleşmeden sonra TAEN'in otomatik sıfırlandığını hesaba katın. Buton titreşimi (bounce) yüzünden bir basış birden çok kenar sayılabilir; 5 basıştan önce LED yanarsa nedeni budur.</li>
+<li><b>Süre ölçme:</b> Timer1'i 32-bit periyodik, yükleme değeri 0xFFFFFFFF olacak şekilde serbest çalıştırın. Bir fonksiyon çağrısından önce ve sonra <code>TimerValueGet</code> okuyarak <code>SysCtlDelay(1000)</code>'in kaç çevrim sürdüğünü ölçün; sonucu 3 × 1000 ile karşılaştırın.</li>
+</ol>
+
+<h2 id="kaynaklar">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014).
+<ul>
+<li>Bölüm 2 "The Cortex-M4F Processor": PRIMASK s. 85; istisna modeli §2.5 s. 101 (bayrak temizleme notu dahil); istisna türleri Tablo 2-8 s. 103; kesmeler Tablo 2-9 s. 104–106; vektör tablosu s. 106–107; öncelikler s. 107–108.</li>
+<li>Bölüm 3 "Cortex-M4 Peripherals": register haritası Tablo 3-8 s. 134; EN0–EN3 s. 142; PRI0–PRI15 s. 152; VTABLE s. 163.</li>
+<li>Bölüm 5 "System Control": RCC s. 254; RCGCTIMER s. 338; RCGCWTIMER s. 357; PRTIMER s. 404.</li>
+<li>Bölüm 11 "General-Purpose Timers" (s. 704–773): özellikler s. 704; blok şema Şekil 11-1 s. 705; CCP pinleri Tablo 11-1/11-2 s. 706–707; işlevsel tanım ve ön bölücü s. 707; kipler Tablo 11-3 s. 708; tek seferlik/periyodik kip s. 709–710; 16-bit ön bölücü Tablo 11-5 s. 710; kenar sayma s. 712–714; başlatma §11.4 s. 722–725; taban adresler s. 725; register haritası Tablo 11-12 s. 726; GPTMCFG s. 727, GPTMTAMR s. 729, GPTMCTL s. 737, GPTMIMR s. 745, GPTMRIS s. 748, GPTMMIS s. 751, GPTMICR s. 754, GPTMTAILR s. 756, GPTMTAMATCHR s. 758, GPTMTAPR s. 760, GPTMTAR s. 764, GPTMTAV s. 766.</li>
+</ul></li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em> (öğrenci kitapçığı), Bölüm 4 "Interrupts and the Timers" ve Lab 4 (s. 4-1 – 4-21).</li>
+<li>Texas Instruments, <em>TivaWare Peripheral Driver Library User's Guide</em> (SW-TM4C-DRL-UG, SPMU298E): Bölüm 17 "Interrupt Controller (NVIC)", Bölüm 26 "System Control", Bölüm 29 "Timer". SPMU298E TivaWare 2.2.0 kılavuzudur; bölüm numaraları ona göredir. Yerel kaynak 2.1.4'tür ve fonksiyon davranışları bu sürümün kaynaklarından doğrulanmıştır: <code>driverlib/timer.c</code>, <code>driverlib/interrupt.c</code>, <code>inc/hw_timer.h</code>, <code>inc/hw_ints.h</code>, <code>inc/tm4c123gh6pm.h</code>.</li>
+<li>"Experiment 11: External/Internal Interrupts and ISR Programming", laboratuvar föyü.</li>
+<li>Ders örnek kodları (EEM 431, Zamanlayıcı klasörü): <code>hafta06TimerKesmesizApisiz</code>, <code>hafta06TimerKesmeliApili</code>, <code>hafta07TimerKesmesizApisiz216bit</code>, <code>hafta07TimerKesmeliApili16bit</code>, <code>TimerKesmesizApisiz16bit</code>, <code>TimerKesmeliApili16bit</code>, <code>Timksmsizcountrapi</code>, <code>bb2</code>, <code>bb3</code>, <code>bb4</code>, <code>drive_2017_timer</code> (<code>timer1.c</code>, <code>timer2.c</code>, <code>timer3.c</code>), <code>drive_timer_tekrari</code>.</li>
+<li>İlgili not: <a href="../gpio/">1. GPIO</a> (GPIODATA maskeleme, PF0 kilidi, buton ve LED devreleri).</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 6. Zamanlayıcılar. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

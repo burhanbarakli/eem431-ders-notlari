@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 712" class="tkp-svg" role="img" aria-labelledby="tkp-title tkp-desc">
+<title id="tkp-title">GPTM kip seçimi</title>
+<desc id="tkp-desc">GPTMCFG: 0x0 32-bit birleşik (A ve B tek sayaç), 0x1 32-bit RTC, 0x4 16-bit ayrık (A ve B bağımsız). GPTMTnMR.TnMR: 0x1 tek seferlik, 0x2 periyodik, 0x3 yakalama; TnCDIR: 0 aşağı, 1 yukarı. 16 MHz’te en uzun süreler: 16-bit 4,1 ms, 16-bit + 8-bit ön bölücü 1,05 s, 32-bit 268 s. TIMER_CFG_A_PERIODIC’in tek başına 32-bit kip verdiği uyarısı.</desc>
+<style>
+.tkp-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.tkp-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.tkp-svg .tkp-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.tkp-svg .tkp-b{font-weight:700}
+.tkp-svg .tkp-it{font-style:italic}
+.tkp-svg .tkp-s13{font-size:13px}
+.tkp-svg .tkp-s16{font-size:16px}
+.tkp-svg .tkp-mut{fill:var(--fig-muted,#76746c)}
+.tkp-svg .tkp-acc{fill:var(--fig-accent,#b4481f)}
+.tkp-svg .tkp-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.tkp-svg .tkp-sub{font-size:13px}
+.tkp-svg .tkp-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.tkp-svg .tkp-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.tkp-svg .tkp-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.tkp-svg .tkp-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tkp-svg .tkp-hlb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.12;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.5}
+.tkp-svg .tkp-hlg{fill:var(--fig-green,#2f7d4f);fill-opacity:.12;stroke:var(--fig-green,#2f7d4f);stroke-width:1.5}
+.tkp-svg .tkp-circ{fill:var(--fig-accent,#b4481f)}
+.tkp-svg .tkp-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.tkp-svg .tkp-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.tkp-svg .tkp-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.tkp-svg .tkp-fillblu{fill:var(--fig-blue,#1f5fa8);fill-opacity:.3;stroke:none}
+.tkp-svg .tkp-fill2{fill:var(--fig-fill-2,#efece4);stroke:none}
+</style>
+<text class="tkp-s16 tkp-b" x="12" y="26">Kip seçimi: GPTMCFG + GPTMTnMR</text>
+<circle class="tkp-circ" cx="22" cy="53" r="10"/>
+<text class="tkp-num" x="22" y="58" text-anchor="middle">1</text>
+<text x="40" y="58"><tspan class="tkp-mono tkp-b">GPTMCFG</tspan><tspan class="tkp-b"> (ofset 0x000, bit 2:0) — blok yapısı</tspan></text>
+<rect class="tkp-box" x="12" y="72" width="736" height="44" rx="6"/>
+<rect class="tkp-pill" x="20" y="81" width="48" height="26" rx="13"/>
+<text class="tkp-mono tkp-b" x="44" y="99" text-anchor="middle">0x0</text>
+<rect class="tkp-hlb" x="80" y="81" width="270" height="26" rx="3"/>
+<text class="tkp-s13 tkp-b" x="215" y="99" text-anchor="middle">A + B → 32-bit sayaç</text>
+<text x="366" y="91"><tspan class="tkp-b">32-bit birleşik</tspan><tspan class="tkp-s13"> — A ve B tek sayaç</tspan></text>
+<text class="tkp-s13" x="366" y="108">yalnız Timer A register’ları kullanılır (TAILR, TAMR …)</text>
+<rect class="tkp-box" x="12" y="122" width="736" height="44" rx="6"/>
+<rect class="tkp-pill" x="20" y="131" width="48" height="26" rx="13"/>
+<text class="tkp-mono tkp-b" x="44" y="149" text-anchor="middle">0x1</text>
+<rect class="tkp-hlg" x="80" y="131" width="270" height="26" rx="3"/>
+<text class="tkp-s13" x="215" y="149" text-anchor="middle">RTC 32-bit, yukarı (1 Hz)</text>
+<text x="366" y="141"><tspan class="tkp-b">32-bit RTC</tspan><tspan class="tkp-s13 tkp-mut"> — kısaca</tspan></text>
+<text class="tkp-s13" x="366" y="158">çift numaralı (even) CCP pininden, TnCCP0: 32,768 kHz</text>
+<rect class="tkp-box" x="12" y="172" width="736" height="44" rx="6"/>
+<rect class="tkp-pill" x="20" y="181" width="48" height="26" rx="13"/>
+<text class="tkp-mono tkp-b" x="44" y="199" text-anchor="middle">0x4</text>
+<rect class="tkp-opt" x="80" y="181" width="38" height="26" rx="3"/>
+<text class="tkp-mono" x="99" y="199" text-anchor="middle">PR</text>
+<rect class="tkp-hlb" x="122" y="181" width="88" height="26" rx="3"/>
+<text class="tkp-s13 tkp-b" x="166" y="199" text-anchor="middle">A 16-bit</text>
+<rect class="tkp-opt" x="220" y="181" width="38" height="26" rx="3"/>
+<text class="tkp-mono" x="239" y="199" text-anchor="middle">PR</text>
+<rect class="tkp-hlb" x="262" y="181" width="88" height="26" rx="3"/>
+<text class="tkp-s13 tkp-b" x="306" y="199" text-anchor="middle">B 16-bit</text>
+<text x="366" y="191"><tspan class="tkp-b">16-bit ayrık</tspan><tspan class="tkp-s13"> — A ve B bağımsız</tspan></text>
+<text class="tkp-s13" x="366" y="208">her birinin kipi kendi GPTMTnMR’sinde; 8-bit ön bölücü</text>
+<text class="tkp-s13 tkp-mut" x="748" y="230" text-anchor="end">0x2–0x3 ve 0x5–0x7 ayrılmış</text>
+<circle class="tkp-circ" cx="22" cy="251" r="10"/>
+<text class="tkp-num" x="22" y="256" text-anchor="middle">2</text>
+<text x="40" y="256"><tspan class="tkp-mono tkp-b">GPTMTnMR</tspan><tspan class="tkp-b"> (A: ofset 0x004, B: 0x008) — sayma biçimi</tspan></text>
+<rect class="tkp-box" x="12" y="270" width="452" height="154" rx="6"/>
+<rect class="tkp-box" x="476" y="270" width="272" height="154" rx="6"/>
+<text x="24" y="290"><tspan class="tkp-mono tkp-b">TnMR</tspan><tspan class="tkp-s13 tkp-mut"> (bit 1:0)</tspan></text>
+<text x="488" y="290"><tspan class="tkp-mono tkp-b">TnCDIR</tspan><tspan class="tkp-s13 tkp-mut"> (bit 4)</tspan></text>
+<text class="tkp-mono tkp-b" x="24" y="322">0x1</text>
+<rect class="tkp-fill2" x="62" y="304" width="64" height="28" rx="3"/>
+<path class="tkp-wb" d="M66,328 L70,328 L70,309 L96,328 L122,328"/>
+<text class="tkp-b" x="140" y="315">Tek seferlik</text>
+<text class="tkp-s13" x="140" y="332">bir kez sayar, zaman aşımında TnEN = 0</text>
+<text class="tkp-mono tkp-b" x="24" y="362">0x2</text>
+<rect class="tkp-fill2" x="62" y="344" width="64" height="28" rx="3"/>
+<path class="tkp-wb" d="M66,368 L68,368 L68,349 L86,368 L86,349 L104,368 L104,349 L122,368"/>
+<text class="tkp-b" x="140" y="355">Periyodik</text>
+<text class="tkp-s13" x="140" y="372">zaman aşımında yeniden yükler, sürer</text>
+<text class="tkp-mono tkp-b" x="24" y="402">0x3</text>
+<rect class="tkp-fill2" x="62" y="384" width="64" height="28" rx="3"/>
+<path class="tkp-wb" d="M66,408 L84,408 L84,389 L104,389 L104,408 L122,408"/>
+<text class="tkp-b" x="140" y="395">Yakalama</text>
+<text class="tkp-s13" x="140" y="412">CCP kenarında sayım ya da zaman (TnCMR)</text>
+<text class="tkp-mono tkp-b" x="488" y="322">0</text>
+<rect class="tkp-fill2" x="506" y="304" width="52" height="28" rx="3"/>
+<path class="tkp-wb" d="M512,309 L552,328"/>
+<text class="tkp-b" x="568" y="315">aşağı (varsayılan)</text>
+<text class="tkp-s13" x="568" y="332">ILR → 0; zaman aşımı 0’da</text>
+<text class="tkp-mono tkp-b" x="488" y="362">1</text>
+<rect class="tkp-fill2" x="506" y="344" width="52" height="28" rx="3"/>
+<path class="tkp-wb" d="M512,368 L552,349"/>
+<text class="tkp-b" x="568" y="355">yukarı</text>
+<text class="tkp-s13" x="568" y="372">0 → ILR; zaman aşımı ILR’de</text>
+<text class="tkp-s13 tkp-mut" x="488" y="402">PWM hep aşağı, RTC hep yukarı</text>
+<circle class="tkp-circ" cx="22" cy="453" r="10"/>
+<text class="tkp-num" x="22" y="458" text-anchor="middle">3</text>
+<text x="40" y="458" xml:space="preserve"><tspan class="tkp-b">16 MHz’te en uzun süre: </tspan><tspan class="tkp-b tkp-it">T</tspan><tspan class="tkp-sub" dy="4">max</tspan><tspan dy="-4"> = 2ⁿ / </tspan><tspan class="tkp-it">f</tspan><tspan class="tkp-sub" dy="4">saat</tspan><tspan class="tkp-s13 tkp-mut" dy="-4">   (aşağı sayma; genel: </tspan><tspan class="tkp-it tkp-mut">T</tspan><tspan class="tkp-s13 tkp-mut"> = (ILR + 1) / </tspan><tspan class="tkp-it tkp-mut">f</tspan><tspan class="tkp-sub tkp-mut" dy="4">saat</tspan><tspan class="tkp-s13 tkp-mut" dy="-4">)</tspan></text>
+<rect class="tkp-box" x="12" y="472" width="736" height="152" rx="6"/>
+<text class="tkp-s13 tkp-b" x="24" y="499">16-bit</text>
+<text class="tkp-s13 tkp-mut" x="24" y="515">2¹⁶ = 65 536</text>
+<text class="tkp-b" x="318" y="507" text-anchor="end">≈ 4,1 ms</text>
+<rect class="tkp-fillblu" x="330" y="492" width="41.44" height="20"/>
+<path class="tkp-wb" d="M371.44,490 L371.44,514"/>
+<text class="tkp-s13 tkp-b" x="24" y="533">16-bit + 8-bit PR (24-bit)</text>
+<text class="tkp-s13 tkp-mut" x="24" y="549">2²⁴ = 16 777 216</text>
+<text class="tkp-b" x="318" y="541" text-anchor="end">≈ 1,05 s</text>
+<rect class="tkp-fillblu" x="330" y="526" width="204.39" height="20"/>
+<path class="tkp-wb" d="M534.39,524 L534.39,548"/>
+<text class="tkp-s13 tkp-b" x="24" y="567">32-bit birleşik</text>
+<text class="tkp-s13 tkp-mut" x="24" y="583">2³² = 4 294 967 296</text>
+<text class="tkp-b" x="318" y="575" text-anchor="end">≈ 268 s</text>
+<rect class="tkp-fillblu" x="330" y="560" width="367.35" height="20"/>
+<path class="tkp-wb" d="M697.35,558 L697.35,582"/>
+<path class="tkp-wt" d="M330,594 L736,594"/>
+<path class="tkp-wt" d="M330,594 L330,599"/>
+<path class="tkp-grid" d="M330,486 L330,592"/>
+<text class="tkp-s13 tkp-mut" x="330" y="613" text-anchor="start">1 ms</text>
+<path class="tkp-wt" d="M397.67,594 L397.67,599"/>
+<path class="tkp-grid" d="M397.67,486 L397.67,592"/>
+<text class="tkp-s13 tkp-mut" x="397.67" y="613" text-anchor="middle">10 ms</text>
+<path class="tkp-wt" d="M465.33,594 L465.33,599"/>
+<path class="tkp-grid" d="M465.33,486 L465.33,592"/>
+<text class="tkp-s13 tkp-mut" x="465.33" y="613" text-anchor="middle">0,1 s</text>
+<path class="tkp-wt" d="M533,594 L533,599"/>
+<path class="tkp-grid" d="M533,486 L533,592"/>
+<text class="tkp-s13 tkp-mut" x="533" y="613" text-anchor="middle">1 s</text>
+<path class="tkp-wt" d="M600.67,594 L600.67,599"/>
+<path class="tkp-grid" d="M600.67,486 L600.67,592"/>
+<text class="tkp-s13 tkp-mut" x="600.67" y="613" text-anchor="middle">10 s</text>
+<path class="tkp-wt" d="M668.33,594 L668.33,599"/>
+<path class="tkp-grid" d="M668.33,486 L668.33,592"/>
+<text class="tkp-s13 tkp-mut" x="668.33" y="613" text-anchor="middle">100 s</text>
+<path class="tkp-wt" d="M736,594 L736,599"/>
+<path class="tkp-grid" d="M736,486 L736,592"/>
+<text class="tkp-s13 tkp-mut" x="736" y="613" text-anchor="end">1000 s</text>
+<text class="tkp-s13 tkp-mut" x="24" y="613">log ölçek · Tc = 62,5 ns</text>
+<rect class="tkp-hl" x="12" y="640" width="736" height="64" rx="6"/>
+<text x="24" y="661"><tspan class="tkp-b tkp-acc">Dikkat (TivaWare): </tspan><tspan class="tkp-mono">TIMER_CFG_A_PERIODIC</tspan><tspan class="tkp-s13"> tek başına = 0x22 = </tspan><tspan class="tkp-mono">TIMER_CFG_PERIODIC</tspan><tspan class="tkp-s13"> → 32-bit periyodik.</tspan></text>
+<text x="24" y="679"><tspan class="tkp-s13">16-bit için </tspan><tspan class="tkp-mono">TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC</tspan><tspan class="tkp-s13"> gerekir (GPTMCFG = ui32Config &gt;&gt; 24 = 0x4).</tspan></text>
+<text x="24" y="696"><tspan class="tkp-s13 tkp-mut">İki durumda da </tspan><tspan class="tkp-mono tkp-mut">GPTMTAMR</tspan><tspan class="tkp-s13 tkp-mut"> register değeri 0x222: TAMR alanı 0x2, TAMIE ve TAPWMIE de 1.</tspan></text>
+</svg>

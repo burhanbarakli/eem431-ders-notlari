@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 690" class="tbl-svg" role="img" aria-labelledby="tbl-title tbl-desc">
+<title id="tbl-title">GPTM blok şeması</title>
+<desc id="tbl-desc">Bir 16/32-bit GPTM bloğu: sistem saati Timer A ve Timer B’ye gider; her birinde kip (GPTMTnMR), yükleme (GPTMTnILR), eşleşme (GPTMTnMATCHR), ön bölücü (GPTMTnPR), sayaç (GPTMTnR) ve karşılaştırıcı vardır. Ortada ortak denetim GPTMCFG ve GPTMCTL. Olaylar kesme mantığına (GPTMRIS, GPTMIMR, GPTMMIS, GPTMICR) ve oradan NVIC’e (IRQ 19 Timer0A, IRQ 20 Timer0B) gider; TnOTE ile ADC tetiklenebilir. CCP pinleri T0CCP0 ve T0CCP1. Altta adresler: Timer0–5 0x4003.0000–0x4003.5000, WTimer0–1 0x4003.6000–0x4003.7000, WTimer2–5 0x4004.C000–0x4004.F000. TI Şekil 11-1’in sade yeniden çizimi.</desc>
+<defs>
+<marker id="tbl-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tbl-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="tbl-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tbl-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.tbl-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.tbl-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.tbl-svg .tbl-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.tbl-svg .tbl-b{font-weight:700}
+.tbl-svg .tbl-s13{font-size:13px}
+.tbl-svg .tbl-s15{font-size:15px}
+.tbl-svg .tbl-s16{font-size:16px}
+.tbl-svg .tbl-mut{fill:var(--fig-muted,#76746c)}
+.tbl-svg .tbl-acc{fill:var(--fig-accent,#b4481f)}
+.tbl-svg .tbl-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.tbl-svg .tbl-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.tbl-svg .tbl-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.tbl-svg .tbl-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.tbl-svg .tbl-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tbl-svg .tbl-dot{fill:var(--fig-stroke,#2b2b29)}
+.tbl-svg .tbl-head{fill:var(--fig-stroke,#2b2b29)}
+.tbl-svg .tbl-heada{fill:var(--fig-accent,#b4481f)}
+.tbl-svg .tbl-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.tbl-svg .tbl-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.tbl-svg .tbl-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tbl-svg .tbl-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+</style>
+<text class="tbl-s16 tbl-b" x="12" y="26">GPTM modülü — bir 16/32-bit blok (sadeleştirilmiş)</text>
+<rect class="tbl-box2" x="132" y="44" width="396" height="170" rx="10"/>
+<text class="tbl-s15 tbl-b" x="146" y="65">Timer A</text>
+<text class="tbl-s13 tbl-mut" x="516" y="65" text-anchor="end">* ön bölücü yalnız 16-bit ayrık kipte</text>
+<rect class="tbl-box" x="148" y="76" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="156" y="92">Kip</text>
+<text class="tbl-mono" x="156" y="109">GPTMTAMR</text>
+<rect class="tbl-box" x="276" y="76" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="284" y="92">Yükleme</text>
+<text class="tbl-mono" x="284" y="109">GPTMTAILR</text>
+<rect class="tbl-box" x="404" y="76" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="412" y="92">Eşleşme</text>
+<text class="tbl-mono" x="412" y="109">GPTMTAMATCHR</text>
+<rect class="tbl-box" x="148" y="132" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="156" y="148">Ön bölücü*</text>
+<text class="tbl-mono" x="156" y="165">GPTMTAPR</text>
+<rect class="tbl-box" x="276" y="132" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="284" y="148">Sayaç</text>
+<text class="tbl-mono" x="284" y="165">GPTMTAR</text>
+<rect class="tbl-box" x="404" y="132" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="412" y="148">Karşılaştırıcı</text>
+<text class="tbl-s13" x="412" y="165">= 0 / ILR / MATCH</text>
+<path class="tbl-w" d="M260,152 L275,152" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M388,152 L403,152" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M332,116 L332,131" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M460,116 L460,131" marker-end="url(#tbl-arr)"/>
+<text class="tbl-s13 tbl-mut" x="338" y="129">yükle</text>
+<rect class="tbl-box" x="276" y="182" width="112" height="24" rx="5"/>
+<text class="tbl-s13" x="332" y="199" text-anchor="middle">kenar / CCP</text>
+<path class="tbl-wt" d="M332,182 L332,172"/>
+<text class="tbl-mono tbl-b" x="12" y="192">T0CCP0</text>
+<text class="tbl-s13 tbl-mut" x="12" y="209">PB6 / PF0</text>
+<path class="tbl-wt" d="M200,194 L124,194 A6,6 0 0 0 112,194 L70,194" marker-end="url(#tbl-arr)"/>
+<path class="tbl-wt" d="M200,194 L275,194" marker-end="url(#tbl-arr)"/>
+<rect class="tbl-box2" x="132" y="312" width="396" height="170" rx="10"/>
+<text class="tbl-s15 tbl-b" x="146" y="333">Timer B</text>
+<text class="tbl-s13 tbl-mut" x="516" y="333" text-anchor="end">CFG = 0x0 iken kullanılmaz</text>
+<rect class="tbl-box" x="148" y="344" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="156" y="360">Kip</text>
+<text class="tbl-mono" x="156" y="377">GPTMTBMR</text>
+<rect class="tbl-box" x="276" y="344" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="284" y="360">Yükleme</text>
+<text class="tbl-mono" x="284" y="377">GPTMTBILR</text>
+<rect class="tbl-box" x="404" y="344" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-mut" x="412" y="360">Eşleşme</text>
+<text class="tbl-mono" x="412" y="377">GPTMTBMATCHR</text>
+<rect class="tbl-box" x="148" y="400" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="156" y="416">Ön bölücü*</text>
+<text class="tbl-mono" x="156" y="433">GPTMTBPR</text>
+<rect class="tbl-box" x="276" y="400" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="284" y="416">Sayaç</text>
+<text class="tbl-mono" x="284" y="433">GPTMTBR</text>
+<rect class="tbl-box" x="404" y="400" width="112" height="40" rx="5"/>
+<text class="tbl-s13 tbl-b" x="412" y="416">Karşılaştırıcı</text>
+<text class="tbl-s13" x="412" y="433">= 0 / ILR / MATCH</text>
+<path class="tbl-w" d="M260,420 L275,420" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M388,420 L403,420" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M332,384 L332,399" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M460,384 L460,399" marker-end="url(#tbl-arr)"/>
+<text class="tbl-s13 tbl-mut" x="338" y="397">yükle</text>
+<rect class="tbl-box" x="276" y="450" width="112" height="24" rx="5"/>
+<text class="tbl-s13" x="332" y="467" text-anchor="middle">kenar / CCP</text>
+<path class="tbl-wt" d="M332,450 L332,440"/>
+<text class="tbl-mono tbl-b" x="12" y="460">T0CCP1</text>
+<text class="tbl-s13 tbl-mut" x="12" y="477">PB7 / PF1</text>
+<path class="tbl-wt" d="M200,462 L70,462" marker-end="url(#tbl-arr)"/>
+<path class="tbl-wt" d="M200,462 L275,462" marker-end="url(#tbl-arr)"/>
+<rect class="tbl-pill" x="12" y="136" width="92" height="32" rx="6"/>
+<text class="tbl-s13 tbl-b" x="58" y="157" text-anchor="middle">Sistem saati</text>
+<path class="tbl-w" d="M104,152 L147,152" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M118,152 L118,420 L147,420" marker-end="url(#tbl-arr)"/>
+<circle class="tbl-dot" cx="118" cy="152" r="3"/>
+<rect class="tbl-box" x="132" y="230" width="396" height="66" rx="8"/>
+<text class="tbl-b" x="146" y="250">Denetim / yapılandırma (A ve B ortak)</text>
+<text x="146" y="269" xml:space="preserve"><tspan class="tbl-mono">GPTMCFG</tspan><tspan class="tbl-s13">  0x0: A+B birleşik 32-bit · 0x4: ayrık 16-bit</tspan></text>
+<text x="146" y="287" xml:space="preserve"><tspan class="tbl-mono">GPTMCTL</tspan><tspan class="tbl-s13">  TnEN: başlat/durdur · TnOTE: ADC tetiği aç</tspan></text>
+<path class="tbl-w" d="M470,230 L470,215" marker-end="url(#tbl-arr)"/>
+<path class="tbl-w" d="M470,296 L470,311" marker-end="url(#tbl-arr)"/>
+<rect class="tbl-box" x="630" y="112" width="118" height="324" rx="8"/>
+<text class="tbl-b" x="689" y="134" text-anchor="middle">Kesme mantığı</text>
+<rect class="tbl-code" x="642" y="156" width="94" height="46" rx="5"/>
+<text class="tbl-mono tbl-b" x="652" y="176">GPTMRIS</text>
+<text class="tbl-s13" x="652" y="194">ham bayrak</text>
+<rect class="tbl-code" x="642" y="218" width="94" height="46" rx="5"/>
+<text class="tbl-mono tbl-b" x="652" y="238">GPTMIMR</text>
+<text class="tbl-s13" x="652" y="256">maske</text>
+<rect class="tbl-code" x="642" y="280" width="94" height="46" rx="5"/>
+<text class="tbl-mono tbl-b" x="652" y="300">GPTMMIS</text>
+<text class="tbl-s13" x="652" y="318">RIS ve IMR</text>
+<rect class="tbl-code" x="642" y="342" width="94" height="46" rx="5"/>
+<text class="tbl-mono tbl-b" x="652" y="362">GPTMICR</text>
+<text class="tbl-s13" x="652" y="380">1 yaz → sil</text>
+<path class="tbl-wa" d="M516,152 L629,152" marker-end="url(#tbl-arra)"/>
+<text class="tbl-s13 tbl-mut" x="556" y="115">zaman aşımı,</text>
+<text class="tbl-s13 tbl-mut" x="556" y="130">eşleşme,</text>
+<text class="tbl-s13 tbl-mut" x="556" y="145">yakalama</text>
+<path class="tbl-wa" d="M516,420 L629,420" marker-end="url(#tbl-arra)"/>
+<text class="tbl-s13 tbl-mut" x="556" y="383">zaman aşımı,</text>
+<text class="tbl-s13 tbl-mut" x="556" y="398">eşleşme,</text>
+<text class="tbl-s13 tbl-mut" x="556" y="413">yakalama</text>
+<rect class="tbl-hl" x="630" y="462" width="118" height="60" rx="8"/>
+<text class="tbl-b" x="642" y="482">NVIC</text>
+<text x="642" y="500"><tspan class="tbl-mono">IRQ 19</tspan><tspan class="tbl-s13"> Timer0A</tspan></text>
+<text x="642" y="516"><tspan class="tbl-mono">IRQ 20</tspan><tspan class="tbl-s13"> Timer0B</tspan></text>
+<path class="tbl-wa" d="M666,436 L666,461" marker-end="url(#tbl-arra)"/>
+<path class="tbl-wa" d="M712,436 L712,461" marker-end="url(#tbl-arra)"/>
+<text class="tbl-s13 tbl-b tbl-acc" x="672" y="454">A</text>
+<text class="tbl-s13 tbl-b tbl-acc" x="718" y="454">B</text>
+<circle class="tbl-dot" cx="538" cy="152" r="3"/>
+<circle class="tbl-dot" cx="548" cy="420" r="3"/>
+<path class="tbl-wm" d="M538,152 L538,414 A6,6 0 0 1 538,426 L538,539"/>
+<path class="tbl-wm" d="M548,420 L548,539"/>
+<rect class="tbl-box" x="526" y="540" width="40" height="30" rx="4"/>
+<text class="tbl-s13 tbl-b" x="546" y="560" text-anchor="middle">≥1</text>
+<rect class="tbl-box" x="630" y="528" width="118" height="54" rx="8"/>
+<text class="tbl-s13 tbl-b" x="642" y="545">ADC tetik</text>
+<text class="tbl-s13 tbl-mut" x="642" y="561">tüm GPTM’ler</text>
+<text class="tbl-s13 tbl-mut" x="642" y="576">VEYA’lanır</text>
+<path class="tbl-w" d="M566,555 L629,555" marker-end="url(#tbl-arr)"/>
+<text x="518" y="551" text-anchor="end"><tspan class="tbl-s13 tbl-mut">yalnız zaman aşımı;</tspan></text>
+<text x="518" y="568" text-anchor="end"><tspan class="tbl-mono">TnOTE</tspan><tspan class="tbl-s13 tbl-mut"> = 1 olanlar →</tspan></text>
+<rect class="tbl-code" x="12" y="604" width="736" height="78" rx="8"/>
+<text x="26" y="626" xml:space="preserve"><tspan class="tbl-b">TM4C123GH6PM’de 12 GPTM bloğu</tspan><tspan class="tbl-s13 tbl-mut">  (taban adresleri, her blok 4 KB)</tspan></text>
+<text x="26" y="648" xml:space="preserve"><tspan class="tbl-s13 tbl-b">6 × 16/32-bit  </tspan><tspan class="tbl-s13">Timer0–5:  </tspan><tspan class="tbl-mono">0x4003.0000, 0x4003.1000 … 0x4003.5000</tspan><tspan class="tbl-s13 tbl-mut">   A/B 16, birleşik 32</tspan></text>
+<text x="26" y="668" xml:space="preserve"><tspan class="tbl-s13 tbl-b">6 × 32/64-bit  </tspan><tspan class="tbl-s13">WTimer0–5: </tspan><tspan class="tbl-mono">0x4003.6000, 0x4003.7000, 0x4004.C000 … 0x4004.F000</tspan><tspan class="tbl-s13 tbl-mut">   A/B 32, birleşik 64</tspan></text>
+</svg>

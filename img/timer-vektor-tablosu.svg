@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 674" class="tvt-svg" role="img" aria-labelledby="tvt-title tvt-desc">
+<title id="tvt-title">Vektör tablosu ve Timer0A girişi</title>
+<desc id="tvt-desc">Solda TM4C123GH6PM vektör tablosu: ofset, vektör numarası, IRQ numarası ve kaynak. 0x000 ilk yığın işaretçisi, 0x004 Reset, 0x008 NMI, 0x00C Hard Fault, 0x03C SysTick, 0x040 IRQ0 GPIO Port A, 0x088 IRQ18 Watchdog, 0x08C IRQ19 Timer0A (vektör 35), 0x090 IRQ20 Timer0B, son giriş 0x268 IRQ138. Sağda startup_ccs.c: extern void Timer0IntHandler(void); bildirimi ve g_pfnVectors dizisinde Timer 0 subtimer A satırında IntDefaultHandler yerine Timer0IntHandler yazılması.</desc>
+<defs>
+<marker id="tvt-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tvt-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.tvt-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.tvt-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.tvt-svg .tvt-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.tvt-svg .tvt-b{font-weight:700}
+.tvt-svg .tvt-s13{font-size:13px}
+.tvt-svg .tvt-s16{font-size:16px}
+.tvt-svg .tvt-mut{fill:var(--fig-muted,#76746c)}
+.tvt-svg .tvt-acc{fill:var(--fig-accent,#b4481f)}
+.tvt-svg .tvt-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.tvt-svg .tvt-strike{text-decoration:line-through}
+.tvt-svg .tvt-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.tvt-svg .tvt-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.tvt-svg .tvt-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.tvt-svg .tvt-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tvt-svg .tvt-circ{fill:var(--fig-accent,#b4481f)}
+.tvt-svg .tvt-heada{fill:var(--fig-accent,#b4481f)}
+.tvt-svg .tvt-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.tvt-svg .tvt-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text class="tvt-s16 tvt-b" x="12" y="26">Vektör tablosu</text>
+<text x="128" y="26"><tspan class="tvt-s13 tvt-mut">(reset sonrası </tspan><tspan class="tvt-mono tvt-mut">0x0000.0000</tspan><tspan class="tvt-s13 tvt-mut">, Flash)</tspan></text>
+<rect class="tvt-box2" x="12" y="40" width="338" height="24"/>
+<text class="tvt-s13 tvt-b" x="18" y="57">Ofset</text>
+<text class="tvt-s13 tvt-b" x="118" y="57">Vektör</text>
+<text class="tvt-s13 tvt-b" x="166" y="57">IRQ</text>
+<text class="tvt-s13 tvt-b" x="224" y="57">Kaynak</text>
+<rect class="tvt-box2" x="12" y="64" width="338" height="22"/>
+<text class="tvt-s13 tvt-b tvt-mut" x="18" y="80">İşlemci istisnaları (vektör 0–15)</text>
+<rect class="tvt-box" x="12" y="86" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="102">0x000</text>
+<text class="tvt-mono" x="118" y="102">0</text>
+<text class="tvt-s13 tvt-mut" x="166" y="102">—</text>
+<text class="tvt-s13" x="224" y="102">İlk yığın işaretçisi</text>
+<path class="tvt-sep" d="M112,86 L112,108"/>
+<path class="tvt-sep" d="M160,86 L160,108"/>
+<path class="tvt-sep" d="M218,86 L218,108"/>
+<rect class="tvt-box" x="12" y="108" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="124">0x004</text>
+<text class="tvt-mono" x="118" y="124">1</text>
+<text class="tvt-s13 tvt-mut" x="166" y="124">—</text>
+<text class="tvt-s13" x="224" y="124">Reset</text>
+<path class="tvt-sep" d="M112,108 L112,130"/>
+<path class="tvt-sep" d="M160,108 L160,130"/>
+<path class="tvt-sep" d="M218,108 L218,130"/>
+<rect class="tvt-box" x="12" y="130" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="146">0x008</text>
+<text class="tvt-mono" x="118" y="146">2</text>
+<text class="tvt-s13 tvt-mut" x="166" y="146">—</text>
+<text class="tvt-s13" x="224" y="146">NMI</text>
+<path class="tvt-sep" d="M112,130 L112,152"/>
+<path class="tvt-sep" d="M160,130 L160,152"/>
+<path class="tvt-sep" d="M218,130 L218,152"/>
+<rect class="tvt-box" x="12" y="152" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="168">0x00C</text>
+<text class="tvt-mono" x="118" y="168">3</text>
+<text class="tvt-s13 tvt-mut" x="166" y="168">—</text>
+<text class="tvt-s13" x="224" y="168">Hard Fault</text>
+<path class="tvt-sep" d="M112,152 L112,174"/>
+<path class="tvt-sep" d="M160,152 L160,174"/>
+<path class="tvt-sep" d="M218,152 L218,174"/>
+<rect class="tvt-box" x="12" y="174" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="190">0x010–0x018</text>
+<text class="tvt-mono" x="118" y="190">4–6</text>
+<text class="tvt-s13 tvt-mut" x="166" y="190">—</text>
+<text class="tvt-s13" x="224" y="190">Mem/Bus/Usage Fault</text>
+<path class="tvt-sep" d="M112,174 L112,196"/>
+<path class="tvt-sep" d="M160,174 L160,196"/>
+<path class="tvt-sep" d="M218,174 L218,196"/>
+<rect class="tvt-box" x="12" y="196" width="338" height="22"/>
+<text class="tvt-mono tvt-mut" x="18" y="212">0x01C–0x028</text>
+<text class="tvt-mono tvt-mut" x="118" y="212">7–10</text>
+<text class="tvt-s13 tvt-mut" x="166" y="212">—</text>
+<text class="tvt-s13 tvt-mut" x="224" y="212">ayrılmış</text>
+<path class="tvt-sep" d="M112,196 L112,218"/>
+<path class="tvt-sep" d="M160,196 L160,218"/>
+<path class="tvt-sep" d="M218,196 L218,218"/>
+<rect class="tvt-box" x="12" y="218" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="234">0x02C</text>
+<text class="tvt-mono" x="118" y="234">11</text>
+<text class="tvt-s13 tvt-mut" x="166" y="234">—</text>
+<text class="tvt-s13" x="224" y="234">SVCall</text>
+<path class="tvt-sep" d="M112,218 L112,240"/>
+<path class="tvt-sep" d="M160,218 L160,240"/>
+<path class="tvt-sep" d="M218,218 L218,240"/>
+<rect class="tvt-box" x="12" y="240" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="256">0x030</text>
+<text class="tvt-mono" x="118" y="256">12</text>
+<text class="tvt-s13 tvt-mut" x="166" y="256">—</text>
+<text class="tvt-s13" x="224" y="256">Debug Monitor</text>
+<path class="tvt-sep" d="M112,240 L112,262"/>
+<path class="tvt-sep" d="M160,240 L160,262"/>
+<path class="tvt-sep" d="M218,240 L218,262"/>
+<rect class="tvt-box" x="12" y="262" width="338" height="22"/>
+<text class="tvt-mono tvt-mut" x="18" y="278">0x034</text>
+<text class="tvt-mono tvt-mut" x="118" y="278">13</text>
+<text class="tvt-s13 tvt-mut" x="166" y="278">—</text>
+<text class="tvt-s13 tvt-mut" x="224" y="278">ayrılmış</text>
+<path class="tvt-sep" d="M112,262 L112,284"/>
+<path class="tvt-sep" d="M160,262 L160,284"/>
+<path class="tvt-sep" d="M218,262 L218,284"/>
+<rect class="tvt-box" x="12" y="284" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="300">0x038</text>
+<text class="tvt-mono" x="118" y="300">14</text>
+<text class="tvt-s13 tvt-mut" x="166" y="300">—</text>
+<text class="tvt-s13" x="224" y="300">PendSV</text>
+<path class="tvt-sep" d="M112,284 L112,306"/>
+<path class="tvt-sep" d="M160,284 L160,306"/>
+<path class="tvt-sep" d="M218,284 L218,306"/>
+<rect class="tvt-box" x="12" y="306" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="322">0x03C</text>
+<text class="tvt-mono" x="118" y="322">15</text>
+<text class="tvt-s13 tvt-mut" x="166" y="322">—</text>
+<text class="tvt-s13" x="224" y="322">SysTick</text>
+<path class="tvt-sep" d="M112,306 L112,328"/>
+<path class="tvt-sep" d="M160,306 L160,328"/>
+<path class="tvt-sep" d="M218,306 L218,328"/>
+<rect class="tvt-box2" x="12" y="328" width="338" height="22"/>
+<text class="tvt-s13 tvt-b tvt-mut" x="18" y="344">Çevre birimi kesmeleri (IRQ = vektör − 16)</text>
+<rect class="tvt-box" x="12" y="350" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="366">0x040</text>
+<text class="tvt-mono" x="118" y="366">16</text>
+<text class="tvt-mono" x="165" y="366">IRQ0</text>
+<text class="tvt-s13" x="224" y="366">GPIO Port A</text>
+<path class="tvt-sep" d="M112,350 L112,372"/>
+<path class="tvt-sep" d="M160,350 L160,372"/>
+<path class="tvt-sep" d="M218,350 L218,372"/>
+<rect class="tvt-box" x="12" y="372" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="388">0x044</text>
+<text class="tvt-mono" x="118" y="388">17</text>
+<text class="tvt-mono" x="165" y="388">IRQ1</text>
+<text class="tvt-s13" x="224" y="388">GPIO Port B</text>
+<path class="tvt-sep" d="M112,372 L112,394"/>
+<path class="tvt-sep" d="M160,372 L160,394"/>
+<path class="tvt-sep" d="M218,372 L218,394"/>
+<rect class="tvt-box" x="12" y="394" width="338" height="22"/>
+<text class="tvt-mut" x="62" y="410" text-anchor="middle">⋮</text>
+<text class="tvt-mut" x="284" y="410" text-anchor="middle">⋮</text>
+<rect class="tvt-box" x="12" y="416" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="432">0x088</text>
+<text class="tvt-mono" x="118" y="432">34</text>
+<text class="tvt-mono" x="165" y="432">IRQ18</text>
+<text class="tvt-s13" x="224" y="432">Watchdog 0 ve 1</text>
+<path class="tvt-sep" d="M112,416 L112,438"/>
+<path class="tvt-sep" d="M160,416 L160,438"/>
+<path class="tvt-sep" d="M218,416 L218,438"/>
+<rect class="tvt-hl" x="12" y="438" width="338" height="22"/>
+<text class="tvt-mono tvt-b" x="18" y="454">0x08C</text>
+<text class="tvt-mono tvt-b" x="118" y="454">35</text>
+<text class="tvt-mono tvt-b" x="165" y="454">IRQ19</text>
+<text class="tvt-s13 tvt-b tvt-acc" x="224" y="454">Timer0A</text>
+<path class="tvt-sep" d="M112,438 L112,460"/>
+<path class="tvt-sep" d="M160,438 L160,460"/>
+<path class="tvt-sep" d="M218,438 L218,460"/>
+<rect class="tvt-box" x="12" y="460" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="476">0x090</text>
+<text class="tvt-mono" x="118" y="476">36</text>
+<text class="tvt-mono" x="165" y="476">IRQ20</text>
+<text class="tvt-s13" x="224" y="476">Timer0B</text>
+<path class="tvt-sep" d="M112,460 L112,482"/>
+<path class="tvt-sep" d="M160,460 L160,482"/>
+<path class="tvt-sep" d="M218,460 L218,482"/>
+<rect class="tvt-box" x="12" y="482" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="498">0x094</text>
+<text class="tvt-mono" x="118" y="498">37</text>
+<text class="tvt-mono" x="165" y="498">IRQ21</text>
+<text class="tvt-s13" x="224" y="498">Timer1A</text>
+<path class="tvt-sep" d="M112,482 L112,504"/>
+<path class="tvt-sep" d="M160,482 L160,504"/>
+<path class="tvt-sep" d="M218,482 L218,504"/>
+<rect class="tvt-box" x="12" y="504" width="338" height="22"/>
+<text class="tvt-mut" x="62" y="520" text-anchor="middle">⋮</text>
+<text class="tvt-mut" x="284" y="520" text-anchor="middle">⋮</text>
+<rect class="tvt-box" x="12" y="526" width="338" height="22"/>
+<text class="tvt-mono" x="18" y="542">0x268</text>
+<text class="tvt-mono" x="118" y="542">154</text>
+<text class="tvt-mono" x="165" y="542">IRQ138</text>
+<text class="tvt-s13" x="224" y="542">son giriş</text>
+<path class="tvt-sep" d="M112,526 L112,548"/>
+<path class="tvt-sep" d="M160,526 L160,548"/>
+<path class="tvt-sep" d="M218,526 L218,548"/>
+<path class="tvt-sep" d="M112,40 L112,64"/>
+<path class="tvt-sep" d="M160,40 L160,64"/>
+<path class="tvt-sep" d="M218,40 L218,64"/>
+<text x="368" y="92"><tspan class="tvt-b">Kendi ISR’nizi bağlamak: </tspan><tspan class="tvt-b tvt-acc">iki değişiklik</tspan></text>
+<text x="368" y="111"><tspan class="tvt-s13 tvt-mut">dosya: </tspan><tspan class="tvt-mono tvt-mut">startup_ccs.c</tspan><tspan class="tvt-s13 tvt-mut"> (CCS: </tspan><tspan class="tvt-mono tvt-mut">tm4c123gh6pm_startup_ccs.c</tspan><tspan class="tvt-s13 tvt-mut">)</tspan></text>
+<rect class="tvt-code" x="368" y="122" width="384" height="400" rx="8"/>
+<text class="tvt-mono tvt-mut" x="378" y="148">// startup_ccs.c</text>
+<rect class="tvt-hl" x="372" y="170" width="376" height="20" rx="4"/>
+<circle class="tvt-circ" cx="734" cy="180" r="10"/>
+<text class="tvt-num" x="734" y="185" text-anchor="middle">1</text>
+<text class="tvt-mono tvt-b tvt-acc" x="378" y="184">extern void Timer0IntHandler(void);</text>
+<text class="tvt-mono" x="378" y="220">#pragma DATA_SECTION(g_pfnVectors, ".intvecs")</text>
+<text class="tvt-mono" x="378" y="238">void (* const g_pfnVectors[])(void) =</text>
+<text class="tvt-mono" x="378" y="256">{</text>
+<text class="tvt-mono" x="378" y="274" xml:space="preserve">  (void (*)(void))((uint32_t)&amp;__STACK_TOP),</text>
+<text class="tvt-mono" x="378" y="292" xml:space="preserve">  ResetISR,          // The reset handler</text>
+<text class="tvt-mono" x="378" y="310" xml:space="preserve">  NmiSR,             // The NMI handler</text>
+<text class="tvt-mono" x="378" y="328" xml:space="preserve">  FaultISR,          // The hard fault handler</text>
+<text class="tvt-mono tvt-mut" x="378" y="346" xml:space="preserve">  …</text>
+<text class="tvt-mono" x="378" y="364" xml:space="preserve">  IntDefaultHandler, // The SysTick handler</text>
+<text class="tvt-mono" x="378" y="382" xml:space="preserve">  IntDefaultHandler, // GPIO Port A</text>
+<text class="tvt-mono tvt-mut" x="378" y="400" xml:space="preserve">  …</text>
+<text class="tvt-mono" x="378" y="418" xml:space="preserve">  IntDefaultHandler, // Watchdog timer</text>
+<text class="tvt-mono tvt-mut tvt-strike" x="378" y="436" xml:space="preserve">  IntDefaultHandler, // Timer 0 subtimer A</text>
+<rect class="tvt-hl" x="372" y="440" width="376" height="20" rx="4"/>
+<circle class="tvt-circ" cx="734" cy="450" r="10"/>
+<text class="tvt-num" x="734" y="455" text-anchor="middle">2</text>
+<text class="tvt-mono tvt-b tvt-acc" x="378" y="454" xml:space="preserve">  Timer0IntHandler,  // Timer 0 subtimer A</text>
+<text class="tvt-mono" x="378" y="472" xml:space="preserve">  IntDefaultHandler, // Timer 0 subtimer B</text>
+<text class="tvt-mono tvt-mut" x="378" y="490" xml:space="preserve">  …</text>
+<text class="tvt-mono" x="378" y="508">};</text>
+<path class="tvt-wa" d="M372,449 L352,449" marker-end="url(#tvt-arra)"/>
+<rect class="tvt-box" x="12" y="566" width="740" height="100" rx="8"/>
+<text x="26" y="589" xml:space="preserve"><tspan class="tvt-b">Her giriş 4 bayt: </tspan><tspan class="tvt-s13">ofset = 4 × vektör no</tspan><tspan class="tvt-mut">  ·  </tspan><tspan class="tvt-s13">vektör no = IRQ + 16</tspan><tspan class="tvt-s13">  →  Timer0A: 4 × 35 = 140 = </tspan><tspan class="tvt-mono tvt-b">0x08C</tspan></text>
+<text x="26" y="610"><tspan class="tvt-b">Sıra önemli: </tspan><tspan class="tvt-s13">bir satır kayarsa kesme yanlış ISR’ye gider. </tspan><tspan class="tvt-mono">INT_TIMER0A</tspan><tspan class="tvt-s13"> = 35 (vektör no), </tspan><tspan class="tvt-mono">EN0</tspan><tspan class="tvt-s13"> biti = 19 (IRQ no).</tspan></text>
+<text x="26" y="631"><tspan class="tvt-b">Alternatif: </tspan><tspan class="tvt-mono">TimerIntRegister(TIMER0_BASE, TIMER_A, Timer0IntHandler)</tspan><tspan class="tvt-s13"> tabloyu SRAM’e kopyalar,</tspan></text>
+<text x="26" y="650"><tspan class="tvt-mono">VTABLE</tspan><tspan class="tvt-s13"> register’ını o kopyaya çevirir, girişi çalışma anında yazar ve ayrıca </tspan><tspan class="tvt-mono">IntEnable()</tspan><tspan class="tvt-s13"> çağırır.</tspan></text>
+</svg>

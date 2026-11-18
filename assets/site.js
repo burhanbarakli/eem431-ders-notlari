@@ -14,7 +14,8 @@
     [].forEach.call(document.querySelectorAll('img.fig[src$=".svg"]'),function(img){
       fetch(img.getAttribute('src')).then(function(r){return r.ok?r.text():Promise.reject();}).then(function(txt){
         var w=document.createElement('div'); w.innerHTML=txt; var svg=w.querySelector('svg'); if(!svg) return;
-        svg.setAttribute('role','img'); if(img.alt) svg.setAttribute('aria-label',img.alt);
+        svg.setAttribute('role','img');
+        if(img.alt){ svg.removeAttribute('aria-labelledby'); svg.setAttribute('aria-label',img.alt); }
         img.replaceWith(svg);
       }).catch(function(){});
     });
