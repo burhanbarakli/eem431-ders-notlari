@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" class="lp-svg" role="img" aria-labelledby="lp-title lp-desc">
+<title id="lp-title">EK-TM4C123GXL LaunchPad: GPIO portları ve kart üstü elemanlar</title>
+<desc id="lp-desc">Kartın sadeleştirilmiş blok şeması: hata ayıklama/güç USB ve ICDI, güç seçici, sol kenarda cihaz USB (PD4/PD5), TM4C123GH6PM ve Port A–F pin grupları; sağ üstte RESET ve altında RGB LED (PF1 kırmızı, PF2 mavi, PF3 yeşil); altta SW1 (PF4) ve SW2 (PF0); J1–J4 başlıkları. Sağda portların APB taban adresleri.</desc>
+<style>
+.lp-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lp-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lp-svg .lp-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-ligatures:none}
+.lp-svg .lp-b{font-weight:700}
+.lp-svg .lp-s13{font-size:13px}
+.lp-svg .lp-s16{font-size:16px}
+.lp-svg .lp-mut{fill:var(--fig-muted,#76746c)}
+.lp-svg .lp-acc{fill:var(--fig-accent,#b4481f)}
+.lp-svg .lp-board{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.8}
+.lp-svg .lp-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.lp-svg .lp-knob{fill:var(--fig-stroke,#2b2b29)}
+.lp-svg .lp-hdr{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.lp-svg .lp-dot{fill:var(--fig-muted,#76746c)}
+.lp-svg .lp-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-linejoin:round}
+.lp-svg .lp-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.lp-svg .lp-tagacc{fill:var(--fig-fill,#ffffff);stroke:var(--fig-accent,#b4481f);stroke-width:2.2}
+.lp-svg .lp-rowhl{fill:var(--fig-accent,#b4481f);fill-opacity:.13;stroke:var(--fig-accent,#b4481f);stroke-width:1.6}
+.lp-svg .lp-thead{fill:var(--fig-fill-2,#efece4)}
+.lp-svg .lp-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<rect class="lp-board" x="20" y="40" width="430" height="466" rx="16"/>
+<rect class="lp-box" x="150" y="26" width="60" height="26" rx="3"/>
+<text class="lp-s13 lp-b" x="180" y="44" text-anchor="middle">USB</text>
+<text class="lp-s13" x="218" y="58">Hata ayıklama / güç USB (ICDI)</text>
+<rect class="lp-box" x="56" y="56" width="40" height="16" rx="3"/><rect class="lp-knob" x="60" y="59" width="14" height="10" rx="2"/>
+<text class="lp-s13 lp-mut" x="76" y="90" text-anchor="middle">güç seçici</text>
+<line class="lp-w" x1="180" y1="52" x2="180" y2="72"/>
+<rect class="lp-box" x="130" y="72" width="190" height="46" rx="6"/>
+<text class="lp-b" x="225" y="91" text-anchor="middle">Hata ayıklayıcı (ICDI)</text>
+<text class="lp-s13 lp-mut" x="225" y="110" text-anchor="middle">JTAG PC0–3 · UART0 PA0–1</text>
+<line class="lp-w" x1="225" y1="118" x2="225" y2="200"/>
+<rect class="lp-box" x="392" y="68" width="34" height="34" rx="4"/><circle class="lp-box" cx="409" cy="85" r="10"/>
+<text class="lp-s13 lp-b" x="409" y="118" text-anchor="middle">RESET</text>
+<rect class="lp-box" x="386" y="130" width="46" height="36" rx="6"/>
+<circle cx="398" cy="148" r="5" fill="#e0342c"/><circle cx="409" cy="148" r="5" fill="#2f6fd6"/><circle cx="420" cy="148" r="5" fill="#2f9e4f"/>
+<text class="lp-s13 lp-b" x="409" y="184" text-anchor="middle">RGB LED</text>
+<text class="lp-s13" x="370" y="136" text-anchor="end"><tspan class="lp-mono lp-acc lp-b">PF1</tspan> kırmızı</text>
+<text class="lp-s13" x="370" y="153" text-anchor="end"><tspan class="lp-mono lp-acc lp-b">PF2</tspan> mavi</text>
+<text class="lp-s13" x="370" y="170" text-anchor="end"><tspan class="lp-mono lp-acc lp-b">PF3</tspan> yeşil</text>
+<rect class="lp-box" x="8" y="156" width="26" height="44" rx="3"/>
+<text class="lp-s13 lp-b" transform="translate(26,178) rotate(-90)" text-anchor="middle">USB</text>
+<path class="lp-w" d="M34,178 H160 V200"/>
+<text class="lp-s13" x="42" y="148">cihaz USB</text>
+<text class="lp-mono lp-s13" x="42" y="171">PD4/PD5 (USB0DM/DP)</text>
+<rect class="lp-hdr" x="40" y="222" width="30" height="148" rx="3"/>
+<text class="lp-s13 lp-b" x="55" y="214" text-anchor="middle">J1·J3</text>
+<circle class="lp-dot" cx="50" cy="234" r="3"/><circle class="lp-dot" cx="60" cy="234" r="3"/>
+<circle class="lp-dot" cx="50" cy="248" r="3"/><circle class="lp-dot" cx="60" cy="248" r="3"/>
+<circle class="lp-dot" cx="50" cy="262" r="3"/><circle class="lp-dot" cx="60" cy="262" r="3"/>
+<circle class="lp-dot" cx="50" cy="276" r="3"/><circle class="lp-dot" cx="60" cy="276" r="3"/>
+<circle class="lp-dot" cx="50" cy="290" r="3"/><circle class="lp-dot" cx="60" cy="290" r="3"/>
+<circle class="lp-dot" cx="50" cy="304" r="3"/><circle class="lp-dot" cx="60" cy="304" r="3"/>
+<circle class="lp-dot" cx="50" cy="318" r="3"/><circle class="lp-dot" cx="60" cy="318" r="3"/>
+<circle class="lp-dot" cx="50" cy="332" r="3"/><circle class="lp-dot" cx="60" cy="332" r="3"/>
+<circle class="lp-dot" cx="50" cy="346" r="3"/><circle class="lp-dot" cx="60" cy="346" r="3"/>
+<circle class="lp-dot" cx="50" cy="360" r="3"/><circle class="lp-dot" cx="60" cy="360" r="3"/>
+<rect class="lp-hdr" x="390" y="222" width="30" height="148" rx="3"/>
+<text class="lp-s13 lp-b" x="405" y="214" text-anchor="middle">J2·J4</text>
+<circle class="lp-dot" cx="400" cy="234" r="3"/><circle class="lp-dot" cx="410" cy="234" r="3"/>
+<circle class="lp-dot" cx="400" cy="248" r="3"/><circle class="lp-dot" cx="410" cy="248" r="3"/>
+<circle class="lp-dot" cx="400" cy="262" r="3"/><circle class="lp-dot" cx="410" cy="262" r="3"/>
+<circle class="lp-dot" cx="400" cy="276" r="3"/><circle class="lp-dot" cx="410" cy="276" r="3"/>
+<circle class="lp-dot" cx="400" cy="290" r="3"/><circle class="lp-dot" cx="410" cy="290" r="3"/>
+<circle class="lp-dot" cx="400" cy="304" r="3"/><circle class="lp-dot" cx="410" cy="304" r="3"/>
+<circle class="lp-dot" cx="400" cy="318" r="3"/><circle class="lp-dot" cx="410" cy="318" r="3"/>
+<circle class="lp-dot" cx="400" cy="332" r="3"/><circle class="lp-dot" cx="410" cy="332" r="3"/>
+<circle class="lp-dot" cx="400" cy="346" r="3"/><circle class="lp-dot" cx="410" cy="346" r="3"/>
+<circle class="lp-dot" cx="400" cy="360" r="3"/><circle class="lp-dot" cx="410" cy="360" r="3"/>
+<rect class="lp-box" x="150" y="200" width="150" height="130" rx="4"/>
+<text class="lp-b" x="225" y="257" text-anchor="middle">TM4C123GH6PM</text>
+<text class="lp-s13 lp-mut" x="225" y="277" text-anchor="middle">Cortex-M4F</text>
+<text class="lp-s13 lp-mut" x="225" y="295" text-anchor="middle">80 MHz</text>
+<line class="lp-w" x1="136" y1="243" x2="150" y2="243"/><rect class="lp-box" x="84" y="232" width="52" height="22" rx="3"/>
+<text class="lp-mono lp-s13" x="110" y="248" text-anchor="middle">PA0–7</text>
+<line class="lp-w" x1="136" y1="277" x2="150" y2="277"/><rect class="lp-box" x="84" y="266" width="52" height="22" rx="3"/>
+<text class="lp-mono lp-s13" x="110" y="282" text-anchor="middle">PB0–7</text>
+<line class="lp-w" x1="136" y1="311" x2="150" y2="311"/><rect class="lp-box" x="84" y="300" width="52" height="22" rx="3"/>
+<text class="lp-mono lp-s13" x="110" y="316" text-anchor="middle">PC0–7</text>
+<line class="lp-w" x1="300" y1="239" x2="314" y2="239"/><rect class="lp-box" x="314" y="228" width="52" height="22" rx="3"/>
+<text class="lp-mono lp-s13" x="340" y="244" text-anchor="middle">PD0–7</text>
+<line class="lp-w" x1="300" y1="285" x2="314" y2="285"/><rect class="lp-box" x="314" y="274" width="52" height="22" rx="3"/>
+<text class="lp-mono lp-s13" x="340" y="290" text-anchor="middle">PE0–5</text>
+<line class="lp-wa" x1="225" y1="330" x2="225" y2="342"/>
+<rect class="lp-tagacc" x="185" y="342" width="80" height="24" rx="3"/>
+<text class="lp-mono lp-b lp-acc" x="225" y="359" text-anchor="middle">PF0–4</text>
+<path class="lp-wa" d="M265,354 H378 V148 H386"/>
+<path class="lp-wa" d="M372,206 L384,194"/>
+<text class="lp-mono lp-s13 lp-b lp-acc" x="368" y="200" text-anchor="end">3</text>
+<text class="lp-mono lp-s13 lp-b lp-acc" x="318" y="347" text-anchor="middle">PF1–3</text>
+<path class="lp-wa" d="M195,366 V392 H85 V430"/>
+<text class="lp-mono lp-s13 lp-b lp-acc" x="140" y="386" text-anchor="middle">PF4</text>
+<path class="lp-wa" d="M255,366 V392 H395 V430"/>
+<text class="lp-mono lp-s13 lp-b lp-acc" x="322" y="386" text-anchor="middle">PF0</text>
+<rect class="lp-box" x="60" y="430" width="50" height="34" rx="4"/><circle class="lp-box" cx="85" cy="447" r="10"/>
+<text class="lp-s13 lp-b" x="85" y="481" text-anchor="middle">SW1</text>
+<rect class="lp-box" x="370" y="430" width="50" height="34" rx="4"/><circle class="lp-box" cx="395" cy="447" r="10"/>
+<text class="lp-s13 lp-b" x="395" y="481" text-anchor="middle">SW2</text>
+<text class="lp-s13 lp-mut" x="235" y="498" text-anchor="middle">J1–J4: pinler portlara karışık dağılmış (kılavuz Tablo 2-3…2-6)</text>
+<text class="lp-s16 lp-b" x="472" y="38">GPIO portları — APB taban adresleri</text>
+<text class="lp-s13 lp-mut" x="472" y="64">datasheet §10.4, s. 658–659</text>
+<rect class="lp-thead" x="470" y="82" width="272" height="26"/>
+<text class="lp-s13 lp-b" x="496" y="100" text-anchor="middle">Port</text>
+<text class="lp-s13 lp-b" x="530" y="100">Pinler</text>
+<text class="lp-s13 lp-b" x="626" y="100">Taban adresi</text>
+<text class="lp-b" x="496" y="128" text-anchor="middle">A</text><text x="530" y="128">PA0–PA7</text><text class="lp-mono" x="626" y="128">0x4000.4000</text>
+<text class="lp-b" x="496" y="158" text-anchor="middle">B</text><text x="530" y="158">PB0–PB7</text><text class="lp-mono" x="626" y="158">0x4000.5000</text>
+<text class="lp-b" x="496" y="188" text-anchor="middle">C</text><text x="530" y="188">PC0–PC7</text><text class="lp-mono" x="626" y="188">0x4000.6000</text>
+<text class="lp-b" x="496" y="218" text-anchor="middle">D</text><text x="530" y="218">PD0–PD7</text><text class="lp-mono" x="626" y="218">0x4000.7000</text>
+<text class="lp-b" x="496" y="248" text-anchor="middle">E</text><text x="530" y="248">PE0–PE5</text><text class="lp-mono" x="626" y="248">0x4002.4000</text>
+<rect class="lp-rowhl" x="470" y="258" width="272" height="30"/>
+<text class="lp-b lp-acc" x="496" y="278" text-anchor="middle">F</text>
+<text class="lp-b lp-acc" x="530" y="278">PF0–PF4</text>
+<text class="lp-mono lp-b lp-acc" x="626" y="278">0x4002.5000</text>
+<line class="lp-grid" x1="470" y1="138" x2="742" y2="138"/>
+<line class="lp-grid" x1="470" y1="168" x2="742" y2="168"/>
+<line class="lp-grid" x1="470" y1="198" x2="742" y2="198"/>
+<line class="lp-grid" x1="470" y1="228" x2="742" y2="228"/>
+<rect class="lp-grid" x="470" y="82" width="272" height="206"/>
+<text class="lp-s13" x="472" y="318">• Toplam 43 GPIO pini (A–D: 8, E: 6, F: 5)</text>
+<text class="lp-s13" x="472" y="344">• <tspan class="lp-mono">PF0</tspan>, <tspan class="lp-mono">PD7</tspan> ve <tspan class="lp-mono">PC0–PC3</tspan> <tspan class="lp-mono">GPIOCR</tspan> ile</text>
+<text class="lp-s13" x="484" y="362">korunur (kilitli); önce <tspan class="lp-mono">GPIOLOCK</tspan> açılır</text>
+<text class="lp-s13" x="472" y="388">• <tspan class="lp-mono">PC0–PC3</tspan> JTAG (ICDI) için ayrılmış;</text>
+<text class="lp-s13" x="484" y="406">GPIO olarak değiştirmeyin</text>
+<text class="lp-s13" x="472" y="432">• <tspan class="lp-mono">PA0/PA1</tspan> UART0 → sanal COM port</text>
+<text class="lp-s13" x="472" y="458">• Butonlar basılınca pini GND'ye çeker</text>
+<text class="lp-s13" x="484" y="476">(aktif düşük, iç pull-up gerekir)</text>
+<text class="lp-s13 lp-mut" x="472" y="502">Blok şema; kart üstü yerleşim yaklaşık.</text>
+</svg>

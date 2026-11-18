@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 566" class="mem-svg" role="img" aria-labelledby="mem-title mem-desc">
+<title id="mem-title">GPIO register adresi = port taban adresi + ofset</title>
+<desc id="mem-desc">Solda TM4C123GH6PM bellek haritasının ölçeksiz dilimi: Flash, SRAM, 0x4000.0000 ile başlayan çevre birimleri bölgesindeki GPIO portları ve 0x400F.E000 System Control; ayrıca GPIO A–F’nin AHB penceresi 0x4005.8000–0x4005.DFFF. Ortada Port F bloğu ve register ofsetleri: GPIODATA 0x000–0x3FC, GPIODIR 0x400, GPIOAFSEL 0x420, GPIOPUR 0x510, GPIODEN 0x51C, GPIOLOCK 0x520, GPIOCR 0x524. Sağda adres hesabı örnekleri, altta HWREG makrosu ve PF1–PF3 çıkış yapma örneği.</desc>
+<style>
+.mem-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.mem-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.mem-svg .mem-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-ligatures:none}
+.mem-svg .mem-s13{font-size:13px}
+.mem-svg .mem-s16{font-size:16px}
+.mem-svg .mem-b{font-weight:700}
+.mem-svg .mem-mut{fill:var(--fig-muted,#76746c)}
+.mem-svg .mem-acc{fill:var(--fig-accent,#b4481f)}
+.mem-svg .mem-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.mem-svg .mem-per{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.mem-svg .mem-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.16;stroke:var(--fig-accent,#b4481f);stroke-width:2}
+.mem-svg .mem-zgap{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.mem-svg .mem-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.mem-svg .mem-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.4}
+.mem-svg .mem-zoom{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.4;stroke-dasharray:5 4}
+</style>
+<text class="mem-s16 mem-b" x="380" y="26" text-anchor="middle">Register adresi = port taban adresi + ofset</text>
+<text class="mem-b" x="203" y="52" text-anchor="middle">Bellek haritası (ölçeksiz)</text>
+<rect class="mem-box" x="130" y="60" width="146" height="26"/>
+<text class="mem-s13" x="203" y="77.5" text-anchor="middle">Flash (256 KB)</text>
+<text class="mem-mono mem-s13" x="124" y="77.5" text-anchor="end">0x0000.0000</text>
+<rect class="mem-box" x="130" y="86" width="146" height="26"/>
+<text class="mem-s13" x="203" y="103.5" text-anchor="middle">SRAM (32 KB)</text>
+<text class="mem-mono mem-s13" x="124" y="103.5" text-anchor="end">0x2000.0000</text>
+<text class="mem-mut" x="203" y="125" text-anchor="middle">⋮</text>
+<rect class="mem-per" x="130" y="128" width="146" height="24"/>
+<text class="mem-s13" x="203" y="144.5" text-anchor="middle">Watchdog 0/1</text>
+<text class="mem-mono mem-s13" x="124" y="144.5" text-anchor="end">0x4000.0000</text>
+<rect class="mem-per" x="130" y="152" width="146" height="24"/>
+<text class="mem-s13" x="203" y="168.5" text-anchor="middle">GPIO A</text>
+<text class="mem-mono mem-s13" x="124" y="168.5" text-anchor="end">0x4000.4000</text>
+<rect class="mem-per" x="130" y="176" width="146" height="24"/>
+<text class="mem-s13" x="203" y="192.5" text-anchor="middle">GPIO B</text>
+<text class="mem-mono mem-s13" x="124" y="192.5" text-anchor="end">0x4000.5000</text>
+<rect class="mem-per" x="130" y="200" width="146" height="24"/>
+<text class="mem-s13" x="203" y="216.5" text-anchor="middle">GPIO C</text>
+<text class="mem-mono mem-s13" x="124" y="216.5" text-anchor="end">0x4000.6000</text>
+<rect class="mem-per" x="130" y="224" width="146" height="24"/>
+<text class="mem-s13" x="203" y="240.5" text-anchor="middle">GPIO D</text>
+<text class="mem-mono mem-s13" x="124" y="240.5" text-anchor="end">0x4000.7000</text>
+<rect class="mem-per" x="130" y="248" width="146" height="24"/>
+<text class="mem-s13 mem-mut" x="203" y="264.5" text-anchor="middle">SSI, UART, I²C …</text>
+<text class="mem-mono mem-s13" x="124" y="264.5" text-anchor="end">0x4000.8000</text>
+<rect class="mem-per" x="130" y="272" width="146" height="24"/>
+<text class="mem-s13" x="203" y="288.5" text-anchor="middle">GPIO E</text>
+<text class="mem-mono mem-s13" x="124" y="288.5" text-anchor="end">0x4002.4000</text>
+<rect class="mem-hl" x="130" y="296" width="146" height="24"/>
+<text class="mem-s13 mem-acc mem-b" x="203" y="312.5" text-anchor="middle">GPIO F</text>
+<text class="mem-mono mem-s13 mem-acc mem-b" x="124" y="312.5" text-anchor="end">0x4002.5000</text>
+<rect class="mem-per" x="130" y="320" width="146" height="24"/>
+<text class="mem-s13 mem-mut" x="203" y="336.5" text-anchor="middle">PWM, Timer, ADC …</text>
+<text class="mem-mono mem-s13" x="124" y="336.5" text-anchor="end">0x4002.8000</text>
+<rect class="mem-per" x="130" y="344" width="146" height="36"/>
+<text class="mem-s13" x="203" y="359" text-anchor="middle">GPIO A–F (AHB)</text>
+<text class="mem-mono mem-s13 mem-mut" x="203" y="374" text-anchor="middle">… 0x4005.DFFF</text>
+<text class="mem-mono mem-s13" x="124" y="359" text-anchor="end">0x4005.8000</text>
+<rect class="mem-per" x="130" y="380" width="146" height="24"/>
+<text class="mem-s13" x="203" y="396.5" text-anchor="middle">System Control</text>
+<text class="mem-mono mem-s13" x="124" y="396.5" text-anchor="end">0x400F.E000</text>
+<text class="mem-mut" x="203" y="417" text-anchor="middle">⋮</text>
+<rect class="mem-box" x="130" y="420" width="146" height="26"/>
+<text class="mem-s13" x="203" y="437.5" text-anchor="middle">NVIC, SysTick …</text>
+<text class="mem-mono mem-s13" x="124" y="437.5" text-anchor="end">0xE000.E000</text>
+<path class="mem-w" d="M38,130 H32 V402 H38"/>
+<text class="mem-s13 mem-b" transform="translate(25,266) rotate(-90)" text-anchor="middle">Çevre birimleri</text>
+<path class="mem-zoom" d="M276,296 L336,60 M276,320 L336,396"/>
+<rect class="mem-per" x="336" y="60" width="250" height="30"/>
+<text class="mem-b mem-acc" x="348" y="80">GPIO Port F</text>
+<text class="mem-mono mem-s13" x="576" y="80" text-anchor="end">taban 0x4002.5000</text>
+<rect class="mem-box" x="336" y="90" width="250" height="50"/>
+<text class="mem-mono mem-s13" x="348" y="109">0x000–0x3FC</text>
+<text class="mem-mono mem-b" x="454" y="109">GPIODATA</text>
+<text class="mem-s13 mem-mut" x="454" y="128">256 maskeli adres</text>
+<rect class="mem-hl" x="336" y="140" width="250" height="28"/>
+<text class="mem-mono mem-s13 mem-acc mem-b" x="348" y="158.5">0x400</text>
+<text class="mem-mono mem-b mem-acc mem-b" x="454" y="158.5">GPIODIR</text>
+<rect class="mem-zgap" x="336" y="168" width="250" height="22"/>
+<text class="mem-s13 mem-mut" x="348" y="183.5">0x404–0x41C · kesme register’ları</text>
+<rect class="mem-box" x="336" y="190" width="250" height="28"/>
+<text class="mem-mono mem-s13" x="348" y="208.5">0x420</text>
+<text class="mem-mono mem-b" x="454" y="208.5">GPIOAFSEL</text>
+<rect class="mem-zgap" x="336" y="218" width="250" height="22"/>
+<text class="mem-s13 mem-mut" x="348" y="233.5">0x500–0x50C · DR2R…DR8R, ODR</text>
+<rect class="mem-box" x="336" y="240" width="250" height="28"/>
+<text class="mem-mono mem-s13" x="348" y="258.5">0x510</text>
+<text class="mem-mono mem-b" x="454" y="258.5">GPIOPUR</text>
+<rect class="mem-zgap" x="336" y="268" width="250" height="22"/>
+<text class="mem-s13 mem-mut" x="348" y="283.5">0x514–0x518 · PDR, SLR</text>
+<rect class="mem-box" x="336" y="290" width="250" height="28"/>
+<text class="mem-mono mem-s13" x="348" y="308.5">0x51C</text>
+<text class="mem-mono mem-b" x="454" y="308.5">GPIODEN</text>
+<rect class="mem-box" x="336" y="318" width="250" height="28"/>
+<text class="mem-mono mem-s13" x="348" y="336.5">0x520</text>
+<text class="mem-mono mem-b" x="454" y="336.5">GPIOLOCK</text>
+<rect class="mem-box" x="336" y="346" width="250" height="28"/>
+<text class="mem-mono mem-s13" x="348" y="364.5">0x524</text>
+<text class="mem-mono mem-b" x="454" y="364.5">GPIOCR</text>
+<rect class="mem-zgap" x="336" y="374" width="250" height="22"/>
+<text class="mem-s13 mem-mut" x="348" y="389.5">0x528 AMSEL, 0x52C PCTL …</text>
+<text class="mem-b" x="604" y="80">GPIODIR (Port F)</text>
+<text class="mem-s13 mem-mut" x="604" y="104">taban</text>
+<text class="mem-mono" x="748" y="104" text-anchor="end">0x4002.5000</text>
+<text class="mem-s13 mem-mut" x="604" y="126">+ ofset</text>
+<text class="mem-mono" x="748" y="126" text-anchor="end">0x400</text>
+<line class="mem-w" x1="604" y1="136" x2="748" y2="136"/>
+<text class="mem-s13 mem-mut" x="604" y="158">=</text>
+<text class="mem-mono mem-b mem-acc" x="748" y="158" text-anchor="end">0x4002.5400</text>
+<text class="mem-b" x="604" y="196">GPIODEN</text>
+<text class="mem-s13 mem-mut" x="604" y="220">taban</text>
+<text class="mem-mono" x="748" y="220" text-anchor="end">0x4002.5000</text>
+<text class="mem-s13 mem-mut" x="604" y="242">+ ofset</text>
+<text class="mem-mono" x="748" y="242" text-anchor="end">0x51C</text>
+<line class="mem-w" x1="604" y1="252" x2="748" y2="252"/>
+<text class="mem-s13 mem-mut" x="604" y="274">=</text>
+<text class="mem-mono mem-b" x="748" y="274" text-anchor="end">0x4002.551C</text>
+<text class="mem-b" x="604" y="312">GPIOLOCK</text>
+<text class="mem-s13 mem-mut" x="604" y="336">taban</text>
+<text class="mem-mono" x="748" y="336" text-anchor="end">0x4002.5000</text>
+<text class="mem-s13 mem-mut" x="604" y="358">+ ofset</text>
+<text class="mem-mono" x="748" y="358" text-anchor="end">0x520</text>
+<line class="mem-w" x1="604" y1="368" x2="748" y2="368"/>
+<text class="mem-s13 mem-mut" x="604" y="390">=</text>
+<text class="mem-mono mem-b" x="748" y="390" text-anchor="end">0x4002.5520</text>
+<rect class="mem-code" x="16" y="462" width="732" height="92" rx="8"/>
+<text class="mem-mono" x="30" y="488">#define HWREG(x) (*((volatile uint32_t *)(x)))</text>
+<text class="mem-mono" x="30" y="514">HWREG(0x40025000 + 0x400) |= 0x0E;</text>
+<text class="mem-mono mem-mut" x="330" y="514">// 0x0E = 0b0000_1110</text>
+<text x="30" y="540">→ GPIODIR (<tspan class="mem-mono">0x4002.5400</tspan>) bit 1–3 = 1 → <tspan class="mem-b mem-acc">PF1–PF3 çıkış</tspan>, diğer bitler korunur (<tspan class="mem-mono">|=</tspan>)</text>
+</svg>

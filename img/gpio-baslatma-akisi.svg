@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 712" class="akis-svg" role="img" aria-labelledby="akis-title akis-desc">
+<title id="akis-title">GPIO başlatma akışı: register ile ve TivaWare ile</title>
+<desc id="akis-desc">Sekiz adım: saat açma (RCGCGPIO), hazır bekleme (PRGPIO), gerekirse kilit açma (GPIOLOCK, GPIOCR), yön (GPIODIR), alternatif fonksiyon ve analog kapatma (GPIOAFSEL, GPIOAMSEL), dijital etkinleştirme (GPIODEN), giriş için pull-up/pull-down (GPIOPUR/GPIOPDR), GPIODATA okuma/yazma. Sağ sütunda karşılık gelen TivaWare çağrıları.</desc>
+<defs>
+<marker id="akis-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="akis-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.akis-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.akis-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.akis-svg .akis-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.akis-svg .akis-b{font-weight:700}
+.akis-svg .akis-s13{font-size:13px}
+.akis-svg .akis-s15{font-size:15px}
+.akis-svg .akis-mut{fill:var(--fig-muted,#76746c)}
+.akis-svg .akis-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.akis-svg .akis-head{fill:var(--fig-stroke,#2b2b29)}
+.akis-svg .akis-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.akis-svg .akis-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.akis-svg .akis-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.akis-svg .akis-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.akis-svg .akis-circ{fill:var(--fig-accent,#b4481f)}
+.akis-svg .akis-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.akis-svg .akis-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+</style>
+<rect class="akis-pill" x="16" y="10" width="344" height="30" rx="15"/>
+<text class="akis-s15 akis-b" x="188" y="30" text-anchor="middle">API’siz — doğrudan register</text>
+<rect class="akis-pill" x="380" y="10" width="368" height="30" rx="15"/>
+<text class="akis-s15 akis-b" x="564" y="30" text-anchor="middle">API’li — TivaWare (driverlib)</text>
+<rect class="akis-box" x="16" y="54" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="74" r="12"/>
+<text class="akis-num" x="36" y="79" text-anchor="middle">1</text>
+<text class="akis-b" x="56" y="79">Saat aç: RCGCGPIO</text>
+<text class="akis-mono" x="56" y="99">SYSCTL_RCGCGPIO_R |= 0x20;</text>
+<text class="akis-s13 akis-mut" x="56" y="116">adres 0x400F.E608 · bit 5 = Port F</text>
+<line class="akis-w" x1="188" y1="124" x2="188" y2="135" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="86" x2="380" y2="86"/>
+<rect class="akis-box" x="16" y="136" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="156" r="12"/>
+<text class="akis-num" x="36" y="161" text-anchor="middle">2</text>
+<text class="akis-b" x="56" y="161">Hazır bekle: PRGPIO</text>
+<text class="akis-mono" x="56" y="181">while(!(SYSCTL_PRGPIO_R &amp; 0x20)){}</text>
+<text class="akis-s13 akis-mut" x="56" y="198">adres 0x400F.EA08</text>
+<line class="akis-w" x1="188" y1="206" x2="188" y2="217" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="168" x2="380" y2="168"/>
+<rect class="akis-opt" x="16" y="218" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="238" r="12"/>
+<text class="akis-num" x="36" y="243" text-anchor="middle">3</text>
+<text class="akis-b" x="56" y="243">Gerekirse kilit aç (PF0, PD7)</text>
+<text class="akis-mono" x="56" y="263">GPIO_PORTF_LOCK_R = 0x4C4F434B;</text>
+<text class="akis-mono" x="56" y="280">GPIO_PORTF_CR_R |= 0x01;</text>
+<line class="akis-w" x1="188" y1="288" x2="188" y2="299" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="250" x2="380" y2="250"/>
+<rect class="akis-box" x="16" y="300" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="320" r="12"/>
+<text class="akis-num" x="36" y="325" text-anchor="middle">4</text>
+<text class="akis-b" x="56" y="325">Yön: GPIODIR (1 = çıkış)</text>
+<text class="akis-mono" x="56" y="345">GPIO_PORTF_DIR_R |= 0x0E; // PF1–3</text>
+<text class="akis-mono" x="56" y="362">GPIO_PORTF_DIR_R &amp;= ~0x11; // PF0,4</text>
+<line class="akis-w" x1="188" y1="370" x2="188" y2="381" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="332" x2="380" y2="332"/>
+<rect class="akis-box" x="16" y="382" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="402" r="12"/>
+<text class="akis-num" x="36" y="407" text-anchor="middle">5</text>
+<text class="akis-b" x="56" y="407">Alternatif fonksiyon ve analog kapalı</text>
+<text class="akis-mono" x="56" y="427">GPIO_PORTF_AFSEL_R &amp;= ~0x1F;</text>
+<text class="akis-mono" x="56" y="444">GPIO_PORTF_AMSEL_R &amp;= ~0x1F;</text>
+<line class="akis-w" x1="188" y1="452" x2="188" y2="463" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="414" x2="380" y2="414"/>
+<rect class="akis-box" x="16" y="464" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="484" r="12"/>
+<text class="akis-num" x="36" y="489" text-anchor="middle">6</text>
+<text class="akis-b" x="56" y="489">Ped: giriş için GPIOPUR / GPIOPDR</text>
+<text class="akis-mono" x="56" y="509">GPIO_PORTF_PUR_R |= 0x11; // SW1,SW2</text>
+<line class="akis-w" x1="188" y1="534" x2="188" y2="545" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="496" x2="380" y2="496"/>
+<rect class="akis-box" x="16" y="546" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="566" r="12"/>
+<text class="akis-num" x="36" y="571" text-anchor="middle">7</text>
+<text class="akis-b" x="56" y="571">Dijital etkin: GPIODEN</text>
+<text class="akis-mono" x="56" y="591">GPIO_PORTF_DEN_R |= 0x1F;</text>
+<line class="akis-w" x1="188" y1="616" x2="188" y2="627" marker-end="url(#akis-arr)"/>
+<line class="akis-con" x1="360" y1="578" x2="380" y2="578"/>
+<rect class="akis-box" x="16" y="628" width="344" height="70" rx="8"/>
+<circle class="akis-circ" cx="36" cy="648" r="12"/>
+<text class="akis-num" x="36" y="653" text-anchor="middle">8</text>
+<text class="akis-b" x="56" y="653">GPIODATA oku / yaz</text>
+<text class="akis-mono" x="56" y="673">GPIO_PORTF_DATA_R |= 0x02; // LED</text>
+<text class="akis-mono" x="56" y="690">sw1 = GPIO_PORTF_DATA_R &amp; 0x10;</text>
+<line class="akis-con" x1="360" y1="660" x2="380" y2="660"/>
+<rect class="akis-code" x="380" y="54" width="368" height="70" rx="8"/>
+<text class="akis-mono" x="392" y="77" xml:space="preserve">SysCtlPeripheralEnable(</text>
+<text class="akis-mono" x="392" y="93" xml:space="preserve">    SYSCTL_PERIPH_GPIOF);</text>
+<rect class="akis-code" x="380" y="136" width="368" height="70" rx="8"/>
+<text class="akis-mono" x="392" y="159" xml:space="preserve">while(!SysCtlPeripheralReady(</text>
+<text class="akis-mono" x="392" y="175" xml:space="preserve">    SYSCTL_PERIPH_GPIOF)) {}</text>
+<rect class="akis-code" x="380" y="218" width="368" height="70" rx="8"/>
+<text class="akis-mono" x="392" y="241" xml:space="preserve">HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK)</text>
+<text class="akis-mono" x="392" y="257" xml:space="preserve">    = GPIO_LOCK_KEY;</text>
+<text class="akis-mono" x="392" y="273" xml:space="preserve">HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;</text>
+<rect class="akis-code" x="380" y="300" width="368" height="152" rx="8"/>
+<text class="akis-mono" x="392" y="323" xml:space="preserve">GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE,</text>
+<text class="akis-mono" x="392" y="339" xml:space="preserve">    GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);</text>
+<text class="akis-mono" x="392" y="355" xml:space="preserve">GPIOPinTypeGPIOInput(GPIO_PORTF_BASE,</text>
+<text class="akis-mono" x="392" y="371" xml:space="preserve">    GPIO_PIN_4 | GPIO_PIN_0);</text>
+<text class="akis-s13 akis-mut" x="392" y="391">Tek çağrı: DIR, AFSEL = 0, AMSEL = 0, DEN = 1;</text>
+<text class="akis-s13 akis-mut" x="392" y="408">PUR/PDR/ODR = 0 (2 mA, push-pull). Bu yüzden</text>
+<text class="akis-s13 akis-mut" x="392" y="425">GPIOPadConfigSet(…WPU) ondan SONRA çağrılmalı.</text>
+<rect class="akis-code" x="380" y="464" width="368" height="70" rx="8"/>
+<text class="akis-mono" x="392" y="483" xml:space="preserve">GPIOPadConfigSet(GPIO_PORTF_BASE,</text>
+<text class="akis-mono" x="392" y="498" xml:space="preserve">    GPIO_PIN_4 | GPIO_PIN_0,</text>
+<text class="akis-mono" x="392" y="513" xml:space="preserve">    GPIO_STRENGTH_2MA,</text>
+<text class="akis-mono" x="392" y="528" xml:space="preserve">    GPIO_PIN_TYPE_STD_WPU);</text>
+<rect class="akis-code" x="380" y="546" width="368" height="70" rx="8"/>
+<text class="akis-s13 akis-mut" x="392" y="573">DEN = 1 adımı 4–5’teki GPIOPinTypeGPIO…</text>
+<text class="akis-s13 akis-mut" x="392" y="590">çağrısının içinde zaten yapılır.</text>
+<rect class="akis-code" x="380" y="628" width="368" height="70" rx="8"/>
+<text class="akis-mono" x="392" y="651" xml:space="preserve">GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,</text>
+<text class="akis-mono" x="392" y="667" xml:space="preserve">             GPIO_PIN_1);</text>
+<text class="akis-mono" x="392" y="683" xml:space="preserve">GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4);</text>
+</svg>

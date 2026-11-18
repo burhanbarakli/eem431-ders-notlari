@@ -1,0 +1,877 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GPIO — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad üzerinde GPIO: register'lar, bellek haritası, GPIODATA maskeleme, başlatma adımları, LED ve buton örnekleri (API'siz ve TivaWare API'li).">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 1. GPIO</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#gpio-nedir">1. GPIO nedir?</a><ol>
+  <li><a href="#portlar">TM4C123GH6PM'nin portları</a></li>
+  <li><a href="#launchpad">LaunchPad'deki LED ve butonlar</a></li></ol></li>
+<li><a href="#pin-yapisi">2. Pinin iç yapısı ve GPIO register'ları</a><ol>
+  <li><a href="#register-tablosu">GPIO register tablosu</a></li></ol></li>
+<li><a href="#bellek">3. Bellek haritası ve register erişimi</a><ol>
+  <li><a href="#taban-adresler">Taban adresler (APB ve AHB)</a></li>
+  <li><a href="#hwreg">HWREG ve doğrudan adresleme</a></li>
+  <li><a href="#maskeleme">GPIODATA adres maskeleme</a></li></ol></li>
+<li><a href="#baslatma">4. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">Adım adım</a></li>
+  <li><a href="#kilit">PF0 / PD7 kilidi (LOCK ve CR)</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li>
+  <li><a href="#portf-init">Örnek: tam başlatma fonksiyonu</a></li></ol></li>
+<li><a href="#devreler">5. LED ve buton devreleri</a></li>
+<li><a href="#ornekler">6. Örnekler</a><ol>
+  <li><a href="#ornek-led">6.1 LED yakıp söndürme</a></li>
+  <li><a href="#ornek-rgb">6.2 RGB renk döngüsü</a></li>
+  <li><a href="#ornek-buton">6.3 Butonla LED kontrolü (iç pull-up)</a></li>
+  <li><a href="#ornek-hwreg">6.4 HWREG ile register erişimi</a></li>
+  <li><a href="#ornek-kutuphane">6.5 Kendi init fonksiyonu ve kütüphane</a></li></ol></li>
+<li><a href="#lab3">7. TI Lab 3 uyarlaması</a></li>
+<li><a href="#exp7">8. Experiment 7 uygulama görevi</a></li>
+<li><a href="#hatalar">9. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">10. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">11. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>GPIO: Genel Amaçlı Giriş/Çıkış</h1>
+<p class="lead">Mikrodenetleyicinin dış dünyaya açılan en temel kapısı GPIO pinleridir. Bu notta Tiva C LaunchPad üzerindeki LED'leri ve butonları önce doğrudan register'larla (API'siz), sonra TivaWare kütüphanesiyle (API'li) kullanacağız. İki yolu da bilen öğrenci, kütüphanenin arkasında ne olduğunu da görmüş olur.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>TM4C123GH6PM'nin GPIO portlarını (A–F), LaunchPad'deki RGB LED (PF1–PF3) ve buton (PF4, PF0) bağlantılarını açıklayabilir.</li>
+<li>Bir GPIO pinini yöneten temel register'ları (DATA, DIR, DEN, AFSEL, PUR/PDR, LOCK/CR, AMSEL, PCTL) ve görevlerini sayabilir.</li>
+<li>Bir register'ın adresini <em>taban adres + ofset</em> olarak hesaplayıp <code>HWREG</code> ya da <code>volatile</code> işaretçi ile erişebilir.</li>
+<li>GPIODATA adres maskelemesini kullanarak tek bir pini diğerlerini bozmadan yazabilir ve okuyabilir.</li>
+<li>Bir portu datasheet sırasıyla başlatabilir (saat → hazır bekleme → gerekirse kilit → DIR → AFSEL/PCTL/AMSEL → PUR/PDR → DEN → DATA) ve PF0 kilidini açabilir.</li>
+<li>Aynı işi hem doğrudan register erişimiyle hem de TivaWare fonksiyonlarıyla (<code>GPIOPinWrite</code>, <code>GPIOPinRead</code>, <code>GPIOPadConfigSet</code>…) yazabilir.</li>
+<li>Aktif-düşük buton okuma, yazılım gecikmesi ve kendi başlatma fonksiyonunu/kütüphanesini yazma becerisini kazanır.</li>
+</ol></div>
+<h2 id="gpio-nedir">1. GPIO nedir?</h2>
+<p><b>GPIO</b> (General-Purpose Input/Output), yazılımla <em>giriş</em> ya da <em>çıkış</em> olarak ayarlanabilen dijital bir pindir. Çıkış olarak ayarlanan pin, programdaki bir biti gerilime çevirir: 1 yazınca pin yaklaşık 3,3 V, 0 yazınca 0 V olur. Giriş olarak ayarlanan pin ise dışarıdaki gerilimi okur ve programa 1 ya da 0 olarak verir. LED yakmak, röle sürmek, buton okumak gibi işlerin hepsi bu basit mekanizmayla yapılır.</p>
+<p>Aynı fiziksel pin, GPIO yerine bir çevre biriminin (UART, SPI, PWM, ADC…) sinyali olarak da kullanılabilir. Buna <b>alternatif işlev</b> denir ve hangi işlevin seçileceğini yine register'lar belirler (AFSEL, PCTL, AMSEL). Bu notta pinleri yalnızca GPIO olarak kullanıyoruz.</p>
+
+<h3 id="portlar">TM4C123GH6PM'nin portları</h3>
+<p>Datasheet'in 10. bölümüne göre (s. 649) GPIO modülü altı ayrı porttan oluşur: <b>Port A, B, C, D, E ve F</b>. 64 bacaklı kılıfta yapılandırmaya bağlı olarak toplam <b>43 GPIO</b> pini vardır. Her port 8 bitlik bir birimdir, ancak her portta 8 pinin hepsi dışarı çıkmaz:</p>
+<table>
+<thead><tr><th>Port</th><th>Pinler</th><th>Sayı</th><th>Not</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>PA0–PA7</td><td>8</td><td>PA0/PA1'in PCTL açılış değeri UART0'ı seçer (LaunchPad'de sanal COM portu).</td></tr>
+<tr><td>B</td><td>PB0–PB7</td><td>8</td><td>PB0/PB1 5 V toleranslı değildir (en çok 3,6 V).</td></tr>
+<tr><td>C</td><td>PC0–PC7</td><td>8</td><td>PC0–PC3 JTAG/SWD hata ayıklama pinleridir; <b>dokunmayın</b>.</td></tr>
+<tr><td>D</td><td>PD0–PD7</td><td>8</td><td>PD7 kilitlidir (NMI). PD4/PD5 USB D-/D+ olarak kullanılabilir (LaunchPad'de USB konnektörüne bağlı) ve 3,6 V ile sınırlıdır.</td></tr>
+<tr><td>E</td><td>PE0–PE5</td><td>6</td><td>&nbsp;</td></tr>
+<tr><td>F</td><td>PF0–PF4</td><td>5</td><td>LaunchPad'in LED ve butonları burada. PF0 kilitlidir (NMI).</td></tr>
+<tr><th colspan="2">Toplam</th><th>43</th><th>&nbsp;</th></tr>
+</tbody></table>
+<p>Datasheet'teki önemli özellikler (s. 649):</p>
+<ul>
+<li>Giriş olarak ayarlanan pinler <b>5 V toleranslıdır</b>. İstisnalar PD4, PD5, PB0 ve PB1'dir; bunlar 3,6 V ile sınırlıdır. Çıkışlar ise 5 V değil, 3,3 V verir.</li>
+<li>Dijital girişler Schmitt tetiklemelidir. Her pine zayıf pull-up/pull-down direnci (pull-up 13–30 kΩ, pull-down 13–35 kΩ, tipik 20 kΩ; datasheet Tablo 24-29, s. 1385) ve açık-kanal (open drain) seçeneği atanabilir.</li>
+<li>Çıkış sürme akımı 2, 4 ya da 8 mA seçilebilir. Yüksek akım isteyen işler için en çok dört pin 18 mA çekebilir (sink).</li>
+<li>Her pin kesme (interrupt) kaynağı olabilir: yükselen/düşen kenarda, her iki kenarda ya da seviyeye duyarlı. Kesmeler ayrı bir notun konusudur.</li>
+<li>Portlar iki farklı veri yolundan erişilebilir: AHB üzerindeki port her saat çevriminde, APB üzerindeki port iki çevrimde bir pin değiştirebilir.</li>
+</ul>
+
+<h3 id="launchpad">LaunchPad'deki LED ve butonlar</h3>
+<p>EK-TM4C123GXL kartında kullanıcıya ayrılmış bir RGB LED ve iki buton vardır (LaunchPad Kullanım Kılavuzu, SPMU296, Tablo 2-2). Hepsi Port F'ye bağlıdır (Şekil 1). Bu yüzden derste hemen hemen her örnek Port F ile başlar.</p>
+<table>
+<thead><tr><th>Pin</th><th>Bağlı olduğu eleman</th><th>Bit değeri</th><th>Yön</th></tr></thead>
+<tbody>
+<tr><td>PF1</td><td>RGB LED – kırmızı</td><td><code>0x02</code></td><td>çıkış</td></tr>
+<tr><td>PF2</td><td>RGB LED – mavi</td><td><code>0x04</code></td><td>çıkış</td></tr>
+<tr><td>PF3</td><td>RGB LED – yeşil</td><td><code>0x08</code></td><td>çıkış</td></tr>
+<tr><td>PF4</td><td>SW1 (sol buton)</td><td><code>0x10</code></td><td>giriş, pull-up</td></tr>
+<tr><td>PF0</td><td>SW2 (sağ buton)</td><td><code>0x01</code></td><td>giriş, pull-up, <b>kilitli</b></td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/gpio-launchpad-pinler.svg" alt="LaunchPad üzerinde Port A–F, RGB LED ve SW1/SW2 bağlantıları"><figcaption><b>Şekil 1.</b> EK-TM4C123GXL üzerinde GPIO portları ve APB taban adresleri. RGB LED PF1 (kırmızı), PF2 (mavi), PF3 (yeşil); SW1 = PF4, SW2 = PF0.</figcaption></figure>
+<p>Renkler karıştırılabilir: kırmızı + yeşil = sarı (<code>0x0A</code>), kırmızı + mavi = mor (<code>0x06</code>), mavi + yeşil = camgöbeği (<code>0x0C</code>), üçü birden = beyaza yakın (<code>0x0E</code>).</p>
+<div class="box"><span class="box-title">Kart notu</span>
+<p>LaunchPad'de PD0–PB6 ve PD1–PB7 pinleri 0 Ω dirençlerle (R9, R10) birbirine bağlıdır. Bu pin çiftlerini aynı anda farklı amaçlarla kullanmayın.</p></div>
+<h2 id="pin-yapisi">2. Pinin iç yapısı ve GPIO register'ları</h2>
+<p>Her port, aynı donanım bloğunun bir kopyasıdır. Bir pinin davranışını o portun register'larındaki <b>aynı numaralı bit</b> belirler. Örneğin PF3'ün yönü GPIODIR'in bit3'ünde, dijital etkinliği GPIODEN'in bit3'ünde, verisi GPIODATA'nın bit3'ünde tutulur. Kısacası register'lar 8 pinlik bir portun "ayar tablosu" gibidir; her sütun bir pine karşılık gelir.</p>
+<figure><img class="fig" src="../img/gpio-pin-yapisi.svg" alt="Dijital GPIO pininin sadeleştirilmiş iç yapısı"><figcaption><b>Şekil 2.</b> Bir dijital GPIO pininin sadeleştirilmiş iç yapısı (datasheet Şekil 10-1'den yeniden çizildi). GPIODIR çıkış tamponunu açar, GPIODEN pinin dijital işlevini (giriş ve çıkış) etkinleştirir, GPIOAFSEL pini çevre birimine verir, GPIOPUR/PDR/ODR ve DR2R/4R/8R ise pad'in elektriksel özelliklerini belirler.</figcaption></figure>
+<p>Şekil 2'deki yolu bir çıkış ve bir giriş için izleyelim:</p>
+<ul>
+<li><b>Çıkış:</b> AFSEL = 0, DEN = 1 ve DIR = 1 olduğunda pini GPIO mantığı sürer: çıkış tamponu açılır ve GPIODATA'daki bit pad'e çıkar (datasheet Tablo 10-3). Sürme akımını DR2R/DR4R/DR8R, açık-kanal davranışını ODR belirler.</li>
+<li><b>Giriş:</b> DIR = 0 olduğunda çıkış tamponu kapalıdır. DEN = 1 ise pad'deki gerilim giriş tamponundan geçip GPIODATA'dan okunur. Pin boşta kalırsa (ör. buton açıkken) PUR ya da PDR ile tanımlı bir seviyeye çekilmelidir.</li>
+<li><b>DEN = 0</b> iken pin ne dijital giriş ne de dijital çıkıştır. Açılışta pinlerin çoğu bu durumdadır, yani üç durumlu (tristate). Bu yüzden DEN'i unutmak en yaygın hatadır.</li>
+</ul>
+
+<h3 id="register-tablosu">GPIO register tablosu</h3>
+<p>Ofsetler port taban adresine eklenir. Değerler ve sayfa numaraları TM4C123GH6PM datasheet'inden alınmıştır (Tablo 10-6, s. 660).</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Görev (bit = 1 olunca)</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>GPIODATA</td><td><code>0x000</code> (+ maske, tümü için <code>0x3FC</code>)</td><td>Pin verisi: çıkışa yazılır, girişten okunur. Adres bitleri [9:2] maske görevi görür.</td><td>s. 662</td></tr>
+<tr><td>GPIODIR</td><td><code>0x400</code></td><td>1 = çıkış, 0 = giriş.</td><td>s. 663</td></tr>
+<tr><td>GPIOIS … GPIOICR</td><td><code>0x404–0x41C</code></td><td>Kesme ayarları (algılama türü, kenar, maske, durum, temizleme). Kesmeler notunda.</td><td>s. 664–670</td></tr>
+<tr><td>GPIOAFSEL</td><td><code>0x420</code></td><td>1 = pin alternatif işlevde (çevre birimi sürer), 0 = GPIO.</td><td>s. 671</td></tr>
+<tr><td>GPIODR2R / DR4R / DR8R</td><td><code>0x500</code> / <code>0x504</code> / <code>0x508</code></td><td>Çıkış sürme akımı 2 / 4 / 8 mA. Açılışta DR2R = 0xFF, yani 2 mA.</td><td>s. 673–675</td></tr>
+<tr><td>GPIOODR</td><td><code>0x50C</code></td><td>Açık-kanal (open drain) çıkış.</td><td>s. 676</td></tr>
+<tr><td>GPIOPUR</td><td><code>0x510</code></td><td>Zayıf iç pull-up direnci.</td><td>s. 677</td></tr>
+<tr><td>GPIOPDR</td><td><code>0x514</code></td><td>Zayıf iç pull-down direnci.</td><td>s. 679</td></tr>
+<tr><td>GPIOSLR</td><td><code>0x518</code></td><td>8 mA sürmede kenar eğimi (slew rate) kontrolü.</td><td>s. 681</td></tr>
+<tr><td>GPIODEN</td><td><code>0x51C</code></td><td>Dijital işlevi etkinleştirir. <b>Dijital G/Ç için şarttır.</b></td><td>s. 682</td></tr>
+<tr><td>GPIOLOCK</td><td><code>0x520</code></td><td><code>0x4C4F434B</code> yazılınca GPIOCR yazılabilir olur. Başka bir değer yazılırsa ya da GPIOCR'ye yazılırsa yeniden kilitlenir.</td><td>s. 684</td></tr>
+<tr><td>GPIOCR</td><td><code>0x524</code></td><td>Commit: AFSEL, PUR, PDR ve DEN'deki ilgili bitin değiştirilmesine izin verir.</td><td>s. 685</td></tr>
+<tr><td>GPIOAMSEL</td><td><code>0x528</code></td><td>Analog işlev (ADC girişi). Dijital kullanımda 0 olmalıdır.</td><td>s. 687</td></tr>
+<tr><td>GPIOPCTL</td><td><code>0x52C</code></td><td>Her pin için 4 bitlik alan: hangi çevre biriminin sinyali seçilecek. GPIO için 0.</td><td>s. 688</td></tr>
+</tbody></table>
+<p>Saat kapısı register'ları GPIO bloğunda değil, Sistem Kontrol (SYSCTL) bloğundadır:</p>
+<table>
+<thead><tr><th>Register</th><th>Adres</th><th>Görev</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>RCGCGPIO</td><td><code>0x400FE608</code> (SYSCTL + 0x608)</td><td>Çalışma modunda port saatini açar. Bit0 = A … bit5 = F.</td><td>s. 340</td></tr>
+<tr><td>PRGPIO</td><td><code>0x400FEA08</code> (SYSCTL + 0xA08)</td><td>Salt okunur. Bit = 1 ise port erişime hazırdır.</td><td>s. 406</td></tr>
+<tr><td>GPIOHBCTL</td><td><code>0x400FE06C</code> (SYSCTL + 0x06C)</td><td>Portun APB'den mi AHB'den mi erişileceğini seçer (0 = APB, açılış değeri).</td><td>s. 258</td></tr>
+<tr><td>RCGC2 (eski)</td><td><code>0x400FE108</code></td><td>Eski yazılımlarla uyumluluk için tutulan saat register'ı. Yeni kodda RCGCGPIO tercih edilmelidir.</td><td>s. 340 notu</td></tr>
+</tbody></table>
+<p>RCGCGPIO bitleri: <code>0x01</code> = A, <code>0x02</code> = B, <code>0x04</code> = C, <code>0x08</code> = D, <code>0x10</code> = E, <code>0x20</code> = F. Örneklerdeki <code>SYSCTL_RCGCGPIO_R |= 0x20;</code> satırı bu yüzden "Port F'nin saatini aç" demektir.</p>
+<h2 id="bellek">3. Bellek haritası ve register erişimi</h2>
+<p>ARM Cortex-M4'te çevre birimleri belleğe eşlenmiştir (memory-mapped I/O). Her register 32 bitlik bir bellek adresidir. Bu adrese yazmak donanımı ayarlar, okumak da donanımın durumunu getirir. Bir register'ın adresi şöyle hesaplanır:</p>
+<p style="text-align:center"><b>register adresi = port taban adresi + register ofseti</b> (Şekil 3)</p>
+<figure><img class="fig" src="../img/gpio-bellek-haritasi.svg" alt="Taban adres artı ofset ile register adresi ve HWREG makrosu"><figcaption><b>Şekil 3.</b> Register adresi = taban adres + ofset. <code>HWREG(x)</code> makrosu, verilen adresi <code>volatile uint32_t</code> işaretçisine çevirip içeriğine erişir. SYSCTL taban adresi 0x400FE000'dır.</figcaption></figure>
+<h3 id="taban-adresler">Taban adresler (APB ve AHB)</h3>
+<p>Her portun iki adres penceresi vardır (datasheet s. 658–659). Açılışta tüm portlar <b>APB</b> (Advanced Peripheral Bus) üzerindendir ve TivaWare'deki <code>GPIO_PORTF_BASE</code> gibi adlar APB adresidir. <b>AHB</b> (Advanced High-performance Bus) penceresi arka arkaya erişimde daha hızlıdır, ancak önce GPIOHBCTL'deki ilgili bitin 1 yapılması gerekir (TivaWare: <code>SysCtlGPIOAHBEnable()</code>). Bir port aynı anda yalnız bir pencereden erişilebilir.</p>
+<table>
+<thead><tr><th>Port</th><th>APB taban</th><th>AHB taban</th><th>TivaWare adı (APB)</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><code>0x40004000</code></td><td><code>0x40058000</code></td><td><code>GPIO_PORTA_BASE</code></td></tr>
+<tr><td>B</td><td><code>0x40005000</code></td><td><code>0x40059000</code></td><td><code>GPIO_PORTB_BASE</code></td></tr>
+<tr><td>C</td><td><code>0x40006000</code></td><td><code>0x4005A000</code></td><td><code>GPIO_PORTC_BASE</code></td></tr>
+<tr><td>D</td><td><code>0x40007000</code></td><td><code>0x4005B000</code></td><td><code>GPIO_PORTD_BASE</code></td></tr>
+<tr><td>E</td><td><code>0x40024000</code></td><td><code>0x4005C000</code></td><td><code>GPIO_PORTE_BASE</code></td></tr>
+<tr><td>F</td><td><code>0x40025000</code></td><td><code>0x4005D000</code></td><td><code>GPIO_PORTF_BASE</code></td></tr>
+</tbody></table>
+<p>Port F için birkaç hazır hesap:</p>
+<table>
+<thead><tr><th>Register</th><th>Hesap</th><th>Adres</th><th><code>tm4c123gh6pm.h</code> adı</th></tr></thead>
+<tbody>
+<tr><td>GPIODATA (tüm pinler)</td><td>0x40025000 + 0x3FC</td><td><code>0x400253FC</code></td><td><code>GPIO_PORTF_DATA_R</code></td></tr>
+<tr><td>GPIODIR</td><td>0x40025000 + 0x400</td><td><code>0x40025400</code></td><td><code>GPIO_PORTF_DIR_R</code></td></tr>
+<tr><td>GPIOPUR</td><td>0x40025000 + 0x510</td><td><code>0x40025510</code></td><td><code>GPIO_PORTF_PUR_R</code></td></tr>
+<tr><td>GPIODEN</td><td>0x40025000 + 0x51C</td><td><code>0x4002551C</code></td><td><code>GPIO_PORTF_DEN_R</code></td></tr>
+<tr><td>GPIOLOCK</td><td>0x40025000 + 0x520</td><td><code>0x40025520</code></td><td><code>GPIO_PORTF_LOCK_R</code></td></tr>
+<tr><td>GPIOCR</td><td>0x40025000 + 0x524</td><td><code>0x40025524</code></td><td><code>GPIO_PORTF_CR_R</code></td></tr>
+</tbody></table>
+
+<h3 id="hwreg">HWREG ve doğrudan adresleme</h3>
+<p>C'de bir sayıyı adres olarak kullanmak için onu işaretçiye çevirip içeriğine erişiriz. Bu iş için TivaWare'in <code>inc/hw_types.h</code> dosyasında şu makro vardır:</p>
+<pre><code class="language-c">#define HWREG(x)  (*((volatile uint32_t *)(x)))</code></pre>
+<p><code>HWREG(0x40025400) |= 0x0E;</code> satırı "0x40025400 adresindeki 32 bitlik değeri oku, 0x0E ile VEYA'la, geri yaz" anlamına gelir. <code>volatile</code> anahtar sözcüğü derleyiciye "bu adresin içeriği senin bilmediğin bir şekilde değişebilir, erişimleri silme ya da birleştirme" der. Bu sözcük olmazsa derleyici, ör. bir buton okuma döngüsünü tek okumaya indirebilir.</p>
+<p>Aynı register'a dört farklı yazımla erişilebilir. İlk üçü derleyicide aynı makine komutlarına dönüşür; API'deki <code>GPIODirModeSet</code> ise aynı DIR ayarını (ve AFSEL = 0) bir fonksiyon çağrısıyla yapar:</p>
+<table>
+<thead><tr><th>Yöntem</th><th>Örnek (PF1–PF3 çıkış)</th><th>Gerekli başlık</th></tr></thead>
+<tbody>
+<tr><td>Kendi <code>#define</code>'ımız</td><td><code>(*((volatile unsigned long *)0x40025400)) |= 0x0E;</code></td><td>yok</td></tr>
+<tr><td>Hazır register adları</td><td><code>GPIO_PORTF_DIR_R |= 0x0E;</code></td><td><code>inc/tm4c123gh6pm.h</code></td></tr>
+<tr><td>HWREG + sembolik ofset</td><td><code>HWREG(GPIO_PORTF_BASE + GPIO_O_DIR) |= 0x0E;</code></td><td><code>hw_types.h</code>, <code>hw_memmap.h</code>, <code>hw_gpio.h</code></td></tr>
+<tr><td>TivaWare API</td><td><code>GPIODirModeSet(GPIO_PORTF_BASE, 0x0E, GPIO_DIR_MODE_OUT);</code></td><td><code>driverlib/gpio.h</code> + <code>driverlib.lib</code></td></tr>
+</tbody></table>
+
+<h3 id="maskeleme">GPIODATA adres maskeleme</h3>
+<p>GPIODATA tek bir adres değil, <b>256 adreslik bir penceredir</b> (taban + 0x000 … taban + 0x3FC). Erişilen adresin <b>[9:2] bitleri bir maske</b> gibi davranır (datasheet 10.2.1.2, s. 654; Şekil 4):</p>
+<ul>
+<li><b>Yazarken:</b> maskede 1 olan bitler değişir, 0 olan bitler <em>olduğu gibi kalır</em>.</li>
+<li><b>Okurken:</b> maskede 1 olan bitler gerçek değeriyle, 0 olanlar 0 olarak okunur.</li>
+</ul>
+<p>Bir pin kümesi için adres <code>taban + (maske &lt;&lt; 2)</code>, yani <code>taban + 4 × maske</code> olur. Derste kullanılan notlardaki <b>"taban + 4·2<sup>b</sup>"</b> formülü, tek bir <i>b</i> biti için bunun özel halidir.</p>
+<figure><img class="fig" src="../img/gpio-data-maskeleme.svg" alt="GPIODATA adres maskeleme: adres bitleri 9:2 pin maskesidir"><figcaption><b>Şekil 4.</b> GPIODATA adres maskeleme. Adresin [9:2] bitleri hangi pinlerin etkileneceğini seçer: taban + 0x3FC tüm pinler, taban + 0x008 yalnız bit1 (PF1).</figcaption></figure>
+<table>
+<thead><tr><th>Hedef pinler</th><th>Maske</th><th>Ofset (maske × 4)</th><th>Port F adresi</th></tr></thead>
+<tbody>
+<tr><td>PF1 (kırmızı)</td><td><code>0x02</code></td><td><code>0x008</code></td><td><code>0x40025008</code></td></tr>
+<tr><td>PF2 (mavi)</td><td><code>0x04</code></td><td><code>0x010</code></td><td><code>0x40025010</code></td></tr>
+<tr><td>PF3 (yeşil)</td><td><code>0x08</code></td><td><code>0x020</code></td><td><code>0x40025020</code></td></tr>
+<tr><td>PF1 + PF3</td><td><code>0x0A</code></td><td><code>0x028</code></td><td><code>0x40025028</code></td></tr>
+<tr><td>PF1 + PF2 + PF3</td><td><code>0x0E</code></td><td><code>0x038</code></td><td><code>0x40025038</code></td></tr>
+<tr><td>PF0 + PF4 (butonlar)</td><td><code>0x11</code></td><td><code>0x044</code></td><td><code>0x40025044</code></td></tr>
+<tr><td>Tüm pinler</td><td><code>0xFF</code></td><td><code>0x3FC</code></td><td><code>0x400253FC</code></td></tr>
+</tbody></table>
+<p><b>Yazma örneği:</b> <code>HWREG(0x40025008) = 0xFF;</code> yalnızca PF1'i 1 yapar; mavi ve yeşil LED'in durumu değişmez. <b>Okuma örneği:</b> <code>HWREG(0x40025044)</code> yalnız PF4 ve PF0'ı getirir. İki buton da bırakılmışsa <code>0x11</code>, yalnız SW1 basılıysa <code>0x01</code> okunur. Datasheet'teki örnekte <code>0xEB</code> değeri GPIODATA + 0x098'e yazılır ve yalnız bit5, bit2 ve bit1 yazılır (0x098 / 4 = 0x26 = 0010 0110).</p>
+<div class="box ok"><span class="box-title">Neden böyle bir tasarım?</span>
+<p><code>GPIO_PORTF_DATA_R |= 0x02;</code> aslında üç adımdır: oku, değiştir, geri yaz (read-modify-write). Bu adımların arasında bir kesme aynı portun başka bir bitini değiştirirse o değişiklik kaybolabilir. Maskeli adrese tek bir yazma ise <b>atomiktir</b>: hem daha kısadır hem de diğer pinleri hiç etkilemez. TivaWare'in <code>GPIOPinWrite(base, pins, val)</code> fonksiyonu tam olarak <code>HWREG(base + (pins &lt;&lt; 2)) = val;</code> işlemini yapar. <code>GPIOPinRead(base, pins)</code> da aynı adresten okur.</p></div>
+<h2 id="baslatma">4. Başlatma adımları</h2>
+<p>Datasheet'in 10.3 bölümü (s. 656–657) bir portu kullanıma hazırlamak için bir sıra önerir. LaunchPad'deki LED ve buton işleri için gereken kısmı Şekil 5'te ve aşağıdaki listede verilmiştir:</p>
+<figure><img class="fig" src="../img/gpio-baslatma-akisi.svg" alt="GPIO başlatma akışı ve TivaWare karşılıkları"><figcaption><b>Şekil 5.</b> GPIO başlatma akışı (datasheet 10.3 sırası): saat (RCGCGPIO) → hazır bekle (PRGPIO) → yalnız PF0/PD7 için LOCK/CR → DIR → AFSEL/PCTL/AMSEL → PUR/PDR/ODR/DRxR → DEN → DATA okuma/yazma. Her adımın yanında karşılık gelen TivaWare çağrısı.</figcaption></figure>
+<h3 id="adimlar">Adım adım</h3>
+<ol>
+<li><b>Saati aç:</b> RCGCGPIO'da portun bitini 1 yap. Saati kapalı bir portun register'ına erişmek <b>bus fault</b> üretir ve program <code>FaultISR</code> içinde takılı kalır.</li>
+<li><b>Hazır olmasını bekle:</b> Datasheet, saat açıldıktan sonra GPIO register'larına erişmeden önce <b>3 sistem saati</b> beklenmesini ister (s. 659). Bunun için PRGPIO'nun ilgili biti 1 olana kadar beklenir ya da derste kullanılan örneklerde olduğu gibi RCGCGPIO'dan boş bir okuma yapılır.</li>
+<li><b>(Gerekirse) kilidi aç:</b> PF0 ve PD7 kullanılacaksa LOCK'a anahtar değer yazılır ve CR'nin ilgili biti 1 yapılır (aşağıda).</li>
+<li><b>Yönü ayarla:</b> GPIODIR'de çıkış pinleri için 1, giriş pinleri için 0.</li>
+<li><b>GPIO işlevini seç:</b> AFSEL = 0, PCTL = 0, AMSEL = 0. Bunlar çoğu pinde zaten açılış değeridir, bu yüzden birçok örnekte yazılmaz. İstisnalar: PCTL, PA0–PA5 ve PB2–PB3'te sıfırdan farklıdır; AFSEL = 1 olan tek grup PC0–PC3'tür (Tablo 10-1).</li>
+<li><b>Pad ayarları:</b> Girişte pull-up/pull-down (PUR/PDR), gerekirse sürme akımı (DR2R/4R/8R) ve açık-kanal (ODR).</li>
+<li><b>Dijitali etkinleştir:</b> GPIODEN'de kullanılan pinlerin bitini 1 yap.</li>
+<li><b>Kullan:</b> GPIODATA'ya yaz ya da GPIODATA'dan oku.</li>
+</ol>
+<p>Saat açıldıktan sonra beklemenin iki temiz yolu:</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">öneri (register)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">SYSCTL_RCGCGPIO_R |= 0x20;                 // Port F saatini aç
+while((SYSCTL_PRGPIO_R &amp; 0x20) == 0) {}    // Port F hazır olana kadar bekle (0x400FEA08)</code></pre>
+</div><div>
+<div class="code-head"><span class="file">öneri (TivaWare)</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) {}</code></pre>
+</div></div>
+
+<h3 id="kilit">PF0 / PD7 kilidi (LOCK ve CR)</h3>
+<p>Hata ayıklayıcıyı ya da NMI girişini yanlışlıkla bozmamak için altı pin korunur: <b>PC0–PC3</b> (JTAG/SWD), <b>PD7</b> ve <b>PF0</b> (NMI). Bu pinlerde AFSEL, PUR, PDR ve DEN bitlerine yapılan yazmalar, ilgili GPIOCR biti 1 olmadıkça <em>sessizce yok sayılır</em> (datasheet 10.2.4, s. 656). GPIOCR de yalnızca GPIOLOCK açıkken yazılabilir. Sonuç olarak SW2 (PF0) kullanılacaksa şu üç adım gerekir:</p>
+<pre><code class="language-c">GPIO_PORTF_LOCK_R = 0x4C4F434B;   // anahtar: ASCII "LOCK"; GPIOCR yazılabilir olur
+GPIO_PORTF_CR_R  |= 0x01;         // PF0 için commit izni
+/* ... ardından PUR ve DEN'e PF0 biti yazılabilir ... */
+GPIO_PORTF_LOCK_R = 0;            // (isteğe bağlı) yeniden kilitle</code></pre>
+<p>TivaWare'de aynısı <code>HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;</code> ve <code>HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;</code> satırlarıyla yapılır (kitapçık s. 3-8). TivaWare 2.2'de bunu yapan <code>GPIOUnlockPin()</code> fonksiyonu da vardır (SW-TM4C-DRL-UG 14.2.3.49); TivaWare 2.1.x sürümlerinde yoktur, kurulu sürümü kontrol edin. Kilit yokken GPIOLOCK'tan 0, kilitliyken 1 okunur. Korunmayan pinlerde CR bitleri donanımca 1'e sabitlenmiştir, yani <code>CR = 0x1F</code> ya da <code>0xFF</code> yazmak zararsızdır.</p>
+<div class="box warn"><span class="box-title">PC0–PC3'e dokunmayın</span>
+<p>JTAG/SWD pinlerini GPIO'ya çeviren bir program yüklerseniz hata ayıklayıcı karta bir daha bağlanamayabilir. Kurtarmak için LM Flash Programmer'ın "Unlock" özelliği gerekir (datasheet s. 653).</p></div>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<table>
+<thead><tr><th>TivaWare çağrısı</th><th>Ne yapar (register düzeyinde)</th></tr></thead>
+<tbody>
+<tr><td><code>SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN)</code></td><td>Sistem saatini ayarlar: 16 MHz kristal → 400 MHz PLL → /2 → /5 = <b>40 MHz</b>. <code>SYSDIV_4</code> ile 50 MHz olur. Hiç çağrılmazsa CPU iç osilatörden (PIOSC) 16 MHz ile çalışır.</td></tr>
+<tr><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF)</code></td><td>RCGCGPIO'da Port F bitini 1 yapar.</td></tr>
+<tr><td><code>SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)</code></td><td>PRGPIO'daki Port F bitini döndürür.</td></tr>
+<tr><td><code>GPIOPinTypeGPIOOutput(base, pins)</code></td><td>DIR = 1, AFSEL = 0, 2 mA standart (push-pull) pad, DEN = 1.</td></tr>
+<tr><td><code>GPIOPinTypeGPIOInput(base, pins)</code></td><td>DIR = 0, standart pad, DEN = 1. <b>Pull-up açmaz.</b></td></tr>
+<tr><td><code>GPIOPadConfigSet(base, pins, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU)</code></td><td>DR4R ve PUR bitlerini (WPU = weak pull-up) ayarlar. WPD: pull-down, OD: açık-kanal.</td></tr>
+<tr><td><code>GPIOPinWrite(base, pins, val)</code></td><td><code>HWREG(base + (pins &lt;&lt; 2)) = val</code>. <code>val</code> bit konumunda olmalıdır: PF3 için 1 değil, 8.</td></tr>
+<tr><td><code>GPIOPinRead(base, pins)</code></td><td>Maskeli okuma. Seçilmeyen bitler 0 gelir. PF4 yüksekse 1 değil, <b>0x10</b> döner.</td></tr>
+<tr><td><code>SysCtlDelay(n)</code></td><td>Her turu 3 çevrim süren bir döngü: süre ≈ 3·n / f<sub>sys</sub>. 40 MHz'te <code>SysCtlDelay(2000000)</code> ≈ 0,15 s.</td></tr>
+</tbody></table>
+
+<h3 id="portf-init">Örnek: tam başlatma fonksiyonu</h3>
+<p>Aşağıdaki fonksiyon Port F'yi LED ve butonlar için eksiksiz hazırlar. Datasheet sırasını adım adım izlediği için başvuru kodu olarak kullanılabilir. Dosyadaki <code>main</code> içinde kullanılmayan değişkenler ve iptal edilmiş bir <code>while(0)</code> bloğu vardı; burada yalnız fonksiyon verilmiştir.</p>
+<div class="code-head"><span class="file">gpio_3/main.c → PortF_Init()</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">void PortF_Init(void){
+  volatile unsigned long delay;
+
+  SYSCTL_RCGC2_R |= 0x00000020;     // 1) Port F saati (eski tip RCGC2 register'ı)
+  delay = SYSCTL_RCGC2_R;           //    saat otursun diye boş okuma
+  GPIO_PORTF_LOCK_R = 0x4C4F434B;   // 2) Port F kilidini aç
+  GPIO_PORTF_CR_R = 0x1F;           //    PF4-0 değişikliğe açık (aslında yalnız PF0 kilitlidir)
+  GPIO_PORTF_AMSEL_R = 0x00;        // 3) analog işlev kapalı
+  GPIO_PORTF_PCTL_R = 0x00000000;   // 4) PF4-0 GPIO olarak
+  GPIO_PORTF_DIR_R = 0x0E;          // 5) PF4, PF0 giriş; PF3-1 çıkış
+  GPIO_PORTF_AFSEL_R = 0x00;        // 6) alternatif işlev yok
+  GPIO_PORTF_PUR_R = 0x11;          //    PF0 ve PF4 pull-up
+  GPIO_PORTF_DEN_R = 0x1F;          // 7) PF4-0 dijital etkin
+}</code></pre>
+
+<p>Bu kod saat için eski <code>SYSCTL_RCGC2_R</code> register'ını kullanır. Datasheet, yeni kodda RCGCGPIO'nun kullanılmasını önerir; RCGC2'ye yazmak RCGCGPIO'daki aynı biti de değiştirir (s. 340).</p>
+<h2 id="devreler">5. LED ve buton devreleri</h2>
+<figure><img class="fig" src="../img/gpio-led-buton-devresi.svg" alt="LaunchPad LED sürme ve buton devresi"><figcaption><b>Şekil 6.</b> LaunchPad'de LED sürme devresi (PF1–PF3 → transistör → LED) ve buton devresi (SW1/SW2 pini GND'ye çeker; iç pull-up açık; basılınca 0 okunur).</figcaption></figure>
+<p><b>LED tarafı (Şekil 6).</b> Kart şemasına göre RGB LED ortak anotludur. Her renk, bir NPN transistör (DTC114E, dirençleri içinde) ve 330 Ω'luk seri direnç üzerinden sürülür. GPIO pinine <b>1</b> yazınca transistör iletime girer ve LED yanar; <b>0</b> yazınca söner. Yazılım açısından LED'ler <b>aktif-yüksektir</b>. Ortak anot USB'den gelen 5 V (VBUS) hattına bağlıdır (SPMU296 şeması); transistör sayesinde LED akımı GPIO pininden değil bu hattan çekilir ve pinin 2 mA'lık varsayılan sürme gücü yeterlidir.</p>
+<p><b>Buton tarafı.</b> SW1 ve SW2, pini doğrudan toprağa (GND) bağlar. Kartta harici pull-up direnci yoktur. Buton açıkken pin boşta kalır (floating) ve rastgele değer okunur. Bu yüzden <b>iç pull-up</b> (GPIOPUR) mutlaka açılmalıdır:</p>
+<table>
+<thead><tr><th>Buton durumu</th><th>Pin gerilimi</th><th>Okunan bit</th></tr></thead>
+<tbody>
+<tr><td>Bırakılmış</td><td>~3,3 V (pull-up üzerinden)</td><td>1</td></tr>
+<tr><td>Basılı</td><td>0 V (GND'ye kısa devre)</td><td><b>0</b></td></tr>
+</tbody></table>
+<p>Butonlar bu yüzden <b>aktif-düşüktür</b>: "basıldı mı?" sorusunun cevabı <code>(okunan &amp; maske) == 0</code> koşuludur.</p>
+<div class="box"><span class="box-title">Harici devreler için</span>
+<p>Kart dışına LED bağlarken pin → seri direnç → LED → GND bağlantısı kullanılır. 3,3 V çıkışta kırmızı bir LED'den 330 Ω ile yaklaşık 4–5 mA akar. Bu durumda pin 8 mA sürmeye (GPIODR8R) ayarlanmalı ya da direnç büyütülmelidir (ör. 1 kΩ ≈ 1,5 mA). Sürme ayarı akımı sınırlamaz; akımı seri direnç belirler. Daha büyük yükler (röle, motor) transistör ya da sürücü entegresiyle sürülmelidir.</p></div>
+<h2 id="ornekler">6. Örnekler</h2>
+<p>Bu bölümdeki kodlar derste kullanılan örnek dosyalarından alınmıştır. Her kodun üstünde kaynak dosyanın adı yazar. Mantık değiştirilmemiştir; yalnızca açıklamalar Türkçeleştirilmiş ve kısaltılmış, kullanılmayan ya da yoruma alınmış satırlar atılmıştır. Atılan kısımlar her örnekte belirtilmiştir. Bu örneklerin bazıları saat açıldıktan sonra beklemeden register'a erişir. Optimizasyonsuz derlemede araya giren komutlar çoğu zaman yeterli süreyi sağlar, ama bu güvence değildir; kendi kodunuzda PRGPIO beklemesini ekleyin (<a href="#adimlar">Bölüm 4</a>). <span class="tag reg">API'siz</span> kodlar doğrudan register'lara erişir, <span class="tag api">API'li</span> kodlar TivaWare <code>driverlib</code> fonksiyonlarını kullanır.</p>
+<div class="box"><span class="box-title">Proje ayarı hatırlatması</span>
+<p>API'li örnekler için CCS projesinde include yoluna TivaWare kök klasörü eklenmeli ve <code>driverlib.lib</code> projeye bağlanmalıdır. API'siz örnekler için <code>#include &lt;stdint.h&gt;</code> ve ardından <code>#include "inc/tm4c123gh6pm.h"</code> yeterlidir (TivaWare başlığı <code>uint32_t</code> kullanır). Include yoluna TivaWare kökü yine eklenmelidir. <code>gpio_001</code> örneği ise hiçbir başlık dosyası kullanmaz.</p></div>
+
+<h3 id="ornek-led">6.1 LED yakıp söndürme</h3>
+<p><b>Amaç:</b> Kart üstündeki kırmızı LED'i belirli aralıklarla yakıp söndürmek ve bunun için gereken en az register ayarını görmek. <b>Donanım:</b> PF1 (kırmızı), API'li örnekte PF1–PF3.</p>
+<h4>En kısa hali: üç register</h4>
+<p>Klasör adı "api_baslangic" olsa da bu kod API kullanmaz. Port F'nin saatini açar, PF1–PF3'ü çıkış yapar, dijitali etkinleştirir ve kırmızıyı yakıp söndürür. Kullanılmayan <code>#include "inc/hw_types.h"</code> satırı atılmıştır. PF1 kilitli olmadığı ve açılışta zaten GPIO olduğu için LOCK, AFSEL, PCTL ayarlarına gerek yoktur.</p>
+<div class="code-head"><span class="file">hafta03_api_baslangic/main.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"         // register adları: GPIO_PORTF_DIR_R vb.
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;        // Port F saatini aç (bit5 = Port F)
+    GPIO_PORTF_DIR_R  |= 0x0E;        // 0000 1110: PF1, PF2, PF3 çıkış
+    GPIO_PORTF_DEN_R  |= 0x1F;        // 0001 1111: PF1-PF4 dijital etkin (PF0 kilitli, bu bit yazılmaz)
+
+    while(1)
+    {
+        long i;
+        GPIO_PORTF_DATA_R |= 0x02;    // 0000 0010: PF1 = 1 -&gt; kırmızı yanar
+        for (i=0;i&lt;2000000;i++){}     // kaba gecikme
+        GPIO_PORTF_DATA_R = 0x00;     // tüm port 0 -&gt; LED söner
+        for (i=0;i&lt;2000000;i++){}
+    }
+}</code></pre>
+
+<h4>Tam ayarlı hali</h4>
+<p>Aynı işi, ilgili tüm register'ları açıkça yazarak yapan sürüm. Kullanılmayan bir <code>int a</code> değişkeni atılmıştır.</p>
+<div class="code-head"><span class="file">001_pure_c_gpio_out_ornegi.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">// Kırmızı LED'i (PF1) yakıp söndürür; gecikme for döngüsüyle yapılır.
+#include "inc/lm4f120h5qr.h"          // register adları (TM4C123 için: inc/tm4c123gh6pm.h)
+
+void wait(void);
+
+int main()
+{
+    SYSCTL_RCGCGPIO_R |= 0x20U;       // Port F saatini aç
+
+    GPIO_PORTF_LOCK_R  = 0x4C4F434BU; // kilidi aç: GPIOCR yazılabilir olur
+    GPIO_PORTF_CR_R    = 0xFF;        // Port F'nin tüm bitlerinde değişikliğe izin ver
+    GPIO_PORTF_AMSEL_R = 0x00U;       // analog işlevi kapat
+    GPIO_PORTF_PCTL_R  = 0x00000000U; // tüm pinler GPIO (çevre birimi seçilmedi)
+    GPIO_PORTF_DIR_R   = 0x0EU;       // 0000 1110: PF3, PF2, PF1 çıkış
+    GPIO_PORTF_AFSEL_R = 0x00U;       // alternatif işlevleri kapat
+    GPIO_PORTF_DEN_R   = 0xFFU;       // Port F'nin tüm pinlerinde dijital I/O aç
+
+    while(1)
+    {
+        GPIO_PORTF_DATA_R &amp;= ~0x0E;   // ~0000 1110 = 1111 0001: üç LED'i söndür
+        wait();
+        GPIO_PORTF_DATA_R |= 0x02;    // 0000 0010: kırmızı LED'i yak
+        wait();
+    }
+
+    return 0;
+}
+
+void wait(void)                       // yaklaşık gecikme; süre derleyiciye bağlı
+{
+    int i;
+    for(i=0;i&lt;1000000;i++);
+}</code></pre>
+
+<div class="box warn"><span class="box-title">Not</span>
+<ul>
+<li>Bu dosya Stellaris LM4F120 başlığını (<code>inc/lm4f120h5qr.h</code>) kullanır. GPIO register adresleri TM4C123GH6PM ile aynıdır; TM4C123 projesinde <code>inc/tm4c123gh6pm.h</code> kullanılabilir; bu durumda önce <code>#include &lt;stdint.h&gt;</code> eklenmelidir.</li>
+<li><code>wait()</code> içindeki sayaç <code>volatile</code> olmadığı için optimizasyon açıkken derleyici döngüyü tamamen silebilir ve LED sürekli yanıyor gibi görünür. Güvenli yazım: <code>volatile int i;</code>. Saat ayarlanmadığı için CPU 16 MHz'te çalışır; gecikme süresi derleyiciye bağlıdır.</li>
+</ul></div>
+<h4>API ile</h4>
+<p>Sistem saatini 40 MHz'e ayarlar ve <code>SysCtlClockGet()</code> ile milisaniye cinsinden bir gecikme fonksiyonu kurar. Üç LED'i sırayla 1'er saniye yakar. <code>GPIOPinWrite</code>'ın üçüncü parametresine 1 değil, bitin konum değeri (2, 4, 8) verilir. Dosyadaki uzun İngilizce açıklama blokları kısaltılmıştır.</p>
+<div class="code-head"><span class="file">003_api_ile_output_ornegi.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">// API ile kırmızı, mavi ve yeşil LED'i sırayla 1'er saniye yakar.
+#include &lt;inc/hw_types.h&gt;
+#include &lt;inc/hw_memmap.h&gt;
+#include &lt;driverlib/gpio.h&gt;
+#include &lt;driverlib/sysctl.h&gt;
+
+void delay_ms(int del)                // milisaniye cinsinden gecikme
+{
+    del = (SysCtlClockGet()/3.0)*del/1000.0;  // SysCtlDelay'in bir turu 3 çevrim
+    SysCtlDelay(del);
+}
+
+int main(void)
+{
+    // 16 MHz kristal -&gt; PLL (400 MHz) -&gt; sabit /2 -&gt; /5 = 40 MHz sistem saati
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);  // Port F saatini aç
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3); // PF1-3 çıkış
+
+    while(1)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 2);  // kırmızı yak (bit1 -&gt; 2)
+        delay_ms(1000);                                // 1 s bekle
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);  // kırmızı söndür
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4);  // mavi yak (bit2 -&gt; 4)
+        delay_ms(1000);
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);  // yeşil yak (bit3 -&gt; 8)
+        delay_ms(1000);
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);
+    }
+}</code></pre>
+
+<div class="box warn"><span class="box-title">Not</span>
+<p>Bu dosya StellarisWare dönemine aittir. TivaWare 2.x ile derlerken <code>hw_types.h</code> ve <code>driverlib</code> başlıkları <code>uint32_t</code> ve <code>bool</code> tiplerine ihtiyaç duyar. Bu yüzden en üste <code>#include &lt;stdint.h&gt;</code> ve <code>#include &lt;stdbool.h&gt;</code> eklenmelidir. Aynı durum <code>004</code> ve <code>005</code> dosyaları için de geçerlidir.</p></div>
+
+<h3 id="ornek-rgb">6.2 RGB renk döngüsü</h3>
+<p><b>Amaç:</b> Üç rengi sırayla ya da ileri-geri yakmak, bunu yaparken bit kaydırma ile 2–4–8 değerlerini üretmek. <b>Donanım:</b> PF1, PF2, PF3. En temel "2 → 4 → 8" döngüsü TI Lab 3'ün konusudur (<a href="#lab3">Bölüm 7</a>); derste kullanılan <code>004_api_ile_output_ornegi2.c</code> dosyası o labın neredeyse birebir uyarlamasıdır (<code>uint8_t</code> yerine <code>int PinData</code> kullanır, <code>stdint.h</code>/<code>stdbool.h</code> eklemez).</p>
+<h4>API ile ileri-geri</h4>
+<p>Orijinal dosyada aynı işi <code>*2</code>, <code>&lt;&lt;1</code> ve <code>for</code> ile farklı biçimlerde yapan üç ayrı <code>while(0)</code> bloğu vardı (öğrenci birini <code>while(1)</code> yaparak dener). Burada yalnızca etkin olan son blok bırakılmıştır.</p>
+<div class="code-head"><span class="file">drive_2019_gpio/out2.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">// Kırmızı -&gt; mavi -&gt; yeşil -&gt; mavi -&gt; kırmızı ... (ileri-geri kayan ışık)
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);                               // Port F saati
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);  // PF1-3 çıkış
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0);        // hepsi sönük
+
+    while(1)
+    {
+        int i;
+        for (i=2;i&lt;9;i=i*2)           // 2, 4, 8 : ileri
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, i);
+            SysCtlDelay(1000000);     // 3 x 10^6 çevrim = 60 ms (50 MHz'te)
+        }
+        for (i=8;i&gt;1;i=i/2)           // 8, 4, 2 : geri
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, i);
+            SysCtlDelay(1000000);
+        }
+    }
+}</code></pre>
+
+<h4>Register düzeyinde: maskeli adresle</h4>
+<p>Aynı döngü <code>GPIOPinWrite</code> olmadan, doğrudan maskeli GPIODATA adreslerine yazarak da kurulabilir. Adres ofseti (<code>sayi</code>) ve değer (<code>deger</code>) birlikte sola kaydırılır; <code>sayi</code>/<code>deger</code>: 0x08/0x02 → 0x10/0x04 → 0x20/0x08. Yalnızca gecikme için <code>SysCtlDelay</code> kullanılmıştır.</p>
+<div class="code-head"><span class="file">drive_hwreg_notlari/hwreg2.txt (parça)</span><span class="tag reg">HWREG</span></div><pre><code class="language-c">// Başlatma (saat, DIR, DEN) yapıldıktan sonra çalışan döngü.
+long taban = 0x40025000;          // GPIO Port F (APB) taban adresi
+long sayi  = 0x00000008;          // 4*2^1 = 0x08 -&gt; yalnız PF1'e (kırmızı) erişen ofset
+long deger = 0x02;                // PF1'in bit değeri
+
+while (sayi &lt;= 0x20)              // 0x08 (PF1), 0x10 (PF2), 0x20 (PF3)
+{
+    HWREG(taban+sayi) = deger;    // yalnız seçili pini 1 yap
+    SysCtlDelay(2000000);
+    HWREG(taban+sayi) = 0x00;     // yalnız seçili pini 0 yap; diğerleri etkilenmez
+    deger = deger &lt;&lt; 1;           // 1 sola kaydırmak 2 ile çarpmaktır
+    sayi  = sayi  &lt;&lt; 1;           // sonraki pinin ofseti: 0x08 -&gt; 0x10 -&gt; 0x20
+}</code></pre>
+
+<p>Burada <code>HWREG(taban+sayi) = 0x00;</code> yalnızca seçili pini söndürür, çünkü adres maskesi yalnız o biti seçer. <code>GPIO_PORTF_DATA_R = 0x00;</code> ise tüm portu sıfırlardı.</p>
+
+<h3 id="ornek-buton">6.3 Butonla LED kontrolü (iç pull-up)</h3>
+<p><b>Amaç:</b> SW1 ve SW2 butonlarını okuyup LED'leri yakmak. Bunun için pull-up açmayı, PF0 kilidini açmayı ve aktif-düşük okumayı birlikte uygulamak gerekir. <b>Donanım:</b> SW1 = PF4, SW2 = PF0 (giriş, pull-up); LED'ler PF1–PF3.</p>
+<p>Aşağıdaki iki kod aynı mantığı izler: iki butonu birlikte oku, PF4 basılıysa kırmızı, PF0 basılıysa mavi yak. İlki register düzeyinde, ikincisi TivaWare ile yazılmıştır. API'li dosyada yoruma alınmış alternatif satırlar atılmıştır.</p>
+<div class="code-head"><span class="file">hafta04_apisiz/main.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;        // Port F saatini aç
+
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;   // GPIOCR kilidini aç
+    GPIO_PORTF_CR_R   = 0x01;         // 0000 0001: PF0 artık yapılandırılabilir
+
+    GPIO_PORTF_DIR_R |= 0x0E;         // 0000 1110: PF1-3 çıkış, PF0 ve PF4 giriş
+    GPIO_PORTF_DEN_R |= 0x1F;         // 0001 1111: PF0-4 dijital etkin
+    GPIO_PORTF_PUR_R  = 0x11;         // 0001 0001: PF0 ve PF4 iç pull-up
+
+    while(1)
+    {
+        unsigned int value;
+        value = GPIO_PORTF_DATA_R;    // tüm portu bir kerede oku
+
+        if ((value &amp; 0x10) == 0)      // PF4 (SW1) basılı mı? (aktif-düşük)
+        {
+            GPIO_PORTF_DATA_R |= 0x02;    // kırmızıyı yak
+        }
+
+        if ((value &amp; 0x01) == 0)      // PF0 (SW2) basılı mı?
+        {
+            GPIO_PORTF_DATA_R |= 0x04;    // maviyi yak
+        }
+    }
+}</code></pre>
+<div class="code-head"><span class="file">hafta04_apili_input_1/main.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.c"
+#include "inc/tm4c123gh6pm.h"
+
+void SetInitSettings();
+
+int main(void)
+{
+    SetInitSettings();
+
+    while(1)
+    {
+        int a = GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4); // yalnız PF0, PF4 okunur
+        if ((a &amp; 0x10) == 0)          // PF4 (SW1) basıldı
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 2);     // yalnız kırmızı
+        }
+        if ((a &amp; 0x01) == 0)          // PF0 (SW2) basıldı
+        {
+            ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 4); // yalnız mavi
+        }
+    }
+}
+
+void SetInitSettings()
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);  // = SYSCTL_RCGCGPIO_R |= 0x20;
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);   // PF1-3 çıkış
+
+    // PF0 kilidini aç: bu üç satır olmazsa PF0'a (SW2) bağlı buton okunamaz
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;   // 0x4C4F434B
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR)  |= 0x01;            // PF0 için commit izni
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;               // yeniden kilitle
+
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4);   // PF0, PF4 giriş
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4,
+                     GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);     // zayıf (iç) pull-up
+
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // LED'ler sönük
+}</code></pre>
+
+<p><b>Fark:</b> API'siz sürüm <code>|=</code> kullandığı için bir LED yandıktan sonra hiç sönmez; iki butona da basılınca kırmızı ve mavi birlikte kalır (mor). API'li sürüm ise üç LED bitini birlikte yazdığı için her basışta yalnız bir renk görünür. Butonu bırakınca LED'in sönmesi için bir <code>else</code> dalı gerekir (bir sonraki örnek).</p>
+<div class="box warn"><span class="box-title">Kodda dikkat edilecekler</span>
+<ul>
+<li><code>ROM_GPIOPinWrite</code>, çipin ROM'undaki sürümü çağırır. Bunun için <code>#include "driverlib/rom.h"</code> eklenmeli ve proje ayarlarında <code>TARGET_IS_TM4C123_RB1</code> (ya da kartın silikon sürümüne uygun) sembolü tanımlanmalıdır; aksi halde derleme ya da bağlama hatası alınır (TI derleyicisi örtük bildirim için yalnız uyarı verir, hata bağlama aşamasında çıkar). Bu satırda <code>GPIOPinWrite</code> kullanmak da aynı işi görür.</li>
+<li><code>#include "driverlib/sysctl.c"</code> satırı kütüphane kaynak dosyasını koda katar. Bu dosyada gereksizdir: GPIO fonksiyonları için <code>driverlib.lib</code> zaten bağlanmak zorundadır. Kaldırılabilir; doğru yol kütüphaneyi projeye bağlamaktır.</li>
+<li><code>inc/tm4c123gh6pm.h</code> burada gereksizdir. Ayrıca <code>sysctl.c</code> üzerinden gelen <code>hw_ints.h</code> ile makro çakışması (yeniden tanımlama uyarıları) üretir.</li>
+</ul></div>
+
+<h4>Tek buton, basılıyken yanan LED</h4>
+<p>SW1 basılı tutuldukça kırmızı yanar, bırakılınca söner. <code>GPIOPinTypeGPIOInput</code> pull-up açmadığı için ardından <code>GPIOPadConfigSet(... GPIO_PIN_TYPE_STD_WPU)</code> çağrılır. PF4 kilitli olmadığından LOCK/CR adımına gerek yoktur. Uzun açıklama blokları kısaltılmıştır.</p>
+<div class="code-head"><span class="file">005_api_ile_input_output_ornegi.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">// SW1 (PF4) basılıyken kırmızı LED (PF1) yanar, bırakılınca söner.
+#include &lt;inc/hw_types.h&gt;
+#include &lt;inc/hw_memmap.h&gt;
+#include &lt;driverlib/gpio.h&gt;
+#include &lt;driverlib/sysctl.h&gt;
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);         // açılışta tüm çevre birimleri kapalıdır
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);   // PF4 (SW1) giriş
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU); // pull-up
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);  // PF1 (kırmızı) çıkış
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);        // LED başlangıçta sönük
+
+    while(1)
+    {
+        if(!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4))    // 0 okunduysa buton basılı
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 2);  // PF1 = 1 (2 = 0000 0010)
+        else
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);  // PF1 = 0
+    }
+}</code></pre>
+
+<h4>İki buton, dört durum (switch-case)</h4>
+<p>İki butonun dört kombinasyonunu <code>switch</code> ile ayırır. <code>GPIO_PORTF_DATA_R &amp; 0x11</code> ifadesi yalnız PF4 ve PF0 bitlerini bırakır.</p>
+<div class="code-head"><span class="file">002_pure_c_gpio_out_input_ornegi.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">// İki butonun durumuna göre renk: ikisi basılı -&gt; kırmızı, yalnız SW1 -&gt; mavi, yalnız SW2 -&gt; yeşil
+#include "inc/lm4f120h5qr.h"
+
+void main()
+{
+    SYSCTL_RCGCGPIO_R |= 0x20U;       // Port F saati
+    GPIO_PORTF_LOCK_R  = 0x4C4F434BU; // kilidi aç
+    GPIO_PORTF_CR_R    = 0xFF;        // tüm bitlere (PF0 dahil) commit izni
+    GPIO_PORTF_AMSEL_R = 0x00U;       // analog kapalı
+    GPIO_PORTF_PCTL_R  = 0x00000000U; // GPIO işlevi
+    GPIO_PORTF_DIR_R   = 0x0EU;       // PF0 ve PF4 giriş; PF1-3 çıkış
+    GPIO_PORTF_AFSEL_R = 0x00U;       // alternatif işlev yok
+    GPIO_PORTF_PUR_R   = 0x11U;       // 0001 0001: PF0 (SW2) ve PF4 (SW1) pull-up
+    GPIO_PORTF_DEN_R   = 0xFFU;       // dijital etkin
+
+    while(1)
+    {
+        GPIO_PORTF_DATA_R &amp;= ~0x0E;           // önce üç LED'i söndür
+        switch(GPIO_PORTF_DATA_R &amp; 0x11U)     // yalnız PF4 ve PF0 bitlerine bak
+        {
+            case 0x00:                        // iki buton da basılı
+                GPIO_PORTF_DATA_R |= 0x02;    // kırmızı
+                break;
+            case 0x01:                        // SW1 basılı, SW2 değil
+                GPIO_PORTF_DATA_R |= 0x04;    // mavi
+                break;
+            case 0x10:                        // SW2 basılı, SW1 değil
+                GPIO_PORTF_DATA_R |= 0x08;    // yeşil
+                break;
+            default:                          // 0x11: hiçbiri basılı değil
+                break;
+        }
+    }
+}</code></pre>
+
+<div class="box warn"><span class="box-title">Not</span>
+<p>Döngünün başında LED'ler her turda söndürülüp yeniden yakıldığı için LED aslında çok hızlı yanıp söner. Göz bunu sürekli ama biraz daha sönük bir ışık olarak görür. Gömülü sistemlerde <code>void main()</code> çalışır, ancak standart C <code>int main(void)</code> ister ve bazı derleyiciler uyarı verir.</p></div>
+<h4>Basıp bırakmayı algılamak</h4>
+<p>Yukarıdaki örneklerde buton basılı kaldıkça koşul her turda yeniden doğru olur. Bir basışı tek bir olay olarak saymak için butonun bırakılmasını beklemek gerekir:</p>
+<div class="code-head"><span class="file">drive_2019_gpio/input3.c (parça)</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)==0)          // SW1 basıldı
+{
+    while(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)==0);  // parmak kalkana kadar burada bekle
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 2);  // sonra kırmızı
+    SysCtlDelay(2000000);
+}</code></pre>
+
+<p>Mekanik butonlar basıldığında birkaç milisaniye boyunca titreşir (bounce) ve kısa süreli birçok 0/1 geçişi üretir. Bırakmayı beklemek ve ardından kısa bir gecikme eklemek, bu titreşimin etkisini büyük ölçüde azaltır.</p>
+
+<h3 id="ornek-hwreg">6.4 HWREG ile register erişimi</h3>
+<p><b>Amaç:</b> Register'ların bellek adresi olduğunu kendi tanımlarımızla görmek ve adres maskelemeyi sayılarla denemek. <b>Donanım:</b> PF3 (yeşil) ve PF1–PF3.</p>
+<h4>Hiç başlık dosyası olmadan</h4>
+<p>Kullanılacak dört register <code>volatile</code> işaretçi olarak elle tanımlanır. <code>tm4c123gh6pm.h</code> dosyası da tam olarak bu tanımlardan oluşur. Experiment 7 föyündeki C kodu da bu örnekle benzer yapıdadır.</p>
+<div class="code-head"><span class="file">gpio_001/main.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">// Register adreslerini kendimiz tanımlıyoruz; hiçbir başlık dosyası yok.
+#define SYSCTL_RCGCGPIO_R  (*((volatile unsigned long *)0x400FE608))  // 0x400FE000 + 0x608
+#define GPIO_PORTF_DATA_R  (*((volatile unsigned long *)0x400253FC))  // 0x40025000 + 0x3FC
+#define GPIO_PORTF_DIR_R   (*((volatile unsigned long *)0x40025400))  // 0x40025000 + 0x400
+#define GPIO_PORTF_DEN_R   (*((volatile unsigned long *)0x4002551C))  // 0x40025000 + 0x51C
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;        // Port F saatini aç
+    volatile unsigned long loop;
+
+    loop = SYSCTL_RCGCGPIO_R;         // boş okuma: saatin oturması için birkaç çevrim kazan
+
+    GPIO_PORTF_DIR_R |= 0x08;         // PF3 (yeşil LED) çıkış
+    GPIO_PORTF_DEN_R |= 0x08;         // PF3 dijital etkin
+
+    while(1)
+    {
+        GPIO_PORTF_DATA_R |= 0x08;            // yeşil yak
+        for(loop=0;loop&lt;200000;loop++) {}     // bekle (volatile: derleyici döngüyü silmez)
+        GPIO_PORTF_DATA_R &amp;= ~(0x08);         // yeşil söndür
+        for(loop=0;loop&lt;200000;loop++) {}
+    }
+}</code></pre>
+
+<h4>Mutlak adreslerle HWREG ve maskeleme denemesi</h4>
+<p>Saat, DIR ve DEN mutlak adresleriyle yazılır, ardından maskeli bir adrese değer yazılır. <code>3</code> (0000 0011) yazılmasına rağmen adres yalnız bit1'i seçtiği için sadece PF1 değişir. Dosyadaki açıklama satırları sadeleştirilmiş, gövdesi boş bir <code>if</code> bloğu atılmıştır (aşağıdaki nota bakın).</p>
+<div class="code-head"><span class="file">hafta03_hwreg_1/main.c</span><span class="tag reg">HWREG</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/hw_types.h"             // HWREG(x) = (*((volatile uint32_t *)(x)))
+
+int main(void)
+{
+    HWREG(0x400FE608) |= 0x20;        // RCGCGPIO: Port F saatini aç
+    HWREG(0x40025400) |= 0x0E;        // GPIODIR (taban+0x400): PF1-3 çıkış
+    HWREG(0x4002551C) |= 0x0E;        // GPIODEN (taban+0x51C): PF1-3 dijital
+
+    // Adres = taban + 4*(maske). Yalnız PF1 için maske 0x02 -&gt; ofset 0x08
+    HWREG(0x40025008) = 3;            // 0000 0011 yazılır ama yalnız bit1 değişir: kırmızı yanar
+
+    // PF1, PF4, PF7 birlikte: 0x40025000 + 4*(2+16+128) = 0x40025248
+    // Tüm pinler (PF0..PF7):   0x40025000 + 4*255       = 0x400253FC
+    // (PF5-7 bu çipte yok; o bitlere yazmanın etkisi olmaz, s. 658)
+}</code></pre>
+
+<div class="box warn"><span class="box-title">Orijinal dosyadaki hata</span>
+<p>Atılan satır orijinal dosyada birebir <code>if (HWREG((0x400253FC)!=1)</code> biçimindedir: üç parantez açılıp iki parantez kapandığı için dosya bu haliyle <b>derlenmez</b>. Parantez tamamlansa bile önce <code>0x400253FC != 1</code> karşılaştırması yapılır (sonuç 1), ardından <code>HWREG(1)</code>, yani 0x00000001 adresi okunur. PF0'ı okumak için doğrusu <code>if ((HWREG(0x400253FC) &amp; 0x01) == 0)</code> olurdu. Ayrıca PF0'ın kilidi açılıp pull-up ve DEN ayarlanmadan bu okuma anlamlı olmaz. <code>main</code> fonksiyonunun <code>while(1)</code> ile bitmemesi de unutulmamalıdır: program sona erer ama LED son durumunda kalır.</p></div>
+<p>Aynı klasördeki <code>hafta03_hwreg_0/main.c</code> içinde <code>HWREG(0x40025028) = 0x0a;</code> satırı vardır: 0x28 / 4 = 0x0A = PF1 + PF3, yani kırmızı ve yeşil birlikte yanar ve <b>sarı</b> görülür. Kırmızı LED'i yakmanın dört yolu yan yana:</p>
+<table>
+<thead><tr><th>Yazım</th><th>Açıklama</th></tr></thead>
+<tbody>
+<tr><td><code>GPIO_PORTF_DATA_R |= 0x02;</code></td><td>Tüm-pin adresi (0x3FC) üzerinden oku-değiştir-yaz.</td></tr>
+<tr><td><code>HWREG(0x40025008) = 0x02;</code></td><td>Maskeli adres, tek yazma, diğer pinler etkilenmez.</td></tr>
+<tr><td><code>HWREG(GPIO_PORTF_BASE + (GPIO_O_DATA + (GPIO_PIN_1 &lt;&lt; 2))) = 0x02;</code></td><td>Aynı maskeli adres, sembolik adlarla (<code>hwreg2.txt</code>).</td></tr>
+<tr><td><code>GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0x02);</code></td><td>TivaWare; içeride bir önceki satırı yapar.</td></tr>
+</tbody></table>
+
+<h3 id="ornek-kutuphane">6.5 Kendi init fonksiyonu ve kütüphane</h3>
+<p><b>Amaç:</b> Başlatma kodunu ayrı bir dosyaya taşıyıp <code>main</code>'i sadeleştirmek ve <code>.h</code>/<code>.c</code> ayrımını öğrenmek. <b>Donanım:</b> PF3 (yeşil); API'li örnekte PF0 butonu ve PF1.</p>
+<h4>API'siz: init.h / init.c / main.c</h4>
+<p><code>gpio_001</code> örneğindeki başlatma satırları <code>GpioPortF_Init()</code> fonksiyonuna taşınmıştır. Başlık dosyası yalnızca bildirimi (prototip) içerir; tanım <code>init.c</code>'dedir. <code>main.c</code>'deki yoruma alınmış eski başlatma satırları ve <code>init.h</code>'deki IDE'nin oluşturduğu başlık yorumu atılmıştır. Fonksiyon orijinal dosyada farklı adlandırılmıştır; burada nötr bir adla (<code>GpioPortF_Init</code>) verilmiştir ve üç dosyada da aynıdır.</p>
+<div class="code-head"><span class="file">hafta04_kutuphane_hazirlama/init.h</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#ifndef INIT_H_
+#define INIT_H_
+
+extern void GpioPortF_Init(void);   // Port F'yi (PF3) hazırlayan fonksiyonun bildirimi
+
+#endif /* INIT_H_ */</code></pre>
+<div class="code-head"><span class="file">hafta04_kutuphane_hazirlama/init.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"
+#include "init.h"
+
+void GpioPortF_Init(void){
+    SYSCTL_RCGCGPIO_R |= 0x20;        // Port F saatini aç
+    volatile unsigned long loop;
+    loop = SYSCTL_RCGCGPIO_R;         // boş okuma: saat açıldıktan sonra kısa bekleme
+
+    GPIO_PORTF_DIR_R |= 0x08;         // PF3 (yeşil LED) çıkış
+    GPIO_PORTF_DEN_R |= 0x08;         // PF3 dijital etkin
+}</code></pre>
+<div class="code-head"><span class="file">hafta04_kutuphane_hazirlama/main.c</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include "stdint.h"
+#include "inc/tm4c123gh6pm.h"
+#include "init.h"                     // kendi "kütüphanemiz"
+
+int main(void)
+{
+    GpioPortF_Init();             // tüm başlatma tek çağrıda
+    volatile unsigned long loop;
+
+    while(1)
+    {
+        GPIO_PORTF_DATA_R |= 0x08;            // yeşil yak
+        for(loop=0;loop&lt;200000;loop++) {}
+        GPIO_PORTF_DATA_R &amp;= ~(0x08);         // yeşil söndür
+        for(loop=0;loop&lt;200000;loop++) {}
+    }
+}</code></pre>
+
+<p><code>#ifndef INIT_H_ … #endif</code> yapısı (include guard), başlık dosyası aynı derleme biriminde iki kez eklense bile içeriğinin bir kez işlenmesini sağlar. <code>init.c</code> de projeye eklenmeli, yani derlenip bağlanmalıdır.</p>
+<h4>API'li: parametreli yardımcı fonksiyon</h4>
+<p>Port tabanı ve pin numarası parametre olarak verilir; fonksiyon o pindeki butonu kontrol edip LED'i yakar. Orijinal dosyada kullanılmayan iki yardımcı fonksiyon (<code>kontrol()</code>, <code>portfpinkontrol()</code>) daha vardı; bunlar atılmıştır. Benzer bir fikir <code>hafta02_ilkornek/main.c</code> içindeki <code>SetInitSettings()</code> ve <code>PortXPiniSet()</code> fonksiyonlarında da görülür.</p>
+<div class="code-head"><span class="file">drive_2017_gpio_ornekleri_2/10.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "math.h"
+
+// portno portunun pinno numaralı pinindeki buton basılıysa kırmızı LED'i kısa süre yakar
+void portpinkontrol(uint32_t portno, uint8_t pinno){
+    if(GPIOPinRead(portno, pow(2,pinno)) == 0)                     // maske = 2^pinno
+    {
+        GPIOPinWrite(portno, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 2); // kırmızı
+        SysCtlDelay(2000000);
+        GPIOPinWrite(portno, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // söndür
+    }
+}
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;  // PF0 kilidini aç
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR)  |= 0x01;
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;
+
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0);
+
+    while(1)
+    {
+        portpinkontrol(GPIO_PORTF_BASE, 0);   // hem port hem pin numarası parametre olarak gider
+    }
+}</code></pre>
+
+<div class="box warn"><span class="box-title">Not</span>
+<ul>
+<li><code>pow(2,pinno)</code> bir <code>double</code> döndürür. Bu değer <code>uint8_t</code> parametreye örtük olarak çevrilir ve kayan noktalı matematik kütüphanesi koda girer. Tamsayı karşılığı <code>(1 &lt;&lt; pinno)</code> hem daha hızlı hem daha güvenlidir.</li>
+<li>Fonksiyon LED'i de <code>portno</code> portuna yazar. Bu yüzden yalnızca buton ve LED aynı porttaysa (burada Port F) doğru çalışır.</li>
+<li><code>hafta02_ilkornek</code> içindeki <code>PortXPiniSet(double port, …)</code> port adresini <code>double</code> olarak taşır. Çalışsa da adresler için <code>uint32_t</code> kullanılmalıdır.</li>
+</ul></div>
+<h2 id="lab3">7. TI Lab 3 uyarlaması <span class="tag ti">TI Lab 3</span></h2>
+<p>TI'nın <em>TM4C123G LaunchPad Workshop</em> kitapçığındaki 3. lab ("Initialization and GPIO"), TivaWare ile sistem saatini ve GPIO'yu kurup RGB LED'i yakıp söndürür. Adımların özeti:</p>
+<ol>
+<li><b>Proje:</b> CCS'de TM4C123GH6PM için boş bir proje (main.c ile) açılır.</li>
+<li><b>Başlıklar:</b> <code>stdint.h</code>, <code>stdbool.h</code>, <code>hw_memmap.h</code>, <code>hw_types.h</code>, <code>sysctl.h</code>, <code>gpio.h</code> eklenir ve LED değerini tutacak 8 bitlik bir değişken tanımlanır.</li>
+<li><b>Saat:</b> Kart üzerindeki 16 MHz kristal PLL'i (400 MHz) sürer. Saat yolundaki sabit /2 bölücüye /5 eklenir ve sistem saati 40 MHz olur.</li>
+<li><b>GPIO:</b> Port F'nin saati açılır ve PF1–PF3 çıkış yapılır. Kitapçık, saati açmayı unutmanın yeni başlayanların en sık hatası olduğunu vurgular (bkz. <a href="#adimlar">Bölüm 4</a>, adım 1).</li>
+<li><b>Döngü:</b> <code>GPIOPinWrite</code> ile renk yazılır, <code>SysCtlDelay</code> ile beklenir, söndürülür ve değişken 2 → 4 → 8 → 2 diye ilerletilir.</li>
+<li><b>Derleme ayarları:</b> Include yoluna TivaWare kökü eklenir, <code>driverlib.lib</code> projeye bağlanır, yığın (stack) ve öbek (heap) boyutları ayarlanarak bağlayıcı uyarısı giderilir.</li>
+<li><b>Çalıştırma:</b> Debug ile karta yüklenir ve Resume ile çalıştırılır.</li>
+<li><b>Maskeleme deneyi:</b> Değişken 14 (= 8 + 4 + 2) yapılıp değişim satırı yoruma alınır; üç LED birlikte yanar. Sonra <code>GPIOPinWrite</code>'taki maske yalnız <code>GPIO_PIN_1</code>, sonra <code>GPIO_PIN_2</code>, sonra <code>GPIO_PIN_3</code> yapılır. Öğrenciden her seferinde hangi rengin yanacağını önceden tahmin etmesi istenir.</li>
+</ol>
+<div class="code-head"><span class="file">Lab 3 – main.c (TI Workshop, Türkçe yorumlu)</span><span class="tag ti">TI Lab 3</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"            // GPIO_PORTF_BASE gibi taban adresleri
+#include "inc/hw_types.h"             // HWREG ve ortak tipler
+#include "driverlib/sysctl.h"         // SysCtlClockSet, SysCtlPeripheralEnable, SysCtlDelay
+#include "driverlib/gpio.h"           // GPIOPinTypeGPIOOutput, GPIOPinWrite
+
+uint8_t ui8PinData = 2;               // 2: kırmızı, 4: mavi, 8: yeşil
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);                               // Port F saati
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);  // LED pinleri çıkış
+
+    while(1)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, ui8PinData); // rengi yak
+        SysCtlDelay(2000000);                                                    // ~0,15 s
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0x00);       // söndür
+        SysCtlDelay(2000000);
+        if(ui8PinData==8) {ui8PinData=2;} else {ui8PinData=ui8PinData*2;}         // 2-4-8-2...
+    }
+}</code></pre>
+
+<div class="box"><span class="box-title">Kitapçıktan iki ek not</span>
+<ul>
+<li>Çevre birimi saatinin açılmasıyla birime erişilebilmesi arasında 3–6 çevrimlik bir gecikme vardır. Birden çok birim kullanılıyorsa saatleri önce art arda açıp ayarları sonra yapmak bu riski ortadan kaldırır (ör. ADC'yi aç, GPIO'yu aç, ADC'yi ayarla, GPIO'yu ayarla).</li>
+<li><code>SysCtlDelay</code>'e verilen sayı çevrim sayısı değil, döngü sayısıdır (süre hesabı için bkz. <a href="#api-tablosu">TivaWare karşılıkları</a>).</li>
+</ul></div>
+<p><b>Maskeleme deneyinin cevabı:</b> Değişken 14 iken maske yalnız <code>GPIO_PIN_1</code> ise 14'ün yalnız bit1'i (1) yazılır ve <b>kırmızı</b> yanar. <code>GPIO_PIN_2</code> ile <b>mavi</b>, <code>GPIO_PIN_3</code> ile <b>yeşil</b> yanar. Kitapçığın ev ödevi önerisi de butonlarla LED'leri açıp kapatmaktır (quickstart uygulamasındaki <code>ButtonsPoll()</code> fonksiyonu incelenerek).</p>
+<h2 id="exp7">8. Experiment 7 uygulama görevi</h2>
+<p>"Experiment 7: Digital Input/Output Interfacing and Programming" föyünün amacı, kart üstündeki bir LED'i doğrudan register erişimiyle yakıp söndürerek G/Ç programlamaya ilk adımı atmaktır. Föy LM4F120 (Stellaris LaunchPad) için yazılmıştır, ancak kullanılan GPIO adresleri TM4C123GH6PM ile aynıdır.</p>
+<h4>Föyün özeti</h4>
+<ul>
+<li>Herhangi bir çevre birimini kullanmanın üç temel adımı: <b>(1)</b> birimin saatini aç, <b>(2)</b> birimin kullanacağı pinleri ayarla, <b>(3)</b> birimin kendisini ayarla.</li>
+<li>Program iskeleti beş parçadan oluşur: (1) saat, (2) pin ayarı, sonsuz döngüde (3) LED'i yak, (4) bekle, (5) LED'i söndür.</li>
+<li>Saat RCGCGPIO'nun bit5'i (0x20; föyde "6. bit" diye geçer) ile açılır. PF3 (yeşil) için GPIODIR ve GPIODEN'e 0x08 yazılır, LED GPIODATA'nın bit3'ü ile yakılıp söndürülür. Gecikme 200.000'e kadar sayan bir döngüdür.</li>
+<li>Föy iki akış şeması karşılaştırır. Uzun olanında "yak, bekle, söndür, bekle" ayrı ayrı yazılır; kısa olanında tek bir "LED'i tersle (toggle), bekle" adımı vardır ve daha küçük kod üretir.</li>
+<li>Föyde aynı programın C ve Thumb assembly sürümleri verilir. C sürümü, <a href="#ornek-hwreg">6.4</a>'teki <code>gpio_001/main.c</code> ile benzer yapıdadır: register adresleri <code>#define</code> ile tanımlanır, saat açıldıktan sonra boş bir okuma yapılır (föy DIR/DEN'i <code>=</code> ile, <code>gpio_001</code> ise <code>|=</code> ile yazar).</li>
+</ul>
+<div class="box warn"><span class="box-title">Föydeki bir tutarsızlık</span>
+<p>Föyün girişinde programın 0x2009C020 adresinin bit28'ini terslediği yazar. Bu adres NXP LPC17xx ailesinin GPIO1 bloğuna aittir ve föye başka bir karttan kalmıştır; TM4C123'ün bellek haritasında GPIO bu adreste değildir. Kodda kullanılan adresler (0x400FE608, 0x400253FC, 0x40025400, 0x4002551C) doğrudur.</p></div>
+<h4>Uygulama görevi</h4>
+<p>Föyün "Exercises" sayfası boştur; aşağıdaki görevler bu not için hazırlanmıştır.</p>
+<ol>
+<li>Föydeki C programını <code>tm4c123gh6pm.h</code> adlarıyla yazın, PF3'teki yeşil LED'in yanıp söndüğünü gösterin.</li>
+<li>Programı kısa akış şemasına göre yeniden düzenleyin: LED'i XOR ile tersleyin (aşağıdaki iskelet).</li>
+<li><code>DELAY</code> değerini 50.000, 200.000 ve 800.000 yaparak gözlemleyin. Saat 16 MHz iken bir döngü turunun yaklaşık kaç çevrim sürdüğünü kronometreyle tahmin edin.</li>
+<li>LED rengini kırmızı ve mavi yapın; sonra RCGCGPIO'dan boş okuma satırını kaldırıp programın yine çalışıp çalışmadığını tartışın (bkz. datasheet'teki 3 çevrim kuralı).</li>
+<li>İsteğe bağlı: föydeki assembly sürümünü (LDR/ORR/STR) C sürümüyle satır satır eşleştirin.</li>
+</ol>
+<div class="code-head"><span class="file">Experiment 7 görevi – XOR ile tersleme (iskelet)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;             // tm4c123gh6pm.h uint32_t kullanır; önce eklenmeli
+#include "inc/tm4c123gh6pm.h"   // föyde lm4f120h5qr.h; adresler aynı
+
+int main(void)
+{
+    volatile unsigned long ulLoop;
+
+    SYSCTL_RCGCGPIO_R |= 0x20;            // (1) Port F saati
+    ulLoop = SYSCTL_RCGCGPIO_R;           //     boş okuma
+
+    GPIO_PORTF_DIR_R |= 0x08;             // (2) PF3 çıkış
+    GPIO_PORTF_DEN_R |= 0x08;             //     PF3 dijital
+
+    while(1)
+    {
+        GPIO_PORTF_DATA_R ^= 0x08;        // (3/5) LED'i tersle (toggle) -&gt; kısa akış şeması
+        for(ulLoop = 0; ulLoop &lt; 200000; ulLoop++) {}   // (4) gecikme
+    }
+}</code></pre>
+
+<h2 id="hatalar">9. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Saati açmadan register'a erişmek.</b> Bus fault oluşur (bkz. <a href="#adimlar">Bölüm 4</a>, adım 1). API'de karşılığı <code>SysCtlPeripheralEnable</code>'ı unutmaktır.</li>
+<li><b>Saati açar açmaz erişmek.</b> Saatin oturması için 3 sistem saati gerekir. PRGPIO'yu bekleyin, <code>SysCtlPeripheralReady()</code> kullanın ya da RCGCGPIO'dan boş okuma yapın.</li>
+<li><b>DEN'i unutmak.</b> DIR ve DATA doğru olsa bile DEN = 0 iken pin dijital olarak çalışmaz: LED yanmaz, girişten hep 0 okunur.</li>
+<li><b>PF0 kilidi.</b> LOCK/CR adımı yapılmazsa PF0'ın PUR ve DEN bitlerine yazılanlar yok sayılır. SW2 hep 0, yani hep "basılı" okunur. PD7 için de aynısı geçerlidir.</li>
+<li><b>Butonun aktif-düşük olduğunu unutmak.</b> Basılı buton 0 verir. Pull-up açılmazsa pin boşta kalır ve rastgele değer okunur.</li>
+<li><b><code>GPIOPinRead</code> sonucunu 1 ile karşılaştırmak.</b> PF4 yüksekken dönen değer 1 değil 0x10'dur. <code>== 1</code> yerine <code>== 0</code> ya da <code>!= 0</code> kullanın.</li>
+<li><b><code>GPIOPinWrite</code>'a 1 yazmak.</b> Değer bit konumunda olmalıdır: PF2 için 4, PF3 için 8. <code>GPIOPinWrite(..., GPIO_PIN_3, 1)</code> LED'i yakmaz.</li>
+<li><b><code>=</code> ile <code>|=</code> karışıklığı.</b> <code>GPIO_PORTF_DATA_R = 0x02;</code> diğer tüm pinleri 0 yapar. Tek pin için <code>|=</code>, <code>&amp;= ~</code> ya da maskeli adres kullanın. <code>if (x = 0)</code> yazım hatasına da dikkat edin.</li>
+<li><b>SysCtlDelay süresini yanlış hesaplamak.</b> Süre saat frekansına bağlıdır (bkz. <a href="#api-tablosu">TivaWare karşılıkları</a>); 40 MHz'ten 50 MHz'e geçince aynı parametre daha kısa gecikme verir. Kesmeler araya girerse süre uzar; hassas zamanlama için zamanlayıcı (Timer) kullanılır.</li>
+<li><b><code>volatile</code> olmayan gecikme döngüsü.</b> Optimizasyon açıkken derleyici boş döngüyü siler. Döngü sayacını <code>volatile</code> tanımlayın.</li>
+<li><b>TivaWare başlık sırası.</b> <code>stdint.h</code>, <code>inc/</code> ve <code>driverlib/</code> başlıklarının hepsinden önce eklenmelidir; <code>driverlib/</code> başlıkları için <code>stdbool.h</code> da gerekir.</li>
+<li><b>Kütüphane <code>.c</code> dosyasını <code>#include</code> etmek.</b> <code>#include "driverlib/gpio.c"</code> çalışabilir, ama aynı dosya iki yerde eklenirse "çoklu tanım" hatası çıkar. <code>driverlib.lib</code>'i projeye bağlayın.</li>
+<li><b>JTAG pinlerini (PC0–PC3) değiştirmek.</b> Hata ayıklayıcı bağlantısı kaybolabilir.</li>
+<li><b>Buton titreşimi (bounce).</b> Tek basış birden çok basış gibi sayılabilir. Bırakılmayı bekleyin ve kısa bir gecikme ekleyin.</li>
+</ol></div>
+<h2 id="alistirmalar">10. Alıştırmalar</h2>
+<ol>
+<li><b>(Ödev) Yanma süresini butonlarla ayarlamak:</b> Kırmızı LED sürekli yanıp sönsün. <code>while</code> döngüsü içinde (yoklama yöntemiyle) SW1'e her basışta LED'in yanma süresi <b>artsın</b>, SW2'ye her basışta <b>azalsın</b>. İpuçları: süreyi bir değişkende tutun (ör. <code>sure</code>, <code>SysCtlDelay</code> parametresi), alt ve üst sınır koyun, her basışı bir kez saymak için bırakılmayı bekleyin (<a href="#ornek-buton">6.3</a>). Önce API'li, sonra API'siz yazın.</li>
+<li><b>Aynı ödev kesme ile:</b> Butonları yoklamak yerine Port F kesmesiyle okuyun. Bu sürüm Kesmeler notunda ele alınacaktır.</li>
+<li><b>Sekiz renk:</b> 0'dan 7'ye sayan bir sayacı <code>sayac &lt;&lt; 1</code> ile PF1–PF3'e yazarak sönük, kırmızı, mavi, mor, yeşil, sarı, camgöbeği ve beyaz renkleri sırayla gösterin.</li>
+<li><b>Maske hesabı:</b> PF2 ve PF3'ü birlikte etkileyen GPIODATA adresini hesaplayın. Bu adrese <code>0xFF</code> yazınca hangi LED'ler yanar, kırmızının durumu ne olur? (Cevap: taban + 0x30 = 0x40025030; mavi ve yeşil yanar, kırmızı değişmez.)</li>
+<li><b>Dönüştürme:</b> <code>002_pure_c_gpio_out_input_ornegi.c</code> programını yalnız TivaWare fonksiyonlarıyla (<code>GPIOPinRead</code>/<code>GPIOPinWrite</code>) yeniden yazın. Ardından <code>005</code> örneğini API'siz yazın.</li>
+<li><b>Kendi GPIO kütüphaneniz:</b> <code>led.h</code>/<code>led.c</code> dosyalarında <code>void led_init(void)</code>, <code>void led_yak(uint8_t renk)</code>, <code>uint8_t buton_oku(void)</code> fonksiyonlarını yazın. Başlatmada PRGPIO beklemesini ve PF0 kilidini unutmayın.</li>
+<li><b>Gecikme hesabı:</b> 40 MHz ve 50 MHz için 1 saniyelik gecikme veren <code>SysCtlDelay</code> parametresini hesaplayın. (40 MHz: ≈ 13.333.333; 50 MHz: ≈ 16.666.667.)</li>
+<li><b>Basılı tutma:</b> SW1 basılı tutulduğu sürece renkler sırayla değişsin, SW2'ye basılınca o anki renkte dursun.</li>
+<li><b>Harici devre:</b> PE1'e harici bir LED (1 kΩ seri dirençle; 330 Ω kullanırsanız pini GPIODR8R ile 8 mA sürmeye ayarlayın, bkz. <a href="#devreler">Bölüm 5</a>) ve PE2'ye harici bir buton bağlayın. Butonu GND'ye değil 3,3 V'a bağlayıp iç pull-down (GPIOPDR) kullanın; bu durumda butonun aktif-yüksek olduğunu gösterin.</li>
+</ol>
+<h2 id="kaynaklar">11. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014). Bölüm 10 "General-Purpose Input/Outputs": özellikler s. 649, özel durumlu pinler Tablo 10-1 s. 650, işlevsel tanım ve Şekil 10-1 s. 652, GPIODATA maskeleme s. 654, commit kontrolü s. 656, başlatma s. 656–657, register haritası Tablo 10-6 s. 660, register açıklamaları s. 662–703. Sistem kontrol: RCGCGPIO s. 340, PRGPIO s. 406, GPIOHBCTL s. 258. Elektriksel özellikler: Tablo 24-29 s. 1385.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em> (öğrenci kitapçığı), Bölüm 3 "TivaWare, Initialization and GPIO" ve Lab 3.</li>
+<li>Texas Instruments, <em>Tiva C Series TM4C123G LaunchPad Evaluation Board User's Guide</em> (SPMU296), Bölüm 2.1.4, Tablo 2-2 ve kart şeması.</li>
+<li>Texas Instruments, <em>TivaWare Peripheral Driver Library User's Guide</em> (SW-TM4C-DRL-UG, SPMU298). Bölüm 14 "GPIO", Bölüm 26 "System Control".</li>
+<li>"Experiment 7: Digital Input/Output Interfacing and Programming", laboratuvar föyü.</li>
+<li>Ders örnek kodları (EEM 431): <code>drive_gpio_dersi/001–005</code>, <code>hafta03_*</code>, <code>hafta04_*</code>, <code>gpio_001</code>, <code>gpio_3</code>, <code>drive_2019_gpio</code>, <code>drive_2017_gpio_ornekleri_2</code>, <code>drive_hwreg_notlari</code>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 1. GPIO. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

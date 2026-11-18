@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" class="dev-svg" role="img" aria-labelledby="dev-title dev-desc">
+<title id="dev-title">LaunchPad RGB LED ve buton devreleri</title>
+<desc id="dev-desc">(a) PF1, PF2, PF3 pinleri dahili dirençli NPN transistörler (DTC114E) üzerinden ortak anotlu RGB LED'in katotlarını 330 ohm dirençlerle GND'ye çeker; pin 1 iken LED yanar. (b) SW1 PF4'e, SW2 PF0'a bağlıdır ve basılınca pini GND'ye çeker; kartta harici pull-up yoktur, GPIOPUR ile iç pull-up açılır; basılı 0, bırakılmış 1 okunur.</desc>
+<defs>
+<marker id="dev-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path class="dev-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="dev-arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e0342c"/></marker>
+<marker id="dev-arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fd6"/></marker>
+<marker id="dev-arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2f9e4f"/></marker>
+</defs>
+<style>
+.dev-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.dev-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.dev-svg .dev-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.dev-svg .dev-b{font-weight:700}
+.dev-svg .dev-s13{font-size:13px}
+.dev-svg .dev-s15{font-size:15px}
+.dev-svg .dev-mut{fill:var(--fig-muted,#76746c)}
+.dev-svg .dev-acc{fill:var(--fig-accent,#b4481f)}
+.dev-svg .dev-ctl{fill:var(--fig-blue,#1f5fa8)}
+.dev-svg .dev-head{fill:var(--fig-stroke,#2b2b29)}
+.dev-svg .dev-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.dev-svg .dev-thick{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:3}
+.dev-svg .dev-dot{fill:var(--fig-stroke,#2b2b29)}
+.dev-svg .dev-term{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.dev-svg .dev-mcu{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.dev-svg .dev-pkg{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:5 3}
+.dev-svg .dev-qc{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.dev-svg .dev-pin{fill:var(--fig-accent,#b4481f)}
+.dev-svg .dev-sep{stroke:var(--fig-muted,#76746c);stroke-width:1;stroke-dasharray:3 4}
+</style>
+
+<!-- ================= (a) LED sürme ================= -->
+<text class="dev-s15 dev-b" x="16" y="28">(a) RGB LED sürme</text>
+
+<!-- +VBUS rayı -->
+<circle class="dev-term" cx="56" cy="72" r="4"/>
+<path class="dev-w" d="M60,72 H370"/>
+<text class="dev-b" x="44" y="58">+VBUS <tspan class="dev-s13 dev-mut" font-weight="400">(USB, ≈5 V)</tspan></text>
+<text class="dev-s13 dev-mut" x="420" y="58" text-anchor="end">D1: ortak anotlu RGB LED</text>
+<circle class="dev-dot" cx="150" cy="72" r="3"/>
+<circle class="dev-dot" cx="260" cy="72" r="3"/>
+
+<!-- Kanal şablonu: ch = 150 (kırmızı), 260 (mavi), 370 (yeşil) -->
+<g id="dev-ch1">
+<path class="dev-w" d="M150,72 V88"/>
+<polygon points="139,88 161,88 150,108" fill="#e0342c" stroke="#e0342c" stroke-width="1.5" stroke-linejoin="round"/>
+<path class="dev-w" d="M139,108 H161 M150,108 V128"/>
+<path d="M164,98 L176,90" stroke="#e0342c" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-r)"/>
+<path d="M164,106 L176,98" stroke="#e0342c" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-r)"/>
+<text class="dev-s13" x="182" y="104">kırmızı</text>
+<path class="dev-w" d="M150,128 l6,4 l-12,8 l12,8 l-12,8 l12,8 l-6,4 V210"/>
+<text class="dev-s13 dev-b" x="138" y="145" text-anchor="end">R3</text>
+<text class="dev-s13" x="138" y="162" text-anchor="end">330 Ω</text>
+<rect class="dev-pkg" x="76" y="194" width="94" height="88" rx="4"/>
+<text class="dev-s13 dev-b" x="80" y="210">Q1</text>
+<circle class="dev-qc" cx="144" cy="226" r="20"/>
+<path class="dev-thick" d="M136,213 V239"/>
+<path class="dev-w" d="M136,220 L150,210"/>
+<path class="dev-w" d="M136,232 L149,241" marker-end="url(#dev-arr)"/>
+<path class="dev-w" d="M150,242 V292"/>
+<path class="dev-w" d="M136,226 H104 l-3,-5 l-6,10 l-6,-10 l-6,10 l-3,-5 H70 V318"/>
+<path class="dev-w" d="M110,226 V232 l5,3 l-10,6 l10,6 l-10,6 l5,3 V270 H150"/>
+<circle class="dev-dot" cx="110" cy="226" r="2.6"/>
+<circle class="dev-dot" cx="150" cy="270" r="2.6"/>
+<path class="dev-w" d="M139,292 H161 M143,297 H157 M147,302 H153"/>
+</g>
+
+<g id="dev-ch2">
+<path class="dev-w" d="M260,72 V88"/>
+<polygon points="249,88 271,88 260,108" fill="#2f6fd6" stroke="#2f6fd6" stroke-width="1.5" stroke-linejoin="round"/>
+<path class="dev-w" d="M249,108 H271 M260,108 V128"/>
+<path d="M274,98 L286,90" stroke="#2f6fd6" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-b)"/>
+<path d="M274,106 L286,98" stroke="#2f6fd6" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-b)"/>
+<text class="dev-s13" x="292" y="104">mavi</text>
+<path class="dev-w" d="M260,128 l6,4 l-12,8 l12,8 l-12,8 l12,8 l-6,4 V210"/>
+<text class="dev-s13 dev-b" x="248" y="145" text-anchor="end">R4</text>
+<text class="dev-s13" x="248" y="162" text-anchor="end">330 Ω</text>
+<rect class="dev-pkg" x="186" y="194" width="94" height="88" rx="4"/>
+<text class="dev-s13 dev-b" x="190" y="210">Q2</text>
+<circle class="dev-qc" cx="254" cy="226" r="20"/>
+<path class="dev-thick" d="M246,213 V239"/>
+<path class="dev-w" d="M246,220 L260,210"/>
+<path class="dev-w" d="M246,232 L259,241" marker-end="url(#dev-arr)"/>
+<path class="dev-w" d="M260,242 V292"/>
+<path class="dev-w" d="M246,226 H214 l-3,-5 l-6,10 l-6,-10 l-6,10 l-3,-5 H180 V318"/>
+<path class="dev-w" d="M220,226 V232 l5,3 l-10,6 l10,6 l-10,6 l5,3 V270 H260"/>
+<circle class="dev-dot" cx="220" cy="226" r="2.6"/>
+<circle class="dev-dot" cx="260" cy="270" r="2.6"/>
+<path class="dev-w" d="M249,292 H271 M253,297 H267 M257,302 H263"/>
+</g>
+
+<g id="dev-ch3">
+<path class="dev-w" d="M370,72 V88"/>
+<polygon points="359,88 381,88 370,108" fill="#2f9e4f" stroke="#2f9e4f" stroke-width="1.5" stroke-linejoin="round"/>
+<path class="dev-w" d="M359,108 H381 M370,108 V128"/>
+<path d="M384,98 L396,90" stroke="#2f9e4f" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-g)"/>
+<path d="M384,106 L396,98" stroke="#2f9e4f" stroke-width="1.6" fill="none" marker-end="url(#dev-arr-g)"/>
+<text class="dev-s13" x="402" y="104">yeşil</text>
+<path class="dev-w" d="M370,128 l6,4 l-12,8 l12,8 l-12,8 l12,8 l-6,4 V210"/>
+<text class="dev-s13 dev-b" x="358" y="145" text-anchor="end">R5</text>
+<text class="dev-s13" x="358" y="162" text-anchor="end">330 Ω</text>
+<rect class="dev-pkg" x="296" y="194" width="94" height="88" rx="4"/>
+<text class="dev-s13 dev-b" x="300" y="210">Q3</text>
+<circle class="dev-qc" cx="364" cy="226" r="20"/>
+<path class="dev-thick" d="M356,213 V239"/>
+<path class="dev-w" d="M356,220 L370,210"/>
+<path class="dev-w" d="M356,232 L369,241" marker-end="url(#dev-arr)"/>
+<path class="dev-w" d="M370,242 V292"/>
+<path class="dev-w" d="M356,226 H324 l-3,-5 l-6,10 l-6,-10 l-6,10 l-3,-5 H290 V318"/>
+<path class="dev-w" d="M330,226 V232 l5,3 l-10,6 l10,6 l-10,6 l5,3 V270 H370"/>
+<circle class="dev-dot" cx="330" cy="226" r="2.6"/>
+<circle class="dev-dot" cx="370" cy="270" r="2.6"/>
+<path class="dev-w" d="M359,292 H381 M363,297 H377 M367,302 H373"/>
+</g>
+
+<!-- MCU (a) -->
+<rect class="dev-mcu" x="40" y="318" width="400" height="40" rx="4"/>
+<rect class="dev-pin" x="66" y="314" width="8" height="8"/>
+<rect class="dev-pin" x="176" y="314" width="8" height="8"/>
+<rect class="dev-pin" x="286" y="314" width="8" height="8"/>
+<text class="dev-mono dev-b dev-acc" x="70" y="342" text-anchor="middle">PF1</text>
+<text class="dev-mono dev-b dev-acc" x="180" y="342" text-anchor="middle">PF2</text>
+<text class="dev-mono dev-b dev-acc" x="290" y="342" text-anchor="middle">PF3</text>
+<text class="dev-s13 dev-b" x="430" y="343" text-anchor="end">TM4C123GH6PM</text>
+
+<text x="16" y="390"><tspan class="dev-mono dev-b">PFx = 1</tspan> → transistör iletimde → LED <tspan class="dev-b">yanar</tspan></text>
+<text x="16" y="410"><tspan class="dev-mono dev-b">PFx = 0</tspan> → transistör kesimde → LED söner</text>
+<text class="dev-s13 dev-mut" x="16" y="434">Q1–Q3: DTC114EET1G, dahili 10 kΩ + 10 kΩ dirençli NPN</text>
+<text class="dev-s13 dev-mut" x="16" y="452">Katotlar 330 Ω (R3–R5) üzerinden transistörlere bağlı</text>
+
+<line class="dev-sep" x1="476" y1="16" x2="476" y2="456"/>
+
+<!-- ================= (b) Butonlar ================= -->
+<text class="dev-s15 dev-b" x="490" y="28">(b) Butonlar (aktif düşük)</text>
+<rect class="dev-pkg" x="488" y="44" width="142" height="304" rx="6"/>
+<text class="dev-s13 dev-mut" x="622" y="340" text-anchor="end">MCU içi</text>
+
+<!-- Satır 1: SW1 / PF4, r = 150 -->
+<g>
+<path class="dev-w" d="M528,64 H552 M540,64 V86 l5,3 l-10,6 l10,6 l-10,6 l10,6 l-10,6 l5,3 V150"/>
+<text class="dev-s13 dev-b" x="560" y="69">3,3 V</text>
+<text class="dev-s13" x="550" y="98">iç pull-up</text>
+<text class="dev-s13 dev-mut" x="550" y="114">13–30 kΩ</text>
+<text class="dev-mono dev-ctl" x="550" y="131">GPIOPUR=1</text>
+<circle class="dev-dot" cx="540" cy="150" r="3"/>
+<path class="dev-w" d="M540,150 H626"/>
+<path class="dev-w" d="M540,150 H526"/>
+<polygon class="dev-term" points="526,141 526,159 508,150"/>
+<path class="dev-w" d="M508,150 H498 V162"/>
+<text class="dev-mono" x="494" y="178">GPIODATA</text>
+<rect class="dev-pin" x="626" y="146" width="8" height="8"/>
+<text class="dev-mono dev-b dev-acc" x="604" y="168" text-anchor="middle">PF4</text>
+<path class="dev-w" d="M634,150 H669 M715,150 H736 V162"/>
+<circle class="dev-term" cx="672" cy="150" r="3"/>
+<circle class="dev-term" cx="712" cy="150" r="3"/>
+<path class="dev-w" d="M666,140 H718 M692,140 V130 M684,130 H700"/>
+<text class="dev-s13 dev-b" x="692" y="122" text-anchor="middle">SW1</text>
+<path class="dev-w" d="M724,162 H748 M728,167 H744 M732,172 H740"/>
+<text class="dev-s13" x="692" y="194" text-anchor="middle">basılı → 0</text>
+<text class="dev-s13" x="692" y="211" text-anchor="middle">bırakılmış → 1</text>
+</g>
+
+<!-- Satır 2: SW2 / PF0, r = 290 -->
+<g>
+<path class="dev-w" d="M528,204 H552 M540,204 V226 l5,3 l-10,6 l10,6 l-10,6 l10,6 l-10,6 l5,3 V290"/>
+<text class="dev-s13 dev-b" x="560" y="209">3,3 V</text>
+<text class="dev-s13" x="550" y="238">iç pull-up</text>
+<text class="dev-s13 dev-mut" x="550" y="254">13–30 kΩ</text>
+<text class="dev-mono dev-ctl" x="550" y="271">GPIOPUR=1</text>
+<circle class="dev-dot" cx="540" cy="290" r="3"/>
+<path class="dev-w" d="M540,290 H626"/>
+<path class="dev-w" d="M540,290 H526"/>
+<polygon class="dev-term" points="526,281 526,299 508,290"/>
+<path class="dev-w" d="M508,290 H498 V302"/>
+<text class="dev-mono" x="494" y="318">GPIODATA</text>
+<rect class="dev-pin" x="626" y="286" width="8" height="8"/>
+<text class="dev-mono dev-b dev-acc" x="604" y="308" text-anchor="middle">PF0</text>
+<path class="dev-w" d="M634,290 H669 M715,290 H736 V302"/>
+<circle class="dev-term" cx="672" cy="290" r="3"/>
+<circle class="dev-term" cx="712" cy="290" r="3"/>
+<path class="dev-w" d="M666,280 H718 M692,280 V270 M684,270 H700"/>
+<text class="dev-s13 dev-b" x="692" y="262" text-anchor="middle">SW2</text>
+<path class="dev-w" d="M724,302 H748 M728,307 H744 M732,312 H740"/>
+<text class="dev-s13" x="692" y="334" text-anchor="middle">basılı → 0</text>
+<text class="dev-s13" x="692" y="351" text-anchor="middle">bırakılmış → 1</text>
+</g>
+
+<text class="dev-s13" x="490" y="382">Kartta harici pull-up direnci yok:</text>
+<text class="dev-s13" x="490" y="400"><tspan class="dev-mono dev-ctl">GPIOPUR</tspan> ile iç pull-up açılmalı</text>
+<text class="dev-s13" x="490" y="424"><tspan class="dev-mono dev-acc dev-b">PF0</tspan> kilitli: önce <tspan class="dev-mono">GPIOLOCK</tspan> + <tspan class="dev-mono">GPIOCR</tspan></text>
+<text class="dev-s13 dev-mut" x="490" y="448">SW2 ayrıca R8 (330 Ω) ile WAKE pinine bağlı</text>
+</svg>

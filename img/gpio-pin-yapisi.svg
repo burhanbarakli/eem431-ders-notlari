@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 536" class="pin-svg" role="img" aria-labelledby="pin-title pin-desc">
+<title id="pin-title">Dijital GPIO pininin iç yapısı (TM4C123GH6PM, sadeleştirilmiş)</title>
+<desc id="pin-desc">Solda APB veri yolu ve GPIO register blokları; ortada çevre birimi ve GPIOAFSEL ile seçilen iki çoklayıcı; sağda çıkış tamponu, GPIODEN ile etkin giriş tamponu, GPIOPUR ve GPIOPDR ile bağlanan pull-up ve pull-down dirençleri ve pin.</desc>
+<defs>
+<marker id="pin-arr" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="pin-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.pin-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pin-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pin-svg .pin-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.pin-svg .pin-b{font-weight:700}
+.pin-svg .pin-s13{font-size:13px}
+.pin-svg .pin-mut{fill:var(--fig-muted,#76746c)}
+.pin-svg .pin-ctl{fill:var(--fig-blue,#1f5fa8)}
+.pin-svg .pin-acc{fill:var(--fig-accent,#b4481f)}
+.pin-svg .pin-head{fill:var(--fig-stroke,#2b2b29)}
+.pin-svg .pin-bus{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.pin-svg .pin-blk{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.pin-svg .pin-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.pin-svg .pin-reg{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.pin-svg .pin-area{fill:var(--fig-fill-2,#efece4);stroke:none}
+.pin-svg .pin-pad{fill:var(--fig-fill,#ffffff);stroke:var(--fig-accent,#b4481f);stroke-width:2.4}
+.pin-svg .pin-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6;stroke-linejoin:round}
+.pin-svg .pin-tag{fill:var(--fig-fill,#ffffff);stroke:var(--fig-blue,#1f5fa8);stroke-width:1.4}
+.pin-svg .pin-cw{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.4;stroke-dasharray:4 3}
+.pin-svg .pin-dot{fill:var(--fig-stroke,#2b2b29)}
+</style>
+
+<!-- ===== APB veri yolu ===== -->
+<rect class="pin-bus" x="14" y="40" width="18" height="418" rx="3"/>
+<text class="pin-s13 pin-b" transform="translate(27,249) rotate(-90)" text-anchor="middle">APB veri yolu (CPU)</text>
+<line class="pin-w" x1="33" y1="88" x2="47" y2="88" marker-start="url(#pin-arr)" marker-end="url(#pin-arr)"/>
+<line class="pin-w" x1="33" y1="190" x2="47" y2="190" marker-start="url(#pin-arr)" marker-end="url(#pin-arr)"/>
+<line class="pin-w" x1="33" y1="352" x2="47" y2="352" marker-start="url(#pin-arr)" marker-end="url(#pin-arr)"/>
+
+<!-- ===== Register blokları ===== -->
+<rect class="pin-blk" x="48" y="40" width="152" height="96" rx="6"/>
+<text class="pin-b" x="124" y="58" text-anchor="middle">Veri kontrolü</text>
+<rect class="pin-reg" x="58" y="66" width="132" height="24" rx="2"/>
+<text class="pin-mono" x="124" y="83" text-anchor="middle">GPIODATA</text>
+<rect class="pin-reg" x="58" y="98" width="132" height="24" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="115" text-anchor="middle">GPIODIR</text>
+
+<rect class="pin-blk" x="48" y="146" width="152" height="88" rx="6"/>
+<text class="pin-b" x="124" y="164" text-anchor="middle">Mod kontrolü</text>
+<rect class="pin-reg" x="58" y="172" width="132" height="24" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="189" text-anchor="middle">GPIOAFSEL</text>
+<rect class="pin-reg" x="58" y="202" width="132" height="24" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="219" text-anchor="middle">GPIOPCTL</text>
+
+<rect class="pin-blk" x="48" y="246" width="152" height="212" rx="6"/>
+<text class="pin-b" x="124" y="264" text-anchor="middle">Ped kontrolü</text>
+<rect class="pin-reg" x="58" y="272" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="288" text-anchor="middle">GPIODEN</text>
+<rect class="pin-reg" x="58" y="298" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="314" text-anchor="middle">GPIOPUR</text>
+<rect class="pin-reg" x="58" y="324" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="340" text-anchor="middle">GPIOPDR</text>
+<rect class="pin-reg" x="58" y="350" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="366" text-anchor="middle">GPIOODR</text>
+<rect class="pin-reg" x="58" y="376" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="392" text-anchor="middle">GPIODR2R/4R/8R</text>
+<rect class="pin-reg" x="58" y="402" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="418" text-anchor="middle">GPIOSLR</text>
+<rect class="pin-reg" x="58" y="428" width="132" height="22" rx="2"/>
+<text class="pin-mono pin-ctl" x="124" y="444" text-anchor="middle">GPIOAMSEL</text>
+
+<!-- ===== Ped bölgesi zemini ===== -->
+<rect class="pin-area" x="466" y="6" width="290" height="462" rx="10"/>
+<text class="pin-s13 pin-b pin-mut" x="488" y="458">Dijital G/Ç pedi</text>
+
+<!-- ===== Giriş yolu ===== -->
+<path class="pin-w" d="M630,60 H572" marker-end="url(#pin-arr)"/>
+<polygon class="pin-box" points="570,40 570,80 530,60"/>
+<path class="pin-w" d="M530,60 H220 V72 H202" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" x="232" y="52">GPIO giriş (okuma)</text>
+<text class="pin-s13" x="524" y="34" text-anchor="end">Giriş</text>
+<text class="pin-s13" x="524" y="51" text-anchor="end">tamponu</text>
+<line class="pin-cw" x1="550" y1="50" x2="550" y2="34"/>
+<rect class="pin-tag" x="540" y="14" width="78" height="20" rx="4"/>
+<text class="pin-mono pin-ctl" x="579" y="29" text-anchor="middle">GPIODEN</text>
+<!-- alternatif giriş -->
+<circle class="pin-dot" cx="284" cy="60" r="3.5"/>
+<path class="pin-w" d="M284,60 V158 A6,6 0 0 1 284,170 V188" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" transform="translate(278,112) rotate(-90)" text-anchor="middle">Alt. giriş</text>
+
+<!-- ===== Veri çıkışı ve yön ===== -->
+<path class="pin-w" d="M200,86 H236 V164 H408" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" x="300" y="157">GPIO çıkış</text>
+<path class="pin-w" d="M200,110 H228 V376 H408" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" x="240" y="394">GPIO yönü (1 = çıkış)</text>
+
+<!-- ===== Çevre birimi ===== -->
+<rect class="pin-box" x="262" y="190" width="118" height="166" rx="6"/>
+<text class="pin-b" x="321" y="254" text-anchor="middle">Çevre birimi</text>
+<text class="pin-s13 pin-mut" x="321" y="274" text-anchor="middle">UART, SSI,</text>
+<text class="pin-s13 pin-mut" x="321" y="292" text-anchor="middle">PWM, I²C…</text>
+<text class="pin-mono pin-ctl" x="321" y="314" text-anchor="middle">(GPIOPCTL)</text>
+<text class="pin-s13" x="374" y="214" text-anchor="end">alt. çıkış</text>
+<text class="pin-s13" x="374" y="337" text-anchor="end">alt. çıkış etkin</text>
+<path class="pin-w" d="M380,196 H408" marker-end="url(#pin-arr)"/>
+<path class="pin-w" d="M380,344 H408" marker-end="url(#pin-arr)"/>
+
+<!-- ===== Çoklayıcılar (AFSEL ile seçim) ===== -->
+<polygon class="pin-box" points="410,146 440,158 440,202 410,214"/>
+<text class="pin-s13" x="415" y="169">0</text>
+<text class="pin-s13" x="415" y="201">1</text>
+<line class="pin-cw" x1="425" y1="152" x2="425" y2="128"/>
+<rect class="pin-tag" x="386" y="108" width="78" height="20" rx="4"/>
+<text class="pin-mono pin-ctl" x="425" y="123" text-anchor="middle">GPIOAFSEL</text>
+
+<polygon class="pin-box" points="410,326 440,338 440,382 410,394"/>
+<text class="pin-s13" x="415" y="349">1</text>
+<text class="pin-s13" x="415" y="381">0</text>
+<line class="pin-cw" x1="425" y1="388" x2="425" y2="414"/>
+<rect class="pin-tag" x="386" y="414" width="78" height="20" rx="4"/>
+<text class="pin-mono pin-ctl" x="425" y="429" text-anchor="middle">GPIOAFSEL</text>
+
+<!-- ===== Çıkış tamponu ===== -->
+<path class="pin-w" d="M440,180 H528" marker-end="url(#pin-arr)"/>
+<path class="pin-w" d="M440,360 H550 V193" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" transform="translate(545,282) rotate(-90)" text-anchor="middle">çıkış etkin</text>
+<polygon class="pin-box" points="530,160 530,200 570,180"/>
+<text class="pin-s13" x="560" y="218">Çıkış</text>
+<text class="pin-s13" x="560" y="235">tamponu</text>
+<line class="pin-cw" x1="550" y1="170" x2="550" y2="148"/>
+<rect class="pin-tag" x="479" y="86" width="142" height="18" rx="4"/>
+<text class="pin-mono pin-ctl" x="550" y="99.5" text-anchor="middle">GPIODEN, GPIOODR</text>
+<rect class="pin-tag" x="489" y="108" width="122" height="18" rx="4"/>
+<text class="pin-mono pin-ctl" x="550" y="121.5" text-anchor="middle">GPIODR2R/4R/8R</text>
+<rect class="pin-tag" x="514" y="130" width="72" height="18" rx="4"/>
+<text class="pin-mono pin-ctl" x="550" y="143.5" text-anchor="middle">GPIOSLR</text>
+<path class="pin-w" d="M570,180 H630"/>
+
+<!-- ===== Pin düğümü ===== -->
+<path class="pin-w" d="M630,60 V440 H700"/>
+<circle class="pin-dot" cx="630" cy="180" r="3.5"/>
+<circle class="pin-dot" cx="630" cy="300" r="3.5"/>
+<rect class="pin-pad" x="700" y="416" width="48" height="48" rx="4"/>
+<text class="pin-b pin-acc" x="724" y="445" text-anchor="middle">Pin</text>
+<text class="pin-s13 pin-mut" x="724" y="484" text-anchor="middle">Paket pini</text>
+
+<!-- ===== Pull-up / pull-down ===== -->
+<path class="pin-w" d="M630,300 H670"/>
+<circle class="pin-dot" cx="670" cy="300" r="3.5"/>
+<!-- pull-up -->
+<path class="pin-w" d="M670,300 V290"/>
+<circle class="pin-box" cx="670" cy="288" r="2.5"/>
+<circle class="pin-box" cx="670" cy="266" r="2.5"/>
+<path class="pin-w" d="M670,288 L682,269"/>
+<path class="pin-w" d="M670,264 V258 L676,254 L664,246 L676,238 L664,230 L676,222 L670,218 V206"/>
+<path class="pin-w" d="M656,206 H684"/>
+<text class="pin-s13 pin-b" x="670" y="198" text-anchor="middle">3,3 V</text>
+<text class="pin-s13 pin-mut" x="684" y="242">pull-up</text>
+<line class="pin-cw" x1="677" y1="278" x2="690" y2="278"/>
+<rect class="pin-tag" x="690" y="268" width="62" height="20" rx="4"/>
+<text class="pin-mono pin-ctl" x="721" y="283" text-anchor="middle">GPIOPUR</text>
+<!-- pull-down -->
+<path class="pin-w" d="M670,300 V310"/>
+<circle class="pin-box" cx="670" cy="312" r="2.5"/>
+<circle class="pin-box" cx="670" cy="334" r="2.5"/>
+<path class="pin-w" d="M670,312 L682,331"/>
+<path class="pin-w" d="M670,336 V342 L676,346 L664,354 L676,362 L664,370 L676,378 L670,382 V394"/>
+<path class="pin-w" d="M656,394 H684 M661,400 H679 M666,406 H674"/>
+<text class="pin-s13 pin-mut" x="684" y="366">pull-down</text>
+<line class="pin-cw" x1="677" y1="322" x2="690" y2="322"/>
+<rect class="pin-tag" x="690" y="312" width="62" height="20" rx="4"/>
+<text class="pin-mono pin-ctl" x="721" y="327" text-anchor="middle">GPIOPDR</text>
+
+<!-- ===== Açıklama ===== -->
+<path class="pin-w" d="M48,486 H78" marker-end="url(#pin-arr)"/>
+<text class="pin-s13" x="86" y="491">sinyal yolu</text>
+<rect class="pin-tag" x="170" y="478" width="30" height="18" rx="4"/>
+<text class="pin-s13" x="208" y="491">kontrol biti (mavi register)</text>
+<text class="pin-s13" x="400" y="491">Alt. = alternatif fonksiyon</text>
+<text class="pin-s13 pin-mut" x="48" y="512">Not: GPIODEN = 0 iken pinin dijital işlevi kapalıdır (giriş de çıkış da çalışmaz).</text>
+<text class="pin-s13 pin-mut" x="48" y="530">Sadeleştirilmiş çizim: Şekil 10-1’deki giriş tarafı AFSEL demux’u ve commit (GPIOLOCK/GPIOCR) bloğu gösterilmedi.</text>
+</svg>

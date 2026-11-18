@@ -1,0 +1,282 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 530" class="msk-svg" role="img" aria-labelledby="msk-title msk-desc">
+<title id="msk-title">GPIODATA adres maskeleme</title>
+<desc id="msk-desc">GPIODATA erişiminde ofsetin 9–2 bitleri, veri bitleri 7–0 için maske olarak kullanılır. Örnekler: taban+0x3FC tüm bitler, taban+0x008 yalnız bit 1 (PF1); 0x098 adresine 0xEB yazılınca yalnız bit 5, 2, 1 değişir; 0x0C4 adresinden okumada maskesiz bitler 0 döner.</desc>
+<defs>
+<marker id="msk-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path class="msk-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.msk-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.msk-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.msk-svg .msk-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-ligatures:none}
+.msk-svg .msk-b{font-weight:700}
+.msk-svg .msk-s13{font-size:13px}
+.msk-svg .msk-s15{font-size:15px}
+.msk-svg .msk-mut{fill:var(--fig-muted,#76746c)}
+.msk-svg .msk-acc{fill:var(--fig-accent,#b4481f)}
+.msk-svg .msk-v{fill:var(--fig-stroke,#2b2b29)}
+.msk-svg .msk-vm{fill:var(--fig-muted,#76746c)}
+.msk-svg .msk-va{fill:var(--fig-accent,#b4481f);font-weight:700}
+.msk-svg .msk-c{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.msk-svg .msk-cm{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.msk-svg .msk-cd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.msk-svg .msk-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.msk-svg .msk-heada{fill:var(--fig-accent,#b4481f)}
+.msk-svg .msk-sep{stroke:var(--fig-muted,#76746c);stroke-width:1;stroke-dasharray:3 4}
+</style>
+<text class="msk-s15 msk-b" x="16" y="26">GPIODATA adresi = taban + ofset; ofsetin [9:2] bitleri, veri bitlerinin [7:0] maskesidir</text>
+<text class="msk-s13 msk-mut" x="270" y="54" text-anchor="middle">9</text>
+<text class="msk-s13 msk-mut" x="310" y="54" text-anchor="middle">8</text>
+<text class="msk-s13 msk-mut" x="350" y="54" text-anchor="middle">7</text>
+<text class="msk-s13 msk-mut" x="390" y="54" text-anchor="middle">6</text>
+<text class="msk-s13 msk-mut" x="430" y="54" text-anchor="middle">5</text>
+<text class="msk-s13 msk-mut" x="470" y="54" text-anchor="middle">4</text>
+<text class="msk-s13 msk-mut" x="510" y="54" text-anchor="middle">3</text>
+<text class="msk-s13 msk-mut" x="550" y="54" text-anchor="middle">2</text>
+<text class="msk-s13 msk-mut" x="590" y="54" text-anchor="middle">1</text>
+<text class="msk-s13 msk-mut" x="630" y="54" text-anchor="middle">0</text>
+<text x="238" y="81" text-anchor="end">ofset (ADDR) bitleri</text>
+<rect class="msk-cm" x="250" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="270" y="81" text-anchor="middle">m7</text>
+<rect class="msk-cm" x="290" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="310" y="81" text-anchor="middle">m6</text>
+<rect class="msk-cm" x="330" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="350" y="81" text-anchor="middle">m5</text>
+<rect class="msk-cm" x="370" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="390" y="81" text-anchor="middle">m4</text>
+<rect class="msk-cm" x="410" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="430" y="81" text-anchor="middle">m3</text>
+<rect class="msk-cm" x="450" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="470" y="81" text-anchor="middle">m2</text>
+<rect class="msk-cm" x="490" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="510" y="81" text-anchor="middle">m1</text>
+<rect class="msk-cm" x="530" y="62" width="40" height="28"/>
+<text class="msk-mono msk-va" x="550" y="81" text-anchor="middle">m0</text>
+<rect class="msk-cd" x="570" y="62" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="590" y="81" text-anchor="middle">0</text>
+<rect class="msk-cd" x="610" y="62" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="630" y="81" text-anchor="middle">0</text>
+<text class="msk-s13 msk-mut" x="662" y="81">bit 1:0 = 00</text>
+<line class="msk-wa" x1="270" y1="92" x2="270" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="310" y1="92" x2="310" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="350" y1="92" x2="350" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="390" y1="92" x2="390" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="430" y1="92" x2="430" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="470" y1="92" x2="470" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="510" y1="92" x2="510" y2="119" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="550" y1="92" x2="550" y2="119" marker-end="url(#msk-arra)"/>
+<text x="238" y="141" text-anchor="end">GPIODATA bitleri</text>
+<rect class="msk-c" x="250" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="270" y="141" text-anchor="middle">D7</text>
+<rect class="msk-c" x="290" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="310" y="141" text-anchor="middle">D6</text>
+<rect class="msk-c" x="330" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="350" y="141" text-anchor="middle">D5</text>
+<rect class="msk-c" x="370" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="390" y="141" text-anchor="middle">D4</text>
+<rect class="msk-c" x="410" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="430" y="141" text-anchor="middle">D3</text>
+<rect class="msk-c" x="450" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="470" y="141" text-anchor="middle">D2</text>
+<rect class="msk-c" x="490" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="510" y="141" text-anchor="middle">D1</text>
+<rect class="msk-c" x="530" y="122" width="40" height="28"/>
+<text class="msk-mono msk-v" x="550" y="141" text-anchor="middle">D0</text>
+<text class="msk-s13 msk-mut" x="270" y="167" text-anchor="middle">7</text>
+<text class="msk-s13 msk-mut" x="310" y="167" text-anchor="middle">6</text>
+<text class="msk-s13 msk-mut" x="350" y="167" text-anchor="middle">5</text>
+<text class="msk-s13 msk-mut" x="390" y="167" text-anchor="middle">4</text>
+<text class="msk-s13 msk-mut" x="430" y="167" text-anchor="middle">3</text>
+<text class="msk-s13 msk-mut" x="470" y="167" text-anchor="middle">2</text>
+<text class="msk-s13 msk-mut" x="510" y="167" text-anchor="middle">1</text>
+<text class="msk-s13 msk-mut" x="550" y="167" text-anchor="middle">0</text>
+<text class="msk-s13" x="586" y="132"><tspan class="msk-mono msk-acc msk-b">m = 1</tspan> → bit erişilir</text>
+<text class="msk-s13" x="586" y="150"><tspan class="msk-mono msk-b">m = 0</tspan> → yazılmaz,</text>
+<text class="msk-s13" x="586" y="167">okumada 0 döner</text>
+<text class="msk-b" x="16" y="202">Port F örnekleri (taban <tspan class="msk-mono">0x4002.5000</tspan>)</text>
+<text class="msk-s13 msk-mut" x="270" y="220" text-anchor="middle">7</text>
+<text class="msk-s13 msk-mut" x="310" y="220" text-anchor="middle">6</text>
+<text class="msk-s13 msk-mut" x="350" y="220" text-anchor="middle">5</text>
+<text class="msk-s13 msk-mut" x="390" y="220" text-anchor="middle">4</text>
+<text class="msk-s13 msk-mut" x="430" y="220" text-anchor="middle">3</text>
+<text class="msk-s13 msk-mut" x="470" y="220" text-anchor="middle">2</text>
+<text class="msk-s13 msk-mut" x="510" y="220" text-anchor="middle">1</text>
+<text class="msk-s13 msk-mut" x="550" y="220" text-anchor="middle">0</text>
+<text class="msk-mono" x="238" y="243" text-anchor="end">taban + 0x3FC</text>
+<text class="msk-s13 msk-mut" x="238" y="259" text-anchor="end">maske = 0xFF</text>
+<rect class="msk-cm" x="250" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="270" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="290" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="310" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="330" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="350" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="370" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="390" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="410" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="430" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="450" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="470" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="490" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="510" y="247" text-anchor="middle">1</text>
+<rect class="msk-cm" x="530" y="228" width="40" height="28"/>
+<text class="msk-mono msk-va" x="550" y="247" text-anchor="middle">1</text>
+<text x="586" y="243">8 bitin hepsi</text>
+<text class="msk-s13 msk-mut" x="586" y="259">(Port F’te PF0–PF4 bağlı)</text>
+<text class="msk-mono" x="238" y="291" text-anchor="end">taban + 0x008</text>
+<text class="msk-s13 msk-mut" x="238" y="307" text-anchor="end">maske = 0x02</text>
+<rect class="msk-c" x="250" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="270" y="295" text-anchor="middle">0</text>
+<rect class="msk-c" x="290" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="310" y="295" text-anchor="middle">0</text>
+<rect class="msk-c" x="330" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="350" y="295" text-anchor="middle">0</text>
+<rect class="msk-c" x="370" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="390" y="295" text-anchor="middle">0</text>
+<rect class="msk-c" x="410" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="430" y="295" text-anchor="middle">0</text>
+<rect class="msk-c" x="450" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="470" y="295" text-anchor="middle">0</text>
+<rect class="msk-cm" x="490" y="276" width="40" height="28"/>
+<text class="msk-mono msk-va" x="510" y="295" text-anchor="middle">1</text>
+<rect class="msk-c" x="530" y="276" width="40" height="28"/>
+<text class="msk-mono msk-vm" x="550" y="295" text-anchor="middle">0</text>
+<text x="586" y="291">yalnız bit 1 → <tspan class="msk-mono msk-acc msk-b">PF1</tspan></text>
+<text class="msk-s13 msk-mut" x="586" y="307">adres <tspan class="msk-mono">0x4002.5008</tspan></text>
+<line class="msk-sep" x1="16" y1="322" x2="744" y2="322"/>
+<line class="msk-sep" x1="380" y1="330" x2="380" y2="520"/>
+<text class="msk-b" x="16" y="346">Yazma (genel 8 pinli port, Şekil 10-3)</text>
+<text class="msk-s13 msk-mut" x="16" y="364">GPIODATA + <tspan class="msk-mono">0x098</tspan> ← <tspan class="msk-mono">0xEB</tspan> · 0x098 &gt;&gt; 2 = 0x26</text>
+<text class="msk-s13 msk-mut" x="133" y="382" text-anchor="middle">7</text>
+<text class="msk-s13 msk-mut" x="163" y="382" text-anchor="middle">6</text>
+<text class="msk-s13 msk-mut" x="193" y="382" text-anchor="middle">5</text>
+<text class="msk-s13 msk-mut" x="223" y="382" text-anchor="middle">4</text>
+<text class="msk-s13 msk-mut" x="253" y="382" text-anchor="middle">3</text>
+<text class="msk-s13 msk-mut" x="283" y="382" text-anchor="middle">2</text>
+<text class="msk-s13 msk-mut" x="313" y="382" text-anchor="middle">1</text>
+<text class="msk-s13 msk-mut" x="343" y="382" text-anchor="middle">0</text>
+<text x="110" y="407" text-anchor="end">maske 0x26</text>
+<rect class="msk-c" x="118" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="133" y="406" text-anchor="middle">0</text>
+<rect class="msk-c" x="148" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="163" y="406" text-anchor="middle">0</text>
+<rect class="msk-cm" x="178" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="193" y="406" text-anchor="middle">1</text>
+<rect class="msk-c" x="208" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="223" y="406" text-anchor="middle">0</text>
+<rect class="msk-c" x="238" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="253" y="406" text-anchor="middle">0</text>
+<rect class="msk-cm" x="268" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="283" y="406" text-anchor="middle">1</text>
+<rect class="msk-cm" x="298" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="313" y="406" text-anchor="middle">1</text>
+<rect class="msk-c" x="328" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="343" y="406" text-anchor="middle">0</text>
+<text x="110" y="447" text-anchor="end">yazılan 0xEB</text>
+<rect class="msk-c" x="118" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="133" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="148" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="163" y="446" text-anchor="middle">1</text>
+<rect class="msk-cm" x="178" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="193" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="208" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="223" y="446" text-anchor="middle">0</text>
+<rect class="msk-c" x="238" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="253" y="446" text-anchor="middle">1</text>
+<rect class="msk-cm" x="268" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="283" y="446" text-anchor="middle">0</text>
+<rect class="msk-cm" x="298" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="313" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="328" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="343" y="446" text-anchor="middle">1</text>
+<text x="110" y="487" text-anchor="end">GPIODATA</text>
+<rect class="msk-c" x="118" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="133" y="486" text-anchor="middle">u</text>
+<rect class="msk-c" x="148" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="163" y="486" text-anchor="middle">u</text>
+<rect class="msk-cm" x="178" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="193" y="486" text-anchor="middle">1</text>
+<rect class="msk-c" x="208" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="223" y="486" text-anchor="middle">u</text>
+<rect class="msk-c" x="238" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="253" y="486" text-anchor="middle">u</text>
+<rect class="msk-cm" x="268" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="283" y="486" text-anchor="middle">0</text>
+<rect class="msk-cm" x="298" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="313" y="486" text-anchor="middle">1</text>
+<rect class="msk-c" x="328" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="343" y="486" text-anchor="middle">u</text>
+<line class="msk-wa" x1="193" y1="415" x2="193" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="193" y1="455" x2="193" y2="467" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="283" y1="415" x2="283" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="283" y1="455" x2="283" y2="467" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="313" y1="415" x2="313" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="313" y1="455" x2="313" y2="467" marker-end="url(#msk-arra)"/>
+<text class="msk-s13" x="16" y="514">Yalnız bit 5, 2, 1 değişir; <tspan class="msk-mono msk-b">u</tspan> = değişmez</text>
+<text class="msk-b" x="394" y="346">Okuma (genel 8 pinli port, Şekil 10-4)</text>
+<text class="msk-s13 msk-mut" x="394" y="364">GPIODATA + <tspan class="msk-mono">0x0C4</tspan> okunur · 0x0C4 &gt;&gt; 2 = 0x31</text>
+<text class="msk-s13 msk-mut" x="505" y="382" text-anchor="middle">7</text>
+<text class="msk-s13 msk-mut" x="535" y="382" text-anchor="middle">6</text>
+<text class="msk-s13 msk-mut" x="565" y="382" text-anchor="middle">5</text>
+<text class="msk-s13 msk-mut" x="595" y="382" text-anchor="middle">4</text>
+<text class="msk-s13 msk-mut" x="625" y="382" text-anchor="middle">3</text>
+<text class="msk-s13 msk-mut" x="655" y="382" text-anchor="middle">2</text>
+<text class="msk-s13 msk-mut" x="685" y="382" text-anchor="middle">1</text>
+<text class="msk-s13 msk-mut" x="715" y="382" text-anchor="middle">0</text>
+<text x="482" y="407" text-anchor="end">maske 0x31</text>
+<rect class="msk-c" x="490" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="505" y="406" text-anchor="middle">0</text>
+<rect class="msk-c" x="520" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="535" y="406" text-anchor="middle">0</text>
+<rect class="msk-cm" x="550" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="565" y="406" text-anchor="middle">1</text>
+<rect class="msk-cm" x="580" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="595" y="406" text-anchor="middle">1</text>
+<rect class="msk-c" x="610" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="625" y="406" text-anchor="middle">0</text>
+<rect class="msk-c" x="640" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="655" y="406" text-anchor="middle">0</text>
+<rect class="msk-c" x="670" y="388" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="685" y="406" text-anchor="middle">0</text>
+<rect class="msk-cm" x="700" y="388" width="30" height="26"/>
+<text class="msk-mono msk-va" x="715" y="406" text-anchor="middle">1</text>
+<text x="482" y="447" text-anchor="end">pin değeri</text>
+<rect class="msk-c" x="490" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="505" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="520" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="535" y="446" text-anchor="middle">0</text>
+<rect class="msk-cm" x="550" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="565" y="446" text-anchor="middle">1</text>
+<rect class="msk-cm" x="580" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="595" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="610" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="625" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="640" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="655" y="446" text-anchor="middle">1</text>
+<rect class="msk-c" x="670" y="428" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="685" y="446" text-anchor="middle">1</text>
+<rect class="msk-cm" x="700" y="428" width="30" height="26"/>
+<text class="msk-mono msk-va" x="715" y="446" text-anchor="middle">0</text>
+<text x="482" y="487" text-anchor="end">okunan</text>
+<rect class="msk-c" x="490" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="505" y="486" text-anchor="middle">0</text>
+<rect class="msk-c" x="520" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="535" y="486" text-anchor="middle">0</text>
+<rect class="msk-cm" x="550" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="565" y="486" text-anchor="middle">1</text>
+<rect class="msk-cm" x="580" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="595" y="486" text-anchor="middle">1</text>
+<rect class="msk-c" x="610" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="625" y="486" text-anchor="middle">0</text>
+<rect class="msk-c" x="640" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="655" y="486" text-anchor="middle">0</text>
+<rect class="msk-c" x="670" y="468" width="30" height="26"/>
+<text class="msk-mono msk-vm" x="685" y="486" text-anchor="middle">0</text>
+<rect class="msk-cm" x="700" y="468" width="30" height="26"/>
+<text class="msk-mono msk-va" x="715" y="486" text-anchor="middle">0</text>
+<line class="msk-wa" x1="565" y1="415" x2="565" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="565" y1="455" x2="565" y2="467" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="595" y1="415" x2="595" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="595" y1="455" x2="595" y2="467" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="715" y1="415" x2="715" y2="427" marker-end="url(#msk-arra)"/>
+<line class="msk-wa" x1="715" y1="455" x2="715" y2="467" marker-end="url(#msk-arra)"/>
+<text class="msk-s13" x="394" y="514">Maskesiz bitler 0 okunur → sonuç <tspan class="msk-mono msk-b">0x30</tspan></text>
+</svg>
