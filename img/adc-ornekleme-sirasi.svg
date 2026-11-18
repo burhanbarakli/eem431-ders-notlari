@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 672" class="aos-svg" role="img" aria-labelledby="aos-title aos-desc">
+<title id="aos-title">Örnekleme sıralayıcısı adım alanları</title>
+<desc id="aos-desc">ADCSSMUXn: her adım için 4-bit kanal alanı, MUX0 bit 3:0 … MUX7 bit 31:28 (SS0 sekiz alan, SS1/SS2 MUX3–MUX0, SS3 yalnız MUX0). ADCSSCTLn: her adım için 4 bit, adım k için TSk = bit 4k+3, IEk = 4k+2, ENDk = 4k+1, Dk = 4k; TivaWare ADC_CTL_TS 0x80, ADC_CTL_IE 0x40, ADC_CTL_END 0x20, ADC_CTL_D 0x10 bu nibble’a kaydırılır. (a) SS3 tek adım: TS ile ADCSSCTL3 = 0xE (TS0|IE0|END0), AIN0 ile ADCSSMUX3 = 0 ve ADCSSCTL3 = 0x6. (b) Workbook Lab 5: SS1’in 4 adımı sıcaklık sensörünü okur, son adımda IE ve END; ADCSSCTL1 = 0xE888. Dört sonuç sırayla ADCSSFIFO1’e yazılır ve son adımda INR1 kurulur.</desc>
+<defs>
+<marker id="aos-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="aos-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="aos-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="aos-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.aos-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.aos-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.aos-svg .aos-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.aos-svg .aos-b{font-weight:700}
+.aos-svg .aos-s13{font-size:13px}
+.aos-svg .aos-s15{font-size:15px}
+.aos-svg .aos-s16{font-size:16px}
+.aos-svg .aos-mut{fill:var(--fig-muted,#76746c)}
+.aos-svg .aos-acc{fill:var(--fig-accent,#b4481f)}
+.aos-svg .aos-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.aos-svg .aos-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.aos-svg .aos-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.aos-svg .aos-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.aos-svg .aos-head{fill:var(--fig-stroke,#2b2b29)}
+.aos-svg .aos-heada{fill:var(--fig-accent,#b4481f)}
+.aos-svg .aos-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.aos-svg .aos-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.aos-svg .aos-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.aos-svg .aos-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.aos-svg .aos-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text x="12" y="22"><tspan class="aos-s16 aos-b">Örnekleme sıralayıcısı</tspan><tspan class="aos-s15"> — adım başına alanlar (n = 0…3)</tspan></text>
+<text x="12" y="46" xml:space="preserve"><tspan class="aos-mono aos-b">ADCSSMUXn</tspan><tspan class="aos-s13">  her adım için 4-bit kanal numarası: 0…11 → AIN0…AIN11</tspan></text>
+<rect class="aos-box" x="656" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="702" y="73" text-anchor="middle">MUX0</text>
+<text class="aos-mono aos-mut" x="702" y="97" text-anchor="middle">3:0</text>
+<rect class="aos-box" x="564" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="610" y="73" text-anchor="middle">MUX1</text>
+<text class="aos-mono aos-mut" x="610" y="97" text-anchor="middle">7:4</text>
+<rect class="aos-box" x="472" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="518" y="73" text-anchor="middle">MUX2</text>
+<text class="aos-mono aos-mut" x="518" y="97" text-anchor="middle">11:8</text>
+<rect class="aos-box" x="380" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="426" y="73" text-anchor="middle">MUX3</text>
+<text class="aos-mono aos-mut" x="426" y="97" text-anchor="middle">15:12</text>
+<rect class="aos-box2" x="288" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="334" y="73" text-anchor="middle">MUX4</text>
+<text class="aos-mono aos-mut" x="334" y="97" text-anchor="middle">19:16</text>
+<rect class="aos-box2" x="196" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="242" y="73" text-anchor="middle">MUX5</text>
+<text class="aos-mono aos-mut" x="242" y="97" text-anchor="middle">23:20</text>
+<rect class="aos-box2" x="104" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="150" y="73" text-anchor="middle">MUX6</text>
+<text class="aos-mono aos-mut" x="150" y="97" text-anchor="middle">27:24</text>
+<rect class="aos-box2" x="12" y="54" width="92" height="28"/>
+<text class="aos-mono aos-b" x="58" y="73" text-anchor="middle">MUX7</text>
+<text class="aos-mono aos-mut" x="58" y="97" text-anchor="middle">31:28</text>
+<path class="aos-wm" d="M14,104 V110 H378 V104"/>
+<text class="aos-s13 aos-mut" x="196" y="126" text-anchor="middle">yalnız SS0 (adım 4–7)</text>
+<path class="aos-wm" d="M382,104 V110 H746 V104"/>
+<text class="aos-s13 aos-mut" x="564" y="126" text-anchor="middle">SS0, SS1, SS2 (adım 0–3) · SS3: yalnız MUX0</text>
+<text x="12" y="154" xml:space="preserve"><tspan class="aos-mono aos-b">ADCSSCTLn</tspan><tspan class="aos-s13">  her adım için 4 kontrol biti — adım k → bit 4k+3 … 4k</tspan></text>
+<rect class="aos-hl" x="656" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="702" y="181" text-anchor="middle">adım 0</text>
+<text class="aos-mono aos-mut" x="702" y="205" text-anchor="middle">3:0</text>
+<rect class="aos-box" x="564" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="610" y="181" text-anchor="middle">adım 1</text>
+<text class="aos-mono aos-mut" x="610" y="205" text-anchor="middle">7:4</text>
+<rect class="aos-box" x="472" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="518" y="181" text-anchor="middle">adım 2</text>
+<text class="aos-mono aos-mut" x="518" y="205" text-anchor="middle">11:8</text>
+<rect class="aos-box" x="380" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="426" y="181" text-anchor="middle">adım 3</text>
+<text class="aos-mono aos-mut" x="426" y="205" text-anchor="middle">15:12</text>
+<rect class="aos-box2" x="288" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="334" y="181" text-anchor="middle">adım 4</text>
+<text class="aos-mono aos-mut" x="334" y="205" text-anchor="middle">19:16</text>
+<rect class="aos-box2" x="196" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="242" y="181" text-anchor="middle">adım 5</text>
+<text class="aos-mono aos-mut" x="242" y="205" text-anchor="middle">23:20</text>
+<rect class="aos-box2" x="104" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="150" y="181" text-anchor="middle">adım 6</text>
+<text class="aos-mono aos-mut" x="150" y="205" text-anchor="middle">27:24</text>
+<rect class="aos-box2" x="12" y="162" width="92" height="28"/>
+<text class="aos-s13 aos-b" x="58" y="181" text-anchor="middle">adım 7</text>
+<text class="aos-mono aos-mut" x="58" y="205" text-anchor="middle">31:28</text>
+<path class="aos-con" d="M656,212 L380,228"/>
+<path class="aos-con" d="M748,212 L748,228"/>
+<rect class="aos-hl" x="380" y="228" width="92" height="42"/>
+<text class="aos-mono aos-b" x="426" y="246" text-anchor="middle">TS0</text>
+<text class="aos-s13 aos-mut" x="426" y="263" text-anchor="middle">bit 3</text>
+<text class="aos-s13" x="426" y="288" text-anchor="middle">sıcaklık</text>
+<text class="aos-s13" x="426" y="304" text-anchor="middle">sensörü</text>
+<rect class="aos-hl" x="472" y="228" width="92" height="42"/>
+<text class="aos-mono aos-b" x="518" y="246" text-anchor="middle">IE0</text>
+<text class="aos-s13 aos-mut" x="518" y="263" text-anchor="middle">bit 2</text>
+<text class="aos-s13" x="518" y="288" text-anchor="middle">adım sonu</text>
+<text class="aos-s13" x="518" y="304" text-anchor="middle">INRn = 1</text>
+<rect class="aos-hl" x="564" y="228" width="92" height="42"/>
+<text class="aos-mono aos-b" x="610" y="246" text-anchor="middle">END0</text>
+<text class="aos-s13 aos-mut" x="610" y="263" text-anchor="middle">bit 1</text>
+<text class="aos-s13" x="610" y="288" text-anchor="middle">dizinin</text>
+<text class="aos-s13" x="610" y="304" text-anchor="middle">son adımı</text>
+<rect class="aos-hl" x="656" y="228" width="92" height="42"/>
+<text class="aos-mono aos-b" x="702" y="246" text-anchor="middle">D0</text>
+<text class="aos-s13 aos-mut" x="702" y="263" text-anchor="middle">bit 0</text>
+<text class="aos-s13" x="702" y="288" text-anchor="middle">diferansiyel</text>
+<text class="aos-s13" x="702" y="304" text-anchor="middle">çift (2i, 2i+1)</text>
+<text x="12" y="236" xml:space="preserve"><tspan class="aos-s13 aos-b">adım k: </tspan><tspan class="aos-s13">TSk = bit 4k+3,  IEk = 4k+2,</tspan></text>
+<text class="aos-s13" x="12" y="253" xml:space="preserve">ENDk = 4k+1,  Dk = 4k</text>
+<text x="12" y="276"><tspan class="aos-s13 aos-b">TivaWare </tspan><tspan class="aos-mono">ADCSequenceStepConfigure</tspan><tspan class="aos-s13"> bayrakları:</tspan></text>
+<text class="aos-mono" x="12" y="294" xml:space="preserve">ADC_CTL_TS  0x80</text>
+<text class="aos-mono" x="12" y="311" xml:space="preserve">ADC_CTL_IE  0x40</text>
+<text class="aos-mono" x="186" y="294">ADC_CTL_END 0x20</text>
+<text class="aos-mono" x="186" y="311" xml:space="preserve">ADC_CTL_D   0x10</text>
+<text x="12" y="329" xml:space="preserve"><tspan class="aos-s13">bit 7:4 → adımın nibble’ı;  </tspan><tspan class="aos-mono">ADC_CTL_CHx</tspan><tspan class="aos-s13"> (3:0) → MUXk</tspan></text>
+<path class="aos-sep" d="M12,342 L748,342"/>
+<text x="12" y="364"><tspan class="aos-b">(a) SS3 — tek adım</tspan><tspan class="aos-s13 aos-mut"> (adım 0 hem ilk hem son adım)</tspan></text>
+<text class="aos-mono aos-mut" x="98" y="384" text-anchor="middle">TS0</text>
+<text class="aos-mono aos-mut" x="134" y="384" text-anchor="middle">IE0</text>
+<text class="aos-mono aos-mut" x="170" y="384" text-anchor="middle">END0</text>
+<text class="aos-mono aos-mut" x="206" y="384" text-anchor="middle">D0</text>
+<text class="aos-s13 aos-b" x="12" y="409">TS ile</text>
+<rect class="aos-hl" x="80" y="390" width="36" height="26"/>
+<text class="aos-mono aos-b" x="98" y="408" text-anchor="middle">1</text>
+<rect class="aos-hl" x="116" y="390" width="36" height="26"/>
+<text class="aos-mono aos-b" x="134" y="408" text-anchor="middle">1</text>
+<rect class="aos-hl" x="152" y="390" width="36" height="26"/>
+<text class="aos-mono aos-b" x="170" y="408" text-anchor="middle">1</text>
+<rect class="aos-box" x="188" y="390" width="36" height="26"/>
+<text class="aos-mono aos-b" x="206" y="408" text-anchor="middle">0</text>
+<text x="234" y="408"><tspan class="aos-s13">= </tspan><tspan class="aos-mono aos-b aos-acc">0xE</tspan></text>
+<text class="aos-s13 aos-mut" x="280" y="408">MUX yok sayılır</text>
+<text class="aos-s13 aos-b" x="12" y="441">AIN0 ile</text>
+<rect class="aos-box" x="80" y="422" width="36" height="26"/>
+<text class="aos-mono aos-b" x="98" y="440" text-anchor="middle">0</text>
+<rect class="aos-hl" x="116" y="422" width="36" height="26"/>
+<text class="aos-mono aos-b" x="134" y="440" text-anchor="middle">1</text>
+<rect class="aos-hl" x="152" y="422" width="36" height="26"/>
+<text class="aos-mono aos-b" x="170" y="440" text-anchor="middle">1</text>
+<rect class="aos-box" x="188" y="422" width="36" height="26"/>
+<text class="aos-mono aos-b" x="206" y="440" text-anchor="middle">0</text>
+<text x="234" y="440"><tspan class="aos-s13">= </tspan><tspan class="aos-mono aos-b aos-acc">0x6</tspan></text>
+<text class="aos-s13 aos-mut" x="280" y="440">MUX0 = 0 (AIN0)</text>
+<text class="aos-s13" x="12" y="474">END0 her zaman kurulmalı; IE0 → INR3 bayrağı (yoklama ya da kesme).</text>
+<rect class="aos-code" x="400" y="354" width="348" height="106" rx="6"/>
+<text class="aos-mono aos-mut" x="410" y="374">// TS ile → ADCSSCTL3 = 0xE</text>
+<text class="aos-mono" x="410" y="392">ADCSequenceStepConfigure(ADC0_BASE, 3, 0,</text>
+<text class="aos-mono aos-b" x="410" y="410" xml:space="preserve">  ADC_CTL_TS | ADC_CTL_IE | ADC_CTL_END);</text>
+<text class="aos-mono aos-mut" x="410" y="432">// 4. parametre, AIN0 ile (SSCTL3 = 0x6):</text>
+<text class="aos-mono" x="410" y="450" xml:space="preserve">  ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END</text>
+<path class="aos-sep" d="M12,488 L748,488"/>
+<text x="12" y="510"><tspan class="aos-b">(b) SS1 — 4 adım, hepsi sıcaklık sensörü</tspan><tspan class="aos-s13 aos-mut"> (Workbook Lab 5)</tspan></text>
+<rect class="aos-box" x="12" y="522" width="108" height="50" rx="6"/>
+<text class="aos-s13 aos-b" x="66" y="541" text-anchor="middle">adım 0</text>
+<text class="aos-mono" x="66" y="561" text-anchor="middle">TS</text>
+<path class="aos-w" d="M120,547 L140,547" marker-end="url(#aos-arr)"/>
+<path class="aos-w" d="M66,572 L66,608" marker-end="url(#aos-arr)"/>
+<text x="74" y="594"><tspan class="aos-s13 aos-mut">nibble </tspan><tspan class="aos-mono">0x8</tspan></text>
+<rect class="aos-box2" x="12" y="610" width="108" height="28"/>
+<text class="aos-s13" x="66" y="629" text-anchor="middle">1. sonuç</text>
+<rect class="aos-box" x="142" y="522" width="108" height="50" rx="6"/>
+<text class="aos-s13 aos-b" x="196" y="541" text-anchor="middle">adım 1</text>
+<text class="aos-mono" x="196" y="561" text-anchor="middle">TS</text>
+<path class="aos-w" d="M250,547 L270,547" marker-end="url(#aos-arr)"/>
+<path class="aos-w" d="M196,572 L196,608" marker-end="url(#aos-arr)"/>
+<text x="204" y="594"><tspan class="aos-s13 aos-mut">nibble </tspan><tspan class="aos-mono">0x8</tspan></text>
+<rect class="aos-box2" x="142" y="610" width="108" height="28"/>
+<text class="aos-s13" x="196" y="629" text-anchor="middle">2. sonuç</text>
+<rect class="aos-box" x="272" y="522" width="108" height="50" rx="6"/>
+<text class="aos-s13 aos-b" x="326" y="541" text-anchor="middle">adım 2</text>
+<text class="aos-mono" x="326" y="561" text-anchor="middle">TS</text>
+<path class="aos-w" d="M380,547 L400,547" marker-end="url(#aos-arr)"/>
+<path class="aos-w" d="M326,572 L326,608" marker-end="url(#aos-arr)"/>
+<text x="334" y="594"><tspan class="aos-s13 aos-mut">nibble </tspan><tspan class="aos-mono">0x8</tspan></text>
+<rect class="aos-box2" x="272" y="610" width="108" height="28"/>
+<text class="aos-s13" x="326" y="629" text-anchor="middle">3. sonuç</text>
+<rect class="aos-hl" x="402" y="522" width="108" height="50" rx="6"/>
+<text class="aos-s13 aos-b" x="456" y="541" text-anchor="middle">adım 3</text>
+<text class="aos-mono aos-b" x="456" y="561" text-anchor="middle">TS|IE|END</text>
+<path class="aos-w" d="M456,572 L456,608" marker-end="url(#aos-arr)"/>
+<text x="464" y="594"><tspan class="aos-s13 aos-mut">nibble </tspan><tspan class="aos-mono">0xE</tspan></text>
+<rect class="aos-box2" x="402" y="610" width="108" height="28"/>
+<text class="aos-s13" x="456" y="629" text-anchor="middle">4. sonuç</text>
+<text x="12" y="656"><tspan class="aos-mono aos-b">ADCSSFIFO1</tspan><tspan class="aos-s13"> — 4 derinlikli FIFO; her okuma bir sonucu çeker (alt 12 bit)</tspan></text>
+<path class="aos-wa" d="M510,547 L538,547" marker-end="url(#aos-arra)"/>
+<rect class="aos-hl" x="540" y="522" width="208" height="50" rx="6"/>
+<text x="550" y="542" xml:space="preserve"><tspan class="aos-mono aos-b">INR1 = 1</tspan><tspan class="aos-s13">  (ADCRIS bit 1)</tspan></text>
+<text class="aos-s13" x="550" y="561">yoklama ya da kesme ile görülür</text>
+<text x="540" y="598"><tspan class="aos-mono">ADCSSCTL1 = </tspan><tspan class="aos-mono aos-b aos-acc">0x0000E888</tspan></text>
+<text class="aos-s13" x="540" y="616">adım 3, 2, 1, 0 = E, 8, 8, 8</text>
+<text x="540" y="636"><tspan class="aos-mono">ADCSSMUX1</tspan><tspan class="aos-s13"> = 0 (TS = 1 iken</tspan></text>
+<text class="aos-s13" x="540" y="653">MUX alanı yok sayılır)</text>
+</svg>

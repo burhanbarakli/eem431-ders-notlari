@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 813" class="aba-svg" role="img" aria-labelledby="aba-title aba-desc">
+<title id="aba-title">ADC0 SS3 başlatma adımları</title>
+<desc id="aba-desc">On üç adım, solda doğrudan register, sağda TivaWare (datasheet §13.4.1 ve §13.4.2 sırası): 1 ADC saati RCGCADC (0x400F.E638) ve hazır bekleme PRADC (0x400F.EA38), 2 GPIO Port E saati, 3 PE3 için AFSEL = 1, DEN = 0, AMSEL = 1 (GPIOPinTypeADC ise DIR = 0, AFSEL = 0, PUR = PDR = 0, DEN = 0, AMSEL = 1 yapar), 4 isteğe bağlı ADCSSPRI, ADCPC, ADCSAC, ADCCC, 5 ADCACTSS.ASEN3 = 0 (ADCSequenceDisable), 6 ADCEMUX tetik (ADCSequenceConfigure), 7 ADCSSMUX3 kanal ve 8 ADCSSCTL3 adım kontrolü (tek ADCSequenceStepConfigure çağrısı), 9 ADCISC temizleme ve ADCIM.MASK3 (ADCIntEnable; maske yalnız kesmeli kullanımda), 10 ASEN3 = 1 (ADCSequenceEnable), 11 NVIC EN0 bit 17 (IntEnable(INT_ADC0SS3)), 12 CPSIE I (IntMasterEnable), 13 tetikle ve yoklamada bekle, oku, temizle. İsteğe bağlı ve yalnız kesmeli adımlar kesik çizgili.</desc>
+<defs>
+<marker id="aba-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="aba-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.aba-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.aba-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.aba-svg .aba-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.aba-svg .aba-b{font-weight:700}
+.aba-svg .aba-s13{font-size:13px}
+.aba-svg .aba-s15{font-size:15px}
+.aba-svg .aba-mut{fill:var(--fig-muted,#76746c)}
+.aba-svg .aba-acc{fill:var(--fig-accent,#b4481f)}
+.aba-svg .aba-blu{fill:var(--fig-blue,#1f5fa8)}
+.aba-svg .aba-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.aba-svg .aba-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.aba-svg .aba-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.aba-svg .aba-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.aba-svg .aba-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.aba-svg .aba-circ{fill:var(--fig-accent,#b4481f)}
+.aba-svg .aba-head{fill:var(--fig-stroke,#2b2b29)}
+.aba-svg .aba-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.aba-svg .aba-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.aba-svg .aba-codeopt{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:6 4}
+.aba-svg .aba-tagacc{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.2}
+</style>
+<rect class="aba-pill" x="30" y="6" width="340" height="26" rx="13"/>
+<text class="aba-s15 aba-b" x="200" y="24" text-anchor="middle">API’siz — doğrudan register</text>
+<rect class="aba-pill" x="382" y="6" width="366" height="26" rx="13"/>
+<text class="aba-s15 aba-b" x="565" y="24" text-anchor="middle">API’li — TivaWare (driverlib)</text>
+<rect class="aba-box" x="30" y="38" width="340" height="56" rx="6"/>
+<text class="aba-b" x="50" y="56">Saat: RCGCADC + hazır bekle: PRADC</text>
+<text class="aba-mono" x="50" y="71" xml:space="preserve">SYSCTL_RCGCADC_R |= 0x01;      // ADC0</text>
+<text class="aba-mono" x="50" y="86" xml:space="preserve">while(!(SYSCTL_PRADC_R &amp; 0x01));</text>
+<rect class="aba-code" x="382" y="38" width="366" height="56" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="56" xml:space="preserve">SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);</text>
+<text class="aba-mono aba-blu" x="394" y="71" xml:space="preserve">while(!SysCtlPeripheralReady(</text>
+<text class="aba-mono aba-blu" x="394" y="86" xml:space="preserve">        SYSCTL_PERIPH_ADC0));</text>
+<path class="aba-con" d="M370,54 H382"/>
+<rect class="aba-box" x="30" y="99" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="117">GPIO portunun saati (Port E)</text>
+<text class="aba-mono" x="50" y="132" xml:space="preserve">SYSCTL_RCGCGPIO_R |= 0x10;     // bit 4</text>
+<rect class="aba-code" x="382" y="99" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="117" xml:space="preserve">SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);</text>
+<path class="aba-con" d="M370,115 H382"/>
+<rect class="aba-box" x="30" y="145" width="340" height="71" rx="6"/>
+<text class="aba-b" x="50" y="163">Pin PE3: AFSEL = 1, DEN = 0, AMSEL = 1</text>
+<text class="aba-mono" x="50" y="178" xml:space="preserve">GPIO_PORTE_AFSEL_R |= 0x08;</text>
+<text class="aba-mono" x="50" y="193" xml:space="preserve">GPIO_PORTE_DEN_R   &amp;= ~0x08;</text>
+<text class="aba-mono" x="50" y="208" xml:space="preserve">GPIO_PORTE_AMSEL_R |= 0x08;</text>
+<rect class="aba-code" x="382" y="145" width="366" height="71" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="163" xml:space="preserve">GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);</text>
+<text class="aba-s13 aba-mut" x="394" y="178" xml:space="preserve">DIR=0, AFSEL=0, PUR=PDR=0, DEN=0, AMSEL=1</text>
+<text class="aba-s13 aba-mut" x="394" y="193" xml:space="preserve">(AFSEL’i siler)</text>
+<path class="aba-con" d="M370,161 H382"/>
+<rect class="aba-opt" x="30" y="221" width="340" height="71" rx="6"/>
+<text class="aba-b" x="50" y="239">Öncelik, hız, ortalama, saat</text>
+<rect class="aba-pill" x="280" y="223" width="84" height="19" rx="9"/>
+<text class="aba-s13 aba-b" x="322" y="237" text-anchor="middle">isteğe bağlı</text>
+<text class="aba-mono" x="50" y="254" xml:space="preserve">ADC0_SSPRI_R = 0x0123; // SS3 en yüksek</text>
+<text class="aba-mono" x="50" y="269" xml:space="preserve">ADC0_PC_R = 0x7; ADC0_SAC_R = 0x6;</text>
+<text class="aba-mono" x="50" y="284" xml:space="preserve">ADC0_CC_R = 0x1;       // PIOSC</text>
+<rect class="aba-codeopt" x="382" y="221" width="366" height="71" rx="6"/>
+<text class="aba-s13 aba-mut" x="394" y="239" xml:space="preserve">öncelik: ADCSequenceConfigure() 4. parametresi</text>
+<text class="aba-mono aba-blu" x="394" y="254" xml:space="preserve">ADCClockConfigSet(…);  // ADCPC + ADCCC</text>
+<text class="aba-mono aba-blu" x="394" y="269" xml:space="preserve">ADCHardwareOversampleConfigure(ADC0_BASE,</text>
+<text class="aba-mono aba-blu" x="394" y="284" xml:space="preserve">    64);                // ADCSAC</text>
+<path class="aba-con" d="M370,237 H382"/>
+<rect class="aba-box" x="30" y="297" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="315">Sıralayıcıyı kapat: ASEN3 = 0</text>
+<text class="aba-mono" x="50" y="330" xml:space="preserve">ADC0_ACTSS_R &amp;= ~0x08;</text>
+<rect class="aba-code" x="382" y="297" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="315" xml:space="preserve">ADCSequenceDisable(ADC0_BASE, 3);</text>
+<path class="aba-con" d="M370,313 H382"/>
+<rect class="aba-box" x="30" y="343" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="361">Tetik: ADCEMUX.EM3 (bit 15:12)</text>
+<text class="aba-mono" x="50" y="376" xml:space="preserve">ADC0_EMUX_R &amp;= ~0xF000;  // EM3 = 0x0</text>
+<rect class="aba-code" x="382" y="343" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="361" xml:space="preserve">ADCSequenceConfigure(ADC0_BASE, 3,</text>
+<text class="aba-mono aba-blu" x="394" y="376" xml:space="preserve">    ADC_TRIGGER_PROCESSOR, 0);</text>
+<path class="aba-con" d="M370,359 H382"/>
+<rect class="aba-box" x="30" y="389" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="407">Kanal: ADCSSMUX3.MUX0</text>
+<text class="aba-mono" x="50" y="422" xml:space="preserve">ADC0_SSMUX3_R = 0;        // AIN0 (PE3)</text>
+<path class="aba-con" d="M370,405 H382"/>
+<rect class="aba-box" x="30" y="435" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="453">Adım kontrolü: ADCSSCTL3</text>
+<text class="aba-mono" x="50" y="468" xml:space="preserve">ADC0_SSCTL3_R = 0x06;     // IE0 | END0</text>
+<rect class="aba-code" x="382" y="389" width="366" height="87" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="407" xml:space="preserve">ADCSequenceStepConfigure(ADC0_BASE, 3, 0,</text>
+<text class="aba-mono aba-blu" x="394" y="422" xml:space="preserve">    ADC_CTL_CH0 | ADC_CTL_IE |</text>
+<text class="aba-mono aba-blu" x="394" y="437" xml:space="preserve">    ADC_CTL_END);</text>
+<text class="aba-s13 aba-mut" x="394" y="452" xml:space="preserve">7 + 8 tek çağrı: MUX ve CTL nibble’ı</text>
+<path class="aba-con" d="M370,451 H382"/>
+<rect class="aba-opt" x="30" y="481" width="340" height="56" rx="6"/>
+<text class="aba-b" x="50" y="499">Bayrak sil + ADCIM.MASK3</text>
+<rect class="aba-tagacc" x="240" y="483" width="124" height="19" rx="9"/>
+<text class="aba-s13 aba-b aba-acc" x="302" y="497" text-anchor="middle">IM: yalnız kesmeli</text>
+<text class="aba-mono" x="50" y="514" xml:space="preserve">ADC0_ISC_R = 0x08;        // eski bayrak</text>
+<text class="aba-mono" x="50" y="529" xml:space="preserve">ADC0_IM_R |= 0x08;        // MASK3</text>
+<rect class="aba-code" x="382" y="481" width="366" height="56" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="499" xml:space="preserve">ADCIntEnable(ADC0_BASE, 3);</text>
+<text class="aba-s13 aba-mut" x="394" y="514" xml:space="preserve">önce ISC’yi temizler, sonra MASK3 = 1</text>
+<path class="aba-con" d="M370,497 H382"/>
+<rect class="aba-box" x="30" y="542" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="560">Sıralayıcıyı aç: ASEN3 = 1</text>
+<text class="aba-mono" x="50" y="575" xml:space="preserve">ADC0_ACTSS_R |= 0x08;</text>
+<rect class="aba-code" x="382" y="542" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="560" xml:space="preserve">ADCSequenceEnable(ADC0_BASE, 3);</text>
+<path class="aba-con" d="M370,558 H382"/>
+<rect class="aba-opt" x="30" y="588" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="606">NVIC: IRQ 17’yi aç</text>
+<rect class="aba-tagacc" x="266" y="590" width="98" height="19" rx="9"/>
+<text class="aba-s13 aba-b aba-acc" x="315" y="604" text-anchor="middle">yalnız kesmeli</text>
+<text class="aba-mono" x="50" y="621" xml:space="preserve">NVIC_EN0_R = 1 &lt;&lt; 17;     // ADC0SS3</text>
+<rect class="aba-codeopt" x="382" y="588" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="606" xml:space="preserve">IntEnable(INT_ADC0SS3);   // vektör 33</text>
+<path class="aba-con" d="M370,604 H382"/>
+<rect class="aba-opt" x="30" y="634" width="340" height="41" rx="6"/>
+<text class="aba-b" x="50" y="652">Global kesmeleri aç</text>
+<rect class="aba-tagacc" x="266" y="636" width="98" height="19" rx="9"/>
+<text class="aba-s13 aba-b aba-acc" x="315" y="650" text-anchor="middle">yalnız kesmeli</text>
+<text class="aba-mono" x="50" y="667" xml:space="preserve">__asm(" CPSIE I");</text>
+<rect class="aba-codeopt" x="382" y="634" width="366" height="41" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="652" xml:space="preserve">IntMasterEnable();</text>
+<path class="aba-con" d="M370,650 H382"/>
+<rect class="aba-box" x="30" y="680" width="340" height="86" rx="6"/>
+<text class="aba-b" x="50" y="698">Tetikle (+ yoklamada bekle, oku, temizle)</text>
+<text class="aba-mono" x="50" y="713" xml:space="preserve">ADC0_PSSI_R = 0x08;</text>
+<text class="aba-mono" x="50" y="728" xml:space="preserve">while(!(ADC0_RIS_R &amp; 0x08));</text>
+<text class="aba-mono" x="50" y="743" xml:space="preserve">v = ADC0_SSFIFO3_R &amp; 0xFFF;</text>
+<text class="aba-mono" x="50" y="758" xml:space="preserve">ADC0_ISC_R = 0x08;        // W1C: = ile</text>
+<rect class="aba-code" x="382" y="680" width="366" height="86" rx="6"/>
+<text class="aba-mono aba-blu" x="394" y="698" xml:space="preserve">ADCProcessorTrigger(ADC0_BASE, 3);</text>
+<text class="aba-mono aba-blu" x="394" y="713" xml:space="preserve">while(!ADCIntStatus(ADC0_BASE, 3, false));</text>
+<text class="aba-mono aba-blu" x="394" y="728" xml:space="preserve">ADCSequenceDataGet(ADC0_BASE, 3, &amp;v);</text>
+<text class="aba-mono aba-blu" x="394" y="743" xml:space="preserve">ADCIntClear(ADC0_BASE, 3);</text>
+<path class="aba-con" d="M370,696 H382"/>
+<path class="aba-w" d="M16,65 V104"/>
+<path class="aba-w" d="M16,126 V150"/>
+<path class="aba-w" d="M16,172 V226"/>
+<path class="aba-w" d="M16,248 V302"/>
+<path class="aba-w" d="M16,324 V348"/>
+<path class="aba-w" d="M16,370 V394"/>
+<path class="aba-w" d="M16,416 V440"/>
+<path class="aba-w" d="M16,462 V486"/>
+<path class="aba-w" d="M16,508 V547"/>
+<path class="aba-w" d="M16,569 V593"/>
+<path class="aba-w" d="M16,615 V639"/>
+<path class="aba-w" d="M16,661 V685"/>
+<path class="aba-w" d="M16,707 V775" marker-end="url(#aba-arr)"/>
+<circle class="aba-circ" cx="16" cy="54" r="11"/>
+<text class="aba-num" x="16" y="59" text-anchor="middle">1</text>
+<circle class="aba-circ" cx="16" cy="115" r="11"/>
+<text class="aba-num" x="16" y="120" text-anchor="middle">2</text>
+<circle class="aba-circ" cx="16" cy="161" r="11"/>
+<text class="aba-num" x="16" y="166" text-anchor="middle">3</text>
+<circle class="aba-circ" cx="16" cy="237" r="11"/>
+<text class="aba-num" x="16" y="242" text-anchor="middle">4</text>
+<circle class="aba-circ" cx="16" cy="313" r="11"/>
+<text class="aba-num" x="16" y="318" text-anchor="middle">5</text>
+<circle class="aba-circ" cx="16" cy="359" r="11"/>
+<text class="aba-num" x="16" y="364" text-anchor="middle">6</text>
+<circle class="aba-circ" cx="16" cy="405" r="11"/>
+<text class="aba-num" x="16" y="410" text-anchor="middle">7</text>
+<circle class="aba-circ" cx="16" cy="451" r="11"/>
+<text class="aba-num" x="16" y="456" text-anchor="middle">8</text>
+<circle class="aba-circ" cx="16" cy="497" r="11"/>
+<text class="aba-num" x="16" y="502" text-anchor="middle">9</text>
+<circle class="aba-circ" cx="16" cy="558" r="11"/>
+<text class="aba-num aba-s13" x="16" y="563" text-anchor="middle">10</text>
+<circle class="aba-circ" cx="16" cy="604" r="11"/>
+<text class="aba-num aba-s13" x="16" y="609" text-anchor="middle">11</text>
+<circle class="aba-circ" cx="16" cy="650" r="11"/>
+<text class="aba-num aba-s13" x="16" y="655" text-anchor="middle">12</text>
+<circle class="aba-circ" cx="16" cy="696" r="11"/>
+<text class="aba-num aba-s13" x="16" y="701" text-anchor="middle">13</text>
+<text class="aba-s13 aba-mut" x="748" y="789" text-anchor="end">Sıra: datasheet §13.4.1 (1–3, 4’teki öncelik) + §13.4.2 (5–10); 11–12 NVIC ve işlemci.</text>
+<text x="748" y="806" text-anchor="end"><tspan class="aba-s13 aba-mut">RCGCADC </tspan><tspan class="aba-mono aba-mut">0x400F.E638</tspan><tspan class="aba-s13 aba-mut"> · PRADC </tspan><tspan class="aba-mono aba-mut">0x400F.EA38</tspan></text>
+</svg>

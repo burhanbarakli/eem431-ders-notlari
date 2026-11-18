@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 788" class="ata-svg" role="img" aria-labelledby="ata-title ata-desc">
+<title id="ata-title">ADC tetikleme ve sonuç alma akışı</title>
+<desc id="ata-desc">Örnek ADC0 SS3. Tetik kaynakları: işlemci (ADCPSSI.SS3 = 1, ADCProcessorTrigger), zamanlayıcı (GPTMCTL.TAOTE = 1, TimerControlTrigger(TIMER0_BASE, TIMER_A, true)) ve diğerleri; ADCEMUX’un EM3 alanı (bit 15:12) kaynağı seçer: 0x0 işlemci, 0x5 zamanlayıcı, 0xF sürekli (ADCSequenceConfigure ile ADC_TRIGGER_TIMER vb.). Sıralayıcı ASEN3 = 1 iken dönüşür, sonucu ADCSSFIFO3’e yazar ve ADCRIS.INR3’ü kurar. Yoklama yolu: INR3’ü bekle (ADCIntStatus), FIFO’yu oku (ADCSequenceDataGet), ADCISC’ye 1 yazarak temizle (ADCIntClear). Kesme yolu: ADCIM.MASK3 ve NVIC (NVIC_EN0 bit 17 = IRQ 17, vektör 33; ADC0 SS0–SS3 = IRQ 14–17) açılır; ISR önce ADCISC’yi temizler, sonra FIFO’yu okur. ADCISC W1C’dir: = ile yazılır, |= diğer bayrakları da siler.</desc>
+<defs>
+<marker id="ata-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ata-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ata-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ata-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.ata-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ata-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ata-svg .ata-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ata-svg .ata-b{font-weight:700}
+.ata-svg .ata-s13{font-size:13px}
+.ata-svg .ata-s15{font-size:15px}
+.ata-svg .ata-s16{font-size:16px}
+.ata-svg .ata-mut{fill:var(--fig-muted,#76746c)}
+.ata-svg .ata-acc{fill:var(--fig-accent,#b4481f)}
+.ata-svg .ata-blu{fill:var(--fig-blue,#1f5fa8)}
+.ata-svg .ata-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.ata-svg .ata-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ata-svg .ata-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.ata-svg .ata-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.ata-svg .ata-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ata-svg .ata-circ{fill:var(--fig-accent,#b4481f)}
+.ata-svg .ata-head{fill:var(--fig-stroke,#2b2b29)}
+.ata-svg .ata-headm{fill:var(--fig-muted,#76746c)}
+.ata-svg .ata-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.ata-svg .ata-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ata-svg .ata-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text x="12" y="22"><tspan class="ata-s16 ata-b">Tetikleme ve sonucu alma</tspan><tspan class="ata-s15"> — örnek: ADC0, SS3 (tek adım, AIN0)</tspan></text>
+<text x="748" y="22" text-anchor="end" xml:space="preserve"><tspan class="ata-s13 ata-mut">düz: </tspan><tspan class="ata-mono ata-mut">register</tspan><tspan class="ata-s13 ata-mut">  ·  mavi: </tspan><tspan class="ata-mono ata-blu">TivaWare</tspan></text>
+<rect class="ata-box" x="12" y="38" width="290" height="74" rx="6"/>
+<text class="ata-b" x="22" y="58">İşlemci (yazılım) tetiği</text>
+<rect class="ata-pill" x="250" y="44" width="44" height="20" rx="10"/>
+<text class="ata-mono ata-b" x="272" y="59" text-anchor="middle">0x0</text>
+<text x="22" y="80" xml:space="preserve"><tspan class="ata-mono">ADC0_PSSI_R = 0x08;</tspan><tspan class="ata-s13 ata-mut">   SS3 = 1</tspan></text>
+<text class="ata-mono ata-blu" x="22" y="100">ADCProcessorTrigger(ADC0_BASE, 3);</text>
+<rect class="ata-box" x="12" y="120" width="290" height="88" rx="6"/>
+<text class="ata-b" x="22" y="140">Zamanlayıcı tetiği</text>
+<rect class="ata-pill" x="250" y="126" width="44" height="20" rx="10"/>
+<text class="ata-mono ata-b" x="272" y="141" text-anchor="middle">0x5</text>
+<text x="22" y="162" xml:space="preserve"><tspan class="ata-mono">TIMER0_CTL_R |= 0x20;</tspan><tspan class="ata-s13 ata-mut">  TAOTE = 1</tspan></text>
+<text class="ata-mono ata-blu" x="22" y="181">TimerControlTrigger(TIMER0_BASE,</text>
+<text class="ata-mono ata-blu" x="22" y="198" xml:space="preserve">    TIMER_A, true);</text>
+<rect class="ata-box2" x="12" y="216" width="290" height="48" rx="6"/>
+<text x="22" y="235"><tspan class="ata-s13 ata-b">Diğer: </tspan><tspan class="ata-s13">karş. </tspan><tspan class="ata-mono">0x1/0x2</tspan><tspan class="ata-s13"> · GPIO </tspan><tspan class="ata-mono">0x4</tspan><tspan class="ata-s13"> · PWM </tspan><tspan class="ata-mono">0x6–9</tspan></text>
+<text x="22" y="254"><tspan class="ata-s13">sürekli </tspan><tspan class="ata-mono">0xF</tspan><tspan class="ata-s13 ata-mut">: en düşük öncelik verin</tspan></text>
+<path class="ata-w" d="M302,75 L328,75" marker-end="url(#ata-arr)"/>
+<path class="ata-w" d="M302,164 L328,164" marker-end="url(#ata-arr)"/>
+<path class="ata-w" d="M302,240 L328,240" marker-end="url(#ata-arr)"/>
+<rect class="ata-box2" x="330" y="38" width="210" height="226" rx="6"/>
+<text class="ata-mono ata-b" x="340" y="58">ADCEMUX</text>
+<text class="ata-s13" x="340" y="76">EM3 alanı = bit 15:12</text>
+<text class="ata-mono ata-b" x="340" y="98">0x0</text>
+<text class="ata-s13" x="376" y="98">işlemci (reset)</text>
+<text class="ata-mono ata-b" x="340" y="116">0x5</text>
+<text class="ata-s13" x="376" y="116">zamanlayıcı</text>
+<text class="ata-mono ata-b" x="340" y="134">0xF</text>
+<text class="ata-s13" x="376" y="134">sürekli</text>
+<text class="ata-mono" x="340" y="160">ADC0_EMUX_R &amp;= ~0xF000;</text>
+<text class="ata-mono" x="340" y="177">ADC0_EMUX_R |= 0x5000;</text>
+<text class="ata-mono ata-blu" x="340" y="201">ADCSequenceConfigure(</text>
+<text class="ata-mono ata-blu" x="340" y="218" xml:space="preserve">  ADC0_BASE, 3,</text>
+<text class="ata-mono ata-blu" x="340" y="235" xml:space="preserve">  ADC_TRIGGER_TIMER, 0);</text>
+<text x="340" y="254"><tspan class="ata-s13 ata-mut">işlemci: </tspan><tspan class="ata-mono ata-mut">…_PROCESSOR</tspan></text>
+<path class="ata-w" d="M540,100 L570,100" marker-end="url(#ata-arr)"/>
+<rect class="ata-box" x="572" y="38" width="176" height="112" rx="6"/>
+<text class="ata-b" x="582" y="58">Sıralayıcı SS3</text>
+<text x="582" y="77"><tspan class="ata-mono">ADCACTSS</tspan><tspan class="ata-s13">.ASEN3 = 1</tspan></text>
+<text class="ata-mono" x="582" y="96">ADCSSMUX3 = 0</text>
+<text class="ata-mono" x="582" y="114">ADCSSCTL3 = 0x6</text>
+<text class="ata-s13 ata-mut" x="582" y="133">IE0 | END0</text>
+<path class="ata-w" d="M660,150 L660,176" marker-end="url(#ata-arr)"/>
+<rect class="ata-hl" x="572" y="178" width="176" height="76" rx="6"/>
+<text class="ata-b" x="582" y="198">Dönüşüm bitti</text>
+<text x="582" y="217"><tspan class="ata-mono">ADCSSFIFO3</tspan><tspan class="ata-s13"> ← sonuç</tspan></text>
+<text x="582" y="237"><tspan class="ata-mono">ADCRIS.INR3</tspan><tspan class="ata-s13"> = 1</tspan></text>
+<path class="ata-w" d="M616,254 V276 H190 V286" marker-end="url(#ata-arr)"/>
+<path class="ata-w" d="M704,254 V286" marker-end="url(#ata-arr)"/>
+<rect class="ata-pill" x="20" y="288" width="350" height="28" rx="14"/>
+<text class="ata-s15 ata-b" x="195" y="307" text-anchor="middle">Yoklama (kesmesiz)</text>
+<rect class="ata-pill" x="390" y="288" width="358" height="28" rx="14"/>
+<text class="ata-s15 ata-b" x="569" y="307" text-anchor="middle">Kesme</text>
+<rect class="ata-box" x="20" y="326" width="350" height="66" rx="6"/>
+<circle class="ata-circ" cx="38" cy="343" r="11"/>
+<text class="ata-num" x="38" y="348" text-anchor="middle">1</text>
+<text class="ata-b" x="56" y="348"><tspan class="ata-b">Bekle: </tspan><tspan class="ata-mono ata-b">ADCRIS.INR3</tspan></text>
+<text class="ata-mono" x="32" y="368" xml:space="preserve">while(!(ADC0_RIS_R &amp; 0x08));</text>
+<text class="ata-mono ata-blu" x="32" y="386" xml:space="preserve">while(!ADCIntStatus(ADC0_BASE, 3, false));</text>
+<path class="ata-w" d="M195,392 L195,406" marker-end="url(#ata-arr)"/>
+<rect class="ata-box" x="20" y="408" width="350" height="66" rx="6"/>
+<circle class="ata-circ" cx="38" cy="425" r="11"/>
+<text class="ata-num" x="38" y="430" text-anchor="middle">2</text>
+<text class="ata-b" x="56" y="430"><tspan class="ata-b">Oku: </tspan><tspan class="ata-mono ata-b">ADCSSFIFO3</tspan></text>
+<text class="ata-mono" x="32" y="450" xml:space="preserve">v = ADC0_SSFIFO3_R &amp; 0xFFF;</text>
+<text class="ata-mono ata-blu" x="32" y="468" xml:space="preserve">ADCSequenceDataGet(ADC0_BASE, 3, &amp;v);</text>
+<path class="ata-w" d="M195,474 L195,488" marker-end="url(#ata-arr)"/>
+<rect class="ata-box" x="20" y="490" width="350" height="66" rx="6"/>
+<circle class="ata-circ" cx="38" cy="507" r="11"/>
+<text class="ata-num" x="38" y="512" text-anchor="middle">3</text>
+<text class="ata-b" x="56" y="512"><tspan class="ata-b">Temizle: </tspan><tspan class="ata-mono ata-b">ADCISC.IN3</tspan><tspan class="ata-s13"> (W1C)</tspan></text>
+<text class="ata-mono" x="32" y="532" xml:space="preserve">ADC0_ISC_R = 0x08;</text>
+<text class="ata-mono ata-blu" x="32" y="550" xml:space="preserve">ADCIntClear(ADC0_BASE, 3);</text>
+<path class="ata-wm" d="M195.0,556 V572 H8 V343 H17" marker-end="url(#ata-arrm)"/>
+<text class="ata-s13 ata-mut" x="32" y="588">sonraki tetikten sonra 1’e dön</text>
+<text class="ata-s13" x="20" y="614">Lab 5 sırası: temizle → tetikle → bekle → oku</text>
+<text class="ata-s13 ata-mut" x="20" y="632">(döngüde eşdeğer: bayrak her turda bir kez silinir)</text>
+<rect class="ata-box" x="390" y="326" width="358" height="102" rx="6"/>
+<circle class="ata-circ" cx="408" cy="343" r="11"/>
+<text class="ata-num" x="408" y="348" text-anchor="middle">1</text>
+<text class="ata-b" x="426" y="348"><tspan class="ata-b">Kurulum: </tspan><tspan class="ata-mono ata-b">ADCIM.MASK3</tspan><tspan class="ata-b"> + NVIC</tspan></text>
+<text class="ata-mono" x="402" y="368" xml:space="preserve">ADC0_IM_R |= 0x08;</text>
+<text class="ata-mono" x="402" y="386" xml:space="preserve">NVIC_EN0_R = 1 &lt;&lt; 17;     // IRQ 17</text>
+<text class="ata-mono ata-blu" x="402" y="404" xml:space="preserve">ADCIntEnable(ADC0_BASE, 3);</text>
+<text class="ata-mono ata-blu" x="402" y="422" xml:space="preserve">IntEnable(INT_ADC0SS3);   // vektör 33</text>
+<path class="ata-w" d="M569,428 L569,442" marker-end="url(#ata-arr)"/>
+<rect class="ata-hl" x="390" y="444" width="358" height="46" rx="6"/>
+<text x="402" y="464"><tspan class="ata-s13 ata-b">INR3 ∧ MASK3 → NVIC: </tspan><tspan class="ata-mono ata-b">ADC0SS3</tspan><tspan class="ata-s13 ata-b">, IRQ 17</tspan></text>
+<text x="402" y="482"><tspan class="ata-s13">ADC0 SS0–SS3 = IRQ 14–17 · vektör adresi </tspan><tspan class="ata-mono">0x0000.0084</tspan></text>
+<path class="ata-w" d="M569,490 L569,512" marker-end="url(#ata-arr)"/>
+<text class="ata-s13 ata-b ata-acc" x="402" y="532">ISR</text>
+<rect class="ata-box" x="400" y="540" width="338" height="66" rx="6"/>
+<circle class="ata-circ" cx="418" cy="557" r="11"/>
+<text class="ata-num" x="418" y="562" text-anchor="middle">2</text>
+<text class="ata-b" x="436" y="562"><tspan class="ata-b">Önce temizle: </tspan><tspan class="ata-mono ata-b">ADCISC</tspan></text>
+<text class="ata-mono" x="412" y="582" xml:space="preserve">ADC0_ISC_R = 0x08;</text>
+<text class="ata-mono ata-blu" x="412" y="600" xml:space="preserve">ADCIntClear(ADC0_BASE, 3);</text>
+<path class="ata-w" d="M569,606 L569,620" marker-end="url(#ata-arr)"/>
+<rect class="ata-box" x="400" y="622" width="338" height="66" rx="6"/>
+<circle class="ata-circ" cx="418" cy="639" r="11"/>
+<text class="ata-num" x="418" y="644" text-anchor="middle">3</text>
+<text class="ata-b" x="436" y="644"><tspan class="ata-b">Sonra oku: </tspan><tspan class="ata-mono ata-b">ADCSSFIFO3</tspan></text>
+<text class="ata-mono" x="412" y="664" xml:space="preserve">v = ADC0_SSFIFO3_R &amp; 0xFFF;</text>
+<text class="ata-mono ata-blu" x="412" y="682" xml:space="preserve">ADCSequenceDataGet(ADC0_BASE, 3, &amp;v);</text>
+<rect class="ata-zone" x="390" y="514" width="358" height="184" rx="8"/>
+<rect class="ata-hl" x="12" y="714" width="736" height="66" rx="6"/>
+<text x="24" y="735"><tspan class="ata-b ata-acc">W1C: </tspan><tspan class="ata-mono ata-b">ADCISC</tspan><tspan class="ata-s13">’ye </tspan><tspan class="ata-mono ata-b">=</tspan><tspan class="ata-s13"> ile yazın. </tspan><tspan class="ata-mono">ADC0_ISC_R |= 0x08;</tspan><tspan class="ata-s13"> okunan diğer 1’leri de geri yazar ve başka SS’lerin</tspan></text>
+<text x="24" y="754"><tspan class="ata-s13">bayraklarını da siler. Yoklamada (MASK = 0) da </tspan><tspan class="ata-mono">INRn</tspan><tspan class="ata-s13"> yalnız </tspan><tspan class="ata-mono">ADCISC</tspan><tspan class="ata-s13">’ye 1 yazılarak silinir (datasheet s. 828).</tspan></text>
+<text class="ata-s13" x="24" y="772">ISR’de bayrak başta silinir; çıkışta hâlâ 1 kalırsa NVIC kesmeyi hemen yeniden alır.</text>
+</svg>

@@ -1,0 +1,982 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADC — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad üzerinde ADC: SAR dönüşüm, çözünürlük, örnekleme sıralayıcıları ve FIFO'lar, iç sıcaklık sensörü, register'lar, işlemci ve zamanlayıcı tetiği, yoklama ve kesme ile sonuç alma, başlatma adımları, API'siz ve TivaWare API'li örnekler, TI Lab 5.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 7. ADC</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#analog">1. Analogdan dijitale</a><ol>
+  <li><a href="#ornekleme">Örnekleme ve nicemleme</a></li>
+  <li><a href="#cozunurluk">Çözünürlük ve VREF</a></li>
+  <li><a href="#sar">SAR ilkesi</a></li>
+  <li><a href="#formul">Dönüşüm formülü ve sayısal örnekler</a></li></ol></li>
+<li><a href="#modul">2. TM4C123 ADC modülü</a><ol>
+  <li><a href="#ozellikler">Özellikler</a></li>
+  <li><a href="#siralayicilar">Örnekleme sıralayıcıları ve FIFO'lar</a></li>
+  <li><a href="#adc-saat">ADC saati ve örnekleme hızı</a></li></ol></li>
+<li><a href="#girisler">3. Analog girişler ve pin ayarı</a><ol>
+  <li><a href="#pin-haritasi">AIN kanal–pin eşlemesi</a></li>
+  <li><a href="#pin-ayari">Pinin analog giriş yapılması</a></li>
+  <li><a href="#sicaklik">İç sıcaklık sensörü</a></li></ol></li>
+<li><a href="#registerlar">4. Register'lar ve taban adresler</a><ol>
+  <li><a href="#taban">Taban adresler ve saat register'ları</a></li>
+  <li><a href="#register-tablosu">ADC register tablosu</a></li>
+  <li><a href="#bitler">Sık kullanılan bitler</a></li></ol></li>
+<li><a href="#siralayici-ayar">5. Örnekleme sıralayıcısı yapılandırması</a><ol>
+  <li><a href="#ssmux-ssctl">ADCSSMUXn ve ADCSSCTLn</a></li>
+  <li><a href="#ss-ornek">Örnek: SS3 tek adım ve SS1 dört adım</a></li>
+  <li><a href="#fifo">FIFO'yu okumak</a></li></ol></li>
+<li><a href="#tetik">6. Tetikleme ve sonucu alma</a><ol>
+  <li><a href="#tetik-kaynak">Tetik kaynakları (ADCEMUX)</a></li>
+  <li><a href="#yoklama-kesme">Yoklama ve kesme</a></li>
+  <li><a href="#zamanlayici-tetik">Zamanlayıcı tetiği</a></li>
+  <li><a href="#kesme-no">ADC kesme numaraları</a></li></ol></li>
+<li><a href="#baslatma">7. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">Adım adım</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#ornekler">8. Örnekler</a><ol>
+  <li><a href="#ornek-yoklama-apisiz">8.1 Tek kanal, işlemci tetiği, yoklama, API'siz</a></li>
+  <li><a href="#ornek-yoklama-apili">8.2 Tek kanal, işlemci tetiği, yoklama, API'li</a></li>
+  <li><a href="#ornek-sicaklik">8.3 İç sıcaklık sensörü ve donanım ortalaması</a></li>
+  <li><a href="#ornek-kesme">8.4 ADC kesmesi</a></li>
+  <li><a href="#ornek-timer">8.5 Zamanlayıcı tetikli ADC</a></li>
+  <li><a href="#ornek-timer-adc">8.6 Timer ve ADC birlikte (yoklamalı)</a></li>
+  <li><a href="#ornek-gpio">8.7 GPIO tetikli ADC</a></li>
+  <li><a href="#diger-dosyalar">8.8 Ders klasöründeki diğer ADC dosyaları</a></li></ol></li>
+<li><a href="#lab5">9. TI Lab 5 uyarlaması</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>ADC: Analog-Dijital Dönüştürücü</h1>
+<p class="lead">Şimdiye kadar pinleri yalnız 0 ya da 1 olarak okuduk. Sıcaklık, ışık, potansiyometre konumu gibi büyüklükler ise sürekli değişen bir gerilimle temsil edilir. Bu notta TM4C123GH6PM'nin 12-bit ADC'siyle bu gerilimleri sayıya çevireceğiz: önce dönüşümün ilkesini, sonra ADC modülünün "örnekleme sıralayıcısı" düzenini, en sonda da işlemci tetikli, kesmeli ve zamanlayıcı tetikli örnekleri hem register düzeyinde hem TivaWare ile göreceğiz. Kesme altyapısı (NVIC, vektör tablosu, ISR kuralları) <a href="../timer/#kesme">Zamanlayıcılar notunda</a> anlatıldığı için burada tekrar edilmiyor.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Örnekleme, nicemleme, çözünürlük ve referans gerilimi kavramlarını açıklayabilir; ardışık yaklaşım (SAR) dönüştürücüsünün 12 adımda nasıl sonuca ulaştığını gösterebilir.</li>
+<li>Verilen bir gerilim için ADC kodunu, verilen bir kod için gerilimi ve iç sıcaklık sensörünün kodundan sıcaklığı hesaplayabilir (kod = V<sub>in</sub>·4096/3,3; adım ≈ 0,806 mV).</li>
+<li>TM4C123 ADC modülünün yapısını (2 modül, 12 kanal + sıcaklık sensörü, 1 Msps, SS0–SS3 sıralayıcıları ve 8/4/4/1 derinlikli FIFO'lar, donanım ortalayıcı, tetik kaynakları) açıklayabilir.</li>
+<li>Bir AIN pinini analog giriş yapabilir (AFSEL = 1, DEN = 0, AMSEL = 1) ve bir sıralayıcıyı ADCSSMUXn ile ADCSSCTLn (TS, IE, END, D bitleri) üzerinden yapılandırabilir.</li>
+<li>ADC'yi şu sırayla başlatabilir: 1 RCGCADC (+ PRADC bekle) → 2 RCGCGPIO → 3 pin (AFSEL/DEN/AMSEL) → 4 isteğe bağlı modül ayarları (ADCSSPRI, ADCPC, ADCSAC, ADCCC) → 5 ASENn = 0 → 6 ADCEMUX → 7 ADCSSMUXn → 8 ADCSSCTLn → 9 ADCISC + ADCIM → 10 ASENn = 1 → 11 NVIC → 12 global izin → 13 tetik.</li>
+<li>Sonucu yoklama (ADCRIS) ya da kesme (ADCIM → NVIC) ile alabilir, bayrağı ADCISC ile doğru biçimde temizleyebilir ve FIFO'yu boşaltabilir.</li>
+<li>İşlemci tetiğini (ADCPSSI) ve zamanlayıcı tetiğini (ADCEMUX + GPTMCTL.TnOTE) kullanarak aynı uygulamayı doğrudan register erişimiyle ve TivaWare fonksiyonlarıyla (<code>ADCSequenceConfigure</code>, <code>ADCSequenceStepConfigure</code>, <code>ADCProcessorTrigger</code>, <code>ADCSequenceDataGet</code>, <code>TimerControlTrigger</code>…) yazabilir.</li>
+</ol></div>
+
+<h2 id="analog">1. Analogdan dijitale</h2>
+<h3 id="ornekleme">Örnekleme ve nicemleme</h3>
+<p>Analog bir sinyal zamanda da genlikte de süreklidir. Bir ADC (Analog-to-Digital Converter) bu sinyali iki adımda sayıya çevirir:</p>
+<ul>
+<li><b>Örnekleme (sampling):</b> Sinyalin değeri belirli anlarda alınır ve dönüşüm süresince sabit tutulur. Bu işi girişteki <b>örnekle-tut</b> (sample-and-hold) devresi yapar. Saniyede alınan örnek sayısına <b>örnekleme hızı</b> denir (TM4C123'te en çok 1 Msps, yani saniyede bir milyon örnek).</li>
+<li><b>Nicemleme (quantization):</b> Tutulan gerilim, sonlu sayıdaki seviyeden en yakınına yuvarlanır ve bu seviyenin numarası (ADC <b>kodu</b>) çıkış olarak verilir. N bitlik bir ADC'de 2<sup>N</sup> seviye vardır.</li>
+</ul>
+<p>Örnekleme hızı, ölçülecek sinyaldeki en yüksek frekansın en az iki katı olmalıdır (<b>Nyquist ölçütü</b>). Daha yavaş örneklenen hızlı bir sinyal, ölçümde olduğundan düşük frekanslı görünür (örtüşme, <i>aliasing</i>). TM4C123'ün ADC girişinde iç örtüşme önleyici süzgeç yoktur; gerekiyorsa dışarıda bir alçak geçiren süzgeç kullanılır (datasheet s. 1390, Tablo 24-33 notu). Sıcaklık ya da potansiyometre gibi yavaş değişen büyüklüklerde bu sorun pratikte ortaya çıkmaz.</p>
+
+<h3 id="cozunurluk">Çözünürlük ve VREF</h3>
+<p>ADC çıkışını iki referans gerilimine göre üretir: V<sub>REFP</sub> (üst) ve V<sub>REFN</sub> (alt). TM4C123GH6PM'de bunlar dışarıdan seçilemez; V<sub>REFP</sub> analog besleme <b>VDDA</b>'ya, V<sub>REFN</sub> analog toprak <b>GNDA</b>'ya bağlıdır (datasheet §13.3.4.1, s. 808–809). LaunchPad'de VDDA = 3,3 V olduğundan ölçülebilen aralık <b>0 – 3,3 V</b>'tur. Tek uçlu (single-ended) kipte 0x000 kodu V<sub>REFN</sub>'e, 0xFFF kodu V<sub>REFP</sub>'ye karşılık gelir. Bir kod adımının (1 LSB) gerilim karşılığı:</p>
+<p style="text-align:center"><b>1 LSB = (V<sub>REFP</sub> − V<sub>REFN</sub>) / 4096 = 3,3 V / 4096 ≈ 0,806 mV</b></p>
+<p>Bu, ADC'nin ayırt edebileceği en küçük gerilim farkıdır (<b>çözünürlük</b>). İdeal bir dönüştürücüde yuvarlamadan gelen nicemleme hatası ±½ LSB'dir (≈ ±0,4 mV). Gerçek ADC'nin toplam ayarlanmamış hatası (offset, kazanç ve doğrusalsızlık birlikte) datasheet'te tipik ±10 LSB (≈ ±8 mV), en çok ±30 LSB olarak verilir (s. 1389). Yani 12 bitin son birkaç biti gürültü ve hata payı taşır; donanım ortalaması (<a href="#siralayicilar">Bölüm 2</a>) bu yüzden işe yarar.</p>
+<p>Giriş gerilimi 0 V'un altına inerse sonuç 0x000'da, 3,3 V'u aşarsa 0xFFF'de <b>doyar</b>. Doğru sonuç için giriş, VDDA ile GNDA arasında kalmalıdır (s. 809, s. 1389). Datasheet AIN pinlerinin 5 V dayanımı konusunda çelişkilidir: s. 650'de analog sinyaller için iç koruma devresinden söz edilir, s. 1329'da ise AINx sinyallerinin 5 V'a dayanıklı olmadığı yazılır. Güvenli taraf: AINx'e VDDA'dan yüksek gerilim vermeyin; ölçüm yalnız 0–VDDA aralığında geçerlidir.</p>
+
+<h3 id="sar">SAR ilkesi</h3>
+<p>TM4C123'ün ADC'si <b>ardışık yaklaşım</b> (SAR, Successive Approximation Register) mimarisindedir (datasheet §13.3.4, s. 807). Dönüştürücüde bir örnekle-tut devresi, 12-bit bir DAC (dijitalden analoğa çevirici), bir karşılaştırıcı ve sonucu biriktiren SAR register'ı vardır. TM4C123'te örnekle-tut ve DAC görevlerini aynı anahtarlamalı kondansatör dizisi üstlenir. Dönüşüm bir <b>ikili arama</b>dır (Şekil 1):</p>
+<ol>
+<li>SAR'ın en anlamlı biti (bit11) 1 yapılır; DAC, V<sub>REF</sub>/2 = 1,65 V üretir.</li>
+<li>Karşılaştırıcı tutulan V<sub>in</sub>'i DAC çıkışıyla karşılaştırır: V<sub>in</sub> büyükse bit 1 kalır, küçükse 0 yapılır.</li>
+<li>Bir sonraki bit 1 yapılır ve karşılaştırma tekrarlanır. Her adımda aralık yarıya iner.</li>
+<li>12 karşılaştırmadan sonra SAR'daki sayı ADC kodudur.</li>
+</ol>
+<figure><img class="fig" src="../img/adc-sar-donusum.svg" alt="SAR ilkesi: örnekle-tut, DAC, karşılaştırıcı ve SAR register'ı ile ikili arama; 12-bit aktarım fonksiyonu kod = Vin·4096/VREF, merdiven grafiği, adım yaklaşık 0,806 mV"><figcaption><b>Şekil 1.</b> SAR (ardışık yaklaşım) ilkesi ve 12-bit aktarım fonksiyonu. (a) Üstte: SAR blok şeması ve 4-bit örnek (V<sub>in</sub> = 1,0 V → 0100); (b) altta: 12-bit aktarım fonksiyonu kod = ⌊V<sub>in</sub>·4096/V<sub>REF</sub>⌋, 1,0 V çevresinin büyütülmüş merdiveni ve ±½ LSB nicemleme hatası (V<sub>REF</sub> = 3,3 V için 1 LSB ≈ 0,806 mV).</figcaption></figure>
+<p><b>Örnek:</b> V<sub>in</sub> = 1,000 V, V<sub>REF</sub> = 3,3 V. Şekil 1'deki 4-bit örnek aynı gerilimin ilk 4 bitini (0100) bulur. 12-bit dönüşümün ilk beş adımı:</p>
+<table>
+<thead><tr><th>Adım</th><th>Denenen bit</th><th>DAC gerilimi</th><th>Karşılaştırma</th><th>Bit sonucu</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>bit11</td><td>1,650 V</td><td>1,000 &lt; 1,650</td><td>0</td></tr>
+<tr><td>2</td><td>bit10</td><td>0,825 V</td><td>1,000 &gt; 0,825</td><td>1</td></tr>
+<tr><td>3</td><td>bit9</td><td>0,825 + 0,4125 = 1,2375 V</td><td>1,000 &lt; 1,2375</td><td>0</td></tr>
+<tr><td>4</td><td>bit8</td><td>0,825 + 0,2063 = 1,0313 V</td><td>1,000 &lt; 1,0313</td><td>0</td></tr>
+<tr><td>5</td><td>bit7</td><td>0,825 + 0,1031 = 0,9281 V</td><td>1,000 &gt; 0,9281</td><td>1</td></tr>
+</tbody></table>
+<p>Kalan yedi adım aynı biçimde sürer ve sonuç <code>0100 1101 1001</code> = <code>0x4D9</code> = 1241 olur. Bu değer aşağıdaki formülle de doğrulanır. SAR'ın avantajı, dönüşüm süresinin giriş değerinden bağımsız ve sabit olmasıdır. TM4C123'te bir dönüşüm (örnekleme dahil) 1 µs, bunun 250 ns'si örnekleme süresidir (s. 1389).</p>
+
+<h3 id="formul">Dönüşüm formülü ve sayısal örnekler</h3>
+<p>Tek uçlu kipte (V<sub>REFN</sub> = 0 V):</p>
+<p style="text-align:center"><b>kod = ⌊ V<sub>in</sub> · 4096 / V<sub>REF</sub> ⌋</b> (en çok 4095) &nbsp;&nbsp;·&nbsp;&nbsp; <b>V<sub>in</sub> ≈ kod · V<sub>REF</sub> / 4096</b></p>
+<table>
+<thead><tr><th>Yön</th><th>Veri</th><th>Hesap</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td>Gerilim → kod</td><td>1,65 V</td><td>1,65 · 4096 / 3,3</td><td>2048 = <code>0x800</code> (aralığın ortası)</td></tr>
+<tr><td>Gerilim → kod</td><td>1,00 V</td><td>1,00 · 1241,2</td><td>1241 = <code>0x4D9</code></td></tr>
+<tr><td>Gerilim → kod</td><td>2,50 V</td><td>2,50 · 1241,2</td><td>3103 = <code>0xC1F</code></td></tr>
+<tr><td>Gerilim → kod</td><td>3,30 V</td><td>4096 olurdu</td><td>4095 = <code>0xFFF</code> (doyma)</td></tr>
+<tr><td>Kod → gerilim</td><td><code>0x9C4</code> = 2500</td><td>2500 · 3,3 / 4096</td><td>≈ 2,014 V</td></tr>
+<tr><td>Kod → gerilim</td><td><code>0xC00</code> = 3072</td><td>3072 · 3,3 / 4096</td><td>2,475 V</td></tr>
+<tr><td>Kod → gerilim</td><td>1</td><td>3,3 / 4096</td><td>≈ 0,806 mV (1 LSB)</td></tr>
+</tbody></table>
+<p>Mikrodenetleyicide kayan nokta kullanmadan milivolt hesabı için <code>mV = (kod * 3300) / 4096</code> yazılır. Çarpma önce yapılır, bölme en sonda; aksi halde tamsayı bölmesi sonucu sıfıra yuvarlar. En büyük ara değer 4095 · 3300 ≈ 13,5 milyon olduğundan 32-bit tamsayıya sığar.</p>
+
+<h2 id="modul">2. TM4C123 ADC modülü</h2>
+<h3 id="ozellikler">Özellikler</h3>
+<p>Datasheet Bölüm 13'e göre (s. 799–800) TM4C123GH6PM'de <b>iki özdeş ADC modülü</b> (ADC0, ADC1) vardır. İkisi aynı 12 analog girişi paylaşır ama birbirinden bağımsız çalışır: farklı kanalları farklı tetiklerle örnekleyebilir, ayrı kesmeler üretebilir. Her modülün özellikleri (yapı Şekil 2'de):</p>
+<ul>
+<li><b>12-bit</b> çözünürlük, en çok <b>1 Msps</b> örnekleme hızı.</li>
+<li><b>12 analog giriş</b> (AIN0–AIN11) ve bir <b>iç sıcaklık sensörü</b>. Tek uçlu ve fark (differential) girişi.</li>
+<li><b>Dört örnekleme sıralayıcısı</b> (SS0–SS3), her birinin kendi sonuç FIFO'su.</li>
+<li>Esnek <b>tetikleme</b>: işlemci (yazılım), zamanlayıcılar, analog karşılaştırıcılar, PWM, GPIO ve sürekli örnekleme.</li>
+<li>2× – 64× <b>donanım ortalaması</b>, 8 dijital karşılaştırıcı, iki modül arasında örnekleme fazı kaydırma (22,5°–337,5°).</li>
+<li>Her sıralayıcı için ayrı <b>μDMA</b> kanalı.</li>
+</ul>
+<figure><img class="fig" src="../img/adc-modul-blok.svg" alt="ADC modülü blok şeması: AIN0-AIN11 ve iç sıcaklık sensörü, analog çoğullayıcı, örnekle-tut, 12-bit SAR, donanım ortalayıcı, SS0 SS1 SS2 SS3 sıralayıcıları ve FIFO'ları, kesme ve μDMA çıkışları, tetik kaynakları, ADC0 ve ADC1"><figcaption><b>Şekil 2.</b> ADC modülü blok şeması (datasheet Şekil 13-1 ve 13-2'den sadeleştirildi): AIN0–AIN11 ve iç sıcaklık sensörü → analog çoğullayıcı (mux) → örnekle-tut → 12-bit SAR → donanım ortalayıcı (ADCSAC) → örnekleme sıralayıcıları SS0 (8 adım / 8 FIFO), SS1 (4/4), SS2 (4/4), SS3 (1/1) → FIFO'lar → kesme (ADCRIS/ADCIM/ADCISC) ve μDMA. Her sıralayıcının (n) her adımı (k) ADCSSMUXn'deki MUXk ve ADCSSCTLn'deki TSk/IEk/ENDk/Dk alanlarıyla tanımlanır. Tetik kaynakları ADCEMUX ile, işlemci tetiği ADCPSSI ile seçilir. ADC0 ve ADC1 aynı girişleri paylaşır.</figcaption></figure>
+<p>Analog devrelerin beslemesi (VDDA/GNDA) dijital beslemeden ayrıdır. Bu, dijital anahtarlama gürültüsünün ölçüme karışmasını azaltır.</p>
+
+<h3 id="siralayicilar">Örnekleme sıralayıcıları ve FIFO'lar</h3>
+<p>Pek çok mikrodenetleyicide ADC "bir kanal seç, başlat, bitmesini bekle" mantığıyla çalışır. TM4C123'te ise örnekleme, <b>sıralayıcılar</b> (sample sequencer) üzerinden yapılır (datasheet §13.3.1, s. 802). Bir sıralayıcı, arka arkaya alınacak örneklerin listesidir. Her <b>adım</b> (step) için hangi girişin okunacağı ve o adımla ilgili denetim bitleri önceden yazılır. Tetik gelince sıralayıcı bütün adımları işlemciye uğramadan sırayla çalıştırır ve sonuçları kendi FIFO'suna yazar.</p>
+<table>
+<thead><tr><th>Sıralayıcı</th><th>En çok adım</th><th>FIFO derinliği</th><th>Tipik kullanım</th></tr></thead>
+<tbody>
+<tr><td>SS0</td><td>8</td><td>8</td><td>Çok kanallı tarama (ör. AIN0–AIN7)</td></tr>
+<tr><td>SS1</td><td>4</td><td>4</td><td>Birkaç kanal ya da aynı kanalın 4 örneği (TI Lab 5)</td></tr>
+<tr><td>SS2</td><td>4</td><td>4</td><td>SS1 ile aynı</td></tr>
+<tr><td>SS3</td><td>1</td><td>1</td><td>Tek kanal, tek örnek</td></tr>
+</tbody></table>
+<p>Sıralayıcıların hepsi aynı yapıdadır; yalnız adım sayıları ve FIFO derinlikleri farklıdır (Tablo 13-2, s. 802). Her FIFO girişi 32 bittir ve sonucun 12 biti alttadır. Aynı anda iki sıralayıcının tetiği gelirse hangisinin önce çalışacağını <b>ADCSSPRI</b> belirler: 0 en yüksek, 3 en düşük öncelik; açılışta SS0 = 0 … SS3 = 3'tür. Etkin sıralayıcılara aynı öncelik verilmemelidir (s. 804).</p>
+<p><b>Donanım ortalayıcı:</b> ADCSAC register'ı 2, 4, …, 64 ardışık dönüşümün ortalamasını alıp FIFO'ya tek bir sonuç yazar. Gürültü azalır ama verim aynı oranda düşer: 64× ortalamada 1 Msps'lik dönüştürücü, FIFO'ya saniyede 15 625 sonuç yazar (s. 807). Ortalayıcı tektir, bütün sıralayıcılara aynı oranda uygulanır.</p>
+
+<h3 id="adc-saat">ADC saati ve örnekleme hızı</h3>
+<p>ADC'nin denetim mantığı <b>16 MHz</b>'lik bir saatle çalışır (datasheet §13.3.2.6, s. 806; F<sub>ADC</sub> = 16 MHz, s. 1389). Bu saatin kaynağı ADC0'ın <b>ADCCC</b> register'ındaki CS alanıyla seçilir (s. 892) ve iki modül için ortaktır:</p>
+<ul>
+<li><b>CS = 0x0 (varsayılan):</b> PLL çalışıyorsa PLL çıkışının 25'e bölünmüşü kullanılır: 400 MHz / 25 = <b>16 MHz</b>. Bu yüzden <code>SysCtlClockSet</code> ile sistem saatini 40 MHz ya da 50 MHz yapan ders örneklerinde ADC saati yine 16 MHz'tir; sistem saatinden bağımsızdır. PLL atlanmışsa (bypass) ADC doğrudan sistem saatini kullanır ve bu saat 16 MHz olmalıdır.</li>
+<li><b>CS = 0x1:</b> ADC saati PIOSC'den (16 MHz iç osilatör) alınır. Bu durumda ADC, işlemci derin uykudayken (Deep-Sleep) de çalışabilir.</li>
+</ul>
+<p>Sistem saati ADC saatinden düşük olamaz (s. 806). <code>SysCtlClockSet</code> hiç çağrılmazsa işlemci PIOSC'den 16 MHz'te çalışır, PLL atlanmıştır ve CS = 0 iken ADC bu 16 MHz'i kullanır; bu notun API'siz örnekleri bu varsayılanla çalışır. Datasheet §13.4 ise (s. 817) ADC kullanılırken PLL'in etkin ve desteklenen bir kristal frekansına ayarlı olmasını ister; Tablo 24-21 de (s. 1380) PLL atlandığında sistem saatinin 15,9952–16,0048 MHz aralığında olmasını şart koşar. Fabrika kalibrasyonlu PIOSC'nin doğruluğu ±%3 olduğundan (Tablo 24-15, s. 1375; ±%1 yalnız kullanıcının 7-bit yeniden kalibrasyonu yaptığı koşulda geçerlidir) bu dar aralığı garanti etmez. Laboratuvarda varsayılan saatle sorunsuz ölçüm alınır, ama datasheet'e tam uygunluk ve kesin zamanlama için kristal + PLL kullanılmalıdır (bkz. <a href="../timer/#saat">Timer notu, saat frekansı</a>).</p>
+<p><b>Örnekleme hızı</b> ADCPC register'ının SR alanıyla seçilir: <code>0x1</code> 125 ksps, <code>0x3</code> 250 ksps, <code>0x5</code> 500 ksps, <code>0x7</code> 1 Msps. Açılış değeri <code>0x7</code>'dir (s. 891). TI Lab 5 de varsayılan 1 Msps ile çalışır. Örnekleri <b>belirli aralıklarla</b> almak için ise hız ayarı değil, zamanlayıcı tetiği kullanılır (<a href="#zamanlayici-tetik">Bölüm 6</a>). Datasheet'e göre tetikten dönüşümün başlamasına kadar 2 ADC saati geçer (s. 1389).</p>
+
+<h2 id="girisler">3. Analog girişler ve pin ayarı</h2>
+<h3 id="pin-haritasi">AIN kanal–pin eşlemesi</h3>
+<p>AIN girişleri bazı GPIO pinlerinin analog işlevidir (datasheet Tablo 13-1, s. 801–802). Kanal numarası ADCSSMUXn alanına ya da TivaWare'deki <code>ADC_CTL_CHn</code> sabitine yazılan sayıdır:</p>
+<table>
+<thead><tr><th>Kanal</th><th>Pin</th><th>Kılıf pini</th><th>Kanal</th><th>Pin</th><th>Kılıf pini</th></tr></thead>
+<tbody>
+<tr><td>AIN0</td><td><b>PE3</b></td><td>6</td><td>AIN6</td><td>PD1</td><td>62</td></tr>
+<tr><td>AIN1</td><td>PE2</td><td>7</td><td>AIN7</td><td>PD0</td><td>61</td></tr>
+<tr><td>AIN2</td><td>PE1</td><td>8</td><td>AIN8</td><td>PE5</td><td>60</td></tr>
+<tr><td>AIN3</td><td>PE0</td><td>9</td><td>AIN9</td><td>PE4</td><td>59</td></tr>
+<tr><td>AIN4</td><td>PD3</td><td>64</td><td>AIN10</td><td>PB4</td><td>58</td></tr>
+<tr><td>AIN5</td><td>PD2</td><td>63</td><td>AIN11</td><td>PB5</td><td>57</td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/adc-pin-haritasi.svg" alt="AIN kanal-pin eşlemesi AIN0=PE3 ile AIN11=PB5 arası; LaunchPad'de potansiyometre bağlantısı: uçlar 3,3 V ve GND'ye, orta uç PE3'e; pin ayarı AFSEL=1, DEN=0, AMSEL=1"><figcaption><b>Şekil 3.</b> AIN kanal–pin eşlemesi (AIN0 = PE3 … AIN11 = PB5) ve LaunchPad'de potansiyometre bağlantısı: potansiyometrenin uçları 3,3 V ve GND'ye, orta ucu PE3'e (AIN0). Pinin analog giriş olması için GPIO ayarı: AFSEL = 1, DEN = 0, AMSEL = 1.</figcaption></figure>
+<p><b>LaunchPad'de:</b> Kartta hazır bir analog kaynak (potansiyometre, ışık sensörü) yoktur; bu notun örneklerinde PE3'e dışarıdan bir potansiyometre bağlanır (Şekil 3). Kart kılavuzuna göre (SPMU296, s. 10) PE3, J3 konnektörünün 9. pini; 3,3 V J1'in 1. pini; GND J2'nin 1. ya da J3'ün 2. pinidir. 10 kΩ'luk bir potansiyometrenin uçları 3,3 V ve GND'ye, orta ucu PE3'e bağlanır. <b>Dikkat:</b> PD0 (AIN7) ve PD1 (AIN6) kartta 0 Ω dirençlerle (R9, R10) PB6 ve PB7'ye bağlıdır (MSP430 BoosterPack uyumluluğu için, SPMU296 Tablo 2-4/2-5). Bu iki kanal kullanılacaksa PB6/PB7 çıkış yapılmamalı ya da dirençler sökülmelidir.</p>
+<p>Datasheet, girişi süren kaynağın direncini en çok 500 Ω olarak verir (R<sub>S</sub>, s. 1389); ADC'nin örnekleme kondansatörü 250 ns içinde bu direnç üzerinden dolar. Potansiyometrenin orta ucunun iç direnci 2,5 kΩ'a kadar çıkabildiğinden hassas ölçümde pine yakın bir kondansatör (ör. 100 nF) ya da bir tampon (op-amp izleyici) sonucu iyileştirir. Bu genel bir uygulama önerisidir; datasheet yalnız R<sub>S</sub> ≤ 500 Ω şartını verir. 100 nF, 10 pF'lık örnekleme kapasitesine (C<sub>ADC</sub>, s. 1389) yük aktarırken gerilimi pek düşürmez; potansiyometreyle oluşan zaman sabiti (2,5 kΩ · 100 nF = 250 µs) yavaş değişen bir ayar için sorun değildir.</p>
+
+<h3 id="pin-ayari">Pinin analog giriş yapılması</h3>
+<p>Datasheet §13.2 ve §13.4.1'e göre (s. 801, 817) bir AIN pini için GPIO tarafında şu ayarlar yapılır (GPIO register'ları için bkz. <a href="../gpio/#register-tablosu">GPIO notu, register tablosu</a>):</p>
+<table>
+<thead><tr><th>Register</th><th>PE3 için değer</th><th>Neden</th></tr></thead>
+<tbody>
+<tr><td>RCGCGPIO</td><td>bit4 = 1</td><td>Port E saatini aç (Port A … F = bit0 … bit5).</td></tr>
+<tr><td>GPIODIR</td><td>bit3 = 0</td><td>Giriş (açılış değeri zaten 0).</td></tr>
+<tr><td>GPIOAFSEL</td><td>bit3 = 1</td><td>Pin GPIO değil, çevre birimi işlevinde (datasheet §13.4.1 adım 3).</td></tr>
+<tr><td>GPIODEN</td><td>bit3 = <b>0</b></td><td>Dijital giriş tamponu kapalı (datasheet §13.4.1 adım 4).</td></tr>
+<tr><td>GPIOAMSEL</td><td>bit3 = <b>1</b></td><td>Analog yalıtım devresi devre dışı: pin ADC'ye bağlanır (datasheet §13.4.1 adım 5).</td></tr>
+</tbody></table>
+<p>GPIOPCTL'ye yazılmaz; AIN işlevi PCTL ile seçilmez, AMSEL ile bağlanır. TivaWare'deki <code>GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3)</code> bu işi tek çağrıda yapar. TivaWare 2.1.4 kaynağına göre bu fonksiyon iki çağrıdan oluşur: <code>GPIODirModeSet(..., GPIO_DIR_MODE_IN)</code> (DIR = 0, <b>AFSEL = 0</b>) ve <code>GPIOPadConfigSet(..., GPIO_PIN_TYPE_ANALOG)</code> (pull-up/pull-down = 0, DEN = 0, AMSEL = 1). Yani API AFSEL'i 0 bırakır, datasheet §13.4.1 ise AFSEL = 1 ister. Bağlantı AMSEL ile kurulduğundan API yolu pratikte çalışır; API'siz kodda datasheet sırası (AFSEL = 1) izlenir.</p>
+<p><b>İç sıcaklık sensörü</b> bir pine bağlı değildir; yalnız onu okuyan bir uygulamada GPIO ayarı (adım 2–3) gerekmez.</p>
+
+<h3 id="sicaklik">İç sıcaklık sensörü</h3>
+<p>Yonga içindeki sıcaklık sensörü, sıcaklıkla doğrusal değişen bir gerilim üretir (datasheet §13.3.6, s. 812–813):</p>
+<p style="text-align:center"><b>V<sub>TSENS</sub> = 2,7 − (TEMP + 55) / 75</b> &nbsp;&nbsp;(TEMP: °C)</p>
+<p>Eğim −1/75 V/°C ≈ <b>−13,3 mV/°C</b>'dir; 25 °C'de V<sub>TSENS</sub> = 1,633 V, −40 °C'de 2,5 V, 85 °C'de 0,833 V'tur. <b>Sıcaklık arttıkça gerilim ve dolayısıyla ADC kodu azalır.</b> Gerilim yerine ADC kodu kullanılırsa (V<sub>REF</sub> = V<sub>REFP</sub> − V<sub>REFN</sub>):</p>
+<p style="text-align:center"><b>TEMP = 147,5 − (75 · V<sub>REF</sub> · kod) / 4096</b> &nbsp;&nbsp;⇒&nbsp;&nbsp; V<sub>REF</sub> = 3,3 V için &nbsp;<b>TEMP = 147,5 − 247,5 · kod / 4096</b></p>
+<p>İki formül birbirinin aynısıdır: ilkinden TEMP = 75·(2,7 − V) − 55 = 147,5 − 75·V bulunur ve V = 3,3·kod/4096 yazılır. Tamsayı aritmetiğinde ondalık kaybolmasın diye TI Lab 5 ve ders kodları her şeyi 10 ile çarpar:</p>
+<div class="code-head"><span class="file">sıcaklık hesabı (tamsayı)</span></div><pre><code class="language-c">TempC = (1475 - (2475 * kod) / 4096) / 10;   // 147,5 ve 247,5 değerleri 10 ile çarpıldı
+TempF = ((TempC * 9) + 160) / 5;             // F = C*9/5 + 32</code></pre>
+<table>
+<thead><tr><th>Veri</th><th>Hesap</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td>kod = 2027</td><td>147,5 − 247,5 · 2027 / 4096 = 147,5 − 122,48</td><td>≈ 25,0 °C (tamsayı formülü: 25)</td></tr>
+<tr><td>kod = 1800</td><td>147,5 − 108,76</td><td>≈ 38,7 °C (tamsayı formülü: 38)</td></tr>
+<tr><td>TEMP = 50 °C</td><td>V = 2,7 − 105/75 = 1,3 V → 1,3 · 4096 / 3,3</td><td>kod ≈ 1614</td></tr>
+<tr><td>TEMP = 30 °C</td><td>V = 2,7 − 85/75 ≈ 1,567 V</td><td>kod ≈ 1944: 30 °C'nin üstü ⇔ kod ≤ 1944</td></tr>
+</tbody></table>
+<p>Sensörün kendi doğruluğu ±5 °C'dir (ADC hatası hariç, s. 1390); TI kitapçığı da sensörün kalibre edilmediğini, deneyde mutlak değerden çok değişimin izlenmesi gerektiğini belirtir. Sensör, sıralayıcı adımında <b>TSn</b> biti 1 yapılarak okunur (<a href="#ssmux-ssctl">Bölüm 5</a>); TSn = 1 iken o adımın ADCSSMUXn alanı kullanılmaz.</p>
+<div class="box warn"><span class="box-title">İşaretsiz tamsayı tuzağı</span>
+<p>Formüldeki <code>2475 * kod / 4096</code> değeri 1475'i aşarsa (kod &gt; 2441, yani yaklaşık 0 °C'nin altı) çıkarma negatif olur. Sonuç <code>uint32_t</code> bir değişkene yazılıyorsa çok büyük bir pozitif sayıya döner. Soğuk ortamda ölçüm yapılacaksa hesap <code>int32_t</code> ile yapılmalıdır.</p></div>
+
+<h2 id="registerlar">4. Register'lar ve taban adresler</h2>
+<h3 id="taban">Taban adresler ve saat register'ları</h3>
+<p>Her ADC modülünün 4 KB'lık bir adres penceresi vardır; register adresi <b>taban + ofset</b>'tir (datasheet §13.5, s. 818). TivaWare adları <code>inc/hw_memmap.h</code> dosyasındadır.</p>
+<table>
+<thead><tr><th>Modül</th><th>Taban adres</th><th>TivaWare adı</th></tr></thead>
+<tbody>
+<tr><td>ADC0</td><td><code>0x40038000</code></td><td><code>ADC0_BASE</code></td></tr>
+<tr><td>ADC1</td><td><code>0x40039000</code></td><td><code>ADC1_BASE</code></td></tr>
+</tbody></table>
+<table>
+<thead><tr><th>Register</th><th>Adres</th><th>Görev</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>RCGCADC</td><td><code>0x400FE638</code> (SYSCTL + 0x638)</td><td>ADC modüllerinin saatini açar: bit0 = ADC0, bit1 = ADC1.</td><td>s. 352</td></tr>
+<tr><td>PRADC</td><td><code>0x400FEA38</code> (SYSCTL + 0xA38)</td><td>Salt okunur; bit = 1 ise modül erişime hazır.</td><td>s. 418</td></tr>
+</tbody></table>
+<p>Saat açıldıktan sonra ADC register'larına erişmeden önce <b>3 sistem saati</b> beklenmelidir (s. 818). Saati kapalı modülün register'ına erişmek bus fault üretir (s. 352); bu durumda program startup dosyasındaki <code>FaultISR</code>'de takılır.</p>
+
+<h3 id="register-tablosu">ADC register tablosu</h3>
+<p>Ofsetler modül taban adresine eklenir (datasheet Tablo 13-4, s. 818–820). Son sütun ADC0 için <code>inc/tm4c123gh6pm.h</code> adıdır.</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Görev</th><th><code>tm4c123gh6pm.h</code> (ADC0)</th><th>Datasheet</th></tr></thead>
+<tbody>
+<tr><td>ADCACTSS</td><td><code>0x000</code></td><td>Sıralayıcıları etkinleştirir (ASEN0–3); BUSY biti.</td><td><code>ADC0_ACTSS_R</code></td><td>s. 821</td></tr>
+<tr><td>ADCRIS</td><td><code>0x004</code></td><td>Ham kesme durumu (salt okunur): INRn = 1 ise SSn'de IE'li bir adım bitti. Yoklama bunu okur.</td><td><code>ADC0_RIS_R</code></td><td>s. 823</td></tr>
+<tr><td>ADCIM</td><td><code>0x008</code></td><td>Kesme maskesi: MASKn = 1 ise INRn kesme olarak NVIC'e gider.</td><td><code>ADC0_IM_R</code></td><td>s. 825</td></tr>
+<tr><td>ADCISC</td><td><code>0x00C</code></td><td>Kesme durumu ve temizleme (RW1C): okununca INRn AND MASKn; INn'ye 1 yazmak INRn'yi temizler.</td><td><code>ADC0_ISC_R</code></td><td>s. 828</td></tr>
+<tr><td>ADCOSTAT</td><td><code>0x010</code></td><td>FIFO taşma (overflow) bayrakları (RW1C).</td><td><code>ADC0_OSTAT_R</code></td><td>s. 831</td></tr>
+<tr><td>ADCEMUX</td><td><code>0x014</code></td><td>Her sıralayıcının tetik kaynağı (EM0–EM3, 4'er bit).</td><td><code>ADC0_EMUX_R</code></td><td>s. 833</td></tr>
+<tr><td>ADCUSTAT</td><td><code>0x018</code></td><td>FIFO alttan taşma (underflow) bayrakları (RW1C).</td><td><code>ADC0_USTAT_R</code></td><td>s. 838</td></tr>
+<tr><td>ADCSSPRI</td><td><code>0x020</code></td><td>Sıralayıcı öncelikleri (açılış <code>0x3210</code>).</td><td><code>ADC0_SSPRI_R</code></td><td>s. 841</td></tr>
+<tr><td>ADCPSSI</td><td><code>0x028</code></td><td>İşlemci tetiği: SSn bitine 1 yazmak SSn'yi başlatır. Okuması anlamlı değildir.</td><td><code>ADC0_PSSI_R</code></td><td>s. 845</td></tr>
+<tr><td>ADCSAC</td><td><code>0x030</code></td><td>Donanım ortalaması: AVG (bit2:0), 2<sup>AVG</sup> örnek (0–6).</td><td><code>ADC0_SAC_R</code></td><td>s. 847</td></tr>
+<tr><td>ADCCTL</td><td><code>0x038</code></td><td>Referans seçimi (yalnız VDDA/GNDA) ve DITHER (bit6).</td><td><code>ADC0_CTL_R</code></td><td>s. 850</td></tr>
+<tr><td>ADCSSMUX0</td><td><code>0x040</code></td><td>SS0 adımlarının giriş seçimi (MUX0–MUX7).</td><td><code>ADC0_SSMUX0_R</code></td><td>s. 851</td></tr>
+<tr><td>ADCSSCTL0</td><td><code>0x044</code></td><td>SS0 adımlarının denetim bitleri (Dn, ENDn, IEn, TSn).</td><td><code>ADC0_SSCTL0_R</code></td><td>s. 853</td></tr>
+<tr><td>ADCSSFIFO0</td><td><code>0x048</code></td><td>SS0 sonuç FIFO'su (okumak bir sonucu çeker).</td><td><code>ADC0_SSFIFO0_R</code></td><td>s. 860</td></tr>
+<tr><td>ADCSSFSTAT0</td><td><code>0x04C</code></td><td>SS0 FIFO durumu: EMPTY, FULL, baş/kuyruk işaretçileri.</td><td><code>ADC0_SSFSTAT0_R</code></td><td>s. 861</td></tr>
+<tr><td>ADCSSMUX1 / SSCTL1 / SSFIFO1 / SSFSTAT1</td><td><code>0x060</code> / <code>0x064</code> / <code>0x068</code> / <code>0x06C</code></td><td>SS1 için aynı dört register (4 adım).</td><td><code>ADC0_SSMUX1_R</code> …</td><td>s. 860–868</td></tr>
+<tr><td>ADCSSMUX2 / SSCTL2 / SSFIFO2 / SSFSTAT2</td><td><code>0x080</code> / <code>0x084</code> / <code>0x088</code> / <code>0x08C</code></td><td>SS2 için aynı dört register (4 adım).</td><td><code>ADC0_SSMUX2_R</code> …</td><td>s. 860–868</td></tr>
+<tr><td>ADCSSMUX3 / SSCTL3 / SSFIFO3 / SSFSTAT3</td><td><code>0x0A0</code> / <code>0x0A4</code> / <code>0x0A8</code> / <code>0x0AC</code></td><td>SS3 için aynı dört register (1 adım).</td><td><code>ADC0_SSMUX3_R</code> …</td><td>s. 860–876</td></tr>
+<tr><td>ADCPP</td><td><code>0xFC0</code></td><td>Özellikler (salt okunur): 12 kanal, 12 bit, 1 Msps, sıcaklık sensörü var.</td><td><code>ADC0_PP_R</code></td><td>s. 889</td></tr>
+<tr><td>ADCPC</td><td><code>0xFC4</code></td><td>Örnekleme hızı: SR (bit3:0) = 0x1/0x3/0x5/0x7 → 125k/250k/500k/1M sps.</td><td><code>ADC0_PC_R</code></td><td>s. 891</td></tr>
+<tr><td>ADCCC</td><td><code>0xFC8</code></td><td>ADC saat kaynağı: CS (bit3:0) = 0x0 PLL/25 ya da 16 MHz sistem saati, 0x1 PIOSC.</td><td><code>ADC0_CC_R</code></td><td>s. 892</td></tr>
+</tbody></table>
+<p>Sıralayıcı register'ları 0x20'lik adımlarla tekrar eder: SSn grubunun başlangıcı <b>0x040 + 0x20·n</b>'dir. Dijital karşılaştırıcı register'ları (ADCSSOPn, ADCSSDCn, ADCDCCTLn, ADCDCCMPn) bu notun konusu değildir.</p>
+
+<h3 id="bitler">Sık kullanılan bitler</h3>
+<table>
+<thead><tr><th>Register</th><th>Bit</th><th>Ad</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">ADCACTSS</td><td>bit3:0</td><td>ASEN3–ASEN0</td><td>1 = SSn etkin. Yapılandırma ASENn = 0 iken yapılır.</td></tr>
+<tr><td>bit16</td><td>BUSY</td><td>1 = dönüşüm sürüyor. ADC saatini kapatmadan önce 0 olması beklenir (s. 806).</td></tr>
+<tr><td>ADCRIS / ADCIM / ADCISC</td><td>bit n (0–3)</td><td>INRn / MASKn / INn</td><td>SSn ham bayrağı / maskesi / maskeli durum ve temizleme. SS3 için hepsi <code>0x08</code>.</td></tr>
+<tr><td>ADCEMUX</td><td>bit 4n+3 : 4n</td><td>EMn</td><td><code>0x0</code> işlemci, <code>0x1</code>/<code>0x2</code> analog karşılaştırıcı 0/1, <code>0x4</code> GPIO, <code>0x5</code> zamanlayıcı, <code>0x6</code>–<code>0x9</code> PWM üreteci 0–3, <code>0xF</code> sürekli (s. 834).</td></tr>
+<tr><td>ADCPSSI</td><td>bit n (0–3)</td><td>SSn</td><td>1 yaz: SSn'yi başlat (SSn, ACTSS'de etkinse). bit27 SYNCWAIT ve bit31 GSYNC iki modülü eşzamanlı başlatmak içindir.</td></tr>
+<tr><td>ADCSAC</td><td>bit2:0</td><td>AVG</td><td>0 ortalama yok, 1 → 2×, … 6 → 64×; 7 kullanılmaz.</td></tr>
+<tr><td>ADCSSMUXn</td><td>bit 4k+3 : 4k</td><td>MUXk</td><td>k. adımda okunacak AIN numarası (0–11).</td></tr>
+<tr><td rowspan="4">ADCSSCTLn<br>(k. adımın dört biti)</td><td>bit 4k</td><td>Dk</td><td>1 = fark girişi (MUXk alanına fark çifti numarası i, 0–5, yazılır; AIN2i − AIN2i+1 ölçülür).</td></tr>
+<tr><td>bit 4k+1</td><td>ENDk</td><td>1 = bu adım dizinin son adımı. <b>Mutlaka bir adımda 1 olmalı.</b></td></tr>
+<tr><td>bit 4k+2</td><td>IEk</td><td>1 = bu adım bitince INRn kalkar (yoklama için de gerekir).</td></tr>
+<tr><td>bit 4k+3</td><td>TSk</td><td>1 = bu adımda pin yerine iç sıcaklık sensörü okunur.</td></tr>
+<tr><td>ADCSSFIFOn</td><td>bit11:0</td><td>DATA</td><td>Dönüşüm sonucu.</td></tr>
+<tr><td>ADCSSFSTATn</td><td>bit8 / bit12</td><td>EMPTY / FULL</td><td>FIFO boş / dolu. Açılış değeri <code>0x100</code> (boş).</td></tr>
+<tr><td>GPTMCTL (Timer)</td><td>bit5 / bit13</td><td>TAOTE / TBOTE</td><td>1 = Timer A / B zaman aşımında ADC tetiği üretir (s. 737).</td></tr>
+</tbody></table>
+
+<h2 id="siralayici-ayar">5. Örnekleme sıralayıcısı yapılandırması</h2>
+<h3 id="ssmux-ssctl">ADCSSMUXn ve ADCSSCTLn</h3>
+<p>Bir sıralayıcının her adımı iki register'daki birer <b>4-bitlik alanla</b> (nibble) tanımlanır (datasheet §13.3.1, s. 802): ADCSSMUXn'deki MUXk alanı <b>hangi girişin</b> okunacağını, ADCSSCTLn'deki k. nibble ise <b>o adımın nasıl işleneceğini</b> söyler (Şekil 4):</p>
+<ul>
+<li><b>TSk</b> (bit 4k+3): Pin yerine sıcaklık sensörü.</li>
+<li><b>IEk</b> (bit 4k+2): Bu adımın dönüşümü bitince sıralayıcının ham kesme bayrağı (ADCRIS.INRn) kalkar. Birden çok adımda 1 olabilir.</li>
+<li><b>ENDk</b> (bit 4k+1): Dizi bu adımda biter. Bu bit hiçbir adımda 1 değilse davranış tanımsızdır (s. 818); END'den sonraki adımlar alanları dolu olsa bile çalıştırılmaz (s. 853).</li>
+<li><b>Dk</b> (bit 4k): Fark girişi. MUXk'ya fark çifti numarası i (0–5) yazılır ve AIN2i − AIN2i+1 ölçülür; 0 V fark 0x800 koduna karşılık gelir (s. 810–811). TSk = 1 iken Dk kullanılamaz.</li>
+</ul>
+<p>TivaWare'deki <code>ADC_CTL_*</code> sabitleri bu bitlerin dört bit sola kaydırılmış hâlidir: <code>ADC_CTL_TS</code> = 0x80, <code>ADC_CTL_IE</code> = 0x40, <code>ADC_CTL_END</code> = 0x20, <code>ADC_CTL_D</code> = 0x10; alt dört bit kanal numarasıdır (<code>ADC_CTL_CH0</code> = 0 … <code>ADC_CTL_CH11</code> = 0xB). <code>ADCSequenceStepConfigure</code> değerin alt nibble'ını ADCSSMUXn'in, üst nibble'ını ADCSSCTLn'in k. alanına yazar (<code>driverlib/adc.c</code>).</p>
+<figure><img class="fig" src="../img/adc-ornekleme-sirasi.svg" alt="Örnekleme sıralayıcısı adımları: ADCSSMUXn kanal alanları ve ADCSSCTLn bitleri D, END, IE, TS; SS3 tek adım TS IE END ve SS1 dört adım örneği, FIFO okuma"><figcaption><b>Şekil 4.</b> Örnekleme sıralayıcısı adımları: her adım için ADCSSMUXn'de bir kanal alanı (MUXk) ve ADCSSCTLn'de dört bit (Dk, ENDk, IEk, TSk). Üstte SS3 tek adım (TS | IE | END = 0xE), altta SS1 dört adım (TI Lab 5: adım 0–2 TS, adım 3 TS | IE | END → ADCSSCTL1 = 0xE888). Sonuçlar ADCSSFIFOn'den sırayla okunur.</figcaption></figure>
+
+<h3 id="ss-ornek">Örnek: SS3 tek adım ve SS1 dört adım</h3>
+<table>
+<thead><tr><th>Uygulama</th><th>ADCSSMUXn</th><th>ADCSSCTLn</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>SS3: AIN0 (PE3), tek örnek</td><td>SSMUX3 = <code>0x0</code></td><td>SSCTL3 = <code>0x6</code> (IE0 | END0)</td><td><code>ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0|ADC_CTL_IE|ADC_CTL_END)</code></td></tr>
+<tr><td>SS3: sıcaklık sensörü</td><td>kullanılmaz</td><td>SSCTL3 = <code>0xE</code> (TS0 | IE0 | END0)</td><td><code>ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END</code></td></tr>
+<tr><td>SS1: sensörün 4 örneği (Lab 5)</td><td>kullanılmaz</td><td>SSCTL1 = <code>0xE888</code></td><td>adım 0–2: <code>ADC_CTL_TS</code>; adım 3: <code>ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END</code></td></tr>
+<tr><td>SS1: AIN0, AIN1, AIN2, AIN3</td><td>SSMUX1 = <code>0x3210</code></td><td>SSCTL1 = <code>0x6000</code> (IE3 | END3)</td><td>dört çağrı; yalnız sonuncusunda <code>ADC_CTL_IE|ADC_CTL_END</code></td></tr>
+<tr><td>SS0: AIN0 … AIN7</td><td>SSMUX0 = <code>0x76543210</code></td><td>SSCTL0 = <code>0x60000000</code></td><td>sekiz çağrı</td></tr>
+</tbody></table>
+<p>Yukarıdaki SS1 örneğinde END üçüncü adımda olduğundan bir tetik dört dönüşüm yapar (≈ 4 µs) ve FIFO1'e dört sonuç yazar. IE yalnız son adımda olduğu için bayrak, dört sonucun hepsi hazır olunca kalkar.</p>
+
+<h3 id="fifo">FIFO'yu okumak</h3>
+<p>ADCSSFIFOn bir dairesel tampondur: register'ı her okuyuş bir sonucu çeker ve sonuçlar adım sırasıyla gelir (s. 803, s. 860). FIFO doluyken yeni bir sonuç gelirse yazılmaz ve ADCOSTAT'ta taşma bayrağı kalkar; boşken okunursa ADCUSTAT'ta alttan taşma işaretlenir. FIFO'nun boş olup olmadığı ADCSSFSTATn.EMPTY (bit8) ile anlaşılır.</p>
+<ul>
+<li><b>API'siz:</b> Sıralayıcının adım sayısı kadar <code>ADC0_SSFIFOn_R</code> okunur (SS1 için 4, SS3 için 1). Daha fazla okumak geçersiz veri ve alttan taşma bayrağı üretir.</li>
+<li><b>API'li:</b> <code>ADCSequenceDataGet(base, n, dizi)</code> FIFO'yu EMPTY olana kadar (en çok 8 okuma) diziye kopyalar ve <b>kopyaladığı örnek sayısını</b> döndürür (<code>driverlib/adc.c</code>; SPMU298E §4.2.2.28). Dizi, kullanılan sıralayıcının FIFO derinliği kadar olmalıdır: SS3 için <code>uint32_t veri[1]</code>, SS1/SS2 için <code>[4]</code>, SS0 için <code>[8]</code>. Dönüşüm bitmeden çağrılırsa yalnız o ana kadar hazır olan örnekleri verir.</li>
+</ul>
+<p>Her tetikten sonra FIFO tamamen boşaltılmazsa eski sonuçlar sırada kalır; bir sonraki okumada dizinin ilk elemanları eski ölçümlerden gelir, FIFO dolunca da yeni sonuçlar atılır.</p>
+
+<h2 id="tetik">6. Tetikleme ve sonucu alma</h2>
+<h3 id="tetik-kaynak">Tetik kaynakları (ADCEMUX)</h3>
+<p>Bir sıralayıcı, ADCEMUX'taki 4-bitlik alanıyla seçilen olay geldiğinde çalışır (datasheet §13.3.2.4, s. 804; ADCEMUX s. 833–836). TivaWare'de aynı değerler <code>ADC_TRIGGER_*</code> sabitleridir ve <code>ADCSequenceConfigure</code>'ün üçüncü parametresiyle yazılır:</p>
+<table>
+<thead><tr><th>EMn</th><th>Tetik</th><th>TivaWare sabiti</th><th>Ek ayar</th></tr></thead>
+<tbody>
+<tr><td><code>0x0</code></td><td>İşlemci (açılış)</td><td><code>ADC_TRIGGER_PROCESSOR</code></td><td>ADCPSSI'de SSn = 1 (<code>ADCProcessorTrigger</code>)</td></tr>
+<tr><td><code>0x1</code>, <code>0x2</code></td><td>Analog karşılaştırıcı 0, 1</td><td><code>ADC_TRIGGER_COMP0</code>, <code>_COMP1</code></td><td>ACCTLn</td></tr>
+<tr><td><code>0x4</code></td><td>Dış olay (GPIO)</td><td><code>ADC_TRIGGER_EXTERNAL</code></td><td>GPIOADCCTL (<code>GPIOADCTriggerEnable</code>)</td></tr>
+<tr><td><code>0x5</code></td><td>Zamanlayıcı</td><td><code>ADC_TRIGGER_TIMER</code></td><td>GPTMCTL.TnOTE = 1 (<code>TimerControlTrigger</code>)</td></tr>
+<tr><td><code>0x6</code>–<code>0x9</code></td><td>PWM üreteci 0–3</td><td><code>ADC_TRIGGER_PWM0</code> … <code>_PWM3</code></td><td>PWMnINTEN, ADCTSSEL</td></tr>
+<tr><td><code>0xF</code></td><td>Sürekli örnekleme</td><td><code>ADC_TRIGGER_ALWAYS</code></td><td>Diğer sıralayıcıları aç bırakmamak için en düşük öncelik verilir (s. 804).</td></tr>
+</tbody></table>
+<p>ADCEMUX'a yazarken yalnız ilgili alan değiştirilir; örneğin SS3'ü zamanlayıcıya bağlamak için <code>ADC0_EMUX_R = (ADC0_EMUX_R &amp; ~0xF000) | 0x5000;</code>. TivaWare <code>ADCSequenceConfigure</code> da bunu yapar ve aynı çağrıda ADCSSPRI'deki öncelik alanını yazar. Bu fonksiyon sıralayıcıyı <b>kendisi kapatmaz</b>; yapılandırmadan önce sıralayıcı etkinse <code>ADCSequenceDisable</code> çağrılmalıdır.</p>
+
+<h3 id="yoklama-kesme">Yoklama ve kesme</h3>
+<p>Sonucun hazır olduğu, Timer'daki zaman aşımı bayrağına benzer bir bayrakla bildirilir (bkz. <a href="../timer/#bayrak">Timer notu, kesme bayrağı ve temizleme</a>). ADC'de bayrak <b>sıralayıcı başınadır</b> ve yalnız <b>IE biti 1 olan bir adım bitince</b> kalkar (Şekil 5):</p>
+<figure><img class="fig" src="../img/adc-tetikleme-akisi.svg" alt="Tetik ve sonuç alma yolları: işlemci tetiği ADCPSSI ya da zamanlayıcı tetiği ADCEMUX ve TnOTE; yoklama ADCRIS ya da kesme ADCIM ve NVIC ADC0SSn; bayrak temizleme ADCISC"><figcaption><b>Şekil 5.</b> Tetik ve sonuç alma yolları. Tetik: işlemci (ADCPSSI) ↔ zamanlayıcı (ADCEMUX = 0x5 ve GPTMCTL.TnOTE). Sıralayıcı adımları çalışır, sonuçlar FIFO'ya yazılır, IE'li adım bitince ADCRIS.INRn kalkar. Sonuç alma: yoklama (ADCRIS okunur) ↔ kesme (ADCIM.MASKn → NVIC, ADC0SSn → ISR). Her iki yolda da bayrak ADCISC'ye 1 yazılarak temizlenir ve FIFO okunur.</figcaption></figure>
+<table>
+<thead><tr><th>Register</th><th>Görev</th><th>SS3 için</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>ADCSSCTLn.IEk</td><td>Kaynak: adım bitince ham bayrak kalksın. <b>Yoklamada da gereklidir.</b></td><td>SSCTL3 bit2</td><td><code>ADC_CTL_IE</code></td></tr>
+<tr><td>ADCRIS.INRn</td><td>Ham bayrak; maske ne olursa olsun kalkar. Yoklama bunu okur.</td><td>bit3</td><td><code>ADCIntStatus(base, 3, false)</code></td></tr>
+<tr><td>ADCIM.MASKn</td><td>Çevre birimi maskesi: 1 ise bayrak NVIC'e kesme isteği olarak gider.</td><td>bit3</td><td><code>ADCIntEnable(base, 3)</code></td></tr>
+<tr><td>ADCISC.INn</td><td>Okuma: INRn AND MASKn. <b>Yazma:</b> 1 yazmak INRn'yi temizler (RW1C).</td><td>bit3</td><td><code>ADCIntClear(base, 3)</code>; <code>ADCIntStatus(base, 3, true)</code></td></tr>
+</tbody></table>
+<div class="compare"><div>
+<div class="code-head"><span class="file">yoklama (kesmesiz)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">ADC0_PSSI_R = 0x08;                   // SS3'ü başlat
+while((ADC0_RIS_R &amp; 0x08) == 0) {}    // INR3 bekle
+sonuc = ADC0_SSFIFO3_R &amp; 0xFFF;       // FIFO3'ü oku
+ADC0_ISC_R = 0x08;                    // INR3'ü temizle</code></pre>
+</div><div>
+<div class="code-head"><span class="file">kesme</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">void ADC0SS3_Handler(void)            // donanım çağırır
+{
+    ADC0_ISC_R = 0x08;                // önce bayrağı temizle
+    sonuc = ADC0_SSFIFO3_R &amp; 0xFFF;   // FIFO3'ü oku
+}</code></pre>
+</div></div>
+<p>Datasheet'e göre yoklama yapılırken de ham bayrak ADCISC üzerinden temizlenir; o sırada ADCIM'de maske kapalı olsa bile bu geçerlidir (s. 828). Temizleme <b>atama</b> (<code>=</code>) ile yapılır: ADCISC'nin INn bitleri RW1C'dir (datasheet register türleri, s. 43) ve <code>|=</code> önce okuyup okunan maskeli bitleri geri yazdığından başka sıralayıcıların bayraklarını da istemeden silebilir. TivaWare <code>ADCIntClear</code> da <code>HWREG(base + ADC_O_ISC) = 1 &lt;&lt; n</code> yazar.</p>
+<p>Kesmeli kullanımda ISR kuralları Timer notundakiyle aynıdır (<a href="../timer/#isr-kurallari">ISR yazma kuralları</a>): ISR kısa olur, bayrak <b>ilk iş</b> temizlenir, ISR ile ana program arasında paylaşılan değişkenler <code>volatile</code> tanımlanır. TivaWare kılavuzu da <code>ADCIntClear</code> açıklamasında yazma tamponu nedeniyle temizlemenin ISR'nin başında yapılmasını önerir (SPMU298E §4.2.2.12).</p>
+
+<h3 id="zamanlayici-tetik">Zamanlayıcı tetiği</h3>
+<p>Ölçümlerin <b>eşit aralıklarla</b> alınması (ör. saniyede 1000 örnek) sinyal işlemenin temel şartıdır. Ana döngüde <code>ADCProcessorTrigger</code> çağırmak bunu sağlamaz; döngünün süresi koddaki diğer işlere göre değişir. Doğru yol, bir zamanlayıcının zaman aşımı olayını ADC tetiği olarak kullanmaktır:</p>
+<ol>
+<li>Zamanlayıcı periyodik kipte, istenen örnekleme periyodu için kurulur: ILR = f·T − 1 (<a href="../timer/#ilr-hesap">Timer notu, yükleme değeri</a>).</li>
+<li>GPTMCTL'de <b>TAOTE</b> (bit5; Timer B için TBOTE, bit13) 1 yapılır. TivaWare: <code>TimerControlTrigger(TIMER0_BASE, TIMER_A, true)</code>.</li>
+<li>Sıralayıcının ADCEMUX alanına <code>0x5</code> yazılır (<code>ADC_TRIGGER_TIMER</code>).</li>
+<li>Zamanlayıcı başlatılır. Her zaman aşımında sıralayıcı bir kez çalışır; sonuç kesme ya da yoklama ile alınır.</li>
+</ol>
+<p>Zamanlayıcının kendi kesmesini açmaya gerek yoktur; tetik, GPTMIMR ve NVIC'ten bağımsızdır. Tetiği yalnız periyodik ya da tek seferlik kipteki zaman aşımı olayı üretir (s. 710). Datasheet'e göre bütün zamanlayıcıların ADC tetik çıkışları VEYA'lanarak ADC'ye gider; bu yüzden aynı anda yalnız bir zamanlayıcıda TnOTE açık olmalıdır (s. 704; bkz. <a href="../timer/#gptm-yapi">Timer notu, GPTM yapısı</a>). Örnekleme periyodu en az sıralayıcının toplam dönüşüm süresi kadar olmalıdır (SS1'de 4 adım ≈ 4 µs; 64× ortalamada ≈ 256 µs).</p>
+
+<h3 id="kesme-no">ADC kesme numaraları</h3>
+<p>Her sıralayıcının NVIC'te ayrı bir kesme hattı vardır (datasheet Tablo 2-9, s. 104–105). Kesme ve vektör numarası ilişkisi, NVIC ve vektör tablosu Timer notunda anlatılmıştır (<a href="../timer/#nvic">NVIC</a>, <a href="../timer/#vektor">vektör tablosu ve startup dosyası</a>).</p>
+<table>
+<thead><tr><th>Kaynak</th><th>Kesme no (EN biti)</th><th>Vektör no</th><th>Ofset</th><th>TivaWare sabiti</th><th>Startup satırı</th></tr></thead>
+<tbody>
+<tr><td>ADC0 SS0</td><td>14 (EN0 bit14)</td><td>30</td><td><code>0x078</code></td><td><code>INT_ADC0SS0</code></td><td>ADC Sequence 0</td></tr>
+<tr><td>ADC0 SS1</td><td>15 (EN0 bit15)</td><td>31</td><td><code>0x07C</code></td><td><code>INT_ADC0SS1</code></td><td>ADC Sequence 1</td></tr>
+<tr><td>ADC0 SS2</td><td>16 (EN0 bit16)</td><td>32</td><td><code>0x080</code></td><td><code>INT_ADC0SS2</code></td><td>ADC Sequence 2</td></tr>
+<tr><td><b>ADC0 SS3</b></td><td><b>17 (EN0 bit17)</b></td><td><b>33</b></td><td><b><code>0x084</code></b></td><td><b><code>INT_ADC0SS3</code></b></td><td>ADC Sequence 3</td></tr>
+<tr><td>ADC1 SS0 … SS3</td><td>48 … 51 (EN1 bit16 … bit19)</td><td>64 … 67</td><td><code>0x100</code> … <code>0x10C</code></td><td><code>INT_ADC1SS0</code> … <code>INT_ADC1SS3</code></td><td>ADC1 Sequence 0 … 3</td></tr>
+</tbody></table>
+<p>NVIC register'larında bit konumu kesme numarasıdır (<code>NVIC_EN0_R = 1 &lt;&lt; 17;</code>); <code>INT_ADC0SS3</code> ise vektör numarasıdır (33), <code>IntEnable</code> 33 − 16 = 17 hesabını kendisi yapar. ADC0 SS3'ün öncelik alanı PRI4 register'ının bit15:13'üdür (17 = 4·4 + 1).</p>
+
+<h2 id="baslatma">7. Başlatma adımları</h2>
+<p>Datasheet §13.4 (s. 817–818) önce modülün (§13.4.1, adım 1–6), sonra her sıralayıcının (§13.4.2, adım 1–7) başlatılmasını anlatır. Bu notta iki liste ve kesme adımları tek bir numaralı listede birleştirilmiştir; kod yorumlarındaki numaralar bu listeye göredir. Şekil 6 API'siz ve API'li yolu yan yana gösterir:</p>
+<figure><img class="fig" src="../img/adc-baslatma-akisi.svg" alt="ADC başlatma akışı: API'siz register adımları ve TivaWare karşılıkları yan yana, datasheet bölüm 13.4 sırası"><figcaption><b>Şekil 6.</b> Başlatma akışı, API'siz ↔ API'li yan yana (datasheet §13.4 + kesme adımları): 1 ADC saati (RCGCADC) + PRADC bekle → 2 GPIO saati (RCGCGPIO) → 3 pin: AFSEL = 1, DEN = 0, AMSEL = 1 → 4 isteğe bağlı: ADCSSPRI, ADCPC, ADCSAC, ADCCC → 5 ASENn = 0 (ADCACTSS) → 6 ADCEMUX → 7 ADCSSMUXn → 8 ADCSSCTLn (son adımda END) → 9 ADCISC temizle + ADCIM → 10 ASENn = 1 → 11 NVIC EN0 → 12 global izin → 13 tetik (ADCPSSI ya da zamanlayıcıyı başlat). 2–3. adımlar iç sıcaklık sensöründe atlanır; 9. adımın ADCIM kısmı ile 11 ve 12. adımlar yalnız kesmeli kullanımda gerekir.</figcaption></figure>
+<h3 id="adimlar">Adım adım</h3>
+<ol>
+<li><b>ADC saatini aç (RCGCADC):</b> ADC0 için bit0 = 1 (<code>SYSCTL_RCGCADC_R |= 0x01;</code>). PRADC'nin bit0'ı 1 olana kadar bekle (<code>while((SYSCTL_PRADC_R &amp; 0x01) == 0) {}</code>). Datasheet adım 1.</li>
+<li><b>GPIO portunun saatini aç (RCGCGPIO):</b> AIN pininin portu; PE3 için bit4 (+ PRGPIO bekle). Datasheet adım 2. Yalnız sıcaklık sensörü okunuyorsa atlanır.</li>
+<li><b>Pini analog giriş yap:</b> GPIOAFSEL = 1, GPIODEN = 0, GPIOAMSEL = 1 (<a href="#pin-ayari">Bölüm 3</a>). Datasheet adım 3–5.</li>
+<li><b>Modül ayarları (isteğe bağlı):</b> Sıralayıcı öncelikleri (ADCSSPRI, datasheet adım 6), örnekleme hızı (ADCPC), donanım ortalaması (ADCSAC), saat kaynağı (ADCCC). Açılış değerleri çoğu uygulama için uygundur.</li>
+<li><b>Sıralayıcıyı kapat (ASENn = 0, ADCACTSS):</b> Yapılandırma sırasında gelen bir tetik yarım kalmış ayarla dönüşüm başlatmasın. <code>ADC0_ACTSS_R &amp;= ~0x08;</code> (SS3). Datasheet §13.4.2 adım 1.</li>
+<li><b>Tetik kaynağı (ADCEMUX):</b> İşlemci için <code>0x0</code>, zamanlayıcı için <code>0x5</code>. Zamanlayıcı tetiğinde zamanlayıcı da kurulur ve GPTMCTL.TnOTE = 1 yapılır. §13.4.2 adım 2 (PWM tetiğinde adım 3: ADCTSSEL).</li>
+<li><b>Giriş seçimi (ADCSSMUXn):</b> Her adım için AIN numarası. §13.4.2 adım 4.</li>
+<li><b>Adım denetim bitleri (ADCSSCTLn):</b> TS, IE, END, D; <b>son adımda END = 1</b>. §13.4.2 adım 5.</li>
+<li><b>Kesme maskesi (ADCISC, ADCIM):</b> Kesme kullanılacaksa önce ADCISC'ye 1 yazarak bekleyen bayrağı temizle, sonra MASKn = 1. §13.4.2 adım 6. <code>ADCIntRegister</code> kullanılıyorsa bu adımdan önce çağrılır; kaynak açılmadan ISR kaydedilmiş olur.</li>
+<li><b>Sıralayıcıyı aç (ASENn = 1, ADCACTSS):</b> §13.4.2 adım 7.</li>
+<li><b>NVIC (EN0, isteğe bağlı PRIn):</b> ADC0 SS3 için EN0 bit17. ISR'nin vektör tablosuna bağlı olduğundan emin olun (startup dosyası ya da <code>ADCIntRegister</code>).</li>
+<li><b>Global kesme izni:</b> <code>IntMasterEnable()</code> (PRIMASK = 0). Açılışta PRIMASK zaten 0'dır (bkz. <a href="../timer/#nvic">Timer notu, Geçit 3</a>).</li>
+<li><b>Tetikle:</b> İşlemci tetiğinde ADCPSSI'ye SSn = 1 yaz (<code>ADC0_PSSI_R = 0x08;</code>); zamanlayıcı tetiğinde zamanlayıcıyı başlat (TnEN = 1).</li>
+</ol>
+<p><b>Sonucu alma:</b> Yoklamada ADCRIS.INRn = 1 beklenir; kesmede ISR çalışır. Ardından bayrak ADCISC'ye 1 yazılarak temizlenir ve FIFO, sıralayıcının adım sayısı kadar okunur. İşlemci tetiğinde her yeni ölçüm için 13. adım tekrarlanır. 9. adımın ADCIM kısmı ile 11 ve 12. adımlar yalnız <b>kesmeli</b> kullanımda gerekir; kesmesiz kullanımda bunlar atlanır, ama IE biti (adım 8) yine 1 olmalıdır.</p>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<p>Fonksiyon davranışları TivaWare 2.1.4 kaynak kodundan (<code>driverlib/adc.c</code>, <code>gpio.c</code>, <code>timer.c</code>) doğrulanmıştır.</p>
+<table>
+<thead><tr><th>Adım</th><th>TivaWare çağrısı</th><th>Ne yapar (register düzeyinde)</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0)</code></td><td>RCGCADC bit0 = 1. <code>SysCtlPeripheralReady(...)</code> PRADC bitini döndürür.</td></tr>
+<tr><td>2</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE)</code></td><td>RCGCGPIO bit4 = 1.</td></tr>
+<tr><td>3</td><td><code>GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3)</code></td><td>DIR = 0, AFSEL = 0, PUR = PDR = 0, DEN = 0, AMSEL = 1.</td></tr>
+<tr><td>4</td><td><code>ADCHardwareOversampleConfigure(ADC0_BASE, 64)</code></td><td>ADCSAC = log<sub>2</sub>(64) = 6. Faktör 0, 2, 4, …, 64 olabilir.</td></tr>
+<tr><td>4</td><td><code>ADCClockConfigSet(ADC0_BASE, ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_FULL, 1)</code></td><td>ADCPC = 0x7 (1 Msps), ADCCC = 0x1 (PIOSC).</td></tr>
+<tr><td>5</td><td><code>ADCSequenceDisable(ADC0_BASE, 3)</code></td><td>ADCACTSS &amp;= ~(1 &lt;&lt; 3).</td></tr>
+<tr><td>6 (+4)</td><td><code>ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0)</code></td><td>ADCEMUX'ta EM3 = tetik; ADCSSPRI'de SS3 alanı = öncelik (0–3). Sıralayıcıyı kapatmaz.</td></tr>
+<tr><td>7–8</td><td><code>ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0|ADC_CTL_IE|ADC_CTL_END)</code></td><td>ADCSSMUX3'ün 0. nibble'ı = 0 (AIN0); ADCSSCTL3'ün 0. nibble'ı = 0x6 (IE | END).</td></tr>
+<tr><td>9</td><td><code>ADCIntEnable(ADC0_BASE, 3)</code></td><td>Önce <code>ADCISC = 1 &lt;&lt; 3</code> (bekleyen bayrağı temizler), sonra <code>ADCIM |= 1 &lt;&lt; 3</code>.</td></tr>
+<tr><td>9, 11</td><td><code>ADCIntRegister(ADC0_BASE, 3, Fonksiyon)</code></td><td>Vektör tablosunu RAM'e taşıyıp 33. girişe fonksiyonu yazar (<code>IntRegister</code>) ve <b><code>IntEnable(INT_ADC0SS3)</code>'ü de çağırır</b>. Kaynağın kesmesi (ADCIM) ayrıca <code>ADCIntEnable</code> ile açılır (SPMU298E §4.2.2.18).</td></tr>
+<tr><td>10</td><td><code>ADCSequenceEnable(ADC0_BASE, 3)</code></td><td>ADCACTSS |= 1 &lt;&lt; 3.</td></tr>
+<tr><td>11</td><td><code>IntEnable(INT_ADC0SS3)</code></td><td>NVIC EN0 bit (33 − 16) = bit17.</td></tr>
+<tr><td>12</td><td><code>IntMasterEnable()</code></td><td><code>CPSIE I</code>: PRIMASK = 0.</td></tr>
+<tr><td>6</td><td><code>TimerControlTrigger(TIMER0_BASE, TIMER_A, true)</code></td><td>GPTMCTL.TAOTE (bit5) = 1: Timer0A zaman aşımı ADC tetiği üretir.</td></tr>
+<tr><td>13</td><td><code>ADCProcessorTrigger(ADC0_BASE, 3)</code></td><td>ADCPSSI'de SS3 = 1.</td></tr>
+<tr><td>sonuç</td><td><code>ADCIntStatus(ADC0_BASE, 3, false)</code></td><td>ADCRIS.INR3'ü okur (<code>true</code> ise ADCISC'yi, yani maskeli durumu).</td></tr>
+<tr><td>sonuç</td><td><code>ADCIntClear(ADC0_BASE, 3)</code></td><td><code>ADCISC = 1 &lt;&lt; 3</code>.</td></tr>
+<tr><td>sonuç</td><td><code>ADCSequenceDataGet(ADC0_BASE, 3, veri)</code></td><td>ADCSSFSTAT3.EMPTY = 1 olana kadar (en çok 8) ADCSSFIFO3'ü diziye kopyalar; kopyalanan örnek sayısını döndürür.</td></tr>
+</tbody></table>
+<p>StellarisWare döneminden kalma <code>SysCtlADCSpeedSet</code> fonksiyonu TivaWare 2.1.4'te yoktur; örnekleme hızı <code>ADCClockConfigSet</code> ile ayarlanır.</p>
+
+<h2 id="ornekler">8. Örnekler</h2>
+<p>Bu bölümdeki kodların çoğu ders örnek projelerinden alınmıştır; her kodun üstünde kaynak dosya yazar. Mantık değiştirilmemiştir. Yoruma alınmış satırlar atılmış, yorumlar Türkçeleştirilip kısaltılmış ve bozuk Türkçe karakterler düzeltilmiştir; yorumlardaki adım numaraları <a href="#adimlar">Bölüm 7</a>'deki listeye göredir. Ders kodlarında API'siz bir ADC örneği yoktur; "bu not için hazırlandı" diye işaretlenen kodlar ders klasöründe bulunmaz.</p>
+<div class="box"><span class="box-title">Proje ayarı hatırlatması</span>
+<ul>
+<li>API'siz örnekler: önce <code>#include &lt;stdint.h&gt;</code>, ardından <code>#include "inc/tm4c123gh6pm.h"</code>.</li>
+<li>API'li örnekler: <code>stdint.h</code> ve <code>stdbool.h</code> önce; <code>driverlib.lib</code> projeye bağlanır. <code>inc/hw_ints.h</code>'deki <code>INT_ADC0SS3</code> gibi sabitler için projede <code>PART_TM4C123GH6PM</code> öntanımlı sembolü bulunmalıdır. <code>ADCIntRegister</code> kullanılıyorsa bağlayıcı dosyasında RAM vektör tablosu (<code>.vtable</code>) bölümü olmalıdır (bkz. <a href="../timer/#vektor">Timer notu</a>).</li>
+<li>Ders kodlarındaki bazı API'li projeler hem <code>inc/hw_ints.h</code>'yi (ya da onu çağıran başlıkları) hem <code>inc/tm4c123gh6pm.h</code>'yi ekler; bu, <code>INT_*</code> makrolarının yeniden tanımlanma uyarılarına yol açar. API'li kodda <code>tm4c123gh6pm.h</code> gerekmez. Projelere eklenmiş <code>driverlib/sysctl.c</code> gibi kaynak dosyalar kütüphane bağlıyken gereksizdir (bkz. <a href="../gpio/#ornek-buton">GPIO notu 6.3</a>).</li>
+</ul></div>
+
+<h3 id="ornek-yoklama-apisiz">8.1 Tek kanal, işlemci tetiği, yoklama, API'siz</h3>
+<p><b>Amaç:</b> PE3'e (AIN0) bağlı potansiyometrenin gerilimini SS3 ile sürekli ölçmek ve milivolta çevirmek. <b>Donanım:</b> Potansiyometre uçları 3,3 V ve GND'ye, orta ucu PE3'e (Şekil 3); saat varsayılan 16 MHz (PIOSC, ADC saati de 16 MHz). Sonuç hata ayıklayıcıda <code>sonuc</code> ve <code>milivolt</code> değişkenleri izlenerek görülür. Bu kod not için hazırlanmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: adc_yoklama.c</span><span class="tag reg">API&#x27;siz · kesmesiz · işlemci tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;                    // tm4c123gh6pm.h uint32_t kullanır; önce eklenmeli
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t sonuc;                // son ADC kodu (0-4095)
+volatile uint32_t milivolt;             // gerilim (mV)
+
+int main(void)
+{
+    // --- Modül ve pin ---
+    SYSCTL_RCGCADC_R  |= 0x01;               // 1) ADC0 saatini aç (RCGCADC bit0)
+    SYSCTL_RCGCGPIO_R |= 0x10;               // 2) Port E saatini aç (RCGCGPIO bit4)
+    while((SYSCTL_PRADC_R  &amp; 0x01) == 0) {}  // 1) ADC0 hazır olana kadar bekle
+    while((SYSCTL_PRGPIO_R &amp; 0x10) == 0) {}  // 2) Port E hazır olana kadar bekle
+    GPIO_PORTE_DIR_R   &amp;= ~0x08;             // 3) PE3 giriş
+    GPIO_PORTE_AFSEL_R |=  0x08;             // 3) PE3 alternatif işlev: AFSEL = 1
+    GPIO_PORTE_DEN_R   &amp;= ~0x08;             // 3) PE3 dijital kapalı: DEN = 0
+    GPIO_PORTE_AMSEL_R |=  0x08;             // 3) PE3 analog bağlı: AMSEL = 1
+
+    // --- Sıralayıcı 3 (4. adım: açılış değerleri yeterli) ---
+    ADC0_ACTSS_R &amp;= ~0x08;                   // 5) ASEN3 = 0: ayar sırasında SS3 kapalı
+    ADC0_EMUX_R  &amp;= ~0xF000;                 // 6) EM3 = 0x0: işlemci tetiği (ADCPSSI)
+    ADC0_SSMUX3_R = 0;                       // 7) MUX0 = 0: AIN0 (PE3)
+    ADC0_SSCTL3_R = 0x06;                    // 8) IE0 | END0: tek adım; bitince INR3 kalksın
+    ADC0_ACTSS_R |= 0x08;                    // 10) ASEN3 = 1: SS3 etkin
+
+    while(1)
+    {
+        ADC0_PSSI_R = 0x08;                  // 13) SS3'ü başlat (işlemci tetiği)
+        while((ADC0_RIS_R &amp; 0x08) == 0) {}   // INR3 = 1 olana kadar bekle: dönüşüm bitti
+        sonuc = ADC0_SSFIFO3_R &amp; 0xFFF;      // FIFO3'ten 12-bit sonucu oku
+        ADC0_ISC_R = 0x08;                   // IN3'e 1 yaz: INR3'ü temizle (RW1C, '=' ile)
+        milivolt = (sonuc * 3300) / 4096;    // kod -&gt; mV (VREF = 3,3 V)
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Kesme kullanılmadığından 9, 11 ve 12. adımlar yoktur; ama ADCSSCTL3'teki IE0 biti 1'dir, aksi halde INR3 hiç kalkmaz ve bekleme döngüsünden çıkılmaz. FIFO3 tek elemanlı olduğu için her ölçümde bir kez okunur. Potansiyometre çevrildikçe <code>sonuc</code> 0 ile 4095, <code>milivolt</code> 0 ile ≈ 3300 arasında değişir; sonucun son bir iki biti gürültü nedeniyle oynar. Varsayılan saatle ADC'nin durumu için bkz. <a href="#adc-saat">Bölüm 2, ADC saati</a>.</p>
+
+<h3 id="ornek-yoklama-apili">8.2 Tek kanal, işlemci tetiği, yoklama, API'li</h3>
+<p><b>Amaç:</b> 8.1'deki ölçümü TivaWare ile yapmak. <b>Donanım:</b> Aynı (PE3); saat 40 MHz (kristal + PLL; ADC saati PLL/25 = 16 MHz). Ders kodlarında tek kanallı, API'li ve kesmesiz bir örnek olmadığından bu kod not için hazırlanmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: adc_yoklama_api.c</span><span class="tag api">API&#x27;li · kesmesiz · işlemci tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"              // ADC0_BASE, GPIO_PORTE_BASE
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"             // GPIOPinTypeADC
+#include "driverlib/adc.h"              // ADCSequence..., ADC_CTL_...
+
+int main(void)
+{
+    uint32_t veri[1];                   // SS3 FIFO derinliği 1
+    volatile uint32_t milivolt;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);              // 1) ADC0 saati
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);             // 2) Port E saati
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0)) {}     // 1) hazır bekle
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE)) {}    // 2) hazır bekle
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);             // 3) PE3: DEN = 0, AMSEL = 1
+
+    ADCSequenceDisable(ADC0_BASE, 3);                        // 5) SS3 kapalı
+    ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);  // 6) işlemci tetiği, öncelik 0
+    ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
+                             ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END); // 7-8) AIN0, IE, END
+    ADCSequenceEnable(ADC0_BASE, 3);                         // 10) SS3 etkin
+
+    while(1)
+    {
+        ADCIntClear(ADC0_BASE, 3);                           // eski bayrağı temizle
+        ADCProcessorTrigger(ADC0_BASE, 3);                   // 13) dönüşümü başlat
+        while(!ADCIntStatus(ADC0_BASE, 3, false)) {}         // ham bayrak (ADCRIS.INR3) bekle
+        ADCSequenceDataGet(ADC0_BASE, 3, veri);              // FIFO3'ü oku (1 örnek döner)
+        milivolt = (veri[0] * 3300) / 4096;                  // kod -&gt; mV
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Bayrak bu kez tetikten <b>önce</b> temizlenir (TI Lab 5'teki düzen); 8.1'deki gibi okumadan sonra temizlemek de doğrudur, yeter ki her turda bir kez temizlensin. <code>ADCSequenceConfigure</code>'e verilen öncelik 0, SS0'ın açılış önceliğiyle aynıdır; datasheet'teki benzersizlik şartı yalnız <b>etkin</b> sıralayıcılar için geçerli olduğundan SS0 kullanılmadıkça sorun yoktur.</p>
+
+<h3 id="ornek-sicaklik">8.3 İç sıcaklık sensörü ve donanım ortalaması</h3>
+<p><b>Amaç:</b> İç sıcaklık sensörünü SS1'in dört adımında örneklemek, dört sonucun ortalamasından sıcaklığı °C ve °F olarak hesaplamak. <b>Donanım:</b> Ek bağlantı yok; saat 40 MHz. Kod TI Lab 5'in yoklamalı biçimidir; orijinal Türkçe yorumlar düzeltilip kısaltılmıştır.</p>
+<div class="code-head"><span class="file">drive_adc_ornekleri/1.c</span><span class="tag api">API&#x27;li · kesmesiz · işlemci tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/debug.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/adc.h"                  // ADC için unutma
+
+int main(void)
+{
+    uint32_t ui32ADC0Value[4];              // SS1 FIFO derinliği kadar: 4 eleman
+    volatile uint32_t ui32TempAvg;          // volatile: hata ayıklayıcıda izlenebilsin
+    volatile uint32_t ui32TempValueC;
+    volatile uint32_t ui32TempValueF;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ); // 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);            // 1) ADC0 saati
+
+    // SS1: 4 adımlı, yazılımla (işlemci) tetiklenecek, öncelik 0
+    ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);   // 6)
+
+    // Adım ayarları: dördünde de iç sıcaklık sensörü okunuyor
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_TS);          // 7-8) adım 0: TS
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADC_CTL_TS);          //    adım 1: TS
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADC_CTL_TS);          //    adım 2: TS
+    ADCSequenceStepConfigure(ADC0_BASE,1,3,ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END); // adım 3: TS, IE, son adım
+
+    ADCSequenceEnable(ADC0_BASE, 1);                       // 10) SS1 etkin
+
+    // Dönüşümün bitip bitmediği yoklama ile kontrol edilecek
+    while(1)
+    {
+        ADCIntClear(ADC0_BASE, 1);                         // bayrağı temizle (ADCISC.IN1)
+        ADCProcessorTrigger(ADC0_BASE, 1);                 // 13) dönüşümü başlat
+
+        while(!ADCIntStatus(ADC0_BASE, 1, false))          // dönüşüm bitmediyse bekle (ADCRIS.INR1)
+        {
+        }
+
+        ADCSequenceDataGet(ADC0_BASE, 1, ui32ADC0Value);   // FIFO1'deki 4 sonucu al
+        ui32TempAvg = (ui32ADC0Value[0] + ui32ADC0Value[1] + ui32ADC0Value[2] + ui32ADC0Value[3] + 2)/4; // +2: yuvarlama
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Sıcaklık sensörü pin kullanmadığı için 2–3. adımlar yoktur. Ortalamaya eklenen 2, 4'e bölmede yarımı yukarı yuvarlamak içindir. Dosyada <code>ui32TempValueC</code> ve <code>ui32TempValueF</code> tanımlanmış ama hesaplanmamıştır; Lab 5'teki iki satır (<a href="#sicaklik">Bölüm 3</a>) döngünün sonuna eklenerek tamamlanır. Parmakla yongaya dokununca <code>ui32TempAvg</code>'nin <b>azaldığı</b> görülür (sıcaklık arttıkça kod azalır).</p>
+<p>Ders kodları 5. adımı (<code>ADCSequenceDisable</code>) ve hazır beklemeyi atlar; açılışta ASENn = 0 olduğu ve çağrı süresi 3 saati aştığı için pratikte çalışır, ama kendi kodunuzda 8.2'deki gibi yazın. <b>Donanım ortalaması</b> bu koda tek satırla eklenir; ayrıntısı ve kodu <a href="#lab5">Bölüm 9</a>'dadır (TI Lab 5, 2. kısım).</p>
+<div class="box warn"><span class="box-title">Aynı ölçümün diğer sürümü: hafta08adc01</span>
+<p><code>hafta08adc01/main.c</code> aynı SS1 + sıcaklık sensörü kurulumunu 50 MHz'te (<code>SYSCTL_SYSDIV_4</code>; ADC saati yine 16 MHz) yapar ve sıcaklığı <code>temp=(1475-((2475*ortalamadeger)/4096))/10;</code> ile hesaplar. Ancak ana döngüde <b>bayrak hiç temizlenmez</b>; döngü birebir şu satırlarla döner:</p>
+<pre><code class="language-c">ADCProcessorTrigger(ADC0_BASE, 1); // yazılımla tetikliyorum
+while(!ADCIntStatus(ADC0_BASE, 1, false)){} // burada bekliyoruz
+ADCSequenceDataGet(ADC0_BASE, 1, gelendata);</code></pre>
+<p>İlk dönüşümden sonra INR1 hep 1 kalır, bekleme döngüsü ikinci turdan itibaren hemen geçilir ve <code>ADCSequenceDataGet</code> dönüşüm bitmeden çağrılır; o anda FIFO'da kaç sonuç varsa onu alır; <code>gelendata</code> döngü içinde ilk değersiz tanımlandığından eksik elemanlar belirsiz (çoğu zaman önceki turun) değerleri taşır. Çözüm, Lab 5'teki gibi tetikten önce <code>ADCIntClear(ADC0_BASE, 1);</code> eklemektir. Ayrıca <code>temp</code> <code>volatile</code> olmadığından optimizasyon açıkken hesap tamamen atılabilir; dosya kullanılmayan Port F'nin saatini de açar.</p></div>
+<h4>API'siz sürüm (bu not için hazırlandı)</h4>
+<p>Aynı ölçüm register düzeyinde. SSCTL1 = 0xE888 değerinin nasıl bulunduğu <a href="#ss-ornek">Bölüm 5</a>'tedir. Saat varsayılan 16 MHz'tir.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: sicaklik.c</span><span class="tag reg">API&#x27;siz · kesmesiz · işlemci tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t ortalama, sicaklikC;
+
+int main(void)
+{
+    uint32_t i, toplam;
+
+    SYSCTL_RCGCADC_R |= 0x01;                 // 1) ADC0 saati
+    while((SYSCTL_PRADC_R &amp; 0x01) == 0) {}    // 1) hazır bekle; 2-3) yok: sensör pin kullanmaz
+    ADC0_SAC_R    = 0x6;                      // 4) AVG = 6: 64 örnek donanım ortalaması
+    ADC0_CTL_R   |= 0x40;                     // 4) DITHER: ortalamayla birlikte önerilir (s. 806)
+    ADC0_ACTSS_R &amp;= ~0x02;                    // 5) ASEN1 = 0
+    ADC0_EMUX_R  &amp;= ~0x00F0;                  // 6) EM1 = 0x0: işlemci tetiği
+    ADC0_SSMUX1_R = 0;                        // 7) TS seçili adımlarda MUX alanı kullanılmaz
+    ADC0_SSCTL1_R = 0xE888;                   // 8) adım 0-2: TS; adım 3: TS | IE | END
+    ADC0_ACTSS_R |= 0x02;                     // 10) ASEN1 = 1
+
+    while(1)
+    {
+        ADC0_ISC_R  = 0x02;                   // IN1: eski bayrağı temizle
+        ADC0_PSSI_R = 0x02;                   // 13) SS1'i başlat
+        while((ADC0_RIS_R &amp; 0x02) == 0) {}    // INR1 bekle: dört adım bitti
+        toplam = 0;
+        for(i = 0; i &lt; 4; i++)                // FIFO1'de tam 4 sonuç var
+            toplam += ADC0_SSFIFO1_R &amp; 0xFFF;
+        ortalama  = (toplam + 2) / 4;         // yuvarlamalı ortalama
+        sicaklikC = (1475 - (2475 * ortalama) / 4096) / 10;  // TEMP = 147,5 - 247,5*kod/4096
+    }
+}</code></pre>
+<p>64× ortalamayla dört adım 256 dönüşüm, yani yaklaşık 256 µs sürer.</p>
+
+<h3 id="ornek-kesme">8.4 ADC kesmesi</h3>
+<p><b>Amaç:</b> Dönüşüm bitince sonucu bir ISR'de almak; ISR her sonuçtan sonra yeni bir dönüşüm başlatarak sürekli ölçüm yapar. <b>Donanım:</b> AIN0 (PE3); saat 50 MHz. Orijinal dosyadaki yanlış "sequence 1 seç" yorumu düzeltilmiştir (kod SS3'ü kullanır).</p>
+<div class="code-head"><span class="file">hafta08adc2/main.c</span><span class="tag api">API&#x27;li · kesmeli · işlemci tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.c"                 // kütüphane kaynağı (gereksiz, bkz. proje ayarı)
+#include "driverlib/adc.h"
+#include "inc/tm4c123gh6pm.h"                 // INT_ADC0SS3 (=33) sysctl.c'nin eklediği hw_ints.h'de de var: yeniden tanım uyarısı
+
+void SetInitSettings();
+uint32_t value[1];                            // SS3 sonucu (FIFO derinliği 1)
+
+void adckesme(){                              // ADC0 SS3 ISR'si (ADCIntRegister ile kaydedildi)
+    ADCIntClear(ADC0_BASE,3);                 // önce bayrağı temizle
+
+    ADCSequenceDataGet(ADC0_BASE,3, value);   // FIFO3'ü oku
+
+    ADCProcessorTrigger(ADC0_BASE, 3);        // bir sonraki dönüşümü yazılımla başlat
+}
+
+int main(void)
+{
+    SetInitSettings();
+
+    while(1){
+                                              // boş: ölçüm ISR'de
+    }
+}
+
+void SetInitSettings()
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);     // Port F saati (bu kodda kullanılmıyor)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);      // 1) ADC0 saati
+
+    ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0); // 6) ADC0, SS3, işlemci tetiği
+
+    ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0|ADC_CTL_IE|ADC_CTL_END); // 7-8) AIN0, IE, END
+
+    ADCSequenceEnable(ADC0_BASE, 3);                 // 10) SS3 etkin; henüz dönüşüm yok
+
+    IntMasterEnable();                               // 12) global izin
+    IntEnable(INT_ADC0SS3);                          // 11) NVIC: kesme 17 (vektör 33)
+
+    ADCIntClear(ADC0_BASE, 3);                       // 9) bekleyen bayrağı temizle
+    ADCIntRegister(ADC0_BASE, 3, adckesme);          // ISR'yi RAM tablosuna yaz (+ IntEnable)
+    ADCIntEnable(ADC0_BASE, 3);                      // 9) ADCIM.MASK3 = 1
+    ADCProcessorTrigger(ADC0_BASE, 3);               // 13) ilk dönüşümü başlat
+}</code></pre>
+<p><b>Açıklama:</b> İlk tetik <code>SetInitSettings</code>'in son satırında verilir. Her dönüşüm bitince ISR çağrılır; ISR bayrağı temizler, sonucu alır ve yeni dönüşümü başlatır. Böylece ADC durmadan çalışır. Bir dönüşüm ≈ 1 µs sürdüğünden ISR saniyede yüz binlerce kez çağrılır ve işlemcinin zamanının büyük kısmı ISR'de geçer; gerçek bir uygulamada örnekleme aralığı zamanlayıcıyla belirlenir (8.5). Çağrı sırası Bölüm 7'deki listeden farklıdır (NVIC ve global izin önce), ama <code>ADCIntRegister</code>, kaynağı açan <code>ADCIntEnable</code>'dan önce çağrıldığı ve ilk tetik en son verildiği için sonuç değişmez.</p>
+<div class="box warn"><span class="box-title">Kodda dikkat edilecekler</span>
+<ul>
+<li><b>PE3 ayarlanmamış:</b> Kanal AIN0 (PE3) seçildiği halde Port E'nin saati açılmamış ve pin analog yapılmamıştır (AMSEL = 0); Port F'nin saati ise boşuna açılmıştır. Datasheet'e göre analog yalıtım devresi kapatılmadan (AMSEL = 1) pin ADC'ye bağlanmaz ve okunan değer güvenilir değildir. Eklenmesi gereken satırlar: <code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);</code> ve <code>GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);</code>.</li>
+<li><b>Dolaylı başlık:</b> <code>driverlib/interrupt.h</code> doğrudan eklenmemiştir; <code>IntMasterEnable</code>/<code>IntEnable</code> bildirimleri yalnız <code>#include "driverlib/sysctl.c"</code> satırı üzerinden gelir (sysctl.c, <code>inc/hw_ints.h</code> ve <code>driverlib/interrupt.h</code>'yi ekler). Bu gereksiz satır kaldırılırsa <code>#include "driverlib/interrupt.h"</code> eklenmelidir.</li>
+<li><code>value</code> ISR'de yazılıp ana programda okunacaksa <code>volatile</code> tanımlanmalıdır.</li>
+</ul></div>
+<p>Aynı yapının SS1 + sıcaklık sensörü sürümü (<code>drive_adc_ornekleri/2.c</code>) ve eski bir sürümü <a href="#diger-dosyalar">8.8</a>'deki tabloda özetlenmiştir.</p>
+<h4>API'siz kesmeli sürüm (bu not için hazırlandı)</h4>
+<p>8.1'deki kurulum 9, 11 ve 12. adımlarla tamamlanır. ISR yalnız sonucu alıp bir bayrak kaldırır; yeni dönüşümü ana döngü başlatır. Böylece 8.4'teki kesme yağmuru oluşmaz.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: adc_kesme.c (8.1'den farklı kısımlar)</span><span class="tag reg">API&#x27;siz · kesmeli · işlemci tetiği</span></div><pre><code class="language-c">volatile uint32_t sonuc;                // ISR yazar, ana döngü okur: volatile
+volatile uint32_t yeni = 0;             // 1 = okunmamış yeni sonuç var
+
+void ADC0SS3_Handler(void)              // vektör 33 (kesme 17): startup'ta "ADC Sequence 3" satırı
+{
+    ADC0_ISC_R = 0x08;                  // önce IN3 bayrağını temizle
+    sonuc = ADC0_SSFIFO3_R &amp; 0xFFF;     // FIFO3'ü oku (tek sonuç)
+    yeni = 1;                           // ana döngüye haber ver
+}
+
+    /* main içinde: 1-8. adımlar 8.1 ile aynı; 8.1'deki 10. adım
+       (ADC0_ACTSS_R |= 0x08) aşağıya, 9. adımın arkasına taşındı */
+    ADC0_ISC_R    = 0x08;               // 9) bekleyen bayrağı temizle
+    ADC0_IM_R    |= 0x08;               // 9) MASK3: SS3 bayrağı kesme üretsin
+    ADC0_ACTSS_R |= 0x08;               // 10) ASEN3 = 1
+    NVIC_EN0_R    = 1 &lt;&lt; 17;            // 11) ADC0 SS3 = kesme 17 (EN0 bit17)
+    __asm("    cpsie   i");             // 12) global izin (PRIMASK = 0)
+    ADC0_PSSI_R   = 0x08;               // 13) ilk dönüşüm
+
+    while(1)
+    {
+        if (yeni)                       // ISR yeni sonuç bıraktı mı?
+        {
+            yeni = 0;
+            milivolt = (sonuc * 3300) / 4096;
+            ADC0_PSSI_R = 0x08;         // 13) sonraki dönüşümü başlat
+        }
+    }</code></pre>
+<p>Startup dosyasındaki eklemeler, Timer notundaki <a href="../timer/#vektor">Yöntem 1</a> ile aynıdır: dosyanın başına <code>extern void ADC0SS3_Handler(void);</code> eklenir; tablodaki <code>IntDefaultHandler,  // ADC Sequence 3</code> satırında <code>IntDefaultHandler</code> yerine <code>ADC0SS3_Handler</code> yazılır. Ders projelerinin startup dosyalarında ADC girişleri değiştirilmemiştir; API'li örnekler ISR'yi <code>ADCIntRegister</code> ile kaydeder.</p>
+
+<h3 id="ornek-timer">8.5 Zamanlayıcı tetikli ADC</h3>
+<p><b>Amaç:</b> Timer0A'nın her saniyedeki zaman aşımıyla sıcaklık sensörünü örneklemek ve sonucu ADC kesmesinde işlemek. İşlemci örnekleme zamanına hiç karışmaz. <b>Donanım:</b> Ek bağlantı yok; saat 40 MHz. Zamanlayıcı kurulumu için bkz. <a href="../timer/#ornek-kesme-apili">Timer notu 7.3</a>.</p>
+<div class="code-head"><span class="file">drive_adc_ornekleri/4.c</span><span class="tag api">API&#x27;li · kesmeli · zamanlayıcı tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/debug.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/adc.h"
+#include "driverlib/interrupt.h"
+#include "inc/hw_ints.h"                       // INT_ADC0SS1
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/timer.h"                   // TimerControlTrigger
+
+uint32_t ui32ADC0Value[4];                     // SS1 sonuçları
+uint32_t ui32TempAvg;
+uint32_t ui32TempValueC;
+uint32_t ui32TempValueF;
+
+void adcintt(void)                             // ADC0 SS1 ISR'si: her saniye bir kez
+{
+
+    ADCIntClear(ADC0_BASE, 1);                 // önce bayrağı temizle
+
+    ADCSequenceDataGet(ADC0_BASE, 1, ui32ADC0Value);   // 4 sonucu al
+    ui32TempAvg = (ui32ADC0Value[0] + ui32ADC0Value[1] + ui32ADC0Value[2] + ui32ADC0Value[3] + 2)/4;
+    ui32TempValueC = (1475 - ((2475 * ui32TempAvg)) / 4096)/10;   // °C
+    ui32TempValueF = ((ui32TempValueC * 9) + 160) / 5;            // °F
+}
+
+int main(void)
+{
+
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ); // 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);              // 1) ADC0 saati
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);            // Timer0 saati
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);         // 32-bit periyodik
+
+    TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()-1);  // ILR = 40 000 000 - 1: 1 s
+
+    ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_TIMER, 0);   // 6) SS1 tetiği: zamanlayıcı
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_TS);      // 7-8) adım 0-2: TS
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADC_CTL_TS);
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADC_CTL_TS);
+    ADCSequenceStepConfigure(ADC0_BASE,1,3,ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END); // adım 3: TS, IE, END
+    ADCSequenceEnable(ADC0_BASE, 1);                         // 10) SS1 etkin
+
+    TimerControlTrigger(TIMER0_BASE, TIMER_A, true);         // 6) GPTMCTL.TAOTE = 1: zaman aşımı ADC'yi tetikler
+    TimerEnable(TIMER0_BASE, TIMER_A);                       // 13) zamanlayıcıyı başlat
+
+    IntMasterEnable();                                       // 12) global izin
+    ADCIntClear(ADC0_BASE,1);                                // 9) bekleyen bayrağı temizle
+    ADCIntRegister(ADC0_BASE, 1,adcintt);                    // ISR'yi kaydet (+ IntEnable)
+    ADCIntEnable(ADC0_BASE,1);                               // 9) ADCIM.MASK1 = 1
+    IntEnable(INT_ADC0SS1);                                  // 11) NVIC (ADCIntRegister zaten yaptı)
+    ADCProcessorTrigger(ADC0_BASE, 1);                       // gereksiz: tetik zamanlayıcıda (bkz. açıklama)
+    while(1)
+    {
+
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Timer0A her saniye sıfıra ulaştığında ADC'ye bir tetik darbesi gönderir; SS1 dört sıcaklık örneği alır ve son adımın IE biti ADC0 SS1 kesmesini üretir. Zamanlayıcının kendi kesmesi açılmadığı için Timer ISR'si ve <code>TimerIntClear</code> gerekmez. Zamanlayıcı ADC kesmesi kurulmadan önce başlatılmıştır, ama ilk tetik 1 s sonra geleceğinden kurulumun bitmesine yetecek kadar zaman vardır; kendi kodunuzda zamanlayıcıyı en son başlatın (13. adım). Son satırdaki <code>ADCProcessorTrigger</code> gereksizdir: TivaWare kılavuzuna göre (SPMU298E §4.2.2.24) bu fonksiyon yalnız tetik <code>ADC_TRIGGER_PROCESSOR</code> iken dönüşüm başlatır. Kendi kodunuzda bu satırı yazmayın. Global değişkenler ISR dışında okunmadığı için <code>volatile</code> olmamaları burada sorun çıkarmaz; ana döngüde kullanılacaksa <code>volatile</code> yapılmalıdır.</p>
+<p>Bu dosyanın StellarisWare döneminden kalma sürümü (<code>adc trigger with timer.txt</code>) <a href="#diger-dosyalar">8.8</a>'deki tabloda özetlenmiştir.</p>
+<h4>API'siz sürüm, eşik aşınca LED (bu not için hazırlandı)</h4>
+<p>Timer0A 100 ms'de bir SS3'ü tetikler (saniyede 10 örnek); ISR, PE3'teki gerilim yaklaşık 2,42 V'u (kod 3000) aşınca kırmızı LED'i yakar. Saat varsayılan 16 MHz. Zamanlayıcı satırlarının ayrıntısı <a href="../timer/#adimlar">Timer notu, başlatma adımları</a>'ndadır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: adc_timer_tetik.c</span><span class="tag reg">API&#x27;siz · kesmeli · zamanlayıcı tetiği</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t sonuc;                    // ISR'nin yazdığı son ADC kodu
+
+void ADC0SS3_Handler(void)                  // vektör 33: startup'ta "ADC Sequence 3" satırına yazılır
+{
+    ADC0_ISC_R = 0x08;                      // önce IN3 bayrağını temizle
+    sonuc = ADC0_SSFIFO3_R &amp; 0xFFF;         // FIFO3: tek sonuç
+    if (sonuc &gt; 3000)                       // ~2,42 V'un üstü mü?
+        GPIO_PORTF_DATA_R |= 0x02;          //   kırmızı LED'i yak
+    else
+        GPIO_PORTF_DATA_R &amp;= ~0x02;         //   söndür
+}
+
+int main(void)
+{
+    SYSCTL_RCGCADC_R   |= 0x01;             // 1) ADC0 saati
+    SYSCTL_RCGCGPIO_R  |= 0x30;             // 2) Port E (AIN0) ve Port F (LED) saati
+    SYSCTL_RCGCTIMER_R |= 0x01;             //    Timer0 saati (tetik kaynağı)
+    while((SYSCTL_PRADC_R   &amp; 0x01) == 0) {}    // hazır beklemeleri
+    while((SYSCTL_PRGPIO_R  &amp; 0x30) != 0x30) {}
+    while((SYSCTL_PRTIMER_R &amp; 0x01) == 0) {}
+
+    GPIO_PORTF_DIR_R   |= 0x02;             // PF1 çıkış (kırmızı LED)
+    GPIO_PORTF_DEN_R   |= 0x02;             // PF1 dijital
+    GPIO_PORTE_AFSEL_R |= 0x08;             // 3) PE3: AFSEL = 1 (DIR açılışta 0: giriş)
+    GPIO_PORTE_DEN_R   &amp;= ~0x08;            // 3) DEN = 0
+    GPIO_PORTE_AMSEL_R |= 0x08;             // 3) AMSEL = 1
+
+    TIMER0_CTL_R  &amp;= ~0x01;                 // Timer0A kapalı (TAEN = 0)
+    TIMER0_CFG_R   = 0x00;                  // 32-bit
+    TIMER0_TAMR_R  = 0x02;                  // periyodik, aşağı sayma
+    TIMER0_TAILR_R = 1600000 - 1;           // 100 ms (16 MHz)
+    TIMER0_CTL_R  |= 0x20;                  // 6) TAOTE = 1: zaman aşımında ADC tetiği
+
+    ADC0_ACTSS_R &amp;= ~0x08;                  // 5) ASEN3 = 0
+    ADC0_EMUX_R   = (ADC0_EMUX_R &amp; ~0xF000) | 0x5000;  // 6) EM3 = 0x5: zamanlayıcı tetiği
+    ADC0_SSMUX3_R = 0;                      // 7) AIN0
+    ADC0_SSCTL3_R = 0x06;                   // 8) IE0 | END0
+    ADC0_ISC_R    = 0x08;                   // 9) bekleyen bayrağı temizle
+    ADC0_IM_R    |= 0x08;                   // 9) MASK3
+    ADC0_ACTSS_R |= 0x08;                   // 10) ASEN3 = 1
+    NVIC_EN0_R    = 1 &lt;&lt; 17;                // 11) ADC0 SS3 = kesme 17
+    __asm("    cpsie   i");                 // 12) global izin
+    TIMER0_CTL_R |= 0x01;                   // 13) TAEN = 1: tetikler başlasın
+
+    while(1)
+    {
+        // boş: örnekleme zamanını zamanlayıcı, işlemeyi ISR yapıyor
+    }
+}</code></pre>
+
+<h3 id="ornek-timer-adc">8.6 Timer ve ADC birlikte (yoklamalı)</h3>
+<p><b>Amaç:</b> Kesme kullanmadan, tek bir ana döngüde iki olayı izlemek: Timer0A'nın 1 saniyelik zaman aşımında LED'i tersleyip ADC'yi tetiklemek, ADC sonucu hazır olunca okumak. Timer + ADC (+ UART) birleşimi sık kullanılan bir kalıp olduğundan önemlidir. <b>Donanım:</b> PF1 (kırmızı LED); saat 40 MHz. Kaynak dosya ayrıca bir saat (sa:dk:sn) tutar ve sonuçları UART ile bilgisayara gönderir; aşağıda yalnız Timer ve ADC kısımları verilmiş, UART, saat ve buton satırları yorumla belirtilip atılmıştır. UART ayrı bir notta işlenecektir.</p>
+<div class="code-head"><span class="file">0btimerapikesmesiz/main.c (parça)</span><span class="tag api">API&#x27;li · kesmesiz · işlemci tetiği</span></div><pre><code class="language-c">uint32_t kesme;                               // Timer bayrak durumu
+uint32_t adcdata[4];                          // SS1 sonuçları
+
+int main(void)
+{
+    SetInitSettings();                        // ilk ayarlar
+
+    while(1)
+    {
+        kesme=TimerIntStatus(TIMER0_BASE, true);      // GPTMMIS: zaman aşımı oldu mu?
+        if (kesme!=0){
+            TimerIntClear(TIMER0_BASE, kesme);        // Timer bayrağını temizle
+
+            if (GPIOPinRead(GPIO_PORTF_BASE,GPIO_PIN_1))   // kırmızıyı tersle
+            {
+                GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1,0);
+            } else
+            {
+                GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1,2);
+            }
+            /* saatkontrol(); PCyesaatgonder();  -- saat ve UART, atıldı */
+            ADCProcessorTrigger(ADC0_BASE, 1);        // her 1 s'de ADC'yi başlat
+        }
+
+        /* SW1 basılıysa UART mesajı -- atıldı */
+
+        if(ADCIntStatus(ADC0_BASE, 1, false)){        // ADC sonucu hazır mı? (ADCRIS.INR1)
+            ADCIntClear(ADC0_BASE, 1);                // ADC bayrağını temizle
+            ADCSequenceDataGet(ADC0_BASE, 1, adcdata);    // 4 sonucu al
+
+            uint32_t ortalamadeger=(adcdata[0]+adcdata[1]+adcdata[2]+adcdata[3])/4;
+            /* adcseridengonder(ortalamadeger);  -- UART ile gönder, atıldı */
+        }
+
+        /* UART'tan saat ayarı alma -- atıldı */
+    }
+}
+
+void SetInitSettings()                        // yalnız Timer ve ADC kısmı
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 MHz
+    /* ... Port F: LED çıkış, PF0 kilidi, PF0/PF4 pull-up'lı giriş ... */
+
+    // timer ayarları
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);     // = TIMER_CFG_PERIODIC (0x22): 32-bit periyodik
+    TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet());  // 40 000 000: ~1 s (-1 yok)
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);       // GPTMIMR: MIS'te görünsün (NVIC kapalı)
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);        // bayrak temizlendi
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);            // 1) ADC0 saati
+    ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);  // 6) SS1, işlemci tetiği
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_TS); // 7-8) sıcaklık sensörü seçildi
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADC_CTL_TS);
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADC_CTL_TS);
+    ADCSequenceStepConfigure(ADC0_BASE, 1, 3, ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END);
+    ADCSequenceEnable(ADC0_BASE, 1);                       // 10) ADC ayarı bitti
+
+    /* ... UART0 ayarları ... */
+    TimerEnable(TIMER0_BASE, TIMER_A);                     // zamanlayıcıyı başlat
+}</code></pre>
+<p><b>Açıklama:</b> Zamanlayıcı kesmesi NVIC'te açılmadığından (<code>IntEnable</code> satırları dosyada yoruma alınmıştır) ISR çağrılmaz. <code>TIMER_CFG_A_PERIODIC</code> adı yarım genişlik izlenimi verse de 2.1.4'te <code>TIMER_CFG_PERIODIC</code> ile aynıdır (0x22) ve <code>TIMER_CFG_SPLIT_PAIR</code> olmadan 32-bit kip seçer. <code>TimerIntEnable</code> yalnız bayrağın GPTMMIS'te görünmesini sağlar ve döngü onu <code>TimerIntStatus(..., true)</code> ile yoklar. ADC tetiği zamanlayıcı dalında, sonucun okunması ise ayrı bir <code>if</code> ile yapılır; ADC bayrağı ilk turda henüz kalkmamış olsa bile döngü bir sonraki turda yakalar. İki bayrak da <b>temizlenir</b>; bu, 8.3'teki <code>hafta08adc01</code> hatasının düzeltilmiş hâlidir. Örnekleme anı, zamanlayıcı dalına girilene kadar geçen süre kadar gecikebilir; kesin örnekleme aralığı gerekiyorsa 8.5'teki zamanlayıcı tetiği kullanılır.</p>
+<p>Aynı kalıbı kullanan ödev çözümleri <a href="#diger-dosyalar">8.8</a>'deki tablodadır.</p>
+
+<h3 id="ornek-gpio">8.7 GPIO tetikli ADC</h3>
+<p><b>Amaç:</b> SW1'e (PF4) basılınca dönüşümü donanımla başlatmak. <b>Donanım:</b> PF4 (SW1, pull-up); saat 40 MHz. Ders kodlarında tek bir örnek vardır; burada yalnız tetikle ilgili kısmı verilmiştir. ISR bayrağı temizleyip dört sonucu alır ve sıcaklığı hesaplar; yeni dönüşümü GPIO tetiği başlatır.</p>
+<div class="code-head"><span class="file">drive_adc_ornekleri/3.c (parça)</span><span class="tag api">API&#x27;li · kesmeli · GPIO tetiği</span></div><pre><code class="language-c">GPIOPinTypeGPIOInput(GPIO_PORTF_BASE,GPIO_PIN_4);           // PF4 giriş
+GPIOPadConfigSet(GPIO_PORTF_BASE,GPIO_PIN_4,GPIO_STRENGTH_4MA,GPIO_PIN_TYPE_STD_WPU); // pull-up
+
+GPIOADCTriggerEnable(GPIO_PORTF_BASE,GPIO_PIN_4);           // GPIOADCCTL: PF4 ADC tetik kaynağı
+
+ADCSequenceConfigure(ADC0_BASE,1,ADC_TRIGGER_EXTERNAL,0);   // 6) EM1 = 0x4: dış (GPIO) tetik
+ADCSequenceStepConfigure(ADC0_BASE,1,0,ADC_CTL_CH0);        // 7-8) adım 0: AIN0 (bkz. not)
+ADCSequenceStepConfigure(ADC0_BASE,1,1,ADC_CTL_TS);         //      adım 1-3: sıcaklık sensörü
+ADCSequenceStepConfigure(ADC0_BASE,1,2,ADC_CTL_TS);
+ADCSequenceStepConfigure(ADC0_BASE,1,3,ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END);</code></pre>
+<div class="box warn"><span class="box-title">Kodda dikkat edilecekler</span>
+<ul>
+<li><b>Ortalama karışık:</b> ISR dört sonucun ortalamasını sıcaklık olarak hesaplar (<code>ortalama=(dizi[0]+dizi[1]+dizi[2]+dizi[3])/4;</code>), oysa adım 0 sensörü değil AIN0'ı okur. Ayrıca PE3 analog yapılmamıştır. Sıcaklık için dört adımın hepsi <code>ADC_CTL_TS</code> olmalı ya da AIN0 sonucu ortalamadan çıkarılmalıdır.</li>
+<li><b>Tetiğin oluşması:</b> Datasheet'e göre (s. 655) GPIO tetiği, pinde <b>maskelenmemiş bir kesme olayı</b> (GPIOIM'de ilgili bit 1) oluştuğunda ADC'ye gönderilir. Kodda kenar türü (<code>GPIOIntTypeSet</code>) ve pin kesmesi (<code>GPIOIntEnable</code>) ayarlanmamıştır. Kendi kodunuzda <code>GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_FALLING_EDGE);</code> ve <code>GPIOIntEnable(GPIO_PORTF_BASE, GPIO_INT_PIN_4);</code> ekleyin; Port F kesmesini NVIC'te açmak gerekmez. ADC ISR'sinde <code>GPIOIntClear(GPIO_PORTF_BASE, GPIO_INT_PIN_4);</code> ile pin bayrağı da temizlenmelidir; aksi halde bir sonraki basış tetik üretmeyebilir (s. 655). Bu davranış kartta ayrıca denenmelidir.</li>
+<li><code>dizi</code> <code>int dizi[4]</code> olarak tanımlanmış ve <code>uint32_t *</code> bekleyen <code>ADCSequenceDataGet</code>'e verilmiştir; derleyici işaretçi türü uyarısı verir. Mekanik buton titreşimi bir basışta birden çok dönüşüm başlatabilir.</li>
+</ul></div>
+
+<h3 id="diger-dosyalar">8.8 Ders klasöründeki diğer ADC dosyaları</h3>
+<p>Aşağıdaki dosyalar yukarıdaki örneklerin varyantlarıdır; ayrıca kod olarak verilmemiştir.</p>
+<table>
+<thead><tr><th>Dosya</th><th>Ne yapar</th><th>Sorun / not</th></tr></thead>
+<tbody>
+<tr><td><code>drive_adc_ornekleri/2.c</code></td><td>8.3'teki SS1 + sıcaklık kurulumu, kesmeli: ISR (<code>adcintt</code>) bayrağı temizler, dört sonucu alır, °C/°F hesaplar ve <code>ADCProcessorTrigger</code> ile yeni dönüşümü başlatır (8.4'teki yapı).</td><td>Çağrı sırası <code>ADCIntClear</code> → <code>ADCIntRegister</code> → <code>ADCIntEnable</code> → <code>IntEnable(INT_ADC0SS1)</code>; son çağrı zararsız tekrar. ISR'de sürekli yeniden tetikleme işlemciyi boğar.</td></tr>
+<tr><td><code>drive_adc_tekrari/adc interrupt.txt</code></td><td><code>2.c</code>'nin StellarisWare döneminden kalma sürümü.</td><td>TivaWare 2.1.4 ile derlenmez: <code>SysCtlADCSpeedSet</code> yok, <code>stdint.h</code>/<code>stdbool.h</code> eklenmemiş. ISR kaydı yok, startup dosyası klasörde yok. ISR yeni dönüşümü FIFO'yu okumadan <b>önce</b> başlatır; doğrusu önce okuyup sonra tetiklemektir.</td></tr>
+<tr><td><code>drive_adc_tekrari/adc trigger with timer.txt</code></td><td>8.5'teki <code>4.c</code>'nin eski sürümü; ISR ayrıca mavi LED'i tersleyerek her ölçümü görünür kılar.</td><td>TivaWare 2.1.4 ile derlenmez: <code>TIMER_CFG_32_BIT_PER</code> ve <code>SysCtlADCSpeedSet</code> yok (karşılıkları <code>TIMER_CFG_PERIODIC</code>, <code>ADCClockConfigSet</code>), <code>stdint.h</code>/<code>stdbool.h</code> eksik, <code>unsigned long</code> dizi <code>uint32_t *</code> yerine verilir; ISR ne kaydedilmiş ne startup dosyası verilmiş.</td></tr>
+<tr><td><code>hafta0c_seriodevi/main.c</code>, <code>hafta0c_seriodevi2/main.c</code></td><td>8.6'daki Timer + ADC yoklama kalıbı, 50 MHz'te (<code>SYSCTL_SYSDIV_4</code>); ADC sonucunu UART ile bilgisayara gönderir (UART kısmı UART notunda).</td><td>"40 000 000 1 sn için" yorumu 50 MHz için sayıca yanlış; <code>SysCtlClockGet()</code> 50 000 000 döndürdüğünden periyot yine ≈ 1 s.</td></tr>
+</tbody></table>
+
+<h2 id="lab5">9. TI Lab 5 uyarlaması <span class="tag ti">TI Lab 5</span></h2>
+<p><b>Amaç:</b> ADC0'ın SS1 sıralayıcısıyla iç sıcaklık sensörünü ölçmek, sonucu CCS'in Expressions penceresinde izlemek, donanım ortalamasının etkisini görmek ve sürücü kütüphanesini ROM'dan çağırarak kod boyutunu küçültmek.</p>
+<p>TI'nın <em>TM4C123G LaunchPad Workshop</em> kitapçığının 5. bölümü ("ADC12") önce TM4C123'ün iki 12-bit, 1 Msps ADC'sini, ortak 12 girişi, tetik seçeneklerini ve dört sıralayıcıyı (8/4/4/1 adım ve FIFO) tanıtır, sonra Lab 5'e geçer. Labın ilk kısmı, 8.3'teki <code>drive_adc_ornekleri/1.c</code> ile aynıdır (SS1, adım 0–2 sensör, adım 3'te IE ve END, işlemci tetiği, bayrak yoklama). Özet:</p>
+<ol>
+<li><b>Kurulum:</b> Hazır lab5 projesi aktarılır; sistem saati 40 MHz, ADC varsayılan 1 Msps'te bırakılır (hız ayarı alıştırmaya bırakılmıştır). Dizi FIFO1 derinliği kadar (4) tanımlanır; ortalama, °C ve °F değişkenleri hata ayıklayıcıda görünsün diye <code>volatile</code>'dır.</li>
+<li><b>Döngü ve hesap:</b> Bayrak tetikten önce temizlenir, yazılım tetiği verilir, bayrak yoklanır; dört sonucun +2 ile yuvarlanmış ortalamasından °C (10 ile çarpılmış tamsayı formül) ve °F hesaplanır. Kitapçık, bekleme yerine kesme kullanmayı alıştırmaya bırakır.</li>
+<li><b>Gözlem:</b> Döngünün ilk satırına "Refresh All Windows" eylemli bir kesme noktası konur. Yongaya parmakla dokununca değerlerin değiştiği görülür; sensör kalibre edilmemiştir, amaç değişimi gözlemektir.</li>
+<li><b>Donanım ortalaması (2. kısım):</b> <code>SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0)</code>'ın ardına <code>ADCHardwareOversampleConfigure(ADC0_BASE, 64)</code> eklenir (4. adım, ADCSAC = 6). Her FIFO sonucu 64 dönüşümün ortalaması olur; yazılımdaki dörtlü ortalamayla toplam 256 dönüşüm ortalanır ve <code>ui32TempAvg</code>'nin oynama aralığı belirgin biçimde daralır. Verim 64'te bire iner (1 Msps → 15 625 sonuç/s).</li>
+<li><b>ROM'dan çağırma (3. kısım):</b> <code>lab5.map</code>'te <code>.text</code> boyutu not edilir; başlıkların sonuna <code>#define TARGET_IS_BLIZZARD_RB1</code> ve <code>#include "driverlib/rom.h"</code> eklenip sürücü çağrılarının başına <code>ROM_</code> yazılır. Fonksiyonlar flash yerine yongadaki ROM'dan çalıştığı için kitapçıktaki ölçümde <code>.text</code> 5e4h'ten 3d4h'e (≈ %35) küçülür.</li>
+</ol>
+<p>Datasheet, ardışık örneklerde donanım ortalamasıyla birlikte ADCCTL'deki DITHER bitinin (bit6) de açılmasını önerir (s. 806). TivaWare 2.1.4'te bunun için ayrı bir fonksiyon yoktur; API'siz kodda <code>ADC0_CTL_R |= 0x40;</code> yazılır (8.3'teki <code>sicaklik.c</code>).</p>
+<div class="code-head"><span class="file">Lab 5 – main.c, 2. kısım (TI Workshop, değişen satırlar, Türkçe yorumlu)</span><span class="tag ti">TI Lab 5</span></div><pre><code class="language-c">    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ); // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);      // 1) ADC0 saati
+    ADCHardwareOversampleConfigure(ADC0_BASE, 64);   // 4) EKLENEN: 64x donanım ortalaması
+    /* ... sıralayıcı kurulumu ve yoklama döngüsü 8.3'teki 1.c ile aynı ... */
+
+    /* döngünün sonunda, ortalamadan sonra: */
+        ui32TempValueC = (1475 - ((2475 * ui32TempAvg)) / 4096)/10;   // °C
+        ui32TempValueF = ((ui32TempValueC * 9) + 160) / 5;            // °F</code></pre>
+<div class="box"><span class="box-title">Kitapçıktan notlar</span>
+<ul>
+<li>Kitapçığın alıştırmaya bıraktığı kesmeli sürümü ders kodlarında <code>hafta08adc2</code> ve <code>2.c</code>, zamanlayıcı tetikli sürümü <code>4.c</code> uygular.</li>
+<li>Kitapçıktaki <code>TARGET_IS_BLIZZARD_RB1</code>, yongadaki ROM sürümüne göre seçilen bir semboldür. TivaWare 2.x'te sembolün adı <code>TARGET_IS_TM4C123_RB1</code>'dir; <code>rom.h</code> eski adı buna eşler. Farklı yonga revizyonlarında ROM içeriği değişebileceği için sembol karttaki yongaya uymalıdır.</li>
+<li>Bu labın LM4F120 (Stellaris LaunchPad) için yazılmış eski sürümü ders belgeleri arasında da bulunur; register ve fonksiyon adları büyük ölçüde aynıdır.</li>
+</ul></div>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Pini analog yapmamak.</b> AIN pininde DEN'i 0 yapmamak ya da AMSEL'i 1 yapmamak: pin ADC'ye bağlanmaz, değer anlamsız gelir. Port saatini açmayı da unutmayın (8.4'teki <code>hafta08adc2</code>: AIN0 seçili ama Port E hiç ayarlanmamış).</li>
+<li><b>Sıralayıcıyı etkinken yapılandırmak.</b> ADCEMUX/ADCSSMUXn/ADCSSCTLn yazılırken ASENn = 1 ise yarım ayarla dönüşüm başlayabilir. Önce ASENn = 0 (<code>ADCSequenceDisable</code>), en son ASENn = 1. <code>ADCSequenceConfigure</code> sıralayıcıyı kendisi kapatmaz.</li>
+<li><b>END bitini koymamak.</b> Son adımda END = 1 değilse davranış tanımsızdır (datasheet s. 818). END'i fazla erken koymak da sonraki adımları devre dışı bırakır.</li>
+<li><b>IE bitini koymamak (yoklamada da).</b> ADCRIS.INRn yalnız IE'li bir adım bitince kalkar. IE yoksa yoklama döngüsü sonsuza kadar bekler, kesme de hiç gelmez. IE ile ADCIM karıştırılmamalıdır: IE ham bayrağı üretir, ADCIM onu NVIC'e geçirir.</li>
+<li><b>Bayrağı temizlememek.</b> ADCISC'ye yazılmazsa yoklamada bayrak hep 1 kalır ve sonuç bitmeden okunur (8.3'teki <code>hafta08adc01</code>); kesmede ISR durmadan yeniden çağrılır. ISR'de temizlemeyi başa alın.</li>
+<li><b>ADCISC'ye <code>|=</code> ile yazmak.</b> RW1C register'a atama (<code>=</code>) ile 1 yazılır; <code>|=</code> okunan maskeli bitleri geri yazıp başka sıralayıcıların bayraklarını silebilir.</li>
+<li><b>FIFO'yu boşaltmamak ya da fazla okumak.</b> Her tetikten sonra sıralayıcının adım sayısı kadar sonuç okunmalıdır. Eksik okunursa eski sonuçlar sırada kalır, FIFO dolunca yenileri atılır (ADCOSTAT taşma). FIFO derinliğinden fazla okumak geçersiz veri ve alttan taşma (ADCUSTAT) verir. <code>ADCSequenceDataGet</code>'e verilen dizi FIFO derinliği kadar olmalıdır (SS0: 8, SS1/SS2: 4, SS3: 1).</li>
+<li><b>Kanal ile pini karıştırmak.</b> <code>ADC_CTL_CH0</code> = AIN0 = <b>PE3</b>'tür, PE0 değil. AIN numaraları pin sırasıyla aynı değildir (<a href="#pin-haritasi">Bölüm 3</a>).</li>
+<li><b>Sıcaklık eğiminin yönünü ters düşünmek.</b> Sıcaklık arttıkça ADC kodu azalır. "30 °C'nin üstünde LED yak" koşulu kod <b>≤</b> 1944 olarak yazılır.</li>
+<li><b>Tamsayı hesap hataları.</b> Önce bölüp sonra çarpmak (<code>kod / 4096 * 3300</code> her zaman 0 verir), sıcaklıkta işaretsiz taşma (0 °C altı), ortalamada yuvarlamayı unutmak.</li>
+<li><b>ADC saatini yanlış anlamak.</b> ADC her zaman 16 MHz'lik bir saatle çalışır: PLL varsa PLL/25, PLL atlanmışsa 16 MHz sistem saati ya da ADCCC.CS = 1 ile PIOSC (<a href="#adc-saat">Bölüm 2</a>). Sistem saati ADC saatinden düşük olamaz (s. 806); örneğin PIOSC/4 = 4 MHz'te ADC doğru çalışmaz. ADCCC iki modül için ADC0'dan ayarlanır.</li>
+<li><b>Kesme numarası ile vektör numarasını karıştırmak.</b> ADC0 SS3: EN0 bit17, <code>INT_ADC0SS3</code> = 33. <code>NVIC_EN0_R = 1 &lt;&lt; 33</code> yanlıştır.</li>
+<li><b>ISR'yi vektör tablosuna bağlamamak.</b> Startup dosyasında "ADC Sequence n" satırında <code>IntDefaultHandler</code> kalmışsa ve <code>ADCIntRegister</code> da çağrılmadıysa ilk kesmede program sonsuz döngüye düşer.</li>
+<li><b>Zamanlayıcı tetiğinde TnOTE'yi unutmak.</b> ADCEMUX = 0x5 tek başına yetmez; GPTMCTL.TAOTE = 1 (<code>TimerControlTrigger</code>) yapılmalı ve zamanlayıcı başlatılmalıdır. Aynı anda birden çok zamanlayıcıda TnOTE açık bırakılmamalıdır.</li>
+<li><b>Sürekli yeniden tetiklemeyle işlemciyi boğmak.</b> ISR'de hemen <code>ADCProcessorTrigger</code> çağırmak (8.4) işlemciyi neredeyse tamamen ISR'ye bağlar. Belirli aralıklı örnekleme için zamanlayıcı tetiği kullanın.</li>
+<li><b>Etkin sıralayıcılara aynı öncelik vermek.</b> İki etkin sıralayıcının ADCSSPRI değeri aynıysa sonuçlar tutarsız olur (s. 804).</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>Kod → gerilim:</b> V<sub>REF</sub> = 3,3 V. ADC'den <code>0x7FF</code>, <code>0xC00</code> ve <code>0x135</code> okunuyor. Gerilimleri bulun. (Cevap: 2047 → ≈ 1,649 V; 3072 → 2,475 V; 309 → ≈ 0,249 V.)</li>
+<li><b>Gerilim → kod:</b> 0,5 V, 2,0 V ve 3,0 V için ADC kodunu ondalık ve onaltılık bulun. (Cevap: 620 = 0x26C; 2482 = 0x9B2; 3723 = 0xE8B.)</li>
+<li><b>Sıcaklık:</b> Sıcaklık sensörü 1950 kodunu veriyor. (a) Sıcaklığı gerçel ve tamsayı formülüyle hesaplayın. (b) 60 °C'de beklenen kod nedir? (Cevap: (a) 147,5 − 247,5·1950/4096 ≈ 29,7 °C; tamsayı formülü 29. (b) V = 2,7 − 115/75 ≈ 1,167 V → kod ≈ 1448.)</li>
+<li><b>Sıralayıcı register'ları:</b> SS2 ile sırasıyla AIN1, AIN2 ve sıcaklık sensörü okunacak, kesme yalnız sonda gelecek. ADCSSMUX2 ve ADCSSCTL2 değerlerini yazın. Aynı ayarı <code>ADCSequenceStepConfigure</code> ile yazın. (Cevap: SSMUX2 = 0x021, SSCTL2 = 0xE00.)</li>
+<li><b>Tetik ve verim:</b> SS1 zamanlayıcıdan, SS3 işlemciden tetiklenecek; ADCEMUX değeri nedir? 64× donanım ortalaması açıkken SS1'in dört adımı ne kadar sürer ve zamanlayıcı en çok hangi frekansta tetikleyebilir? (Cevap: ADCEMUX = 0x0050; ≈ 256 µs; ≈ 3,9 kHz.)</li>
+<li><b>Periyodik örnekleme:</b> f = 40 MHz'te Timer0A ile AIN0'ı saniyede 1000 kez örnekleyin (SS3, zamanlayıcı tetiği, ADC kesmesi). GPTMTAILR değerini bulun, kodu önce API'siz sonra API'li yazın. (Cevap: ILR = 39 999.)</li>
+<li><b>Eşik aşınca LED:</b> PE3'teki potansiyometre gerilimi 2 V'u aşınca kırmızı, 1 V'un altına inince mavi LED yansın, arada LED sönük kalsın. Eşik kodlarını hesaplayın (≈ 2482 ve 1241). Önce yoklamayla (8.1 tabanlı), sonra ADC kesmesiyle yazın.</li>
+<li><b>Çok kanallı tarama:</b> SS0 ile AIN0–AIN3'ü tek tetikte okuyun ve dört sonucu bir diziye yazın. <code>ADCSequenceDataGet</code>'in dönüş değerini kontrol ederek dört örneğin geldiğini doğrulayın. PD0/PD1'i kullanmak istediğinizde LaunchPad'de nelere dikkat etmelisiniz?</li>
+<li><b>Hata bulma:</b> Bir öğrenci <code>ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH1);</code> yazıp yoklama döngüsünde <code>while(!ADCIntStatus(ADC0_BASE, 3, false)) {}</code> satırında takılıyor. Neden? Kanal hangi pindir? (Cevap: IE ve END eksik; INR3 hiç kalkmaz. AIN1 = PE2.)</li>
+<li><b>(Final tarzı) Timer + ADC:</b> Timer0A 32-bit periyodik kipte 0,5 s'de bir ADC0 SS1'i tetiklesin (zamanlayıcı tetiği). SS1 iç sıcaklık sensörünü dört kez örneklesin, 16× donanım ortalaması açık olsun. ADC kesmesinde ortalama sıcaklık hesaplansın; 30 °C'nin üstündeyse kırmızı, değilse yeşil LED yansın. Sistem saati 40 MHz. (a) GPTMTAILR, ADCEMUX, ADCSAC, ADCSSCTL1 değerlerini ve ADC0 SS1'in NVIC bitini verin. (b) Programı API'siz ve API'li yazın. (c) Aynı programı kesmesiz, 8.6'daki gibi tek bir ana döngüde yazın; iki yaklaşımın örnekleme anı bakımından farkını açıklayın. (Cevap (a): 19 999 999; EM1 = 0x5 → 0x0050; AVG = 4; 0xE888; EN0 bit15, <code>INT_ADC0SS1</code> = 31. Karşılaştırma için kod ≤ 1944.)</li>
+</ol>
+
+<h2 id="kaynaklar">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014).
+<ul>
+<li>Bölüm 1–2: register türleri (RW1C) s. 43; kesmeler Tablo 2-9 s. 104–105.</li>
+<li>Bölüm 5 "System Control": RCGCADC s. 352; PRADC s. 418.</li>
+<li>Bölüm 10 "GPIO": ADC tetik kaynağı s. 655; GPIOAFSEL s. 671, GPIODEN s. 682, GPIOAMSEL s. 687, GPIOADCCTL s. 690.</li>
+<li>Bölüm 13 "Analog-to-Digital Converter (ADC)" (s. 799–892): özellikler s. 799–800; blok şemalar Şekil 13-1/13-2 s. 800–801; sinyaller Tablo 13-1 s. 801–802; sıralayıcılar ve Tablo 13-2 s. 802–803; kesmeler, öncelik, tetikler s. 803–804; modül saati s. 806; donanım ortalaması s. 807; SAR ve referans s. 807–810; fark girişi s. 810–811; sıcaklık sensörü s. 812–813; başlatma §13.4 s. 817–818; register haritası Tablo 13-4 s. 818–820; ADCACTSS s. 821, ADCRIS s. 823, ADCIM s. 825, ADCISC s. 828, ADCOSTAT s. 831, ADCEMUX s. 833, ADCSSPRI s. 841, ADCPSSI s. 845, ADCSAC s. 847, ADCCTL s. 850, ADCSSMUX0 s. 851, ADCSSCTL0 s. 853, ADCSSFIFOn s. 860, ADCSSFSTATn s. 861, ADCSSMUX3/ADCSSCTL3 s. 875–876, ADCPP s. 889, ADCPC s. 891, ADCCC s. 892.</li>
+<li>Bölüm 24 "Electrical Characteristics": ADC ile sistem saati Tablo 24-21 s. 1380; ADC elektriksel karakteristikleri Tablo 24-33 s. 1389–1390; giriş eşdeğer devresi Şekil 24-18 s. 1391.</li>
+</ul></li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em> (öğrenci kitapçığı), Bölüm 5 "ADC12" ve Lab 5 (s. 5-1 – 5-19). Aynı labın LM4F120 için yazılmış eski sürümü: <em>Stellaris LaunchPad Workshop</em>, 5. bölüm.</li>
+<li>Texas Instruments, <em>TivaWare Peripheral Driver Library User's Guide</em> (SW-TM4C-DRL-UG, SPMU298E): Bölüm 4 "Analog to Digital Converter (ADC)" (<code>ADCIntClear</code> §4.2.2.12, <code>ADCIntRegister</code> §4.2.2.18, <code>ADCSequenceDataGet</code> §4.2.2.28), Bölüm 14 "GPIO", Bölüm 17 "Interrupt Controller (NVIC)", Bölüm 29 "Timer" (<code>TimerControlTrigger</code> s. 546). SPMU298E TivaWare 2.2.0 kılavuzudur; bölüm numaraları ona göredir. Yerel kaynak 2.1.4'tür ve fonksiyon davranışları bu sürümün kaynaklarından doğrulanmıştır: <code>driverlib/adc.c</code>, <code>adc.h</code>, <code>gpio.c</code>, <code>timer.c</code>, <code>inc/hw_adc.h</code>, <code>inc/hw_ints.h</code>, <code>inc/hw_memmap.h</code>, <code>inc/tm4c123gh6pm.h</code>.</li>
+<li>Texas Instruments, <em>Tiva C Series TM4C123G LaunchPad Evaluation Board User's Guide</em> (SPMU296): konnektör tabloları 2-3 – 2-6, s. 9–10.</li>
+<li>Ders örnek kodları (EEM 431, ADC klasörü): <code>hafta08adc01</code>, <code>hafta08adc2</code>, <code>drive_adc_ornekleri</code> (<code>1.c</code>, <code>2.c</code>, <code>3.c</code>, <code>4.c</code>), <code>drive_adc_tekrari</code> (<code>adc trigger with timer.txt</code>, <code>adc interrupt.txt</code>); projeler ve ödevler klasörü: <code>0btimerapikesmesiz</code>, <code>hafta0c_seriodevi</code>, <code>hafta0c_seriodevi2</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a> (pin register'ları, başlatma), <a href="../timer/">6. Zamanlayıcılar</a> (NVIC, vektör tablosu, ISR kuralları, periyodik kip).</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 7. ADC. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

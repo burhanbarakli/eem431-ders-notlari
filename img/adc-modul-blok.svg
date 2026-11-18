@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 660" class="amb-svg" role="img" aria-labelledby="amb-title amb-desc">
+<title id="amb-title">ADC modülü blok şeması</title>
+<desc id="amb-desc">Sadeleştirilmiş ADC modülü (datasheet Şekil 13-1/13-2’nin yeniden çizimi): AIN0–AIN11 ve iç sıcaklık sensörü TS analog çoklayıcıya, oradan örnekle-tut devresine, 12-bit SAR dönüştürücüye (VREFP = VDDA, VREFN = GNDA) ve ADCSAC ile ayarlanan donanım ortalayıcıya gider; sonuç etkin sıralayıcının FIFO’suna yazılır. Dört örnekleme sıralayıcısı: SS0 8 adım/8 derinlikli FIFO, SS1 ve SS2 4/4, SS3 1/1; her biri ADCSSMUXn, ADCSSCTLn, ADCSSFIFOn içerir ve etkin adımın MUXk/TSk alanı çoklayıcının kanalını seçer. Tetik kaynakları (işlemci ADCPSSI 0x0, analog karşılaştırıcı 0x1/0x2, GPIO 0x4, zamanlayıcı 0x5, PWM 0x6–0x9, sürekli 0xF) ADCEMUX’un EM0–EM3 alanlarıyla her sıralayıcı için ayrı seçilir. Öncelik ADCSSPRI, etkinleştirme ADCACTSS. Kesme yolu ADCRIS → ADCIM → ADCISC → NVIC (ADC0 SS0–3 IRQ 14–17, ADC1 IRQ 48–51); ayrıca IE olayından μDMA burst isteği (maskeden bağımsız). ADC0 0x4003.8000, ADC1 0x4003.9000, 12-bit, en çok 1 Msps.</desc>
+<defs>
+<marker id="amb-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="amb-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="amb-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="amb-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.amb-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.amb-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.amb-svg .amb-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.amb-svg .amb-b{font-weight:700}
+.amb-svg .amb-s13{font-size:13px}
+.amb-svg .amb-s15{font-size:15px}
+.amb-svg .amb-s16{font-size:16px}
+.amb-svg .amb-mut{fill:var(--fig-muted,#76746c)}
+.amb-svg .amb-acc{fill:var(--fig-accent,#b4481f)}
+.amb-svg .amb-sub{font-size:13px}
+.amb-svg .amb-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.amb-svg .amb-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.amb-svg .amb-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.amb-svg .amb-dot{fill:var(--fig-stroke,#2b2b29)}
+.amb-svg .amb-head{fill:var(--fig-stroke,#2b2b29)}
+.amb-svg .amb-heada{fill:var(--fig-accent,#b4481f)}
+.amb-svg .amb-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.amb-svg .amb-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.amb-svg .amb-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.amb-svg .amb-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text x="12" y="22"><tspan class="amb-s16 amb-b">ADC modülü</tspan><tspan class="amb-s15"> — sadeleştirilmiş (ADC0 ve ADC1 özdeş)</tspan></text>
+<text class="amb-mono" x="14" y="67">AIN0</text>
+<path class="amb-wt" d="M56,62 L88,62"/>
+<text class="amb-mono" x="14" y="87">AIN1</text>
+<path class="amb-wt" d="M56,82 L88,82"/>
+<text class="amb-mono" x="14" y="127">AIN11</text>
+<path class="amb-wt" d="M56,122 L88,122"/>
+<text class="amb-mono amb-b" x="14" y="149">TS</text>
+<path class="amb-wt" d="M56,144 L88,144"/>
+<text class="amb-mut" x="34" y="106" text-anchor="middle">⋮</text>
+<path class="amb-box2" d="M88,50 L116,66 L116,140 L88,156 Z"/>
+<text class="amb-s13 amb-mut" x="102" y="42" text-anchor="middle">analog çoklayıcı</text>
+<path class="amb-w" d="M116,103 L138,103" marker-end="url(#amb-arr)"/>
+<rect class="amb-box" x="140" y="79" width="96" height="48" rx="6"/>
+<text class="amb-b" x="188" y="99" text-anchor="middle">Örnekle-tut</text>
+<text class="amb-s13 amb-mut" x="188" y="117" text-anchor="middle">(S/H)</text>
+<path class="amb-w" d="M236,103 L260,103" marker-end="url(#amb-arr)"/>
+<rect class="amb-hl" x="262" y="66" width="130" height="74" rx="6"/>
+<text class="amb-b" x="327" y="88" text-anchor="middle">12-bit SAR</text>
+<text class="amb-s13" x="327" y="106" text-anchor="middle">dönüştürücü</text>
+<text class="amb-s13" x="327" y="124" text-anchor="middle">16 MHz · 1 µs</text>
+<path class="amb-w" d="M327,48 L327,64" marker-end="url(#amb-arr)"/>
+<text x="335" y="52" xml:space="preserve"><tspan class="amb-s13">V</tspan><tspan class="amb-sub" dy="4">REFP</tspan><tspan class="amb-s13" dy="-4"> = VDDA,  </tspan><tspan class="amb-s13">V</tspan><tspan class="amb-sub" dy="4">REFN</tspan><tspan class="amb-s13" dy="-4"> = GNDA</tspan></text>
+<path class="amb-w" d="M392,103 L416,103" marker-end="url(#amb-arr)"/>
+<rect class="amb-box" x="418" y="66" width="150" height="74" rx="6"/>
+<text class="amb-b" x="493" y="88" text-anchor="middle">Donanım ortalayıcı</text>
+<text class="amb-mono" x="493" y="106" text-anchor="middle">ADCSAC.AVG</text>
+<text class="amb-s13" x="493" y="124" text-anchor="middle">1, 2, 4 … 64 örnek</text>
+<rect class="amb-box2" x="612" y="44" width="136" height="110" rx="6"/>
+<text x="622" y="64"><tspan class="amb-s13 amb-b">ADC0 </tspan><tspan class="amb-mono">0x4003.8000</tspan></text>
+<text x="622" y="84"><tspan class="amb-s13 amb-b">ADC1 </tspan><tspan class="amb-mono">0x4003.9000</tspan></text>
+<text class="amb-s13" x="622" y="106">12-bit · en çok 1 Msps</text>
+<text class="amb-s13" x="622" y="124">ADC saati 16 MHz</text>
+<text class="amb-s13" x="622" y="142">12 AIN ortak</text>
+<rect class="amb-box" x="290" y="226" width="230" height="58" rx="6"/>
+<text class="amb-s15 amb-b" x="300" y="245">SS0</text>
+<text class="amb-s13" x="510" y="245" text-anchor="end">8 adım · FIFO 8</text>
+<text class="amb-mono" x="300" y="262">ADCSSMUX0 · ADCSSCTL0</text>
+<text class="amb-mono amb-b" x="300" y="278">ADCSSFIFO0</text>
+<rect class="amb-box" x="290" y="292" width="230" height="58" rx="6"/>
+<text class="amb-s15 amb-b" x="300" y="311">SS1</text>
+<text class="amb-s13" x="510" y="311" text-anchor="end">4 adım · FIFO 4</text>
+<text class="amb-mono" x="300" y="328">ADCSSMUX1 · ADCSSCTL1</text>
+<text class="amb-mono amb-b" x="300" y="344">ADCSSFIFO1</text>
+<rect class="amb-box" x="290" y="358" width="230" height="58" rx="6"/>
+<text class="amb-s15 amb-b" x="300" y="377">SS2</text>
+<text class="amb-s13" x="510" y="377" text-anchor="end">4 adım · FIFO 4</text>
+<text class="amb-mono" x="300" y="394">ADCSSMUX2 · ADCSSCTL2</text>
+<text class="amb-mono amb-b" x="300" y="410">ADCSSFIFO2</text>
+<rect class="amb-box" x="290" y="424" width="230" height="58" rx="6"/>
+<text class="amb-s15 amb-b" x="300" y="443">SS3</text>
+<text class="amb-s13" x="510" y="443" text-anchor="end">1 adım · FIFO 1</text>
+<text class="amb-mono" x="300" y="460">ADCSSMUX3 · ADCSSCTL3</text>
+<text class="amb-mono amb-b" x="300" y="476">ADCSSFIFO3</text>
+<rect class="amb-zone" x="284" y="222" width="242" height="266" rx="8"/>
+<text class="amb-s13 amb-b" x="405" y="214" text-anchor="middle">Örnekleme sıralayıcıları</text>
+<path class="amb-w" d="M568,103 H600 V471"/>
+<path class="amb-w" d="M600,273 L522,273" marker-end="url(#amb-arr)"/>
+<circle class="amb-dot" cx="600" cy="273" r="3"/>
+<path class="amb-w" d="M600,339 L522,339" marker-end="url(#amb-arr)"/>
+<circle class="amb-dot" cx="600" cy="339" r="3"/>
+<path class="amb-w" d="M600,405 L522,405" marker-end="url(#amb-arr)"/>
+<circle class="amb-dot" cx="600" cy="405" r="3"/>
+<path class="amb-w" d="M600,471 L522,471" marker-end="url(#amb-arr)"/>
+<text class="amb-s13 amb-mut" x="608" y="176">sonuç → etkin</text>
+<text class="amb-s13 amb-mut" x="608" y="192">SS’nin FIFO’su</text>
+<path class="amb-wa" d="M496,222 V180 H110 V147" marker-end="url(#amb-arra)"/>
+<text class="amb-s13 amb-acc" x="300" y="174" text-anchor="middle">kanal seçimi: etkin adımın MUXk / TSk alanı</text>
+<rect class="amb-box" x="12" y="226" width="172" height="256" rx="6"/>
+<text class="amb-b" x="22" y="248">Tetik kaynakları</text>
+<text class="amb-s13 amb-mut" x="22" y="266">EMn değeri → olay</text>
+<text class="amb-mono amb-b" x="22" y="292">0x0</text>
+<text class="amb-s13" x="72" y="292">İşlemci (ADCPSSI)</text>
+<text class="amb-mono" x="22" y="316">0x1</text>
+<text class="amb-s13" x="72" y="316">Analog karş. 0</text>
+<text class="amb-mono" x="22" y="340">0x2</text>
+<text class="amb-s13" x="72" y="340">Analog karş. 1</text>
+<text class="amb-mono" x="22" y="364">0x4</text>
+<text class="amb-s13" x="72" y="364">GPIO (harici)</text>
+<text class="amb-mono amb-b" x="22" y="388">0x5</text>
+<text class="amb-s13" x="72" y="388">Zamanlayıcı</text>
+<text class="amb-mono" x="22" y="412">0x6–9</text>
+<text class="amb-s13" x="72" y="412">PWM üreteci 0–3</text>
+<text class="amb-mono amb-b" x="22" y="436">0xF</text>
+<text class="amb-s13" x="72" y="436">Sürekli</text>
+<text class="amb-s13 amb-mut" x="22" y="472">0x3, 0xA–0xE ayrılmış</text>
+<path class="amb-w" d="M184,354 H194"/>
+<path class="amb-w" d="M194,255 V453"/>
+<circle class="amb-dot" cx="194" cy="354" r="3"/>
+<rect class="amb-box2" x="206" y="200" width="66" height="22"/>
+<text class="amb-mono amb-b" x="239" y="215" text-anchor="middle">ADCEMUX</text>
+<rect class="amb-box2" x="206" y="226" width="66" height="58"/>
+<text class="amb-mono amb-b" x="239" y="251" text-anchor="middle">EM0</text>
+<text class="amb-mono amb-mut" x="239" y="269" text-anchor="middle">[3:0]</text>
+<path class="amb-w" d="M272,255 L288,255" marker-end="url(#amb-arr)"/>
+<path class="amb-w" d="M194,255 L204,255" marker-end="url(#amb-arr)"/>
+<rect class="amb-box2" x="206" y="292" width="66" height="58"/>
+<text class="amb-mono amb-b" x="239" y="317" text-anchor="middle">EM1</text>
+<text class="amb-mono amb-mut" x="239" y="335" text-anchor="middle">[7:4]</text>
+<path class="amb-w" d="M272,321 L288,321" marker-end="url(#amb-arr)"/>
+<path class="amb-w" d="M194,321 L204,321" marker-end="url(#amb-arr)"/>
+<circle class="amb-dot" cx="194" cy="321" r="3"/>
+<rect class="amb-box2" x="206" y="358" width="66" height="58"/>
+<text class="amb-mono amb-b" x="239" y="383" text-anchor="middle">EM2</text>
+<text class="amb-mono amb-mut" x="239" y="401" text-anchor="middle">[11:8]</text>
+<path class="amb-w" d="M272,387 L288,387" marker-end="url(#amb-arr)"/>
+<path class="amb-w" d="M194,387 L204,387" marker-end="url(#amb-arr)"/>
+<circle class="amb-dot" cx="194" cy="387" r="3"/>
+<rect class="amb-box2" x="206" y="424" width="66" height="58"/>
+<text class="amb-mono amb-b" x="239" y="449" text-anchor="middle">EM3</text>
+<text class="amb-mono amb-mut" x="239" y="467" text-anchor="middle">[15:12]</text>
+<path class="amb-w" d="M272,453 L288,453" marker-end="url(#amb-arr)"/>
+<path class="amb-w" d="M194,453 L204,453" marker-end="url(#amb-arr)"/>
+<rect class="amb-box2" x="612" y="226" width="136" height="82" rx="6"/>
+<text class="amb-b" x="622" y="246">Öncelik</text>
+<text class="amb-mono" x="622" y="264">ADCSSPRI</text>
+<text class="amb-s13" x="622" y="282">0 = en yüksek</text>
+<text x="622" y="299"><tspan class="amb-s13">reset </tspan><tspan class="amb-mono">0x3210</tspan></text>
+<rect class="amb-box2" x="612" y="320" width="136" height="72" rx="6"/>
+<text class="amb-b" x="622" y="340">Etkinleştirme</text>
+<text class="amb-mono" x="622" y="358">ADCACTSS</text>
+<text class="amb-s13" x="622" y="376">ASENn = 1 → SSn açık</text>
+<rect class="amb-box2" x="612" y="404" width="136" height="78" rx="6"/>
+<text class="amb-b" x="622" y="424">FIFO durumu</text>
+<text class="amb-mono" x="622" y="442">ADCSSFSTATn</text>
+<text class="amb-s13" x="622" y="460">EMPTY / FULL;</text>
+<text class="amb-s13" x="622" y="476">taşma: ADCOSTAT</text>
+<path class="amb-w" d="M405,488 L405,516" marker-end="url(#amb-arr)"/>
+<text class="amb-s13 amb-mut" x="413" y="506">IEk’li adım bitti</text>
+<rect class="amb-box" x="290" y="518" width="230" height="112" rx="6"/>
+<text class="amb-b" x="300" y="538">Kesme denetimi</text>
+<text class="amb-mono" x="300" y="560">ADCRIS</text>
+<text class="amb-s13" x="366" y="560">INRn: ham bayrak</text>
+<text class="amb-mono" x="300" y="580">ADCIM</text>
+<text class="amb-s13" x="366" y="580">MASKn: maske</text>
+<text class="amb-mono" x="300" y="600">ADCISC</text>
+<text class="amb-s13" x="366" y="600">INn = INRn ∧ MASKn</text>
+<text class="amb-s13 amb-b amb-acc" x="366" y="619">1 yaz → sil (W1C)</text>
+<path class="amb-w" d="M520,543 L558,543" marker-end="url(#amb-arr)"/>
+<path class="amb-w" d="M520,610 L558,610" marker-end="url(#amb-arr)"/>
+<rect class="amb-box2" x="560" y="512" width="188" height="62" rx="6"/>
+<text class="amb-b" x="570" y="532">μDMA</text>
+<text class="amb-s13 amb-mut" x="570" y="567">IE olayı, maskeden bağımsız</text>
+<text class="amb-s13" x="570" y="550">her SS’ye ayrı kanal (burst)</text>
+<rect class="amb-hl" x="560" y="586" width="188" height="62" rx="6"/>
+<text class="amb-b" x="570" y="606">NVIC</text>
+<text class="amb-s13" x="570" y="623">ADC0 SS0–3 → IRQ 14–17</text>
+<text class="amb-s13" x="570" y="640">ADC1 SS0–3 → IRQ 48–51</text>
+<text class="amb-s13 amb-b" x="12" y="520">Notlar</text>
+<text class="amb-s13" x="12" y="540">• FIFO girdisi 32 bit; sonuç alt 12 bit</text>
+<text class="amb-s13" x="12" y="559">• TS: iç sıcaklık sensörü (TSk = 1)</text>
+<text class="amb-s13" x="12" y="578">• Her SS kendi EMn tetiğini seçer</text>
+<text class="amb-s13" x="12" y="597">• Eşzamanlı tetikte sıra ADCSSPRI’de</text>
+<text class="amb-s13 amb-mut" x="12" y="636">TI Şekil 13-2’nin sade yeniden çizimi</text>
+</svg>

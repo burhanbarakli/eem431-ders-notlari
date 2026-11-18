@@ -71,7 +71,7 @@
 <li><b>Süre kesin değildir.</b> Boş döngünün süresi derleyiciye ve optimizasyon ayarına bağlıdır. Araya bir kesme girerse gecikme o kadar uzar.</li>
 <li><b>Birden çok zamanlama yönetilemez.</b> Biri 0,5 s, diğeri 0,2 s aralıkla yanıp sönen iki LED'i tek bir gecikme döngüsüyle düzgün sürmek zordur.</li>
 </ul>
-<p><b>Donanım zamanlayıcısı</b> (timer), sistem saatiyle kendi kendine sayan bir sayaçtır. Yazılım sayacı bir kez kurar, sonra işine bakar. Sayaç belirlenen değere ulaştığında bir <b>bayrak</b> kalkar; yazılım bu bayrağı ya ara ara kontrol eder (yoklama) ya da bayrak bir <b>kesme</b> üreterek işlemciyi kendisi çağırır. Süre sistem saatinden türetilir ve işlemcinin o sırada ne yaptığından etkilenmez. Saat kristal + PLL'den geliyorsa (40 MHz örnekler) çok kesindir; varsayılan 16 MHz PIOSC'de doğruluk kalibrasyonla ±%1, sıcaklık aralığında ±%3 mertebesindedir (datasheet s. 224).</p>
+<p><b>Donanım zamanlayıcısı</b> (timer), sistem saatiyle kendi kendine sayan bir sayaçtır. Yazılım sayacı bir kez kurar, sonra işine bakar. Sayaç belirlenen değere ulaştığında bir <b>bayrak</b> kalkar; yazılım bu bayrağı ya ara ara kontrol eder (yoklama) ya da bayrak bir <b>kesme</b> üreterek işlemciyi kendisi çağırır. Süre sistem saatinden türetilir ve işlemcinin o sırada ne yaptığından etkilenmez. Saat kristal + PLL'den geliyorsa (40 MHz örnekler) çok kesindir; varsayılan 16 MHz PIOSC'nin fabrika kalibrasyonuyla sapması gerilim ve sıcaklık aralığında ±%3'tür; kullanıcı yeniden kalibrasyon yaparsa o koşulda ±%1'e iner (datasheet s. 224, Tablo 24-15 s. 1375).</p>
 <table>
 <thead><tr><th>Özellik</th><th><code>SysCtlDelay</code> / boş döngü</th><th>Donanım zamanlayıcısı (GPTM)</th></tr></thead>
 <tbody>

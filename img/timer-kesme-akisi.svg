@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 800" class="tki-svg" role="img" aria-labelledby="tki-title tki-desc">
 <title id="tki-title">Timer0A kesmesinin yolu</title>
-<desc id="tki-desc">Timer0A zaman aşımı GPTMRIS.TATORIS bayrağını kurar; GPTMIMR.TATOIM maskesi açıksa GPTMMIS üzerinden NVIC’e kesme 19 isteği gider; NVIC’te EN0 bit 19 etkin ve PRIMASK = 0 ise CPU bağlamı yığına kaydeder, vektör 35’ten (VTABLE + 0x08C) ISR adresini okur; ISR ilk iş GPTMICR.TATOCINT = 1 ile bayrağı silip sonra işini yapar ve dönüşte bağlam geri yüklenir. Sağ sütunda register (siyah) ve TivaWare (mavi) karşılıkları; ICR yazılmazsa ISR’ye hemen yeniden girildiği uyarısı.</desc>
+<desc id="tki-desc">Timer0A zaman aşımı GPTMRIS.TATORIS bayrağını kurar; GPTMIMR.TATOIM maskesi açıksa GPTMMIS üzerinden NVIC’e kesme 19 isteği gider; NVIC’te EN0 bit 19 etkin ve PRIMASK = 0 ise CPU bağlamı yığına kaydeder, vektör 35’ten (VTABLE + 0x08C) ISR adresini okur; ISR ilk iş GPTMICR.TATOCINT = 1 ile bayrağı silip sonra işini yapar ve dönüşte bağlam geri yüklenir. Sağ sütunda register (düz) ve TivaWare (mavi) karşılıkları; ICR yazılmazsa ISR’ye hemen yeniden girildiği uyarısı.</desc>
 <defs>
 <marker id="tki-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tki-head" d="M0,0 L10,5 L0,10 z"/></marker>
 <marker id="tki-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="tki-heada" d="M0,0 L10,5 L0,10 z"/></marker>
@@ -30,7 +30,7 @@
 </style>
 <text class="tki-s16 tki-b" x="16" y="31">Bir kesmenin yolu (Timer0A)</text>
 <rect class="tki-dot" x="398" y="21" width="12" height="12" rx="2"/>
-<text x="416" y="31"><tspan class="tki-b">siyah</tspan><tspan class="tki-s13"> = register (API’siz)</tspan></text>
+<text x="416" y="31"><tspan class="tki-b">düz</tspan><tspan class="tki-s13"> = register (API’siz)</tspan></text>
 <rect class="tki-blu" x="574" y="21" width="12" height="12" rx="2"/>
 <text x="592" y="31"><tspan class="tki-b tki-blu">mavi</tspan><tspan class="tki-s13"> = TivaWare (API’li)</tspan></text>
 <rect class="tki-box" x="44" y="72" width="288" height="51" rx="8"/>

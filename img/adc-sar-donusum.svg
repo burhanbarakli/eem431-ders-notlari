@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 802" class="asr-svg" role="img" aria-labelledby="asr-title asr-desc">
+<title id="asr-title">SAR dönüşüm ilkesi ve 12-bit aktarım fonksiyonu</title>
+<desc id="asr-desc">(a) Ardışık yaklaşım: örnekle-tut devresi girişi tutar, SAR yazmacı en anlamlı bitten başlayarak her biti dener, DAC deneme kodunu VDAC gerilimine çevirir, karşılaştırıcı Vin ≥ VDAC ise biti 1 bırakır. 4-bit örnek: Vin = 1,0 V, VREF = 3,3 V; denemeler 1000 (1,650 V, bit3 = 0), 0100 (0,825 V, bit2 = 1), 0110 (1,238 V, bit1 = 0), 0101 (1,031 V, bit0 = 0), sonuç 0100 = 4. 12 bitte kod 1241 = 0x4D9 ve ilk 4 bit yine 0100. (b) 12-bit aktarım fonksiyonu: kod = taban(Vin · 4096 / 3,3), 0x000 VREFN’ye, 0xFFF VREFP’ye karşılık gelir, VREFP üstünde doyma; 1 LSB = 3,3/4096 ≈ 0,806 mV. Büyütülmüş pencerede 1,0 V çevresinde basamaklar ve nicemleme hatası (kod basamak ortası olarak yorumlanırsa ±½ LSB) gösterilir.</desc>
+<defs>
+<marker id="asr-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="asr-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="asr-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="asr-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.asr-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.asr-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.asr-svg .asr-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.asr-svg .asr-b{font-weight:700}
+.asr-svg .asr-s13{font-size:13px}
+.asr-svg .asr-s15{font-size:15px}
+.asr-svg .asr-s16{font-size:16px}
+.asr-svg .asr-mut{fill:var(--fig-muted,#76746c)}
+.asr-svg .asr-acc{fill:var(--fig-accent,#b4481f)}
+.asr-svg .asr-grn{fill:var(--fig-green,#2f7d4f)}
+.asr-svg .asr-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.asr-svg .asr-sub{font-size:13px}
+.asr-svg .asr-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.asr-svg .asr-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.asr-svg .asr-hlg{fill:var(--fig-green,#2f7d4f);fill-opacity:.28;stroke:var(--fig-green,#2f7d4f);stroke-width:1.5}
+.asr-svg .asr-circ{fill:var(--fig-accent,#b4481f)}
+.asr-svg .asr-head{fill:var(--fig-stroke,#2b2b29)}
+.asr-svg .asr-heada{fill:var(--fig-accent,#b4481f)}
+.asr-svg .asr-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.asr-svg .asr-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.asr-svg .asr-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.asr-svg .asr-wad{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.6;stroke-dasharray:5 4}
+.asr-svg .asr-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.asr-svg .asr-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.asr-svg .asr-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.asr-svg .asr-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.asr-svg .asr-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+.asr-svg .asr-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.asr-svg .asr-sat{fill:var(--fig-muted,#76746c);fill-opacity:.28;stroke:none}
+</style>
+<text class="asr-s16 asr-b" x="12" y="22">(a) Ardışık yaklaşım (SAR) ilkesi</text>
+<text x="14" y="103">V<tspan class="asr-sub" dy="4">in</tspan></text>
+<path class="asr-w" d="M40,98 L58,98" marker-end="url(#asr-arr)"/>
+<rect class="asr-box" x="60" y="74" width="100" height="48" rx="6"/>
+<text class="asr-b" x="110" y="94" text-anchor="middle">Örnekle-tut</text>
+<text class="asr-s13 asr-mut" x="110" y="112" text-anchor="middle">(S/H)</text>
+<path class="asr-w" d="M160,98 L194,98" marker-end="url(#asr-arr)"/>
+<path class="asr-box" d="M196,80 L196,142 L250,111 Z"/>
+<text class="asr-s15 asr-b" x="201" y="103">+</text>
+<text class="asr-s15 asr-b" x="201" y="131">−</text>
+<text class="asr-s13 asr-mut" x="222" y="162" text-anchor="middle">karşılaştırıcı</text>
+<path class="asr-w" d="M250,111 L268,111" marker-end="url(#asr-arr)"/>
+<rect class="asr-box2" x="270" y="74" width="96" height="72" rx="6"/>
+<text class="asr-b" x="318" y="96" text-anchor="middle">SAR</text>
+<text class="asr-s13" x="318" y="114" text-anchor="middle">yazmacı ve</text>
+<text class="asr-s13" x="318" y="130" text-anchor="middle">denetim</text>
+<path class="asr-w" d="M318,74 L318,50" marker-end="url(#asr-arr)"/>
+<text class="asr-s13 asr-mut" x="326" y="58">sonuç (n bit)</text>
+<path class="asr-w" d="M318,146 L318,213 L282,213" marker-end="url(#asr-arr)"/>
+<text class="asr-s13 asr-mut" x="326" y="186">deneme</text>
+<text class="asr-s13 asr-mut" x="326" y="201">kodu</text>
+<rect class="asr-box" x="150" y="190" width="130" height="46" rx="6"/>
+<text class="asr-b" x="215" y="209" text-anchor="middle">DAC</text>
+<text class="asr-s13 asr-mut" x="215" y="226" text-anchor="middle">kapasitör dizisi</text>
+<path class="asr-w" d="M172,190 L172,126 L194,126" marker-end="url(#asr-arr)"/>
+<text x="165" y="162" text-anchor="end">V<tspan class="asr-sub" dy="4">DAC</tspan></text>
+<path class="asr-w" d="M215,262 L215,238" marker-end="url(#asr-arr)"/>
+<text x="215" y="278" text-anchor="middle">V<tspan class="asr-sub" dy="4">REFP</tspan><tspan dy="-4"> = 3,3 V</tspan></text>
+<text x="12" y="304"><tspan class="asr-b">1.</tspan><tspan class="asr-s13"> S/H girişi örnekler, dönüşüm boyunca sabit tutar.</tspan></text>
+<text x="12" y="322"><tspan class="asr-b">2.</tspan><tspan class="asr-s13"> MSB’den başlanır: denenen bit 1 yapılır, </tspan><tspan class="asr-s13">V</tspan><tspan class="asr-sub asr-s13" dy="4">DAC</tspan><tspan class="asr-s13" dy="-4"> = kod·VREF/2ⁿ.</tspan></text>
+<text x="12" y="340"><tspan class="asr-b">3.</tspan><tspan class="asr-s13"> </tspan><tspan class="asr-s13">V</tspan><tspan class="asr-sub asr-s13" dy="4">in</tspan><tspan class="asr-s13" dy="-4"> ≥ </tspan><tspan class="asr-s13">V</tspan><tspan class="asr-sub asr-s13" dy="4">DAC</tspan><tspan class="asr-s13" dy="-4"> ise bit 1 kalır, değilse 0; n bit = n adım.</tspan></text>
+<text x="400" y="22"><tspan class="asr-b">4-bit örnek: </tspan><tspan class="asr-b">V</tspan><tspan class="asr-sub asr-b" dy="4">in</tspan><tspan class="asr-b" dy="-4"> = 1,0 V, </tspan><tspan class="asr-b">V</tspan><tspan class="asr-sub asr-b" dy="4">REF</tspan><tspan class="asr-b" dy="-4"> = 3,3 V</tspan></text>
+<text x="400" y="41"><tspan class="asr-s13">V</tspan><tspan class="asr-sub asr-s13" dy="4">DAC</tspan><tspan class="asr-s13 asr-mut" dy="-4"> = kod · 3,3/16 = kod · 0,206 25 V</tspan></text>
+<rect class="asr-box2" x="400" y="50" width="348" height="22"/>
+<text class="asr-s13 asr-b" x="418" y="65" text-anchor="middle">Adım</text>
+<text class="asr-s13 asr-b" x="478" y="65" text-anchor="middle">Deneme</text>
+<text class="asr-s13 asr-b" x="548" y="65" text-anchor="middle"><tspan class="asr-s13 asr-b">V</tspan><tspan class="asr-sub asr-s13 asr-b" dy="4">DAC</tspan><tspan class="asr-s13 asr-b" dy="-4"> (V)</tspan></text>
+<text class="asr-s13 asr-b" x="632" y="65" text-anchor="middle">Karşılaştırma</text>
+<text class="asr-s13 asr-b" x="716" y="65" text-anchor="middle">Karar</text>
+<rect class="asr-box" x="400" y="72" width="348" height="24"/>
+<text class="asr-s13 asr-b" x="418" y="89" text-anchor="middle">1</text>
+<text x="478" y="89" text-anchor="middle"><tspan class="asr-mono asr-b asr-acc">1</tspan><tspan class="asr-mono">000</tspan></text>
+<text class="asr-s13" x="548" y="89" text-anchor="middle">1,650</text>
+<text class="asr-s13" x="632" y="89" text-anchor="middle">1,0 &lt; 1,650</text>
+<text class="asr-s13 asr-b asr-acc" x="716" y="89" text-anchor="middle">b3 = 0</text>
+<rect class="asr-box" x="400" y="96" width="348" height="24"/>
+<text class="asr-s13 asr-b" x="418" y="113" text-anchor="middle">2</text>
+<text x="478" y="113" text-anchor="middle"><tspan class="asr-mono">0</tspan><tspan class="asr-mono asr-b asr-acc">1</tspan><tspan class="asr-mono">00</tspan></text>
+<text class="asr-s13" x="548" y="113" text-anchor="middle">0,825</text>
+<text class="asr-s13" x="632" y="113" text-anchor="middle">1,0 ≥ 0,825</text>
+<text class="asr-s13 asr-b asr-grn" x="716" y="113" text-anchor="middle">b2 = 1</text>
+<rect class="asr-box" x="400" y="120" width="348" height="24"/>
+<text class="asr-s13 asr-b" x="418" y="137" text-anchor="middle">3</text>
+<text x="478" y="137" text-anchor="middle"><tspan class="asr-mono">01</tspan><tspan class="asr-mono asr-b asr-acc">1</tspan><tspan class="asr-mono">0</tspan></text>
+<text class="asr-s13" x="548" y="137" text-anchor="middle">1,238</text>
+<text class="asr-s13" x="632" y="137" text-anchor="middle">1,0 &lt; 1,238</text>
+<text class="asr-s13 asr-b asr-acc" x="716" y="137" text-anchor="middle">b1 = 0</text>
+<rect class="asr-box" x="400" y="144" width="348" height="24"/>
+<text class="asr-s13 asr-b" x="418" y="161" text-anchor="middle">4</text>
+<text x="478" y="161" text-anchor="middle"><tspan class="asr-mono">010</tspan><tspan class="asr-mono asr-b asr-acc">1</tspan></text>
+<text class="asr-s13" x="548" y="161" text-anchor="middle">1,031</text>
+<text class="asr-s13" x="632" y="161" text-anchor="middle">1,0 &lt; 1,031</text>
+<text class="asr-s13 asr-b asr-acc" x="716" y="161" text-anchor="middle">b0 = 0</text>
+<path class="asr-sep" d="M446,50 L446,168"/>
+<path class="asr-sep" d="M512,50 L512,168"/>
+<path class="asr-sep" d="M584,50 L584,168"/>
+<path class="asr-sep" d="M682,50 L682,168"/>
+<text x="400" y="188" xml:space="preserve"><tspan class="asr-s13 asr-b">Sonuç: </tspan><tspan class="asr-mono asr-b">0100</tspan><tspan class="asr-s13">₂ = 4  →  0,825 V ≤ </tspan><tspan class="asr-s13">V</tspan><tspan class="asr-sub asr-s13" dy="4">in</tspan><tspan class="asr-s13" dy="-4"> &lt; 1,031 V</tspan></text>
+<text x="400" y="207"><tspan class="asr-s13">12 bit: ⌊1,0·4096/3,3⌋ = 1241 = </tspan><tspan class="asr-mono">0x4D9</tspan></text>
+<text x="400" y="225" xml:space="preserve"><tspan class="asr-s13">= </tspan><tspan class="asr-mono asr-b asr-acc">0100</tspan><tspan class="asr-mono"> 1101 1001</tspan><tspan class="asr-s13">₂  (ilk 4 bit aynı)</tspan></text>
+<path class="asr-wt" d="M410,292 L746,292"/>
+<path class="asr-wt" d="M410,287 L410,297"/>
+<path class="asr-wt" d="M430.62,289 L430.62,295"/>
+<path class="asr-wt" d="M451.25,289 L451.25,295"/>
+<path class="asr-wt" d="M471.88,289 L471.88,295"/>
+<path class="asr-wt" d="M492.5,287 L492.5,297"/>
+<path class="asr-wt" d="M513.12,289 L513.12,295"/>
+<path class="asr-wt" d="M533.75,289 L533.75,295"/>
+<path class="asr-wt" d="M554.38,289 L554.38,295"/>
+<path class="asr-wt" d="M575,287 L575,297"/>
+<path class="asr-wt" d="M595.62,289 L595.62,295"/>
+<path class="asr-wt" d="M616.25,289 L616.25,295"/>
+<path class="asr-wt" d="M636.88,289 L636.88,295"/>
+<path class="asr-wt" d="M657.5,287 L657.5,297"/>
+<path class="asr-wt" d="M678.12,289 L678.12,295"/>
+<path class="asr-wt" d="M698.75,289 L698.75,295"/>
+<path class="asr-wt" d="M719.38,289 L719.38,295"/>
+<path class="asr-wt" d="M740,287 L740,297"/>
+<text class="asr-mono asr-mut" x="410" y="310" text-anchor="middle">0</text>
+<text class="asr-mono asr-mut" x="492.5" y="310" text-anchor="middle">4</text>
+<text class="asr-mono asr-mut" x="575" y="310" text-anchor="middle">8</text>
+<text class="asr-mono asr-mut" x="657.5" y="310" text-anchor="middle">12</text>
+<text class="asr-mono asr-mut" x="740" y="310" text-anchor="middle">16</text>
+<text class="asr-s13 asr-mut" x="408" y="280">kod</text>
+<rect class="asr-hlg" x="492.5" y="285" width="20.62" height="14"/>
+<path class="asr-wa" d="M510,266 L510,284" marker-end="url(#asr-arra)"/>
+<text x="510" y="257" text-anchor="middle"><tspan class="asr-s13 asr-acc">V</tspan><tspan class="asr-sub asr-acc" dy="4">in</tspan><tspan class="asr-s13 asr-acc" dy="-4"> = 1,0 V</tspan></text>
+<circle class="asr-circ" cx="575" cy="324" r="8"/>
+<text class="asr-num asr-s13" x="575" y="328" text-anchor="middle">1</text>
+<circle class="asr-circ" cx="492.5" cy="324" r="8"/>
+<text class="asr-num asr-s13" x="492.5" y="328" text-anchor="middle">2</text>
+<circle class="asr-circ" cx="533.75" cy="324" r="8"/>
+<text class="asr-num asr-s13" x="533.75" y="328" text-anchor="middle">3</text>
+<circle class="asr-circ" cx="513.12" cy="324" r="8"/>
+<text class="asr-num asr-s13" x="513.12" y="328" text-anchor="middle">4</text>
+<text class="asr-s13 asr-mut" x="400" y="346">Her adım aralığı yarıya böler: 8 → 4 → 6 → 5 (ikili arama).</text>
+<path class="asr-sep" d="M12,360 L748,360"/>
+<text x="12" y="384"><tspan class="asr-s16 asr-b">(b) 12-bit aktarım fonksiyonu</tspan><tspan class="asr-s15"> — tek uçlu, </tspan><tspan class="asr-s15">V</tspan><tspan class="asr-sub" dy="4">REFP</tspan><tspan class="asr-s15" dy="-4"> = 3,3 V, </tspan><tspan class="asr-s15">V</tspan><tspan class="asr-sub" dy="4">REFN</tspan><tspan class="asr-s15" dy="-4"> = 0 V</tspan></text>
+<text x="12" y="406" xml:space="preserve"><tspan class="asr-s15 asr-b">kod = ⌊ </tspan><tspan class="asr-s15 asr-b">V</tspan><tspan class="asr-sub asr-b" dy="4">in</tspan><tspan class="asr-s15 asr-b" dy="-4"> · 4096 / 3,3 V ⌋</tspan><tspan class="asr-s13">   (en çok 4095 = </tspan><tspan class="asr-mono">0xFFF</tspan><tspan class="asr-s13">)</tspan></text>
+<text x="748" y="406" text-anchor="end"><tspan class="asr-s15 asr-b">1 LSB = 3,3 V / 4096 ≈ 0,806 mV</tspan></text>
+<rect class="asr-sat" x="364.17" y="450" width="25.83" height="310"/>
+<path class="asr-w" d="M80,760 L398,760" marker-end="url(#asr-arr)"/>
+<path class="asr-w" d="M80,760 L80,436" marker-end="url(#asr-arr)"/>
+<text class="asr-s13 asr-b" x="88" y="446">kod</text>
+<path class="asr-wt" d="M80,760 L80,765"/>
+<text class="asr-s13" x="80" y="779" text-anchor="middle">0</text>
+<path class="asr-wt" d="M151.04,760 L151.04,765"/>
+<text class="asr-s13" x="151.04" y="779" text-anchor="middle">0,825</text>
+<path class="asr-wt" d="M222.08,760 L222.08,765"/>
+<text class="asr-s13" x="222.08" y="779" text-anchor="middle">1,65</text>
+<path class="asr-wt" d="M293.12,760 L293.12,765"/>
+<text class="asr-s13" x="293.12" y="779" text-anchor="middle">2,475</text>
+<path class="asr-wt" d="M364.17,760 L364.17,765"/>
+<text class="asr-s13" x="364.17" y="779" text-anchor="middle">3,3</text>
+<text x="390" y="793" text-anchor="end"><tspan class="asr-s13 asr-b">V</tspan><tspan class="asr-sub asr-b" dy="4">in</tspan><tspan class="asr-s13 asr-b" dy="-4"> (V)</tspan></text>
+<path class="asr-wt" d="M75,760 L80,760"/>
+<text class="asr-mono" x="72" y="764" text-anchor="end">0x000</text>
+<path class="asr-wt" d="M75,682.5 L80,682.5"/>
+<text class="asr-mono" x="72" y="686.5" text-anchor="end">0x400</text>
+<path class="asr-wt" d="M75,605 L80,605"/>
+<text class="asr-mono" x="72" y="609" text-anchor="end">0x800</text>
+<path class="asr-wt" d="M75,527.5 L80,527.5"/>
+<text class="asr-mono" x="72" y="531.5" text-anchor="end">0xC00</text>
+<path class="asr-wt" d="M75,450.08 L80,450.08"/>
+<text class="asr-mono" x="72" y="454.08" text-anchor="end">0xFFF</text>
+<path class="asr-grid" d="M80,682.5 H151.0 V760"/>
+<path class="asr-grid" d="M80,605.0 H222.1 V760"/>
+<path class="asr-grid" d="M80,527.5 H293.1 V760"/>
+<path class="asr-wb" d="M80,760 L364.1,450.1 H390"/>
+<text x="390" y="442" text-anchor="end"><tspan class="asr-s13 asr-mut">V</tspan><tspan class="asr-sub asr-s13 asr-mut" dy="4">in</tspan><tspan class="asr-s13 asr-mut" dy="-4"> ≥ </tspan><tspan class="asr-s13 asr-mut">V</tspan><tspan class="asr-sub asr-s13 asr-mut" dy="4">REFP</tspan><tspan class="asr-s13 asr-mut" dy="-4"> − 1 LSB → </tspan><tspan class="asr-mono asr-mut">0xFFF</tspan><tspan class="asr-s13 asr-mut"> (doyma)</tspan></text>
+<text class="asr-s13 asr-mut" x="377.17" y="700" text-anchor="middle" transform="rotate(-90 377.2 700)">doyma</text>
+<path class="asr-wad" d="M166.1,760 V666.1"/>
+<path class="asr-wad" d="M80,666.1 H166.1"/>
+<text class="asr-s13 asr-b asr-acc" x="172.11" y="752">1,0 V</text>
+<text x="86" y="653.08"><tspan class="asr-s13 asr-acc">1241 = </tspan><tspan class="asr-mono asr-acc">0x4D9</tspan></text>
+<rect class="asr-zone" x="158.11" y="658.08" width="16" height="16"/>
+<path class="asr-con" d="M174.11,658.08 L516,560" marker-end="url(#asr-arr)"/>
+<text class="asr-s13 asr-mut" x="446" y="566" text-anchor="middle">büyüt</text>
+<text class="asr-s13 asr-b" x="470" y="436">Büyütme: 1,0 V çevresi (her basamak 1 kod)</text>
+<rect class="asr-box" x="520" y="446" width="220" height="194"/>
+<path class="asr-wb" d="M520,622.0 H542.0 V586.0 H597.0 V550.0 H652.0 V514.0 H707.0 V478.0 H740.0"/>
+<path class="asr-wad" d="M520,618.4 L740,474.4"/>
+<text class="asr-s13 asr-acc" x="734" y="464" text-anchor="end">ideal: Vin/LSB − ½</text>
+<text class="asr-mono" x="514" y="626" text-anchor="end">1239</text>
+<path class="asr-wt" d="M520,622 L524,622"/>
+<text class="asr-mono" x="514" y="590" text-anchor="end">1240</text>
+<path class="asr-wt" d="M520,586 L524,586"/>
+<text class="asr-mono asr-b asr-acc" x="514" y="554" text-anchor="end">1241</text>
+<path class="asr-wt" d="M520,550 L524,550"/>
+<text class="asr-mono" x="514" y="518" text-anchor="end">1242</text>
+<path class="asr-wt" d="M520,514 L524,514"/>
+<text class="asr-mono" x="514" y="482" text-anchor="end">1243</text>
+<path class="asr-wt" d="M520,478 L524,478"/>
+<path class="asr-wt" d="M542,640 L542,636"/>
+<text class="asr-s13" x="542" y="656" text-anchor="middle">0,9990</text>
+<path class="asr-wt" d="M597,640 L597,636"/>
+<text class="asr-s13" x="597" y="656" text-anchor="middle">0,9998</text>
+<path class="asr-wt" d="M652,640 L652,636"/>
+<text class="asr-s13" x="652" y="656" text-anchor="middle">1,0006</text>
+<path class="asr-wt" d="M707,640 L707,636"/>
+<text class="asr-s13" x="707" y="656" text-anchor="middle">1,0014</text>
+<path class="asr-wad" d="M608.7,640 V552.0"/>
+<text x="593" y="540" text-anchor="end"><tspan class="asr-s13 asr-acc">V</tspan><tspan class="asr-sub asr-acc" dy="4">in</tspan><tspan class="asr-s13 asr-acc" dy="-4"> = 1,0 V</tspan></text>
+<path class="asr-wt" d="M652,620 L652,632"/>
+<path class="asr-wt" d="M707,620 L707,632"/>
+<path class="asr-wt" d="M652,626 L707,626"/>
+<text class="asr-s13" x="679.5" y="616" text-anchor="middle">1 LSB ≈ 0,806 mV</text>
+<text class="asr-s13 asr-b" x="470" y="682">nicemleme hatası e = Vin − (kod + ½)·LSB</text>
+<path class="asr-wm" d="M520,714 L740,714"/>
+<path class="asr-grid" d="M520,694 L740,694"/>
+<path class="asr-grid" d="M520,734 L740,734"/>
+<text class="asr-s13" x="514" y="698" text-anchor="end">+½ LSB</text>
+<text class="asr-s13" x="514" y="718" text-anchor="end">0</text>
+<text class="asr-s13" x="514" y="738" text-anchor="end">−½ LSB</text>
+<path class="asr-wa" d="M520,710.0 L542.0,694 V734 L597.0,694 V734 L652.0,694 V734 L707.0,694 V734 L740,710.0"/>
+<text class="asr-s13" x="470" y="760">|e| ≤ ½ LSB ≈ 0,40 mV (kod = basamak ortası)</text>
+<text class="asr-s13 asr-mut" x="470" y="778">kod·LSB alınırsa hata 0 … 1 LSB olur</text>
+</svg>

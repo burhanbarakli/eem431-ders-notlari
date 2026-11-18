@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 794" class="aph-svg" role="img" aria-labelledby="aph-title aph-desc">
+<title id="aph-title">AIN kanal–pin eşlemesi ve potansiyometre örneği</title>
+<desc id="aph-desc">Tablo: AIN0 PE3 (kılıf pini 6, LaunchPad J3.09), AIN1 PE2 (7, J3.08), AIN2 PE1 (8, J3.07), AIN3 PE0 (9, J2.03), AIN4 PD3 (64, J3.06), AIN5 PD2 (63, J3.05), AIN6 PD1 (62, J3.04), AIN7 PD0 (61, J3.03), AIN8 PE5 (60, J1.06), AIN9 PE4 (59, J1.05), AIN10 PB4 (58, J1.07), AIN11 PB5 (57, J1.02). PD0/PD1 kartta 0 Ω R9/R10 ile PB6/PB7’ye de bağlıdır. Devre: 10 kΩ potansiyometre 3,3 V (J1.01) ile GND arasında, orta uç PE3/AIN0’a (J3.09) gider; isteğe bağlı 100 nF süzme kondansatörü. Çip içinde DEN = 0 dijital tamponu kapatır, AMSEL = 1 analog izolasyon anahtarını kapatıp pini ADC çoklayıcısına bağlar. Altta Port E saati, GPIOAFSEL, GPIODEN, GPIOAMSEL ayarları ve TivaWare GPIOPinTypeADC karşılığı (DIR = 0, AFSEL = 0, DEN = 0, AMSEL = 1); uyarı: giriş 0–3,3 V, 5 V toleransı konusunda datasheet çelişkili olduğundan AINx’e VDDA üstü gerilim verilmemeli, kaynak direnci ≤ 500 Ω.</desc>
+<defs>
+<marker id="aph-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="aph-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.aph-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.aph-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.aph-svg .aph-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.aph-svg .aph-b{font-weight:700}
+.aph-svg .aph-s13{font-size:13px}
+.aph-svg .aph-s15{font-size:15px}
+.aph-svg .aph-s16{font-size:16px}
+.aph-svg .aph-mut{fill:var(--fig-muted,#76746c)}
+.aph-svg .aph-acc{fill:var(--fig-accent,#b4481f)}
+.aph-svg .aph-grn{fill:var(--fig-green,#2f7d4f)}
+.aph-svg .aph-sub{font-size:13px}
+.aph-svg .aph-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.aph-svg .aph-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.aph-svg .aph-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.aph-svg .aph-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.aph-svg .aph-dot{fill:var(--fig-stroke,#2b2b29)}
+.aph-svg .aph-head{fill:var(--fig-stroke,#2b2b29)}
+.aph-svg .aph-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.aph-svg .aph-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.aph-svg .aph-wg{fill:none;stroke:var(--fig-green,#2f7d4f);stroke-width:2}
+.aph-svg .aph-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.aph-svg .aph-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text x="12" y="22"><tspan class="aph-s16 aph-b">AIN kanal–pin eşlemesi</tspan><tspan class="aph-s15"> — 64-LQFP, EK-TM4C123GXL</tspan></text>
+<rect class="aph-box2" x="12" y="36" width="328" height="26"/>
+<text class="aph-s13 aph-b" x="42" y="54" text-anchor="middle">Kanal</text>
+<text class="aph-s13 aph-b" x="97" y="54" text-anchor="middle">Pin</text>
+<text class="aph-s13 aph-b" x="159" y="54" text-anchor="middle">Kılıf pini</text>
+<text class="aph-s13 aph-b" x="268" y="54" text-anchor="middle">LaunchPad</text>
+<rect class="aph-hl" x="12" y="62" width="328" height="25"/>
+<text class="aph-mono aph-b" x="42" y="79" text-anchor="middle">AIN0</text>
+<text class="aph-mono aph-b" x="97" y="79" text-anchor="middle">PE3</text>
+<text class="aph-s13 aph-b" x="159" y="79" text-anchor="middle">6</text>
+<text class="aph-mono aph-b" x="268" y="79" text-anchor="middle">J3.09</text>
+<rect class="aph-box" x="12" y="87" width="328" height="25"/>
+<text class="aph-mono" x="42" y="104" text-anchor="middle">AIN1</text>
+<text class="aph-mono" x="97" y="104" text-anchor="middle">PE2</text>
+<text class="aph-s13" x="159" y="104" text-anchor="middle">7</text>
+<text class="aph-mono" x="268" y="104" text-anchor="middle">J3.08</text>
+<rect class="aph-box" x="12" y="112" width="328" height="25"/>
+<text class="aph-mono" x="42" y="129" text-anchor="middle">AIN2</text>
+<text class="aph-mono" x="97" y="129" text-anchor="middle">PE1</text>
+<text class="aph-s13" x="159" y="129" text-anchor="middle">8</text>
+<text class="aph-mono" x="268" y="129" text-anchor="middle">J3.07</text>
+<rect class="aph-box" x="12" y="137" width="328" height="25"/>
+<text class="aph-mono" x="42" y="154" text-anchor="middle">AIN3</text>
+<text class="aph-mono" x="97" y="154" text-anchor="middle">PE0</text>
+<text class="aph-s13" x="159" y="154" text-anchor="middle">9</text>
+<text class="aph-mono" x="268" y="154" text-anchor="middle">J2.03</text>
+<rect class="aph-box" x="12" y="162" width="328" height="25"/>
+<text class="aph-mono" x="42" y="179" text-anchor="middle">AIN4</text>
+<text class="aph-mono" x="97" y="179" text-anchor="middle">PD3</text>
+<text class="aph-s13" x="159" y="179" text-anchor="middle">64</text>
+<text class="aph-mono" x="268" y="179" text-anchor="middle">J3.06</text>
+<rect class="aph-box" x="12" y="187" width="328" height="25"/>
+<text class="aph-mono" x="42" y="204" text-anchor="middle">AIN5</text>
+<text class="aph-mono" x="97" y="204" text-anchor="middle">PD2</text>
+<text class="aph-s13" x="159" y="204" text-anchor="middle">63</text>
+<text class="aph-mono" x="268" y="204" text-anchor="middle">J3.05</text>
+<rect class="aph-box" x="12" y="212" width="328" height="25"/>
+<text class="aph-mono" x="42" y="229" text-anchor="middle">AIN6</text>
+<text class="aph-mono" x="97" y="229" text-anchor="middle">PD1</text>
+<text class="aph-s13" x="159" y="229" text-anchor="middle">62</text>
+<text class="aph-mono" x="268" y="229" text-anchor="middle">J3.04 *</text>
+<rect class="aph-box" x="12" y="237" width="328" height="25"/>
+<text class="aph-mono" x="42" y="254" text-anchor="middle">AIN7</text>
+<text class="aph-mono" x="97" y="254" text-anchor="middle">PD0</text>
+<text class="aph-s13" x="159" y="254" text-anchor="middle">61</text>
+<text class="aph-mono" x="268" y="254" text-anchor="middle">J3.03 *</text>
+<rect class="aph-box" x="12" y="262" width="328" height="25"/>
+<text class="aph-mono" x="42" y="279" text-anchor="middle">AIN8</text>
+<text class="aph-mono" x="97" y="279" text-anchor="middle">PE5</text>
+<text class="aph-s13" x="159" y="279" text-anchor="middle">60</text>
+<text class="aph-mono" x="268" y="279" text-anchor="middle">J1.06</text>
+<rect class="aph-box" x="12" y="287" width="328" height="25"/>
+<text class="aph-mono" x="42" y="304" text-anchor="middle">AIN9</text>
+<text class="aph-mono" x="97" y="304" text-anchor="middle">PE4</text>
+<text class="aph-s13" x="159" y="304" text-anchor="middle">59</text>
+<text class="aph-mono" x="268" y="304" text-anchor="middle">J1.05</text>
+<rect class="aph-box" x="12" y="312" width="328" height="25"/>
+<text class="aph-mono" x="42" y="329" text-anchor="middle">AIN10</text>
+<text class="aph-mono" x="97" y="329" text-anchor="middle">PB4</text>
+<text class="aph-s13" x="159" y="329" text-anchor="middle">58</text>
+<text class="aph-mono" x="268" y="329" text-anchor="middle">J1.07</text>
+<rect class="aph-box" x="12" y="337" width="328" height="25"/>
+<text class="aph-mono" x="42" y="354" text-anchor="middle">AIN11</text>
+<text class="aph-mono" x="97" y="354" text-anchor="middle">PB5</text>
+<text class="aph-s13" x="159" y="354" text-anchor="middle">57</text>
+<text class="aph-mono" x="268" y="354" text-anchor="middle">J1.02</text>
+<path class="aph-sep" d="M72,36 L72,362"/>
+<path class="aph-sep" d="M122,36 L122,362"/>
+<path class="aph-sep" d="M196,36 L196,362"/>
+<text class="aph-s13 aph-mut" x="12" y="380">* 0 Ω R9/R10 ile PB6/PB7’ye de bağlı (J2.07/J2.06,</text>
+<text class="aph-s13 aph-mut" x="12" y="397" xml:space="preserve">  MSP430 uyumu): PD0/PD1 analogken PB6/PB7’yi sürmeyin.</text>
+<text class="aph-s13 aph-mut" x="12" y="416">Kaynak: datasheet Tablo 13-1; spmu296 Tablo 2-3…2-5</text>
+<text class="aph-b" x="372" y="54">Örnek: potansiyometre → PE3 (AIN0)</text>
+<text x="432" y="78" text-anchor="middle" xml:space="preserve"><tspan class="aph-s13 aph-b">3,3 V</tspan><tspan class="aph-s13 aph-mut">  (J1.01)</tspan></text>
+<path class="aph-w" d="M418,86 L446,86"/>
+<path class="aph-w" d="M432,86 L432,120"/>
+<rect class="aph-box" x="422" y="120" width="20" height="90"/>
+<path class="aph-w" d="M432,210 L432,250"/>
+<path class="aph-w" d="M418,250 L446,250"/>
+<path class="aph-w" d="M423,255 L441,255"/>
+<path class="aph-w" d="M428,260 L436,260"/>
+<text x="432" y="280" text-anchor="middle"><tspan class="aph-s13 aph-b">GND</tspan><tspan class="aph-s13 aph-mut"> (J2.01)</tspan></text>
+<text class="aph-s13 aph-b" x="414" y="160" text-anchor="end">10 kΩ</text>
+<text class="aph-s13 aph-mut" x="414" y="177" text-anchor="end">pot</text>
+<path class="aph-w" d="M472,165 L444,165" marker-end="url(#aph-arr)"/>
+<path class="aph-w" d="M472,165 L576,165"/>
+<circle class="aph-dot" cx="506" cy="165" r="3"/>
+<path class="aph-con" d="M506,165 V202"/>
+<path class="aph-w" d="M494,202 L518,202"/>
+<path class="aph-w" d="M494,209 L518,209"/>
+<path class="aph-con" d="M506,209 V250"/>
+<path class="aph-w" d="M492,250 L520,250"/>
+<path class="aph-w" d="M497,255 L515,255"/>
+<path class="aph-w" d="M502,260 L510,260"/>
+<text class="aph-s13" x="522" y="203">100 nF</text>
+<text class="aph-s13 aph-mut" x="522" y="220">isteğe</text>
+<text class="aph-s13 aph-mut" x="522" y="235">bağlı</text>
+<text x="478" y="157"><tspan class="aph-s13 aph-b">V</tspan><tspan class="aph-sub aph-b" dy="4">in</tspan></text>
+<text class="aph-mono aph-b" x="578" y="157" text-anchor="end">PE3</text>
+<text class="aph-mono aph-mut" x="578" y="183" text-anchor="end">J3.09</text>
+<rect class="aph-box2" x="584" y="70" width="164" height="248" rx="8"/>
+<text class="aph-s13 aph-b" x="666" y="90" text-anchor="middle">TM4C123GH6PM</text>
+<rect class="aph-box" x="580" y="161" width="8" height="8"/>
+<path class="aph-w" d="M588,165 H612"/>
+<circle class="aph-dot" cx="612" cy="165" r="3"/>
+<path class="aph-w" d="M612,165 V124 H628"/>
+<path class="aph-box" d="M628,112 L628,136 L652,124 Z"/>
+<path class="aph-wa" d="M624,110 L656,138 M656,110 L624,138"/>
+<text class="aph-s13" x="660" y="120">dijital giriş</text>
+<text class="aph-mono aph-acc" x="660" y="137">DEN = 0</text>
+<path class="aph-w" d="M612,165 V214 H628"/>
+<circle class="aph-dot" cx="630" cy="214" r="2.5"/>
+<circle class="aph-dot" cx="658" cy="214" r="2.5"/>
+<path class="aph-wg" d="M630,214 L658,214"/>
+<path class="aph-w" d="M658,214 H700 V246" marker-end="url(#aph-arr)"/>
+<text class="aph-mono aph-b aph-grn" x="664" y="206">AMSEL = 1</text>
+<text class="aph-s13 aph-mut" x="644" y="232" text-anchor="middle">izolasyon</text>
+<rect class="aph-box" x="626" y="248" width="112" height="44" rx="6"/>
+<text class="aph-s13 aph-b" x="682" y="266" text-anchor="middle">ADC çoklayıcı</text>
+<text class="aph-mono" x="682" y="284" text-anchor="middle">AIN0</text>
+<text x="594" y="308"><tspan class="aph-mono">AFSEL = 1</tspan><tspan class="aph-s13 aph-mut"> (§13.4.1/3)</tspan></text>
+<text x="372" y="342" xml:space="preserve"><tspan class="aph-s13">V</tspan><tspan class="aph-sub" dy="4">in</tspan><tspan class="aph-s13" dy="-4"> = 3,3 V · R</tspan><tspan class="aph-sub" dy="4">alt</tspan><tspan class="aph-s13" dy="-4"> / 10 kΩ  </tspan><tspan class="aph-s13 aph-mut">(R</tspan><tspan class="aph-sub aph-mut" dy="4">alt</tspan><tspan class="aph-s13 aph-mut" dy="-4">: orta uç–GND arası)</tspan></text>
+<text class="aph-s13" x="372" y="360">orta konum: 1,65 V → kod ≈ 2048 (0x800)</text>
+<text class="aph-s13" x="372" y="378">uçlarda: 0 V → 0, 3,3 V → 4095 (0xFFF)</text>
+<text x="12" y="460"><tspan class="aph-s15 aph-b">PE3’ü analog giriş yapmak</tspan><tspan class="aph-s13 aph-mut"> (her AIN pini için aynı adımlar, ilgili port/bit ile)</tspan></text>
+<rect class="aph-box" x="12" y="472" width="736" height="26"/>
+<text x="22" y="490" xml:space="preserve"><tspan class="aph-s13 aph-b aph-acc">1  </tspan><tspan class="aph-mono aph-b">RCGCGPIO</tspan></text>
+<text class="aph-mono" x="158" y="490">SYSCTL_RCGCGPIO_R |= 0x10;</text>
+<text class="aph-s13" x="428" y="490">Port E saati (bit 4), hazır bekle: PRGPIO</text>
+<rect class="aph-box" x="12" y="498" width="736" height="26"/>
+<text x="22" y="516" xml:space="preserve"><tspan class="aph-s13 aph-b aph-acc">2  </tspan><tspan class="aph-mono aph-b">GPIOAFSEL</tspan></text>
+<text class="aph-mono" x="158" y="516">GPIO_PORTE_AFSEL_R |= 0x08;</text>
+<text class="aph-s13" x="428" y="516">alternatif işlev (datasheet §13.4.1 adım 3)</text>
+<rect class="aph-box" x="12" y="524" width="736" height="26"/>
+<text x="22" y="542" xml:space="preserve"><tspan class="aph-s13 aph-b aph-acc">3  </tspan><tspan class="aph-mono aph-b">GPIODEN</tspan></text>
+<text class="aph-mono" x="158" y="542">GPIO_PORTE_DEN_R &amp;= ~0x08;</text>
+<text class="aph-s13" x="428" y="542">dijital tampon kapalı</text>
+<rect class="aph-box" x="12" y="550" width="736" height="26"/>
+<text x="22" y="568" xml:space="preserve"><tspan class="aph-s13 aph-b aph-acc">4  </tspan><tspan class="aph-mono aph-b">GPIOAMSEL</tspan></text>
+<text class="aph-mono" x="158" y="568">GPIO_PORTE_AMSEL_R |= 0x08;</text>
+<text class="aph-s13" x="428" y="568">analog izolasyon kalkar → pin ADC’ye bağlanır</text>
+<path class="aph-sep" d="M150,472 L150,576"/>
+<path class="aph-sep" d="M420,472 L420,576"/>
+<rect class="aph-code" x="12" y="586" width="736" height="82" rx="6"/>
+<text x="22" y="606"><tspan class="aph-s13 aph-b">TivaWare: </tspan><tspan class="aph-mono">SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);</tspan></text>
+<text x="22" y="625" xml:space="preserve"><tspan class="aph-s13">          </tspan><tspan class="aph-mono aph-b">GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);</tspan></text>
+<text x="22" y="643"><tspan class="aph-mono">GPIOPinTypeADC</tspan><tspan class="aph-s13"> → DIR = 0, AFSEL = 0, PUR = PDR = 0, DEN = 0, AMSEL = 1</tspan></text>
+<text class="aph-s13 aph-mut" x="22" y="660">(datasheet adım 3’ün tersine AFSEL’i siler; bağlantı AMSEL ile kurulduğu için çalışır)</text>
+<rect class="aph-hl" x="12" y="680" width="736" height="104" rx="6"/>
+<text x="24" y="701"><tspan class="aph-b aph-acc">Dikkat: giriş aralığı 0 – 3,3 V. </tspan><tspan class="aph-s13">Doğru dönüşüm 0 ≤ </tspan><tspan class="aph-s13">V</tspan><tspan class="aph-sub" dy="4">in</tspan><tspan class="aph-s13" dy="-4"> ≤ VDDA = VREFP (Tablo 24-33); üstünde kod </tspan><tspan class="aph-mono">0xFFF</tspan><tspan class="aph-s13">’te doyar.</tspan></text>
+<text x="24" y="721"><tspan class="aph-s13 aph-b">Datasheet çelişkili: </tspan><tspan class="aph-s13">s. 650: koruma var, 5,5 V’a dek hasar yok (Tablo 24-1); s. 1329: AINx 5-V tolerant değil.</tspan></text>
+<text x="24" y="740"><tspan class="aph-s13 aph-b">Güvenli taraf: </tspan><tspan class="aph-s13">AINx’e VDDA’dan yüksek gerilim vermeyin; ölçüm zaten yalnız 0–VDDA’da geçerli.</tspan></text>
+<text x="24" y="759"><tspan class="aph-s13">Kaynak direnci </tspan><tspan class="aph-s13">R</tspan><tspan class="aph-sub" dy="4">S</tspan><tspan class="aph-s13" dy="-4"> ≤ 500 Ω (Tablo 24-33); 10 kΩ pot orta konumda ≈ 2,5 kΩ olur →</tspan></text>
+<text class="aph-s13" x="24" y="777">orta uçtan GND’ye 100 nF süzme kondansatörü ya da düşük örnekleme hızı/ortalama yardımcı olur.</text>
+</svg>
