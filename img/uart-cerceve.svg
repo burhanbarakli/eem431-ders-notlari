@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 664" class="ucr-svg" role="img" aria-labelledby="ucr-title ucr-desc">
+<title id="ucr-title">UART çerçevesi (8N1) zaman diyagramı</title>
+<desc id="ucr-desc">Boşta hat yüksek (1). Başlangıç biti 0, ardından D0…D7 veri bitleri LSB önce, sonra durma biti 1 ve yeniden boşta. Örnek karakter A = 0x41 = 0100 0001 ikili; hatta sırayla 1, 0, 0, 0, 0, 0, 1, 0 gider. Bir bit süresi T_bit = 1/baud: 9 600 baud için 104,17 µs, 115 200 baud için 8,68 µs. 8N1 çerçevesi 10 bit olduğundan 9 600 baud en çok 960 karakter/s taşır. Alıcı her bitin ortasında örnekler: 16 kat aşırı örneklemede (HSE = 0) düşen kenardan sonra Baud16’nın 8. tıkında hat hâlâ 0 ise başlangıç biti geçerlidir, sonraki bitler her 16 tıkta bir örneklenir (datasheet §14.3.3). Eşlik açıksa (PEN = 1) D7 ile durma biti arasına eşlik biti girer; çift eşlikte A için P = 0.</desc>
+<defs>
+<marker id="ucr-arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ucr-headb" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ucr-ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ucr-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ucr-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ucr-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.ucr-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ucr-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ucr-svg .ucr-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ucr-svg .ucr-b{font-weight:700}
+.ucr-svg .ucr-it{font-style:italic}
+.ucr-svg .ucr-s13{font-size:13px}
+.ucr-svg .ucr-s15{font-size:15px}
+.ucr-svg .ucr-s16{font-size:16px}
+.ucr-svg .ucr-mut{fill:var(--fig-muted,#76746c)}
+.ucr-svg .ucr-acc{fill:var(--fig-accent,#b4481f)}
+.ucr-svg .ucr-blu{fill:var(--fig-blue,#1f5fa8)}
+.ucr-svg .ucr-grn{fill:var(--fig-green,#2f7d4f)}
+.ucr-svg .ucr-sub{font-size:11px}
+.ucr-svg .ucr-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.ucr-svg .ucr-heada{fill:var(--fig-accent,#b4481f)}
+.ucr-svg .ucr-headb{fill:var(--fig-blue,#1f5fa8)}
+.ucr-svg .ucr-headm{fill:var(--fig-muted,#76746c)}
+.ucr-svg .ucr-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.ucr-svg .ucr-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ucr-svg .ucr-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.ucr-svg .ucr-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ucr-svg .ucr-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.ucr-svg .ucr-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.ucr-svg .ucr-fillacc{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:none}
+.ucr-svg .ucr-fillgrn{fill:var(--fig-green,#2f7d4f);fill-opacity:.28;stroke:none}
+.ucr-svg .ucr-wave{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.2;stroke-linejoin:round}
+.ucr-svg .ucr-optcell{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.5;stroke-dasharray:5 4}
+</style>
+<text x="12" y="22"><tspan class="ucr-s16 ucr-b">UART çerçevesi</tspan><tspan class="ucr-s15"> — 8N1, örnek karakter </tspan><tspan class="ucr-mono">'A' = 0x41 = 0100 0001</tspan><tspan class="ucr-sub" dy="4">2</tspan></text>
+<rect class="ucr-fillacc" x="86" y="102" width="60" height="52"/>
+<rect class="ucr-fillgrn" x="626" y="102" width="60" height="52"/>
+<path class="ucr-grid" d="M86,62 V160"/>
+<path class="ucr-grid" d="M146,62 V160"/>
+<path class="ucr-grid" d="M206,62 V160"/>
+<path class="ucr-grid" d="M266,62 V160"/>
+<path class="ucr-grid" d="M326,62 V160"/>
+<path class="ucr-grid" d="M386,62 V160"/>
+<path class="ucr-grid" d="M446,62 V160"/>
+<path class="ucr-grid" d="M506,62 V160"/>
+<path class="ucr-grid" d="M566,62 V160"/>
+<path class="ucr-grid" d="M626,62 V160"/>
+<path class="ucr-grid" d="M686,62 V160"/>
+<text class="ucr-s13 ucr-mut" x="51" y="76" text-anchor="middle">boşta</text>
+<text class="ucr-s15 ucr-b ucr-mut" x="51" y="96" text-anchor="middle">1</text>
+<text class="ucr-s13 ucr-mut" x="715" y="76" text-anchor="middle">boşta</text>
+<text class="ucr-s15 ucr-b ucr-mut" x="715" y="96" text-anchor="middle">1</text>
+<text class="ucr-s13 ucr-b ucr-acc" x="116" y="76" text-anchor="middle">başlangıç</text>
+<text class="ucr-s15 ucr-b ucr-acc" x="116" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="176" y="76" text-anchor="middle">D0</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="176" y="96" text-anchor="middle">1</text>
+<text class="ucr-b" x="236" y="76" text-anchor="middle">D1</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="236" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="296" y="76" text-anchor="middle">D2</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="296" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="356" y="76" text-anchor="middle">D3</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="356" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="416" y="76" text-anchor="middle">D4</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="416" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="476" y="76" text-anchor="middle">D5</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="476" y="96" text-anchor="middle">0</text>
+<text class="ucr-b" x="536" y="76" text-anchor="middle">D6</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="536" y="96" text-anchor="middle">1</text>
+<text class="ucr-b" x="596" y="76" text-anchor="middle">D7</text>
+<text class="ucr-s15 ucr-b ucr-blu" x="596" y="96" text-anchor="middle">0</text>
+<text class="ucr-s13 ucr-b ucr-grn" x="656" y="76" text-anchor="middle">durma</text>
+<text class="ucr-s15 ucr-b ucr-grn" x="656" y="96" text-anchor="middle">1</text>
+<path class="ucr-wave" d="M16,108 H86.0 V148 H146.0 V108 H206.0 V148 H266.0 H326.0 H386.0 H446.0 H506.0 V108 H566.0 V148 H626.0 V108 H686.0 H744.0"/>
+<text class="ucr-mono" x="12" y="136">UnTx</text>
+<path class="ucr-wt" d="M148,58 V52 H624 V58"/>
+<text x="386" y="46" text-anchor="middle" xml:space="preserve"><tspan class="ucr-s13">D0…D7 hatta LSB önce: </tspan><tspan class="ucr-mono ucr-b">1 0 0 0 0 0 1 0</tspan></text>
+<text class="ucr-s13 ucr-mut" x="150" y="46">LSB</text>
+<text class="ucr-s13 ucr-mut" x="622" y="46" text-anchor="end">MSB</text>
+<path class="ucr-wb" d="M116.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M176.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M236.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M296.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M356.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M416.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M476.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M536.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M596.0,180 V156" marker-end="url(#ucr-arb)"/>
+<path class="ucr-wb" d="M656.0,180 V156" marker-end="url(#ucr-arb)"/>
+<text class="ucr-s13 ucr-blu" x="86" y="198">alıcının örnekleme anları: her bitin ortası (aşağıdaki yakın plan)</text>
+<path class="ucr-wm" d="M147,224 H206" marker-end="url(#ucr-dim)"/>
+<path class="ucr-wm" d="M205,224 H146" marker-end="url(#ucr-dim)"/>
+<path class="ucr-wm" d="M146,217 V231"/>
+<path class="ucr-wm" d="M206,217 V231"/>
+<text x="216" y="229" xml:space="preserve"><tspan class="ucr-it">T</tspan><tspan class="ucr-sub" dy="4">bit</tspan><tspan dy="-4"> = 1 / baud  ·  9 600 baud → 104,17 µs  ·  115 200 baud → 8,68 µs</tspan></text>
+<path class="ucr-wm" d="M87,262 H686" marker-end="url(#ucr-dim)"/>
+<path class="ucr-wm" d="M685,262 H86" marker-end="url(#ucr-dim)"/>
+<path class="ucr-wm" d="M86,255 V269"/>
+<path class="ucr-wm" d="M686,255 V269"/>
+<text class="ucr-s13" x="386" y="254" text-anchor="middle">1 karakter = 1 başlangıç + 8 veri + 1 durma = 10 bit → 9 600 baud’da en çok 960 karakter/s</text>
+<path class="ucr-sep" d="M12,284 H748"/>
+<text x="12" y="306"><tspan class="ucr-s15 ucr-b">Alıcı: 16× aşırı örnekleme</tspan><tspan class="ucr-s13"> (UARTCTL.HSE = 0, Baud16 = 16 × baud)</tspan></text>
+<rect class="ucr-fillacc" x="91" y="335" width="208" height="42"/>
+<path class="ucr-wave" d="M52,340 H91 V372 H299 V340 H507"/>
+<text class="ucr-mono" x="12" y="360">UnRx</text>
+<text class="ucr-s13" x="97" y="327">düşen kenar → sayaç başlar</text>
+<text class="ucr-s13 ucr-b" x="99" y="364">başlangıç (0)</text>
+<text class="ucr-s13 ucr-b ucr-blu" x="403" y="330" text-anchor="middle">D0 (1)</text>
+<text class="ucr-mono" x="12" y="416">Baud16</text>
+<path class="ucr-wm" d="M104,408 V418"/>
+<path class="ucr-wm" d="M117,408 V418"/>
+<path class="ucr-wm" d="M130,408 V418"/>
+<path class="ucr-wm" d="M143,408 V418"/>
+<path class="ucr-wm" d="M156,408 V418"/>
+<path class="ucr-wm" d="M169,408 V418"/>
+<path class="ucr-wm" d="M182,408 V418"/>
+<path class="ucr-wt" d="M195,404 V418"/>
+<path class="ucr-wm" d="M208,408 V418"/>
+<path class="ucr-wm" d="M221,408 V418"/>
+<path class="ucr-wm" d="M234,408 V418"/>
+<path class="ucr-wm" d="M247,408 V418"/>
+<path class="ucr-wm" d="M260,408 V418"/>
+<path class="ucr-wm" d="M273,408 V418"/>
+<path class="ucr-wm" d="M286,408 V418"/>
+<path class="ucr-wt" d="M299,404 V418"/>
+<path class="ucr-wm" d="M312,408 V418"/>
+<path class="ucr-wm" d="M325,408 V418"/>
+<path class="ucr-wm" d="M338,408 V418"/>
+<path class="ucr-wm" d="M351,408 V418"/>
+<path class="ucr-wm" d="M364,408 V418"/>
+<path class="ucr-wm" d="M377,408 V418"/>
+<path class="ucr-wm" d="M390,408 V418"/>
+<path class="ucr-wt" d="M403,404 V418"/>
+<path class="ucr-wm" d="M416,408 V418"/>
+<path class="ucr-wm" d="M429,408 V418"/>
+<path class="ucr-wm" d="M442,408 V418"/>
+<path class="ucr-wm" d="M455,408 V418"/>
+<path class="ucr-wm" d="M468,408 V418"/>
+<path class="ucr-wm" d="M481,408 V418"/>
+<path class="ucr-wm" d="M494,408 V418"/>
+<path class="ucr-wt" d="M507,404 V418"/>
+<text class="ucr-mono" x="195" y="434" text-anchor="middle">8</text>
+<text class="ucr-mono" x="299" y="434" text-anchor="middle">16</text>
+<text class="ucr-mono" x="403" y="434" text-anchor="middle">24</text>
+<path class="ucr-wa" d="M195,402 V378" marker-end="url(#ucr-ara)"/>
+<path class="ucr-wb" d="M403,402 V346" marker-end="url(#ucr-arb)"/>
+<text class="ucr-s13 ucr-b ucr-acc" x="195" y="456" text-anchor="middle">8. tık: hat hâlâ 0</text>
+<text class="ucr-s13 ucr-acc" x="195" y="472" text-anchor="middle">→ başlangıç geçerli</text>
+<text class="ucr-s13 ucr-b ucr-blu" x="403" y="456" text-anchor="middle">24. tık (+16): D0 örneklenir</text>
+<text class="ucr-s13 ucr-blu" x="403" y="472" text-anchor="middle">sonra her 16 tıkta bir</text>
+<text class="ucr-s13 ucr-mut" x="12" y="498">HSE = 1: Baud8, doğrulama 4. tıkta, bitler her 8 tıkta bir. Durma biti 1 değilse çerçeve hatası (FE).</text>
+<rect class="ucr-box2" x="532" y="318" width="216" height="158" rx="6"/>
+<text class="ucr-s13 ucr-b" x="542" y="338">Bit süresi ve hız (8N1)</text>
+<text class="ucr-s13 ucr-mut" x="542" y="360">baud</text>
+<text x="614" y="360"><tspan class="ucr-s13 ucr-it ucr-mut">T</tspan><tspan class="ucr-sub ucr-mut" dy="4">bit</tspan></text>
+<text class="ucr-s13 ucr-mut" x="738" y="360" text-anchor="end">karakter/s</text>
+<path class="ucr-sep" d="M540,370 H740"/>
+<text class="ucr-mono" x="542" y="390">9 600</text>
+<text class="ucr-mono" x="614" y="390">104,17 µs</text>
+<text class="ucr-mono" x="738" y="390" text-anchor="end" xml:space="preserve">960</text>
+<text class="ucr-mono" x="542" y="412">19 200</text>
+<text class="ucr-mono" x="614" y="412">52,08 µs</text>
+<text class="ucr-mono" x="738" y="412" text-anchor="end" xml:space="preserve">1 920</text>
+<text class="ucr-mono" x="542" y="434">115 200</text>
+<text class="ucr-mono" x="614" y="434">8,68 µs</text>
+<text class="ucr-mono" x="738" y="434" text-anchor="end" xml:space="preserve">11 520</text>
+<text class="ucr-s13 ucr-mut" x="542" y="458">karakter/s = baud / 10</text>
+<path class="ucr-sep" d="M12,514 H748"/>
+<text x="12" y="536"><tspan class="ucr-s15 ucr-b">Eşlik açıksa</tspan><tspan class="ucr-s13"> (UARTLCRH.PEN = 1, ör. 8E1): D7 ile durma arasına P girer</tspan></text>
+<path class="ucr-grid" d="M52,558 V612"/>
+<path class="ucr-grid" d="M110,558 V612"/>
+<path class="ucr-grid" d="M168,558 V612"/>
+<path class="ucr-grid" d="M342,558 V612"/>
+<path class="ucr-grid" d="M400,558 V612"/>
+<rect class="ucr-optcell" x="226" y="556" width="58" height="54" rx="3"/>
+<text class="ucr-s13 ucr-b ucr-acc" x="255" y="568" text-anchor="middle">P</text>
+<text class="ucr-s13 ucr-mut" x="81" y="568" text-anchor="middle">…</text>
+<text class="ucr-s13 ucr-b" x="139" y="568" text-anchor="middle">D6</text>
+<text class="ucr-s13 ucr-b" x="197" y="568" text-anchor="middle">D7</text>
+<text class="ucr-s13 ucr-b" x="313" y="568" text-anchor="middle">durma</text>
+<text class="ucr-s13 ucr-mut" x="371" y="568" text-anchor="middle">boşta</text>
+<path class="ucr-wave" d="M52,604 H110 V578 H168 V604 H226 H284 V578 H342 H400"/>
+<text class="ucr-s13 ucr-acc" x="255" y="630" text-anchor="middle">isteğe bağlı</text>
+<text x="420" y="566"><tspan class="ucr-s13 ucr-b">çift eşlik (EPS = 1): </tspan><tspan class="ucr-s13">0x41’de iki tane 1 → P = 0</tspan></text>
+<text x="420" y="586"><tspan class="ucr-s13 ucr-b">tek eşlik (EPS = 0): </tspan><tspan class="ucr-s13">P = 1</tspan></text>
+<text class="ucr-s13 ucr-mut" x="420" y="606">çerçeve 11 bit olur; 8N1’de P hücresi yoktur</text>
+<text class="ucr-s13 ucr-mut" x="748" y="654" text-anchor="end">Kaynak: TM4C123GH6PM datasheet §14.3.1, §14.3.3, Şekil 14-2 (sade yeniden çizim)</text>
+</svg>

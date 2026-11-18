@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 492" class="ubh-svg" role="img" aria-labelledby="ubh-title ubh-desc">
+<title id="ubh-title">UART baud bölücü hesabı</title>
+<desc id="ubh-desc">BRD = UARTSysClk / (ClkDiv × baud); ClkDiv = 16 (UARTCTL.HSE = 0) ya da 8 (HSE = 1). UARTIBRD = BRD’nin tam kısmı, UARTFBRD = kesir × 64 + 0,5’in tam kısmı. Gerçek baud = UARTSysClk / (ClkDiv × (IBRD + FBRD/64)). Örnek: 16 MHz, 9 600 baud: BRD = 104,1667, IBRD = 104, FBRD = 11, gerçek 9 599,5 baud, hata −%0,005. Bölücü, UARTIBRD/UARTFBRD yazıldıktan sonra UARTLCRH yazılınca yürürlüğe girer. UARTConfigSetExpClk aynı sonucu Div = ((clk × 8 / baud) + 1) / 2 ile bulur. PIOSC fabrika kalibrasyonuyla ±%3 sapabilir; bu, bölücü hatasından çok büyüktür. Teorik tolerans sınırı yaklaşık %4,6, pratikte %2–3’ün altı hedeflenir.</desc>
+<style>
+.ubh-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ubh-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ubh-svg .ubh-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ubh-svg .ubh-b{font-weight:700}
+.ubh-svg .ubh-s13{font-size:13px}
+.ubh-svg .ubh-s15{font-size:15px}
+.ubh-svg .ubh-s16{font-size:16px}
+.ubh-svg .ubh-mut{fill:var(--fig-muted,#76746c)}
+.ubh-svg .ubh-blu{fill:var(--fig-blue,#1f5fa8)}
+.ubh-svg .ubh-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ubh-svg .ubh-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.ubh-svg .ubh-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ubh-svg .ubh-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ubh-svg .ubh-warn{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.5;stroke-dasharray:6 4}
+</style>
+<text x="12" y="22"><tspan class="ubh-s16 ubh-b">Baud bölücü hesabı</tspan><tspan class="ubh-s15"> — UARTIBRD (16 bit tam) + UARTFBRD (6 bit kesir)</tspan></text>
+<rect class="ubh-box" x="12" y="36" width="420" height="168" rx="6"/>
+<text x="26" y="60"><tspan class="ubh-b">BRD</tspan> = UARTSysClk / (ClkDiv × baud)</text>
+<text x="56" y="80" xml:space="preserve"><tspan class="ubh-s13">ClkDiv = 16  (UARTCTL.HSE = 0)  ·  8  (HSE = 1)</tspan></text>
+<text x="26" y="108" xml:space="preserve"><tspan class="ubh-mono ubh-b">UARTIBRD</tspan> = ⌊BRD⌋<tspan class="ubh-s13 ubh-mut">   DIVINT, bit 15:0</tspan></text>
+<text x="26" y="132" xml:space="preserve"><tspan class="ubh-mono ubh-b">UARTFBRD</tspan> = ⌊(BRD − IBRD) × 64 + 0,5⌋<tspan class="ubh-s13 ubh-mut">   bit 5:0</tspan></text>
+<text x="26" y="160"><tspan class="ubh-b">gerçek baud</tspan><tspan class="ubh-s13"> = UARTSysClk / (ClkDiv × (IBRD + FBRD/64))</tspan></text>
+<text x="26" y="186"><tspan class="ubh-b">hata %</tspan><tspan class="ubh-s13"> = (gerçek − istenen) / istenen × 100</tspan></text>
+<rect class="ubh-box2" x="446" y="36" width="302" height="168" rx="6"/>
+<text class="ubh-b" x="456" y="58">Örnek: 16 MHz, 9 600 baud, HSE = 0</text>
+<text class="ubh-s13" x="456" y="80" xml:space="preserve">BRD = 16 000 000 / (16 × 9 600)</text>
+<text class="ubh-s13" x="488" y="98">= 104,1667</text>
+<text x="456" y="120"><tspan class="ubh-mono ubh-b">IBRD</tspan><tspan class="ubh-s13"> = 104 (</tspan><tspan class="ubh-mono">0x68</tspan><tspan class="ubh-s13">)</tspan></text>
+<text x="456" y="142"><tspan class="ubh-mono ubh-b">FBRD</tspan><tspan class="ubh-s13"> = ⌊0,1667 × 64 + 0,5⌋ = ⌊11,17⌋ = 11 (</tspan><tspan class="ubh-mono">0x0B</tspan><tspan class="ubh-s13">)</tspan></text>
+<text class="ubh-s13" x="456" y="164">gerçek = 16 MHz / (16 × 104,171875)</text>
+<text x="488" y="184"><tspan class="ubh-s13">= 9 599,5 baud → hata </tspan><tspan class="ubh-s13 ubh-b">−%0,005</tspan></text>
+<rect class="ubh-hl" x="12" y="222" width="360" height="112" rx="6"/>
+<text class="ubh-b" x="24" y="244">Kural: önce bölücü, sonra UARTLCRH</text>
+<text class="ubh-s13" x="24" y="266">UARTIBRD, UARTFBRD ve UARTLCRH tek bir iç</text>
+<text class="ubh-s13" x="24" y="284">30 bitlik yazmaçtır; yeni bölücü yalnız UARTLCRH</text>
+<text class="ubh-s13" x="24" y="302">yazılınca yürürlüğe girer (§14.3.2). Önce UARTEN = 0,</text>
+<text class="ubh-s13" x="24" y="320">sıra: IBRD → FBRD → LCRH (FBRD → IBRD → LCRH da olur).</text>
+<rect class="ubh-code" x="388" y="222" width="360" height="112" rx="6"/>
+<text x="400" y="244"><tspan class="ubh-mono ubh-b ubh-blu">UARTConfigSetExpClk</tspan><tspan class="ubh-s13 ubh-b"> ne hesaplar?</tspan></text>
+<text x="400" y="266"><tspan class="ubh-mono ubh-blu">Div = ((clk × 8 / baud) + 1) / 2</tspan></text>
+<text class="ubh-s13" x="400" y="284">≈ 64 × BRD, en yakın tamsayıya yuvarlanmış</text>
+<text x="400" y="302" xml:space="preserve"><tspan class="ubh-mono ubh-blu">IBRD = Div / 64,  FBRD = Div % 64</tspan></text>
+<text class="ubh-s13" x="400" y="320">baud × 16 &gt; clk ise HSE = 1 yapıp baud’u yarılar</text>
+<rect class="ubh-warn" x="12" y="350" width="736" height="112" rx="6"/>
+<text x="24" y="372"><tspan class="ubh-b">Dikkat: PIOSC ile çalışırken</tspan><tspan class="ubh-s13"> (UARTCC.CS = 0x5 ya da sistem saati PIOSC)</tspan></text>
+<text class="ubh-s13" x="24" y="394">PIOSC fabrika kalibrasyonuyla ±%3 sapabilir (datasheet Tablo 24-15, s. 1375); bu, bölücü hatasından</text>
+<text class="ubh-s13" x="24" y="412">(&lt; %0,1) çok büyüktür: toplam baud hatası ≈ bölücü hatası + saat hatası. Alıcı durma bitini düşen kenardan</text>
+<text class="ubh-s13" x="24" y="430">9,5 bit sonra örnekler: teorik sınır ≈ %4,6 ((0,5 − 1/16) / 9,5, iki tarafın toplam farkı);</text>
+<text class="ubh-s13" x="24" y="448">pratikte %2–3’ün altı hedeflenir. Kristal + PLL güvenli.</text>
+<text class="ubh-s13 ubh-mut" x="748" y="482" text-anchor="end">Kaynak: datasheet §14.3.2 (s. 896–897), §14.4 (s. 903), UARTCTL s. 920; TivaWare driverlib/uart.c</text>
+</svg>

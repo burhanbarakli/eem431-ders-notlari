@@ -10,6 +10,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `gpio/` | 1. GPIO ders notu |
 | `timer/` | 6. Zamanlayıcılar (GPTM) ve kesmelere giriş |
 | `adc/` | 7. ADC |
+| `uart/` | 8. UART ve seri port (PC tarafı C# dahil) |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

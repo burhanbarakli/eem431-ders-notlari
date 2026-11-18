@@ -1,0 +1,748 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UART — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad üzerinde UART: çerçeve, baud hesabı, FIFO, register'lar, yoklama ve kesmeli alma, sanal COM portu, API'siz ve API'li örnekler, C# SerialPort, TI Lab 12.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 8. UART</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#seri">1. Seri haberleşme ve UART çerçevesi</a><ol>
+  <li><a href="#senkron">Senkron ve asenkron</a></li>
+  <li><a href="#cerceve">UART çerçevesi</a></li>
+  <li><a href="#baud">Baud hızı ve bit süresi</a></li></ol></li>
+<li><a href="#modul">2. TM4C123 UART modülü</a><ol>
+  <li><a href="#ozellikler">Özellikler ve blok yapı</a></li>
+  <li><a href="#fifo">FIFO'lar</a></li></ol></li>
+<li><a href="#pinler">3. Pinler ve LaunchPad bağlantısı</a><ol>
+  <li><a href="#pin-tablosu">UART0–UART7 pinleri</a></li>
+  <li><a href="#pin-ayari">Pinin UART işlevine alınması</a></li>
+  <li><a href="#sanal-com">LaunchPad sanal COM portu</a></li>
+  <li><a href="#seviyeler">TTL ve RS-232 seviyeleri</a></li></ol></li>
+<li><a href="#baud-hesabi">4. Baud hızı hesabı</a><ol>
+  <li><a href="#formul">Formül: IBRD ve FBRD</a></li>
+  <li><a href="#sayisal">Sayısal örnekler</a></li>
+  <li><a href="#tolerans">Saat doğruluğu ve tolerans</a></li>
+  <li><a href="#hse-cc">HSE ve saat kaynağı (UARTCC)</a></li>
+  <li><a href="#yazma-sirasi">IBRD, FBRD ve LCRH yazma sırası</a></li></ol></li>
+<li><a href="#registerlar">5. Register'lar ve taban adresler</a><ol>
+  <li><a href="#taban">Taban adresler ve kesme numaraları</a></li>
+  <li><a href="#register-tablosu">UART register tablosu</a></li>
+  <li><a href="#bitler">Sık kullanılan bitler</a></li>
+  <li><a href="#dr-okuma">UARTDR okumada hata bitleri</a></li></ol></li>
+<li><a href="#baslatma">6. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">Adım adım</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#veri">7. Veri gönderme ve alma</a><ol>
+  <li><a href="#yoklama-kesme">Yoklama ve kesme</a></li>
+  <li><a href="#fifo-esik">FIFO eşikleri ve alma zaman aşımı</a></li>
+  <li><a href="#isr">UART kesme servis programı</a></li></ol></li>
+<li><a href="#ornekler">8. Örnekler</a><ol>
+  <li><a href="#ornek-apisiz">8.1 Dizi gönderme ve eko, yoklama, API'siz</a></li>
+  <li><a href="#ornek-apili">8.2 Dizi gönderme ve eko, yoklama, API'li</a></li>
+  <li><a href="#ornek-kesme-apili">8.3 Kesmeli alma, API'li</a></li>
+  <li><a href="#ornek-kesme-apisiz">8.4 Kesmeli alma, API'siz</a></li>
+  <li><a href="#ornek-sayi">8.5 Sayıyı ve sıcaklığı metin olarak gönderme</a></li>
+  <li><a href="#ornek-odev">8.6 Timer, ADC ve UART birlikte: ödev çözümü</a></li></ol></li>
+<li><a href="#pc">9. PC tarafı: C# SerialPort</a><ol>
+  <li><a href="#com-port">COM portunu bulmak ve terminalle denemek</a></li>
+  <li><a href="#csharp-temel">Port açma, gönderme, alma</a></li>
+  <li><a href="#csharp-protokol">Satır tabanlı protokol: ödevin PC tarafı</a></li></ol></li>
+<li><a href="#lab12">10. TI Lab 12 uyarlaması</a></li>
+<li><a href="#exp10">11. Experiment 10 uygulama görevi</a></li>
+<li><a href="#hatalar">12. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">13. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">14. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>UART ve Seri Port</h1>
+<p class="lead">Mikrodenetleyicinin dış dünyayla en eski ve en yaygın konuşma yolu asenkron seri haberleşmedir. Bu notta TM4C123GH6PM'nin UART modülüyle bir bilgisayara ve başka cihazlara bayt göndermeyi ve almayı öğreneceğiz: çerçeve yapısı, baud hesabı, FIFO'lar, yoklama ve kesmeli alma, register düzeyinde ve TivaWare ile örnekler; sonunda da PC tarafında C# ile basit bir arayüz. Kesme altyapısı (NVIC, vektör tablosu, ISR kuralları) <a href="../timer/#kesme">Zamanlayıcılar notunda</a>, sıcaklık ölçümü <a href="../adc/#sicaklik">ADC notunda</a> anlatıldığı için burada tekrar edilmiyor.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Senkron ve asenkron seri haberleşmeyi ayırt edebilir; UART çerçevesini (başlangıç biti, LSB önce veri, eşlik, durma biti) bir bayt için çizebilir ve verilen baud hızı için bit ve karakter süresini hesaplayabilir.</li>
+<li>TM4C123 UART modülünün yapısını (8 UART, 16×8 TX ve 16×12 RX FIFO, baud üreteci, kesme kaynakları) ve LaunchPad'de UART0'ın (PA0/PA1) ICDI üzerinden sanal COM portuna bağlandığını açıklayabilir.</li>
+<li>Verilen saat ve baud için IBRD, FBRD değerlerini ve baud hatasını hesaplayabilir; saat kaynağının doğruluğunun (PIOSC ±%3) haberleşmeye etkisini tartışabilir.</li>
+<li>UART'ı şu sırayla başlatabilir: 1 RCGCUART (+ PRUART bekle) → 2 RCGCGPIO → 3 GPIOAFSEL → 4 GPIODEN (+ isteğe bağlı sürüş akımı) → 5 GPIOPCTL → 6 UARTEN = 0 → 7 UARTIBRD → 8 UARTFBRD → 9 UARTLCRH → 10 UARTCC → 11 kesme ayarı (UARTIFLS, UARTICR, UARTIM) → 12 UARTEN = 1 → 13 NVIC → 14 global izin.</li>
+<li>Veriyi yoklama (UARTFR.TXFF / RXFE) ve kesme (RX, RT) ile gönderip alabilir; ISR'de bayrağı UARTICR'ye <code>=</code> ile yazarak temizleyip FIFO'yu boşaltabilir.</li>
+<li>Aynı uygulamayı doğrudan register erişimiyle ve TivaWare fonksiyonlarıyla (<code>GPIOPinConfigure</code>, <code>UARTConfigSetExpClk</code>, <code>UARTCharPut</code>, <code>UARTCharGet</code>, <code>UARTIntRegister</code>…) yazabilir; sayıları elle ASCII metne çevirebilir.</li>
+<li>PC tarafında C# <code>SerialPort</code> ile port açıp veri gönderebilir, <code>DataReceived</code> olayında gelen veriyi <code>Invoke</code> ile arayüze aktarabilir.</li>
+</ol></div>
+
+<h2 id="seri">1. Seri haberleşme ve UART çerçevesi</h2>
+<h3 id="senkron">Senkron ve asenkron</h3>
+<p>Seri haberleşmede bitler tek bir telden art arda gönderilir; az tel ve basit konnektör gerektirdiği için çevre birimleri ve bilgisayarlarla haberleşmede tercih edilir. Alıcının her biti doğru anda okuyabilmesi için zamanlama bilgisi iki yolla taşınır:</p>
+<ul>
+<li><b>Senkron:</b> Veriyle birlikte ayrı bir <b>saat hattı</b> da gönderilir; alıcı biti saat kenarında okur. SPI (SSI) ve I2C bu türdendir.</li>
+<li><b>Asenkron:</b> Saat hattı yoktur. İki taraf hızda (baud) önceden anlaşır ve her biri kendi saatini kullanır. Zamanlama, her karakterin başındaki <b>başlangıç bitinin düşen kenarından</b> çıkarılır. UART (Universal Asynchronous Receiver/Transmitter) bu işi yapan donanımdır.</li>
+</ul>
+<p>İki cihaz arasında en az üç tel vardır: bir tarafın <b>TX</b> ucu diğerinin <b>RX</b> ucuna (ve tersi) bağlanır, üçüncüsü <b>ortak toprak</b>tır (GND). İki yön bağımsızdır (tam çift yönlü, <i>full duplex</i>).</p>
+
+<h3 id="cerceve">UART çerçevesi</h3>
+<p>Hat boştayken lojik 1'dedir (<b>boşta 1</b>, <i>idle/mark</i>). Her karakter bir <b>çerçeve</b> içinde gider (datasheet §14.3.1, Şekil 14-2, s. 895–896):</p>
+<ol>
+<li><b>Başlangıç biti</b> (start): 1 bit süresi boyunca 0. Hattın 1'den 0'a inmesi alıcıya "karakter başlıyor" der.</li>
+<li><b>Veri bitleri:</b> 5, 6, 7 ya da 8 bit; <b>en anlamsız bit (LSB) önce</b> gönderilir. Bu derste her zaman 8 bit kullanılır.</li>
+<li><b>Eşlik biti</b> (parity, isteğe bağlı): Çift eşlikte veri + eşlik bitlerindeki 1'lerin sayısı çift, tek eşlikte tek olacak şekilde seçilir. Tek bitlik hataları yakalar, düzeltmez.</li>
+<li><b>Durma biti</b> (stop): 1 ya da 2 bit süresi boyunca 1. Hattı bir sonraki başlangıç biti için yeniden 1'e getirir.</li>
+</ol>
+<p>Ayar kısaca "8N1" diye yazılır: 8 veri biti, eşlik yok (<i>None</i>), 1 durma biti. 8N1'de bir karakter 1 + 8 + 1 = <b>10 bit</b> sürer. Örnek olarak <code>'A'</code> = <code>0x41</code> = <code>0100 0001</code><sub>2</sub> hatta şu sırayla çıkar (Şekil 1):</p>
+<p style="text-align:center"><code>…1 1 | 0 | 1 0 0 0 0 0 1 0 | 1 | 1 1…</code> &nbsp; (boşta | başlangıç | bit0 … bit7 | durma | boşta)</p>
+<p>Eşlik açık olsaydı <code>0x41</code>'de iki tane 1 olduğu için çift eşlik biti 0, tek eşlik biti 1 olurdu.</p>
+<figure><img class="fig" src="../img/uart-cerceve.svg" alt="UART çerçevesi zaman diyagramı: boşta 1, başlangıç biti 0, LSB önce 8 veri biti, isteğe bağlı eşlik, durma biti 1; örnek A = 0x41; 9 600 ve 115 200 baud için bit süreleri"><figcaption><b>Şekil 1.</b> UART çerçevesi: boşta 1 → başlangıç biti (0) → 8 veri biti, LSB önce → isteğe bağlı eşlik biti → durma biti (1). Örnek karakter <code>'A'</code> = <code>0x41</code> (veri bitleri hatta 1 0 0 0 0 0 1 0 sırasıyla). Bit süresi T<sub>bit</sub> = 1/baud: 9 600 baud için ≈ 104,2 µs, 115 200 baud için ≈ 8,68 µs.</figcaption></figure>
+<p><b>Alıcı nasıl okur?</b> Alıcı hattı baud hızının 16 katı bir saatle örnekler. Düşen kenardan 8 örnek (yarım bit) sonra hat hâlâ 0 ise başlangıç biti geçerlidir; sonra her 16 örnekte bir, yani her bitin ortasında okur. Durma biti yerinde 1 yoksa <b>çerçeve hatası</b> bildirir (s. 897). Bitin ortasında okumak küçük saat farklarına pay bırakır (<a href="#tolerans">Bölüm 4</a>).</p>
+
+<h3 id="baud">Baud hızı ve bit süresi</h3>
+<p><b>Baud</b>, hattaki saniyedeki sembol (burada bit) sayısıdır. UART'ta baud = bit/s'dir; ama başlangıç ve durma bitleri de sayıldığından <b>yararlı veri hızı</b> daha düşüktür:</p>
+<table>
+<thead><tr><th>Baud</th><th>T<sub>bit</sub> = 1/baud</th><th>8N1 karakter süresi (10 bit)</th><th>En çok karakter/s</th></tr></thead>
+<tbody>
+<tr><td>9 600</td><td>104,17 µs</td><td>1,042 ms</td><td>960</td></tr>
+<tr><td>115 200</td><td>8,68 µs</td><td>86,8 µs</td><td>11 520</td></tr>
+</tbody></table>
+<p>Standart hızlar (1 200, 2 400, 4 800, 9 600, 19 200, 38 400, 57 600, 115 200…) eski modem hızlarından gelir. İki tarafın hızı, veri bit sayısı, eşliği ve durma bit sayısı <b>aynı</b> olmalıdır; aksi halde alıcı bitleri yanlış yerde örnekler ve ekranda anlamsız karakterler görülür.</p>
+
+<h2 id="modul">2. TM4C123 UART modülü</h2>
+<h3 id="ozellikler">Özellikler ve blok yapı</h3>
+<p>Datasheet Bölüm 14'e göre (s. 893) TM4C123GH6PM'de <b>8 UART</b> (UART0–UART7) vardır. Başlıca özellikleri:</p>
+<ul>
+<li>Kesirli bölücülü baud üreteci: normal hızda (÷16) 5 Mbps'e, yüksek hızda (÷8, HSE) 10 Mbps'e kadar.</li>
+<li>Ayrı 16 girişlik <b>TX ve RX FIFO'ları</b>; kesme eşikleri 1/8, 1/4, 1/2, 3/4, 7/8.</li>
+<li>Başlangıç, durma ve eşlik bitleri donanımla üretilir ve ayıklanır; 5–8 veri biti; çift, tek, sabit ya da eşliksiz; 1 ya da 2 durma biti; hat kesmesi (break) üretme/algılama.</li>
+<li>Hata algılama: taşma (overrun), hat kesmesi (break), eşlik (parity), çerçeve (framing).</li>
+<li>Bu notta kullanılmayan ek işlevler: IrDA, ISO 7816 akıllı kart, UART1'de RTS/CTS, 9-bit kip, iç geri döngü, μDMA.</li>
+</ul>
+<figure><img class="fig" src="../img/uart-modul-blok.svg" alt="UART modülü blok şeması: baud üreteci IBRD ve FBRD; TX FIFO 16x8, kaydırma register'ı, UnTx; UnRx, kaydırma register'ı, RX FIFO 16x12 hata bitleriyle; denetim LCRH, CTL, CC; kesme RIS, IM, MIS, ICR ve NVIC; μDMA"><figcaption><b>Şekil 2.</b> UART modülü blok şeması (datasheet Şekil 14-1'den sadeleştirildi): baud üreteci (IBRD/FBRD; saat UARTCC ile sistem saati ya da PIOSC); UARTDR → TX FIFO (16×8) → kaydırma register'ı → UnTx; UnRx → kaydırma register'ı → RX FIFO (16×12: veri + 4 hata biti); denetim (LCRH, CTL, CC); kesme (RIS/IM/MIS/ICR) → NVIC; μDMA.</figcaption></figure>
+<p>Program yalnız <b>UARTDR</b> ile konuşur: yazınca bayt TX FIFO'ya girer ve donanım onu çerçeveleyip gönderir; okuyunca RX FIFO'nun en eski girişi gelir (Şekil 2). UARTCTL'nin açılış değeri <code>0x300</code>'dür: TXE ve RXE 1, UARTEN dahil diğer bitler 0 (s. 895, 918).</p>
+
+<h3 id="fifo">FIFO'lar</h3>
+<p>İki FIFO da 16 giriş derinliğindedir; RX FIFO her girişte 4 hata bitini de sakladığı için 12 bit genişliğindedir (§14.3.3, s. 897; UARTDR, s. 906; §14.3.8 ve blok şema ikisini de "16x8" verir). FIFO'lar <b>açılışta kapalıdır</b> (UARTLCRH.FEN = 0) ve 1 baytlık tutucu register gibi davranır. <code>UARTConfigSetExpClk</code> sonunda <code>UARTEnable</code>'ı çağırır, o da FEN'i 1 yapar; API'li programlarda FIFO bu yüzden açıktır. TI kitapçığının "FIFO'lar açılışta açıktır" ifadesi buradan gelir; kendi dipnotu datasheet'e göre kapalı olduğunu belirtir.</p>
+<p>115 200 baud'da bir karakter 86,8 µs'de gelir; FIFO açıkken işlemci ≈ 1,4 ms'lik (16 karakter) bir gecikmeyi veri kaybetmeden karşılar. RX FIFO doluyken yeni karakter gelirse <b>taşma hatası</b> (OE) olur; FIFO korunur, yeni karakter kaybolur (s. 908).</p>
+
+<h2 id="pinler">3. Pinler ve LaunchPad bağlantısı</h2>
+<h3 id="pin-tablosu">UART0–UART7 pinleri</h3>
+<p>UART sinyalleri GPIO pinlerinin alternatif işlevidir. Parantezdeki sayı GPIOPCTL'nin PMCn alanına yazılan koddur (datasheet Tablo 14-1, s. 895; Tablo 23-5, s. 1351). Son iki sütun TivaWare <code>driverlib/pin_map.h</code> sabitleri ve LaunchPad konnektörüdür (SPMU296, Tablo 2-3 – 2-6):</p>
+<table>
+<thead><tr><th>Modül</th><th>Rx (PMC)</th><th>Tx (PMC)</th><th>TivaWare sabiti</th><th>LaunchPad</th></tr></thead>
+<tbody>
+<tr><td><b>UART0</b></td><td><b>PA0 (1)</b></td><td><b>PA1 (1)</b></td><td><code>GPIO_PA0_U0RX</code>, <code>GPIO_PA1_U0TX</code></td><td>ICDI sanal COM portu; konnektörde yok</td></tr>
+<tr><td>UART1</td><td>PB0 (1) / PC4 (2)</td><td>PB1 (1) / PC5 (2)</td><td><code>GPIO_PB0_U1RX</code>, <code>GPIO_PB1_U1TX</code> (<code>GPIO_PC4_U1RX</code>…)</td><td>PB0/PB1: J1.03/J1.04 (en çok 3,6 V); PC4/PC5: J4.04/J4.05</td></tr>
+<tr><td>UART2</td><td>PD6 (1)</td><td>PD7 (1)</td><td><code>GPIO_PD6_U2RX</code>, <code>GPIO_PD7_U2TX</code></td><td>J4.08 / J4.09 (PD7 kilitli)</td></tr>
+<tr><td>UART3</td><td>PC6 (1)</td><td>PC7 (1)</td><td><code>GPIO_PC6_U3RX</code>, <code>GPIO_PC7_U3TX</code></td><td>J4.06 / J4.07</td></tr>
+<tr><td>UART4</td><td>PC4 (1)</td><td>PC5 (1)</td><td><code>GPIO_PC4_U4RX</code>, <code>GPIO_PC5_U4TX</code></td><td>J4.04 / J4.05</td></tr>
+<tr><td>UART5</td><td>PE4 (1)</td><td>PE5 (1)</td><td><code>GPIO_PE4_U5RX</code>, <code>GPIO_PE5_U5TX</code></td><td>J1.05 / J1.06</td></tr>
+<tr><td>UART6</td><td>PD4 (1)</td><td>PD5 (1)</td><td><code>GPIO_PD4_U6RX</code>, <code>GPIO_PD5_U6TX</code></td><td>Konnektörde yok (USB hattı)</td></tr>
+<tr><td>UART7</td><td>PE0 (1)</td><td>PE1 (1)</td><td><code>GPIO_PE0_U7RX</code>, <code>GPIO_PE1_U7TX</code></td><td>J2.03 / J3.07</td></tr>
+</tbody></table>
+<p>UART1'in RTS/CTS pinleri PF0/PF1 (PMC 1) ya da PC4/PC5 (PMC 8) üzerindedir; PC4/PC5 UART1 ile UART4 arasında paylaşılır. GPIO pinleri giriş olarak 5 V'a dayanıklıdır, ama <b>PD4, PD5, PB0 ve PB1 3,6 V ile sınırlıdır</b> (s. 649). PD7 NMI pini olduğu için kilitlidir; UART2 için önce GPIOLOCK/GPIOCR ile açılır (<a href="../gpio/#kilit">GPIO notu, PF0 / PD7 kilidi</a>).</p>
+
+<h3 id="pin-ayari">Pinin UART işlevine alınması</h3>
+<p>Datasheet §14.4 önce saat ve GPIO tarafını (adım 1–5) anlatır (s. 902–903); GPIO bölümü de dijital alternatif işlev için AFSEL, DEN ve PCTL'nin birlikte ayarlanmasını ister (s. 649). PA0/PA1 için: RCGCGPIO bit0 = 1 (Port A saati), GPIOAFSEL bit1:0 = 1, GPIODEN bit1:0 = 1, GPIOPCTL'de PMC0 = PMC1 = 1 (<code>0x00000011</code>; pin başına 4 bitlik alan). GPIODIR önemsizdir: AFSEL = 1 iken yönü çevre birimi belirler (<a href="../gpio/#register-tablosu">GPIO notu, register tablosu</a>).</p>
+<p>Datasheet UART0 pinlerinin açılışta UART işlevinde olduğunu söyler (s. 894); ancak Tablo 10-1'e göre (s. 650) PA[1:0]'ın açılış değerleri GPIOPCTL = 0x1, <b>GPIOAFSEL = 0, GPIODEN = 0</b>'dır. Yani AFSEL ve DEN yine de 1 yapılmalıdır.</p>
+
+<h3 id="sanal-com">LaunchPad sanal COM portu</h3>
+<p>EK-TM4C123GXL'deki ikinci TM4C123 yongası <b>ICDI</b>'dir (In-Circuit Debug Interface). Hata ayıklama USB kablosu takılınca PC'de hem hata ayıklayıcı hem <b>sanal COM portu</b> olarak görünür; bu port hedef işlemcinin <b>PA0 (U0RX)</b> ve <b>PA1 (U0TX)</b> pinlerine bağlıdır (SPMU296 §2.3.1, Tablo 2-8, s. 12). UART0'a yazılan her bayt ek donanım olmadan PC'deki terminale ya da C# uygulamasına ulaşır (Şekil 3). PA0/PA1 konnektörlere çıkarılmamıştır; dış bir modül (GPS, Bluetooth, başka kart) için UART1, UART3, UART5 gibi başka bir modül kullanılır.</p>
+<figure><img class="fig" src="../img/uart-launchpad-baglanti.svg" alt="UART0 PA0 PA1 kart üstü ICDI yongasına, ICDI USB sanal COM portu olarak PC'ye; PC'de terminal ya da C# SerialPort; harici bağlantıda TX RX çaprazlama, ortak GND, 3,3 V TTL ve RS-232 seviye farkı"><figcaption><b>Şekil 3.</b> UART0 (PA0/PA1) → kart üstü ICDI → USB sanal COM portu → PC (terminal ya da C# <code>SerialPort</code>). Harici bağlantıda (ör. UART1, PB0/PB1) TX↔RX çapraz bağlanır, GND'ler birleştirilir; 3,3 V TTL ile RS-232 (±3…±15 V, ters mantık) doğrudan bağlanamaz.</figcaption></figure>
+
+<h3 id="seviyeler">TTL ve RS-232 seviyeleri</h3>
+<p>TM4C123 pinleri <b>3,3 V TTL</b> seviyesindedir (lojik 1 ≈ 3,3 V, boşta 1). Eski PC'lerdeki DB9 seri port ise <b>RS-232</b> seviyesini kullanır: lojik 1 için −3…−15 V, lojik 0 için +3…+15 V, yani ters mantık. Doğrudan bağlanırsa negatif gerilim pine zarar verir; arada MAX3232 gibi bir seviye dönüştürücü ya da 3,3 V'luk bir USB–TTL dönüştürücü kullanılır. 5 V TTL bir cihazda Tiva'nın RX pini 5 V'a dayanıklı olmalı (PB0, PB1, PD4, PD5 değil), karşı taraf da 3,3 V'u lojik 1 saymalıdır.</p>
+
+<h2 id="baud-hesabi">4. Baud hızı hesabı</h2>
+<h3 id="formul">Formül: IBRD ve FBRD</h3>
+<p>Baud üreteci, UART saatini 22 bitlik bir sayıya böler: 16 bitlik tam kısım (<b>UARTIBRD</b>.DIVINT) ve 6 bitlik kesir kısmı (<b>UARTFBRD</b>.DIVFRAC). Datasheet §14.3.2'ye göre (s. 896):</p>
+<p style="text-align:center"><b>BRD = UARTSysClk / (ClkDiv · baud)</b> &nbsp;&nbsp; ClkDiv = 16 (HSE = 0) ya da 8 (HSE = 1)</p>
+<p style="text-align:center"><b>IBRD = ⌊BRD⌋</b> &nbsp;·&nbsp; <b>FBRD = ⌊(BRD − IBRD) · 64 + 0,5⌋</b> &nbsp;·&nbsp; <b>gerçek baud = UARTSysClk / (ClkDiv · (IBRD + FBRD/64))</b></p>
+<p>Kesir kısmı 1/64'lük adımlarla ifade edildiği için 64 ile çarpılıp en yakın tamsayıya yuvarlanır. Hata yüzdesi <b>(gerçek − istenen) / istenen × 100</b> ile bulunur (Şekil 4).</p>
+<figure><img class="fig" src="../img/uart-baud-hesabi.svg" alt="Baud bölücü hesabı: BRD = UARTSysClk / (ClkDiv · baud), ClkDiv 16 ya da 8; IBRD tam kısım, FBRD kesir çarpı 64 artı 0,5; 16 MHz ve 9 600 baud örneği; LCRH kuralı; UARTConfigSetExpClk hesabı; PIOSC uyarısı"><figcaption><b>Şekil 4.</b> Baud bölücü: BRD = UARTSysClk / (ClkDiv · baud), IBRD = tam kısım, FBRD = ⌊kesir · 64 + 0,5⌋. Örnek: 16 MHz, 9 600 baud → BRD = 104,1667 → IBRD = 104, FBRD = 11 → gerçek 9 599,5 (−%0,005). Yeni bölücü yalnız UARTLCRH yazılınca etkin olur; <code>UARTConfigSetExpClk</code> aynı sonucu 64 · BRD'yi yuvarlayarak bulur. PIOSC'nin ±%3'lük hatası bölücü hatasından çok büyüktür.</figcaption></figure>
+
+<h3 id="sayisal">Sayısal örnekler</h3>
+<p>Ders kodlarının hepsi <code>SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | …)</code> ile <b>50 MHz</b> kullanır (PLL 400 MHz → ÷2 → ÷4). TI'ın Lab 4 gibi örneklerindeki <code>SYSCTL_SYSDIV_5</code> 40 MHz verir (Lab 12 <code>SYSDIV_4</code>, 50 MHz); saat ayarı yapılmamış bir program PIOSC'den 16 MHz'te çalışır (<a href="../timer/#saat">Timer notu, saat frekansı</a>). HSE = 0 (ClkDiv = 16):</p>
+<table>
+<thead><tr><th>Saat</th><th>Baud</th><th>BRD</th><th>IBRD</th><th>FBRD</th><th>Gerçek baud</th><th>Hata</th></tr></thead>
+<tbody>
+<tr><td>16 MHz</td><td>9 600</td><td>104,1667</td><td>104</td><td>11</td><td>9 599,5</td><td>−%0,005</td></tr>
+<tr><td>16 MHz</td><td>115 200</td><td>8,6806</td><td>8</td><td>44</td><td>115 108</td><td>−%0,080</td></tr>
+<tr><td>20 MHz</td><td>115 200</td><td>10,8507</td><td>10</td><td>54</td><td>115 274</td><td>+%0,064 (datasheet örneği, s. 903)</td></tr>
+<tr><td>40 MHz</td><td>115 200</td><td>21,7014</td><td>21</td><td>45</td><td>115 191</td><td>−%0,008</td></tr>
+<tr><td>50 MHz</td><td>9 600</td><td>325,5208</td><td>325</td><td>33</td><td>9 600,2</td><td>+%0,002</td></tr>
+<tr><td>50 MHz</td><td>115 200</td><td>27,1267</td><td>27</td><td>8</td><td>115 207</td><td>+%0,006</td></tr>
+</tbody></table>
+<p><b>Örnek hesap (50 MHz, 115 200):</b> BRD = 50 000 000 / (16 · 115 200) = 27,1267 → IBRD = 27; 0,1267 · 64 + 0,5 = 8,61 → FBRD = 8; gerçek baud = 50 000 000 / (16 · 27,125) = 115 207. Kesir kısmı yazılmasaydı (FBRD = 0) 16 MHz/115 200'de baud 125 000 olur, hata +%8,5'e çıkardı; haberleşme tamamen bozulur.</p>
+
+<h3 id="tolerans">Saat doğruluğu ve tolerans</h3>
+<p>Baud hatasının iki kaynağı vardır: bölücünün yuvarlanması (yukarıdaki tablo; genellikle %0,1'in altında) ve <b>saat kaynağının hatası</b>. LaunchPad'deki 16 MHz kristal birkaç on ppm (≈ ±%0,005) doğrulukla çalışır. İç osilatör <b>PIOSC</b>'nin doğruluğu ise fabrika kalibrasyonuyla ±%3'tür; ±%1 yalnız kullanıcının 7-bit yeniden kalibrasyonu yaptığı koşulda geçerlidir (Tablo 24-15, s. 1375). <code>SysCtlClockSet</code> çağrılmamış bir programda sistem saati PIOSC'dir; baud hatası da ±%3'e kadar çıkabilir.</p>
+<p><b>Ne kadar fark tolere edilir?</b> Datasheet UART için tolerans değeri vermez; aşağıdaki hesap genel bilgidir. 8N1'de son örnek (durma biti) düşen kenardan 9,5 bit sonra alınır ve örnekleme anı bitin ortasından 0,5 bitten az kaymalıdır. 16× örneklemenin 1/16 bitlik kenar belirsizliği de düşülünce iki tarafın <b>toplam</b> farkı için teorik sınır ≈ <b>%4,6</b> ((0,5 − 1/16) / 9,5) bulunur; pratikte <b>%2–3'ün altı</b> hedeflenir (Experiment 10 föyü %2 verir). PIOSC'den çalışan bir Tiva çoğu kartta haberleşir ama bu <b>garanti değildir</b>; güvenilir haberleşme için kristal + PLL kullanılır.</p>
+
+<h3 id="hse-cc">HSE ve saat kaynağı (UARTCC)</h3>
+<ul>
+<li><b>HSE</b> (UARTCTL bit5): 0 iken ÷16, 1 iken ÷8; alıcı 8× örnekler (s. 920). En büyük baud HSE = 0'da saat/16 (80 MHz'te 5 Mbps), HSE = 1'de saat/8'dir. <code>UARTConfigSetExpClk</code>, baud · 16 &gt; saat ise HSE'yi kendisi 1 yapar.</li>
+<li><b>UARTCC</b> (s. 939): <code>0x0</code> sistem saati (açılış), <code>0x5</code> PIOSC (16 MHz). PIOSC seçilirse baud sistem saatinden bağımsız kalır, bölücü 16 MHz'e göre hesaplanır; sistem saati en az 9 MHz olmalıdır (Run kipinde, s. 939). TivaWare: <code>UARTClockSourceSet</code>.</li>
+</ul>
+<p><b>Dikkat:</b> UARTCC = 0x5 iken baud, sistem saati kristalden gelse bile PIOSC'nin ±%3 doğruluğunu taşır (Tablo 24-15, s. 1375). TivaWare'de <code>UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC)</code> çağrısından sonra <code>UARTConfigSetExpClk</code>'e <code>SysCtlClockGet()</code> değil <code>16000000</code> verilir. Sistem saati kaynağında ise saat değişirse bölücü yeniden hesaplanmalıdır; API'li kodlarda saat <code>SysCtlClockGet()</code> ile, <code>SysCtlClockSet</code>'ten <b>sonra</b> alınır.</p>
+
+<h3 id="yazma-sirasi">IBRD, FBRD ve LCRH yazma sırası</h3>
+<p>UARTIBRD, UARTFBRD ve UARTLCRH içeride 30 bitlik tek bir register oluşturur ve bu register <b>yalnız UARTLCRH'ye yazıldığında güncellenir</b> (s. 896). Bölücü değiştirildikten sonra LCRH'ye yazılmazsa yeni baud etkin olmaz. Geçerli sıralar: IBRD → FBRD → LCRH, FBRD → IBRD → LCRH, yalnız IBRD → LCRH ya da yalnız FBRD → LCRH. Bu yazmalar ve UARTCTL değişiklikleri <b>UARTEN = 0</b> iken yapılmalıdır (s. 895, 918).</p>
+
+<h2 id="registerlar">5. Register'lar ve taban adresler</h2>
+<h3 id="taban">Taban adresler ve kesme numaraları</h3>
+<p>Her UART'ın 4 KB'lık bir adres penceresi vardır; register adresi <b>taban + ofset</b>'tir (s. 904). Kesme numaraları datasheet Tablo 2-9'dan (s. 104–106); NVIC'te kesme numarası, TivaWare <code>INT_UARTn</code> sabitinde vektör numarası kullanılır (<a href="../timer/#vektor">Timer notu, vektör tablosu</a>).</p>
+<table>
+<thead><tr><th>Modül (<code>UARTn_BASE</code>)</th><th>Taban adres</th><th>Kesme no (EN biti)</th><th>Vektör no / ofset</th></tr></thead>
+<tbody>
+<tr><td><b>UART0</b></td><td><code>0x4000C000</code></td><td><b>5 (EN0 bit5)</b></td><td><b>21 / <code>0x054</code></b></td></tr>
+<tr><td>UART1</td><td><code>0x4000D000</code></td><td>6 (EN0 bit6)</td><td>22 / <code>0x058</code></td></tr>
+<tr><td>UART2</td><td><code>0x4000E000</code></td><td>33 (EN1 bit1)</td><td>49 / <code>0x0C4</code></td></tr>
+<tr><td>UART3</td><td><code>0x4000F000</code></td><td>59 (EN1 bit27)</td><td>75 / <code>0x12C</code></td></tr>
+<tr><td>UART4</td><td><code>0x40010000</code></td><td>60 (EN1 bit28)</td><td>76 / <code>0x130</code></td></tr>
+<tr><td>UART5</td><td><code>0x40011000</code></td><td>61 (EN1 bit29)</td><td>77 / <code>0x134</code></td></tr>
+<tr><td>UART6</td><td><code>0x40012000</code></td><td>62 (EN1 bit30)</td><td>78 / <code>0x138</code></td></tr>
+<tr><td>UART7</td><td><code>0x40013000</code></td><td>63 (EN1 bit31)</td><td>79 / <code>0x13C</code></td></tr>
+</tbody></table>
+<p>Saat register'ları: <b>RCGCUART</b> <code>0x400FE618</code> (bit n = UARTn, s. 344) ve <b>PRUART</b> <code>0x400FEA18</code> (salt okunur, bit n = 1 ise UARTn hazır, s. 410). Saat açıldıktan sonra UART register'larına erişmeden önce 3 sistem saati beklenmelidir (s. 904); saati kapalı modüle erişmek bus fault üretir (s. 344). Bir UART'ın bütün kesme olayları VEYA'lanarak tek bir NVIC kesmesine bağlanır (s. 901).</p>
+
+<h3 id="register-tablosu">UART register tablosu</h3>
+<p>Datasheet Tablo 14-3 (s. 904). <code>inc/tm4c123gh6pm.h</code>'deki adlar modül numarasıyla kurulur: <code>UART0_DR_R</code>, <code>UART2_LCRH_R</code>… IrDA (UARTILPR, 0x020), μDMA (UARTDMACTL, 0x048) ve 9-bit kip register'ları bu notta kullanılmaz.</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Açılış</th><th>Görev</th><th>s.</th></tr></thead>
+<tbody>
+<tr><td>UARTDR</td><td><code>0x000</code></td><td>0</td><td>Veri: yaz → TX FIFO; oku → RX FIFO (bit7:0 veri, bit11:8 hata).</td><td>906</td></tr>
+<tr><td>UARTRSR / UARTECR</td><td><code>0x004</code></td><td>0</td><td>Okuma: son okunan karakterin hataları (OE, BE, PE, FE). Yazma: herhangi bir değer hataları temizler.</td><td>908</td></tr>
+<tr><td>UARTFR</td><td><code>0x018</code></td><td><code>0x90</code></td><td>Bayraklar (salt okunur): TXFE, RXFF, TXFF, RXFE, BUSY.</td><td>911</td></tr>
+<tr><td>UARTIBRD</td><td><code>0x024</code></td><td>0</td><td>Baud bölücü tam kısmı (DIVINT, bit15:0).</td><td>914</td></tr>
+<tr><td>UARTFBRD</td><td><code>0x028</code></td><td>0</td><td>Baud bölücü kesir kısmı (DIVFRAC, bit5:0).</td><td>915</td></tr>
+<tr><td>UARTLCRH</td><td><code>0x02C</code></td><td>0</td><td>Veri uzunluğu, eşlik, durma biti, FIFO; yazılınca bölücü yüklenir.</td><td>916</td></tr>
+<tr><td>UARTCTL</td><td><code>0x030</code></td><td><code>0x300</code></td><td>Denetim: UARTEN, HSE, LBE, TXE, RXE…</td><td>918</td></tr>
+<tr><td>UARTIFLS</td><td><code>0x034</code></td><td><code>0x12</code></td><td>FIFO kesme eşikleri.</td><td>922</td></tr>
+<tr><td>UARTIM</td><td><code>0x038</code></td><td>0</td><td>Kesme maskesi: 1 olan olay NVIC'e gider.</td><td>924</td></tr>
+<tr><td>UARTRIS</td><td><code>0x03C</code></td><td>0</td><td>Ham kesme durumu (salt okunur).</td><td>927</td></tr>
+<tr><td>UARTMIS</td><td><code>0x040</code></td><td>0</td><td>Maskeli kesme durumu = RIS AND IM.</td><td>930</td></tr>
+<tr><td>UARTICR</td><td><code>0x044</code></td><td>0</td><td>Kesme temizleme (W1C).</td><td>933</td></tr>
+<tr><td>UARTCC</td><td><code>0xFC8</code></td><td>0</td><td>Baud saati: 0x0 sistem saati, 0x5 PIOSC.</td><td>939</td></tr>
+</tbody></table>
+
+<h3 id="bitler">Sık kullanılan bitler</h3>
+<table>
+<thead><tr><th>Register</th><th>Bit</th><th>Ad</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td rowspan="5">UARTFR</td><td>7</td><td>TXFE</td><td>TX FIFO boş (FEN = 0 ise tutucu register boş).</td></tr>
+<tr><td>6</td><td>RXFF</td><td>RX FIFO dolu.</td></tr>
+<tr><td>5</td><td><b>TXFF</b></td><td>TX FIFO dolu: 1 iken UARTDR'ye yazılmaz, beklenir.</td></tr>
+<tr><td>4</td><td><b>RXFE</b></td><td>RX FIFO boş: 0 ise okunacak veri var.</td></tr>
+<tr><td>3</td><td>BUSY</td><td>Gönderim sürüyor; son karakterin durma biti çıkana kadar 1.</td></tr>
+<tr><td rowspan="4">UARTLCRH</td><td>6:5</td><td><b>WLEN</b></td><td>Veri uzunluğu: 0x0 = 5 … <b>0x3 = 8 bit</b> (<code>0x60</code>).</td></tr>
+<tr><td>4</td><td><b>FEN</b></td><td>FIFO etkin (<code>0x10</code>).</td></tr>
+<tr><td>3</td><td>STP2</td><td>2 durma biti.</td></tr>
+<tr><td>2 / 1</td><td>EPS / PEN</td><td>Çift eşlik / eşlik etkin (bit7 SPS: sabit eşlik, bit0 BRK: hat kesmesi gönder).</td></tr>
+<tr><td rowspan="4">UARTCTL</td><td>9 / 8</td><td><b>RXE / TXE</b></td><td>Alıcı / verici etkin (açılışta 1).</td></tr>
+<tr><td>7</td><td>LBE</td><td>İç geri döngü: TX içeride RX'e bağlanır.</td></tr>
+<tr><td>5</td><td>HSE</td><td>Yüksek hız (÷8).</td></tr>
+<tr><td>0</td><td><b>UARTEN</b></td><td>UART etkin.</td></tr>
+<tr><td>UARTIM / RIS / MIS / ICR</td><td>10 / 9 / 8 / 7 / 6 / 5 / 4</td><td>OE / BE / PE / FE / <b>RT</b> / <b>TX</b> / <b>RX</b></td><td>Taşma, hat kesmesi, eşlik, çerçeve hatası, alma zaman aşımı, gönderme, alma. Adlar <code>…IM</code>, <code>…RIS</code>, <code>…MIS</code>, <code>…IC</code> sonekini alır (ör. RXIM, RTRIS, RXIC).</td></tr>
+<tr><td rowspan="2">UARTIFLS</td><td>5:3</td><td>RXIFLSEL</td><td>RX eşiği: 0x0 ≥ 1/8, 0x1 ≥ 1/4, <b>0x2 ≥ 1/2</b> (açılış), 0x3 ≥ 3/4, 0x4 ≥ 7/8 dolu.</td></tr>
+<tr><td>2:0</td><td>TXIFLSEL</td><td>TX eşiği, aynı kodlarla (açılış 0x2, 1/2). Datasheet bunu "boşluk", TivaWare "doluluk" diliyle yazar.</td></tr>
+</tbody></table>
+
+<h3 id="dr-okuma">UARTDR okumada hata bitleri</h3>
+<p>UARTDR okunduğunda veri baytıyla birlikte o karaktere ait dört hata biti de gelir: bit11 OE (taşma), bit10 BE (hat kesmesi), bit9 PE (eşlik), bit8 FE (çerçeve) (s. 906–907). Karakter bu yüzden <code>UART0_DR_R &amp; 0xFF</code> ile alınır; hata kontrolü gerekiyorsa aynı okumanın üst bitlerine bakılır. TivaWare'in <code>UARTCharGet</code> ve <code>UARTCharGetNonBlocking</code> fonksiyonları DR'nin tamamını <code>int32_t</code> olarak döndürür; sonuç <code>char</code>'a atanınca hata bitleri düşer. Hatalar UARTRSR'den de okunabilir ve UARTECR'ye herhangi bir değer yazılarak temizlenir (<code>UART0_ECR_R = 0;</code>). Baud uyumsuzluğunda en sık görülen hata FE'dir.</p>
+
+<h2 id="baslatma">6. Başlatma adımları</h2>
+<p>Datasheet §14.4 (s. 902–903) önce saat ve GPIO tarafını (adım 1–5), sonra UART modülünü (adım 1–7) anlatır. Bu notta iki liste ve kesme adımları tek bir numaralı listede birleştirilmiştir; kod yorumlarındaki numaralar bu listeye göredir. Şekil 5 API'siz ve API'li yolu yan yana gösterir:</p>
+<figure><img class="fig" src="../img/uart-baslatma-akisi.svg" alt="UART başlatma akışı: 14 adım, API'siz register yazmaları ve TivaWare karşılıkları yan yana, datasheet bölüm 14.4 sırası"><figcaption><b>Şekil 5.</b> Başlatma akışı, API'siz ↔ API'li (datasheet §14.4 + kesme adımları): 1 RCGCUART (+ PRUART) → 2 RCGCGPIO → 3 GPIOAFSEL → 4 GPIODEN → 5 GPIOPCTL → 6 UARTEN = 0 → 7 UARTIBRD → 8 UARTFBRD → 9 UARTLCRH → 10 UARTCC → 11 UARTIFLS, UARTICR, UARTIM → 12 UARTEN = 1 → 13 NVIC → 14 global izin. TivaWare: 1–2 <code>SysCtlPeripheralEnable</code>, 3–4 <code>GPIOPinTypeUART</code>, 5 <code>GPIOPinConfigure</code>, 10 <code>UARTClockSourceSet</code>, 6–9 ve 12 <code>UARTConfigSetExpClk</code>, 11 <code>UARTFIFOLevelSet</code>/<code>UARTIntClear</code>/<code>UARTIntEnable</code>, 13 <code>IntEnable</code>, 14 <code>IntMasterEnable</code>. 11, 13, 14 yalnız kesmeli kullanımda.</figcaption></figure>
+<h3 id="adimlar">Adım adım</h3>
+<ol>
+<li><b>UART saatini aç (RCGCUART):</b> UART0 için bit0 = 1; PRUART bit0 = 1 olana kadar bekle. Datasheet ilk liste, adım 1.</li>
+<li><b>GPIO port saatini aç (RCGCGPIO):</b> Port A, bit0 (+ PRGPIO bekle). Adım 2.</li>
+<li><b>GPIOAFSEL = 1:</b> Rx ve Tx pinleri çevre birimine verilir. Adım 3.</li>
+<li><b>GPIODEN = 1:</b> Dijital tampon açılır. Datasheet adım 4 burada isteğe bağlı sürüş akımı ve eğim ayarını anar; açılıştaki 2 mA yeterlidir.</li>
+<li><b>GPIOPCTL:</b> PMCn alanlarına UART kodu (PA0/PA1 için 1) yazılır, diğer alanlar korunur. Adım 5.</li>
+<li><b>UARTEN = 0 (UARTCTL):</b> Yapılandırma sırasında UART kapalı olmalıdır. Modül adım 1.</li>
+<li><b>UARTIBRD:</b> Bölücünün tam kısmı. Modül adım 2.</li>
+<li><b>UARTFBRD:</b> Bölücünün kesir kısmı. Modül adım 3.</li>
+<li><b>UARTLCRH:</b> 8N1 + FIFO için <code>0x70</code>, FIFO'suz <code>0x60</code>; bölücüyü de yükler. Modül adım 4.</li>
+<li><b>UARTCC:</b> <code>0x0</code> sistem saati, <code>0x5</code> PIOSC. Modül adım 5 (adım 6, μDMA, bu notta yok).</li>
+<li><b>Kesme ayarı (kesmeli kullanımda):</b> UARTIFLS eşiği (isteğe bağlı), UARTICR ile bekleyen bayrakları temizleme, UARTIM'de RXIM/RTIM. Datasheet IFLS/IM/ICR için UART'ın kapalı olmasını açıkça istemez (s. 904 yalnız kontrol register'larından söz eder). TivaWare'in <code>UARTIntEnable</code>, <code>UARTIntClear</code> ve <code>UARTFIFOLevelSet</code> fonksiyonları UART'ı kapatmaz; TI Lab 12 de bunları UART açıkken çağırır. Bu yüzden API'li kodda ve 8.4'te bu adım 12'den sonra gelir. <code>UARTIntRegister</code> kullanılıyorsa UARTIM'den önce çağrılır.</li>
+<li><b>UARTEN = 1 (UARTCTL):</b> TXE ve RXE ile birlikte (<code>|= 0x301</code>). Modül adım 7.</li>
+<li><b>NVIC:</b> UART0 için EN0 bit5. ISR vektör tablosuna bağlanmış olmalıdır (startup dosyasında vektör 21 "UART0 Rx and Tx" ya da <code>UARTIntRegister</code>).</li>
+<li><b>Global kesme izni:</b> <code>IntMasterEnable()</code> (PRIMASK = 0; açılışta zaten 0, <a href="../timer/#nvic">Timer notu, Geçit 3</a>).</li>
+</ol>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<p>Basit karşılıklar Şekil 5'tedir; aşağıdaki fonksiyonların davranışı TivaWare 2.1.4 kaynak kodundan (<code>driverlib/uart.c</code>) doğrulanmıştır.</p>
+<table>
+<thead><tr><th>Adım</th><th>TivaWare çağrısı</th><th>Ne yapar (register düzeyinde)</th></tr></thead>
+<tbody>
+<tr><td>6–9, 12</td><td><code>UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE)</code></td><td><code>UARTDisable</code> (BUSY = 0 bekler, FEN = 0, UARTEN/TXE/RXE = 0); baud·16 &gt; saat ise HSE = 1; bölücü = round(64·saat/(16·baud)), IBRD = bölücü/64, FBRD = bölücü%64; LCRH = ayar; sonunda <code>UARTEnable</code>: <b>FEN = 1</b>, UARTEN | TXE | RXE = 1. Ardından ayrıca <code>UARTEnable</code> çağırmak gereksizdir.</td></tr>
+<tr><td>11, 13</td><td><code>UARTIntRegister(UART0_BASE, Fonksiyon)</code></td><td>Vektör tablosunu RAM'e taşıyıp 21. girişe fonksiyonu yazar ve <b><code>IntEnable(INT_UART0)</code>'ı da çağırır</b>.</td></tr>
+<tr><td>11</td><td><code>UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT)</code></td><td><code>UARTIM |= 0x10 | 0x40</code>; bekleyen bayrakları temizlemez.</td></tr>
+<tr><td>veri</td><td><code>UARTCharPut</code> / <code>UARTCharPutNonBlocking</code></td><td>TXFF = 0 olana kadar <b>bekler</b>, sonra yazar / TXFF = 1 ise yazmadan <code>false</code> döner.</td></tr>
+<tr><td>veri</td><td><code>UARTCharGet</code> / <code>UARTCharGetNonBlocking</code></td><td>RXFE = 0 olana kadar bekler / FIFO boşsa <b>−1</b> döner. İkisi de DR'nin tamamını döndürür.</td></tr>
+<tr><td>veri</td><td><code>UARTCharsAvail</code>, <code>UARTSpaceAvail</code>, <code>UARTBusy</code></td><td>RXFE = 0 mı? TXFF = 0 mı? BUSY = 1 mi?</td></tr>
+<tr><td>kesme</td><td><code>UARTIntStatus(UART0_BASE, true)</code> / <code>UARTIntClear(…, durum)</code></td><td>MIS'i (<code>false</code>: RIS'i) okur / <code>UARTICR = durum</code>.</td></tr>
+</tbody></table>
+
+<h2 id="veri">7. Veri gönderme ve alma</h2>
+<h3 id="yoklama-kesme">Yoklama ve kesme</h3>
+<p>UARTFR'deki iki bayrak, yoklamalı haberleşmenin tamamıdır:</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">gönderme (yoklama)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">while(UART0_FR_R &amp; 0x20) {}   // TXFF = 1: FIFO dolu, bekle
+UART0_DR_R = c;               // FIFO'ya yaz</code></pre>
+</div><div>
+<div class="code-head"><span class="file">alma (yoklama)</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">while(UART0_FR_R &amp; 0x10) {}   // RXFE = 1: FIFO boş, bekle
+c = UART0_DR_R &amp; 0xFF;        // veri baytını al</code></pre>
+</div></div>
+<p>Gönderme yoklamayla sorunsuzdur: FIFO doluysa işlemci en çok bir karakter süresi bekler. <b>Alma</b>da ise verinin ne zaman geleceği bilinmez; bekleyen okuma programı durdurur. Ana döngü başka işler de yapıyorsa ya bloklamayan okuma (<code>UARTCharsAvail</code> ile, ders kodlarının çoğu gibi) ya da <b>kesme</b> kullanılır. Kesmenin yolu (çevre birimi maskesi → NVIC → PRIMASK) Timer notundakiyle aynıdır (<a href="../timer/#nvic">Timer notu, NVIC</a>).</p>
+
+<h3 id="fifo-esik">FIFO eşikleri ve alma zaman aşımı</h3>
+<p>UART'ın alma tarafında iki kesme kaynağı birlikte kullanılır (§14.3.9, s. 900–901; Şekil 6):</p>
+<ul>
+<li><b>RX kesmesi (RXRIS):</b> FIFO açıkken RX FIFO'daki karakter sayısı UARTIFLS'deki eşiğe ulaşınca kalkar (açılışta 1/2, yani ≈ 8 karakter); FIFO kapalıyken her karakterde. Datasheet'in iki yeri bu konuda farklıdır: §14.3.8 (s. 900) 1/4 eşiğinde kesmenin 4 bayt alındıktan sonra geldiğini, UARTIFLS açıklaması (s. 922) ise 1/2 eşiğinde 9. karakter alınırken geldiğini yazar. Bu notta yuvarlak olarak 1/2 ≈ 8 karakter denir. FIFO'yu RXFE = 1 olana dek boşaltan bir ISR için bu fark önemsizdir.</li>
+<li><b>Alma zaman aşımı (RT, RTRIS):</b> RX FIFO boş değilse ve HSE = 0 iken <b>32 bit süresi</b> (HSE = 1 iken 64) boyunca yeni karakter gelmezse kalkar: 115 200 baud'da ≈ 278 µs, 9 600 baud'da ≈ 3,3 ms. Eşiğe ulaşmayan son karakterler (ör. klavyeden tek tuş) bu kesmeyle alınır. RT, FIFO boşaltılınca ya da UARTICR.RTIC'ye 1 yazılınca temizlenir.</li>
+<li><b>TX kesmesi (TXRIS):</b> TX FIFO doluluğu eşiğin altına <b>inerken</b> (geçişte) kalkar; UARTCTL.EOT = 1 ise son bitin çıkmasıyla. Bu notta gönderme yoklamayla yapılır.</li>
+</ul>
+<p><b>RX ve RT bu yüzden birlikte açılır</b> (<code>UART_INT_RX | UART_INT_RT</code> = <code>0x50</code>): yalnız RX açılırsa ≈ 8 karakter dolmadan kesme gelmez ve tek tuşlara tepki verilmez. Alternatif, FIFO'yu kapatıp (<code>UARTFIFODisable</code>) her karakterde RX kesmesi almaktır; ISR uzun sürerse taşma riski artar.</p>
+<figure><img class="fig" src="../img/uart-kesme-fifo.svg" alt="FIFO ve kesme: RX FIFO seviye eşikleri UARTIFLS, alma zaman aşımı RT, TX kesmesi"><figcaption><b>Şekil 6.</b> FIFO'lar ve kesme eşikleri: RX eşiği (UARTIFLS.RXIFLSEL, açılış 1/2) → RX kesmesi; eşiğe ulaşmayan son baytlar için 32 bit süresi sonra alma zaman aşımı (RT); TX FIFO eşiğin altına inerken TX kesmesi.</figcaption></figure>
+
+<h3 id="isr">UART kesme servis programı</h3>
+<p>Timer notundaki <a href="../timer/#isr-kurallari">ISR kuralları</a> UART için de geçerlidir; UART'a özgü noktalar:</p>
+<ol>
+<li><b>Önce MIS'i oku, aynı değeri ICR'ye yaz.</b> Tek ISR birden çok kaynağa (RX, RT, hata) hizmet eder; <code>UARTIntStatus(base, true)</code> hangilerinin geldiğini söyler, <code>UARTIntClear</code> bunları temizler. Temizleme ISR'nin başında yapılır.</li>
+<li><b>FIFO'yu boşalt.</b> ISR, RXFE = 1 olana kadar (<code>while(UARTCharsAvail(...))</code>) okumalıdır. Tek karakter okuyan bir ISR (<code>if</code>) eşikte biriken diğer karakterleri FIFO'da bırakır: akış sürdükçe her yeni karakter yeni bir RX kesmesi üretir ve FIFO'da sürekli 7–8 karakter bekler; akış durunca kalanlar her biri ayrı bir RT kesmesiyle, gecikmeli alınır. Hem gecikme hem gereksiz kesme sayısı artar.</li>
+<li><b>Kısa tut.</b> ISR'de uzun bekleme yapılmaz; gelen veri bir diziye (tampon) yazılır, işlenmesi ana döngüye bırakılır. Ana döngüyle paylaşılan değişkenler <code>volatile</code> olmalıdır.</li>
+</ol>
+<p>ISR akışı kısaca: UARTMIS'i oku → aynı değeri UARTICR'ye yaz → RXFE = 1 olana dek UARTDR'yi oku ve işle → dön.</p>
+
+<h2 id="ornekler">8. Örnekler</h2>
+<p>Kodların bir kısmı ders örnek projelerinden alınmıştır; kaynak dosya her kodun üstünde yazar. Mantık değiştirilmemiş; yoruma alınmış satırlar atılmış, yorumlar Türkçeleştirilip kısaltılmış, bozuk karakterler düzeltilmiştir. Yorumlardaki adım numaraları <a href="#adimlar">Bölüm 6</a>'ya göredir. "Bu not için hazırlandı" kodları ders klasöründe yoktur. Örnekler UART0 ve sanal COM portuyla çalışır; PC'de bir terminal (<a href="#com-port">Bölüm 9</a>) aynı baud ve 8N1 ile açılır.</p>
+<div class="box"><span class="box-title">Proje ayarı hatırlatması</span>
+<ul>
+<li>API'siz: önce <code>&lt;stdint.h&gt;</code>, sonra <code>"inc/tm4c123gh6pm.h"</code>. API'li: önce <code>stdint.h</code> ve <code>stdbool.h</code>; <code>driverlib.lib</code> bağlı; <code>INT_UART0</code> için <code>PART_TM4C123GH6PM</code> öntanımlı sembolü; <code>UARTIntRegister</code> için bağlayıcı dosyasında <code>.vtable</code> (<a href="../timer/#vektor">Timer notu</a>).</li>
+<li><code>hafta0A_seriport_basla</code> ve <code>hafta0c_seriodevi</code> hem <code>"driverlib/sysctl.c"</code>'yi (o da <code>inc/hw_ints.h</code>'yi ekler) hem <code>inc/tm4c123gh6pm.h</code>'yi ekler; <code>INT_*</code> makroları için yeniden tanımlama uyarıları çıkar. Kütüphane bağlıyken <code>sysctl.c</code> eklemek gereksizdir.</li>
+</ul></div>
+
+<h3 id="ornek-apisiz">8.1 Dizi gönderme ve eko, yoklama, API'siz</h3>
+<p><b>Amaç:</b> UART0'ı register düzeyinde 9 600 baud, 8N1 ve FIFO açık olarak kurmak; açılışta bir karşılama metni göndermek, sonra gelen her karakteri geri göndermek (eko). <b>Donanım:</b> Yalnız LaunchPad ve USB kablosu; saat varsayılan 16 MHz (PIOSC). Ders kodlarında API'siz bir UART örneği olmadığından bu kod not için hazırlanmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: uart_yoklama.c</span><span class="tag reg">API&#x27;siz · yoklama</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;                     // tm4c123gh6pm.h uint32_t kullanır; önce eklenmeli
+#include "inc/tm4c123gh6pm.h"
+
+void UART0_Baslat(void)                  // 16 MHz, 9600 baud, 8N1, FIFO açık
+{
+    SYSCTL_RCGCUART_R |= 0x01;               // 1) UART0 saatini aç (RCGCUART bit0)
+    SYSCTL_RCGCGPIO_R |= 0x01;               // 2) Port A saatini aç (RCGCGPIO bit0)
+    while((SYSCTL_PRUART_R &amp; 0x01) == 0) {}  // 1) UART0 hazır olana kadar bekle
+    while((SYSCTL_PRGPIO_R &amp; 0x01) == 0) {}  // 2) Port A hazır olana kadar bekle
+
+    GPIO_PORTA_AFSEL_R |= 0x03;              // 3) PA0, PA1: alternatif işlev
+    GPIO_PORTA_DEN_R   |= 0x03;              // 4) PA0, PA1: dijital etkin
+    GPIO_PORTA_PCTL_R = (GPIO_PORTA_PCTL_R &amp; ~0x000000FF)
+                      | 0x00000011;          // 5) PMC0 = 1 (U0Rx), PMC1 = 1 (U0Tx)
+
+    UART0_CTL_R &amp;= ~0x01;                    // 6) UARTEN = 0: ayar sırasında kapalı
+    UART0_IBRD_R = 104;                      // 7) BRD = 16e6 / (16*9600) = 104,1667
+    UART0_FBRD_R = 11;                       // 8) int(0,1667*64 + 0,5) = 11
+    UART0_LCRH_R = 0x70;                     // 9) WLEN = 8 bit (0x60) | FEN (0x10); bölücüyü de yükler
+    UART0_CC_R   = 0x0;                      // 10) baud saati: sistem saati
+    UART0_CTL_R |= 0x301;                    // 12) RXE | TXE | UARTEN
+}
+
+void UART0_KarakterGonder(char c)
+{
+    while(UART0_FR_R &amp; 0x20) {}              // TXFF = 1 (FIFO dolu) iken bekle
+    UART0_DR_R = c;                          // FIFO'ya yaz; çerçeveyi donanım gönderir
+}
+
+char UART0_KarakterAl(void)
+{
+    while(UART0_FR_R &amp; 0x10) {}              // RXFE = 1 (FIFO boş) iken bekle
+    return (char)(UART0_DR_R &amp; 0xFF);        // bit7:0 veri; bit11:8 hata bitleri atılır
+}
+
+void UART0_DiziGonder(const char *s)
+{
+    while(*s) UART0_KarakterGonder(*s++);    // dizi sonundaki '\0'a kadar gönder
+}
+
+int main(void)
+{
+    UART0_Baslat();
+    UART0_DiziGonder("Merhaba Tiva\r\n");    // \r: satır başı, \n: yeni satır
+    while(1)
+    {
+        char c = UART0_KarakterAl();         // bir karakter gelene kadar bekle
+        UART0_KarakterGonder(c);             // eko: aynı karakteri geri gönder
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Ekranda görünen karakter Tiva'nın geri gönderdiğidir (terminalin yerel ekosu kapalıyken). Enter çoğu terminalde yalnız <code>'\r'</code> gönderir; imleç satır başına döner ama alt satıra inmez. Kesme olmadığından 11, 13, 14. adımlar yoktur. Saat PIOSC olduğundan baud hatası ±%3'e kadar çıkabilir (<a href="#tolerans">Bölüm 4</a>); anlamsız karakter görülürse kristal + PLL kullanılır (50 MHz'te IBRD = 325, FBRD = 33).</p>
+
+<h3 id="ornek-apili">8.2 Dizi gönderme ve eko, yoklama, API'li</h3>
+<p><b>Amaç:</b> 8.1'deki işi TivaWare ile, 115 200 baud'da yapmak. <b>Donanım:</b> Aynı; saat 50 MHz (kristal + PLL). Kod <code>drive_seriport/seri1.c</code>'den alınmıştır; <code>seri1_2.c</code> aynı dosyanın Türkçe karakterleri düzgün kopyasıdır.</p>
+<div class="code-head"><span class="file">drive_seriport/seri1.c (kısaltılmış)</span><span class="tag api">API&#x27;li · yoklama</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"              // UART0_BASE, GPIO_PORTA_BASE
+#include "inc/hw_types.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"          // GPIO_PA0_U0RX, GPIO_PA1_U0TX
+#include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
+#include "inc/hw_ints.h"
+
+int main(void) {
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ); // 50 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);   // 1) seri port çevre birimi
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);   // 2) PA0 ve PA1 kullanılacak
+
+    GPIOPinConfigure(GPIO_PA0_U0RX);               // 5) PA0 PCTL = 1: U0Rx
+    GPIOPinConfigure(GPIO_PA1_U0TX);               // 5) PA1 PCTL = 1: U0Tx
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0|GPIO_PIN_1);   // 3-4) AFSEL = 1, DEN = 1
+
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
+        UART_CONFIG_WLEN_8|UART_CONFIG_STOP_ONE|UART_CONFIG_PAR_NONE);  // 6-9, 12) 115200 8N1, FIFO açık
+
+    UARTCharPut(UART0_BASE, 'V');       // tek karakter gönderir (TX FIFO doluysa bekler)
+    UARTCharPut(UART0_BASE, 'e');
+    /* 'r', 'i', ' ', 'g', 'i', 'r' aynı biçimde gönderilir: "Veri gir" */
+
+    char gelenveri;
+    while(1)
+    {
+        if(UARTCharsAvail(UART0_BASE))           // veri geldi mi? (RXFE = 0 ise true)
+        {
+            gelenveri = UARTCharGet(UART0_BASE); // veriyi al
+            UARTCharPut(UART0_BASE, gelenveri);  // gelen veriyi geri gönder
+        }
+    }
+}</code></pre>
+<p><b>Açıklama:</b> <code>UARTConfigSetExpClk</code> bölücüyü 50 MHz'e göre hesaplar (IBRD = 27, FBRD = 8) ve UART'ı FIFO'lu açar; <code>interrupt.h</code> ve <code>hw_ints.h</code> kullanılmaz. <code>hafta0A_seriport_basla/main.c</code> aynı yapıdadır: başlatma <code>ilkayarlar()</code>'da toplanmış, gereksiz bir <code>UARTEnable</code> eklenmiş ve döngüye bir yer tutucu bırakılmıştır:</p>
+<div class="box warn"><span class="box-title"><code>hafta0A_seriport_basla</code> derlenmez</span>
+<p>Döngüdeki <code>if(pf4 basılmışsa){</code> satırı C değil, bir görev tanımıdır ("SW1'e basılınca mesaj gönder"); derlenmez. PF4 pull-up'lı giriş yapılıp <code>if(!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4))</code> ile tamamlanabilir (<a href="../gpio/#ornek-buton">GPIO notu 6.3</a>).</p></div>
+
+<h3 id="ornek-kesme-apili">8.3 Kesmeli alma, API'li</h3>
+<p><b>Amaç:</b> Gelen karakterleri ana döngüyü meşgul etmeden, UART kesmesiyle geri göndermek. <b>Donanım:</b> Aynı; saat 50 MHz, <b>9 600 baud</b>. Kod <code>hafta0A_seriport_KESME/main.c</code>'den alınmıştır; ISR çalışma anında <code>UARTIntRegister</code> ile kaydedilir, startup dosyasına dokunulmaz.</p>
+<div class="code-head"><span class="file">hafta0A_seriport_KESME/main.c</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">#include "stdbool.h"
+#include "stdint.h"
+#include "inc/hw_ints.h"                // INT_UART0
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"        // IntMasterEnable, IntEnable
+#include "driverlib/pin_map.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+
+void serikesme(void)                    // UART0 ISR (UARTIntRegister ile kaydedilir)
+{
+    unsigned long kesmeno;
+    kesmeno = UARTIntStatus(UART0_BASE, true);   // hangi kaynak? (UARTMIS)
+    UARTIntClear(UART0_BASE, kesmeno);           // önce bayrakları temizle (UARTICR)
+    if(UARTCharsAvail(UART0_BASE))               // FIFO'da veri varsa
+    {
+        UARTCharPut(UART0_BASE, UARTCharGet(UART0_BASE));  // bir karakteri geri gönder
+    }
+}
+
+int main(void) {
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);     // 1)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);     // 2)
+
+    GPIOPinConfigure(GPIO_PA0_U0RX);                 // 5)
+    GPIOPinConfigure(GPIO_PA1_U0TX);                 // 5)
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);   // 3-4)
+
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 9600,
+        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));  // 6-9, 12)
+
+    IntMasterEnable();                               // 14) global izin
+    IntEnable(INT_UART0);                            // 13) NVIC: EN0 bit5
+    UARTIntEnable(UART0_BASE, UART_INT_RX|UART_INT_RT);  // 11) RX ve alma zaman aşımı kesmeleri
+    UARTIntRegister(UART0_BASE, serikesme);          // 11, 13) ISR'yi RAM vektör tablosuna yaz (+ IntEnable)
+    UARTCharPut(UART0_BASE, 'E');                    // başladığını göster
+
+    while (1)
+    {
+        /* boş: eko işini ISR yapıyor */
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Klavyeden tek tuşa basıldığında FIFO eşiği (≈ 8 karakter) dolmaz; karakter 32 bit süresi (9 600 baud'da ≈ 3,3 ms) sonra gelen RT kesmesiyle alınır (<a href="#fifo-esik">Bölüm 7</a>).</p>
+<div class="box warn"><span class="box-title">Ders kodundaki iki sorun</span>
+<ul>
+<li><b>Kayıt sırası:</b> ISR, kaynak ve NVIC açıldıktan sonra kaydedilir:<br><code>UARTIntEnable(UART0_BASE, UART_INT_RX|UART_INT_RT);</code><br><code>UARTIntRegister(UART0_BASE, serikesme);</code><br>Arada bir karakter gelirse kesme <code>IntDefaultHandler</code>'a (sonsuz döngü) düşer. Aralık birkaç mikrosaniye olduğundan pratikte görülmez; doğru sıra <code>UARTIntRegister</code> → <code>UARTIntEnable</code> → <code>IntMasterEnable</code>'dır. <code>UARTIntRegister</code> <code>IntEnable(INT_UART0)</code>'ı kendisi çağırdığından ayrı <code>IntEnable</code> gereksizdir.</li>
+<li><b>FIFO boşaltılmıyor:</b> <code>if(UARTCharsAvail(UART0_BASE))</code> her kesmede yalnız bir karakter okur; kalanlar her biri ayrı bir RT kesmesiyle, gecikmeli alınır (<a href="#isr">Bölüm 7</a>). <code>while</code> kullanılmalıdır (Lab 12 ve <code>seri2.c</code> gibi).</li>
+</ul></div>
+
+<h3 id="ornek-kesme-apisiz">8.4 Kesmeli alma, API'siz</h3>
+<p><b>Amaç:</b> 8.3'teki kesmeli ekoyu register düzeyinde yazmak ve ISR'yi startup dosyasına bağlamak; küçük harfler büyüğe çevrilerek geri gönderilir. <b>Donanım:</b> Aynı; 16 MHz, 9 600 baud. Bu kod not için hazırlanmıştır; 1–10 ve 12. adımlar 8.1'deki <code>UART0_Baslat</code> ile yapılır, 11. adım ondan sonra gelir (<a href="#adimlar">Bölüm 6</a>, adım 11).</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: uart_kesme.c</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">/* 8.1'deki #include satırları ve UART0_Baslat fonksiyonu bu dosyaya eklenir. */
+
+void UART0_Handler(void)                  // kesme 5 (vektör 21): startup dosyasına yazılır
+{
+    uint32_t durum = UART0_MIS_R;         // hangi olay? RXMIS (bit4), RTMIS (bit6)
+    UART0_ICR_R = durum;                  // önce bayrakları temizle (W1C: '=' ile)
+    while((UART0_FR_R &amp; 0x10) == 0)       // RXFE = 0 oldukça FIFO'yu boşalt
+    {
+        char c = (char)(UART0_DR_R &amp; 0xFF);     // veri baytı
+        if(c &gt;= 'a' &amp;&amp; c &lt;= 'z') c -= 32;       // küçük harfi büyüğe çevir
+        while(UART0_FR_R &amp; 0x20) {}       // TXFF = 1 iken bekle
+        UART0_DR_R = c;                   // geri gönder
+    }
+}
+
+int main(void)
+{
+    UART0_Baslat();                           // 1-10, 12) 9600 8N1, FIFO açık
+    UART0_IFLS_R = 0x12;                      // 11) RX ≥ 1/2, TX ≤ 1/2 (açılış değeri)
+    UART0_ICR_R  = 0x50;                      // 11) bekleyen RX ve RT bayraklarını temizle (W1C)
+    UART0_IM_R  |= 0x50;                      // 11) RXIM (bit4) | RTIM (bit6)
+    NVIC_EN0_R = 1 &lt;&lt; 5;                      // 13) UART0 = kesme 5 (EN0 bit5)
+    __asm("    cpsie   i");                   // 14) global izin (PRIMASK = 0)
+
+    while(1)
+    {
+        /* boş: işi ISR yapıyor */
+    }
+}</code></pre>
+<p><b>Startup dosyası:</b> <code>tm4c123gh6pm_startup_ccs.c</code>'nin başına <code>extern void UART0_Handler(void);</code> eklenir ve vektör tablosunda yorumu <code>// UART0 Rx and Tx</code> olan satırdaki <code>IntDefaultHandler</code> yerine <code>UART0_Handler</code> yazılır (<a href="../timer/#vektor">Timer notu, Yöntem 1</a>). <b>Açıklama:</b> ISR'deki TXFF beklemesi kısa sürer: karakterler aynı hızda gelip gittiği için TX FIFO dolmaz.</p>
+
+<h3 id="ornek-sayi">8.5 Sayıyı ve sıcaklığı metin olarak gönderme</h3>
+<p>Terminal gelen baytları ASCII olarak gösterir: <code>UARTCharPut(UART0_BASE, 25)</code> ekranda "25" değil, görünmez bir denetim karakteri üretir. Sayı hanelerine ayrılır, her haneye <code>'0'</code> (= 48) eklenir. <code>sprintf</code> flash ve yığını çok tüketir; <code>utils/uartstdio.c</code>'deki <code>UARTprintf</code> daha hafiftir. <code>hafta0c_seriodevi</code>'deki <code>adcseridengonder</code> sayıyı 1–4 haneli durumlar için ayrı dallarda hanelerine ayırır, sonra <code>'('</code>, dört ASCII hane, <code>')'</code> ve <code>'\n'</code> gönderir.</p>
+<div class="box warn"><span class="box-title">Ders kodundaki hata: yüzler hanesi</span>
+<p>4 haneli daldaki orijinal satır: <code>hane2=((deger-10*hane1-1*hane0)%100);</code> — parantez içi her zaman 100'ün katı olduğundan sonuç hep 0'dır: 2345 için "2045" gönderilir. Doğrusu <code>hane2=(deger/100)%10;</code>. Sıcaklık sensörünün ham kodu 1500–2100 aralığında olduğu için ödevde kullanılan dal tam olarak budur; üç haneli dal doğru çalışır.</p></div>
+<p>Aşağıdaki fonksiyon her <code>uint32_t</code> için çalışır: haneleri sağdan sola bir diziye yazar, ters sırayla gönderir. Ardından sıcaklığı °C olarak gönderen döngü parçası gelir; SS1 4 adımda sıcaklık sensörünü okuyacak şekilde kuruludur (<a href="../adc/#ornek-sicaklik">ADC notu 8.3</a>). Bu kodlar not için hazırlanmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: sayi_gonder.c</span><span class="tag api">API&#x27;li</span></div><pre><code class="language-c">void sayiGonder(uint32_t sayi)            // ör. 2345 -&gt; '2' '3' '4' '5'
+{
+    char tampon[10];                      // uint32_t en çok 10 hane
+    int  n = 0;
+    do {
+        tampon[n++] = '0' + (sayi % 10);  // en sağdaki hane, ASCII olarak
+        sayi /= 10;
+    } while(sayi &gt; 0);
+    while(n &gt; 0)
+        UARTCharPut(UART0_BASE, tampon[--n]);   // en anlamlı hane önce gider
+}
+
+/* ana döngüde, 1 saniyede bir: */
+uint32_t adc[4], ort, sicaklik;
+ADCProcessorTrigger(ADC0_BASE, 1);                   // SS1: 4 adım iç sıcaklık sensörü
+while(!ADCIntStatus(ADC0_BASE, 1, false)) {}         // dönüşüm bitene kadar bekle
+ADCIntClear(ADC0_BASE, 1);
+ADCSequenceDataGet(ADC0_BASE, 1, adc);
+ort = (adc[0] + adc[1] + adc[2] + adc[3]) / 4;       // 4 örneğin ortalaması
+sicaklik = (1475 - (2475 * ort) / 4096) / 10;        // kod -&gt; °C (ADC notu)
+UARTCharPut(UART0_BASE, 'T');
+UARTCharPut(UART0_BASE, '=');
+sayiGonder(sicaklik);                                // ör. "T=27"
+UARTCharPut(UART0_BASE, '\r');
+UARTCharPut(UART0_BASE, '\n');</code></pre>
+<p><b>Açıklama:</b> Sıcaklık 0 °C'nin altına inerse formül negatif sonuç verir ve <code>uint32_t</code>'de çok büyük bir sayıya döner (<a href="../adc/#sicaklik">ADC notu, işaretsiz tamsayı tuzağı</a>); işaretli değer için önce <code>'-'</code> gönderilip mutlak değer <code>sayiGonder</code>'e verilir.</p>
+
+<h3 id="ornek-odev">8.6 Timer, ADC ve UART birlikte: ödev çözümü</h3>
+<p><b>Amaç:</b> <code>13_Projeler_Odevler/hafta0c_seriodevi</code>, seri port ödevinin (<a href="#alistirmalar">Alıştırma 8</a>) Tiva tarafı için bir çözümdür: Timer0A her saniye bir yazılım saatini ilerletip PC'ye gönderir, ADC iç sıcaklık sensörünü okur, PC'den gelen <code>%</code> komutu saati ayarlar. Üç birim de <b>yoklamayla</b> izlenir. <b>Donanım:</b> LaunchPad; 50 MHz, 115 200 baud. Ödev LCD ister, ama iki çözümde de LCD kodu yoktur. Satırların ilk karakteri verinin türünü belirtir:</p>
+<table>
+<thead><tr><th>Yön</th><th>Biçim</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>Tiva → PC</td><td><code>[hh:mm:ss\n</code></td><td>Her saniye güncel saat.</td></tr>
+<tr><td>Tiva → PC</td><td><code>(dddd)\n</code></td><td>Sıcaklık sensörü 4 örnek ortalaması, <b>ham ADC kodu</b>.</td></tr>
+<tr><td>Tiva → PC</td><td><code>{metin}\n</code> / <code>*dddd\n</code></td><td>SW1 basılıyken sabit metin / yalnız <code>seriodevi2</code>: grafik için sinüs noktası.</td></tr>
+<tr><td>PC → Tiva</td><td><code>%hh:mm:ss</code></td><td>Saati ayarla: <code>%</code>'den sonraki 8 karakter.</td></tr>
+</tbody></table>
+<div class="code-head"><span class="file">hafta0c_seriodevi/main.c (ana döngü, kısaltılmış)</span><span class="tag api">API&#x27;li · yoklama</span></div><pre><code class="language-c">int saatdizi[8]={1,3,10,4,5,10,3,5};      // "13:45:35"; ':' 10 olarak saklanır (':' - '0' = 10)
+
+while(1)
+{
+    timerkesmesi=TimerIntStatus(TIMER0_BASE, true);   // Timer0A zaman aşımı bayrağı (MIS)
+    if (timerkesmesi!=0){                      // 1 s doldu
+        TimerIntClear(TIMER0_BASE, timerkesmesi);
+        /* PF1 (kırmızı LED) terslenir */
+        saatkontrol();                         // saniyeyi artır; dakika ve saat taşmaları
+        pcyesaatgonder();                      // '[' + 8 karakter + '\n'
+        ADCProcessorTrigger(ADC0_BASE, 1);     // sıcaklık ölçümünü başlat (SS1, 4 adım TS)
+    }
+    if(ADCIntStatus(ADC0_BASE, 1, false)){     // ADC dönüşümü bitti mi?
+        ADCIntClear(ADC0_BASE, 1);
+        ADCSequenceDataGet(ADC0_BASE, 1, adcdata);
+        uint32_t ortalamadeger=(adcdata[0]+adcdata[1]+adcdata[2]+adcdata[3])/4;
+        adcseridengonder(ortalamadeger);       // "(dddd)\n" (8.5)
+    }
+    /* SW1 basılıysa '{' ... '}' çerçeveli sabit metin gönderilir */
+    if (UARTCharsAvail(UART0_BASE)){           // PC'den karakter geldi mi?
+        gelenveri=UARTCharGet(UART0_BASE);
+        if (gelenveri=='%'){                   // saat başlıyor: ardından 8 karakter
+            saatmi=true;
+            gelensaatno=0;
+            TimerDisable(TIMER0_BASE, TIMER_A);    // saat yazılırken sayma dursun
+        }
+        else if (saatmi==true){
+            saatdizi[gelensaatno]=gelenveri-48;    // ASCII -&gt; sayı
+            gelensaatno++;
+            if (gelensaatno==8){               // 8 karakter tamam
+                saatmi=false;
+                gelensaatno=0;
+                TimerEnable(TIMER0_BASE, TIMER_A);
+            }
+        }
+    }
+}</code></pre>
+<p><b>Açıklama:</b> <code>setinitsettings</code> GPIO, Timer0A (32-bit periyodik), UART0 ve ADC0 SS1'i (4 adım <code>ADC_CTL_TS</code>) kurar. Gelen karakter bir <b>durum makinesiyle</b> işlenir: <code>saatmi</code> "saat karakterleri bekleniyor" durumunu tutar. PC'nin eklediği son <code>/</code> karakteri 8 karakterden sonra geldiği için yok sayılır. PF1 tersleme ve SW1 bloğu yalnız yorumla belirtildi.</p>
+<div class="box warn"><span class="box-title">Ödev çözümlerindeki sorunlar</span>
+<ul>
+<li>Yüzler hanesi hatası (<a href="#ornek-sayi">8.5</a>); ayrıca gönderilen değer °C değil ham koddur.</li>
+<li><code>TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()); // 40 000 000 1 sn için</code> — saat 50 MHz olduğundan yorum yanlıştır; periyot yine 1 s'dir.</li>
+<li><code>void adcseridengonder(deger);</code> prototipi (satır 18) türsüz parametre listesi içerir. Standart C'de bu yalnız fonksiyon tanımında geçerlidir; clang hata verir (TI derleyicisi gevşek kipte uyarıyla geçirebilir). Tanımdaki <code>deger</code> de örtük <code>int</code>'tir. <code>hafta0c_seriodevi2</code>'de ikisi de <code>int deger</code> olarak düzeltilmiştir.</li>
+<li>SW1 bloğu kenar algılamadan her döngü turunda çalışır: buton basılı tutulunca hat sabit metinle dolar, saat ve ADC satırları gecikir.</li>
+<li><code>hafta0c_seriodevi2</code>'deki <code>singonder()</code> her turda 100 satırı gecikmeli gönderip döngüyü bloklar. Yerel <code>int gSeriesData[SERIES_LENGTH];</code> aynı adlı global diziyi gizler ve yalnız ilk çağrıda doldurulur; sonraki çağrılarda ilk değeri verilmemiş dizi gider. Aynı 4 haneli dalı kullandığından sinüs değerlerinde (1000–2000) yüzler hanesi hep 0'dır.</li>
+</ul></div>
+
+<h2 id="pc">9. PC tarafı: C# SerialPort</h2>
+<h3 id="com-port">COM portunu bulmak ve terminalle denemek</h3>
+<p>LaunchPad Windows'ta <b>Aygıt Yöneticisi → Bağlantı noktaları (COM ve LPT)</b> altında "Stellaris Virtual Serial Port (COM<i>n</i>)" olarak görünür; <i>n</i> bilgisayara göre değişir (ders projelerinin tasarımcı dosyalarında COM4, COM7, COM13 ve COM18 yazılıdır; bir projenin <code>serialPort1.PortName</code> özelliğinde de COM19 kalmıştır). Linux'ta <code>/dev/ttyACM0</code>, macOS'ta <code>/dev/cu.usbmodem…</code> biçimindedir. İlk deneme bir <b>terminal programıyla</b> yapılır (PuTTY, Tera Term…): "Serial", port adı, Tiva ile aynı hız, 8N1, akış denetimi yok. Bir portu aynı anda <b>yalnız bir program</b> açabilir; port ICDI'de olduğundan Tiva'yı yeniden programlamak onu kapatmaz.</p>
+
+<h3 id="csharp-temel">Port açma, gönderme, alma</h3>
+<p>Ders klasöründeki C# projeleri (<code>PC_CSharp/</code>) SharpDevelop ile hazırlanmış WinForms uygulamalarıdır. Forma bir <code>SerialPort</code> bileşeni (<code>System.IO.Ports</code>) eklenir; tasarımcı <code>DataReceived</code> olayını <code>MainForm.Designer.cs</code>'de <code>SerialPort1DataReceived</code> fonksiyonuna bağlar. Kod <code>drive_seriport2/seriport2/MainForm.cs</code>'den alınmıştır (<code>drive_seriportcsharp</code> ve <code>drive_seriportprojesi</code> aynı yapıdadır):</p>
+<div class="code-head"><span class="file">drive_seriport2/seriport2/MainForm.cs (kısaltılmış)</span><span class="tag api">PC · C#</span></div><pre><code class="language-csharp">public partial class MainForm : Form
+{
+    string s;                                       // DataReceived'de gelen metin
+
+    void Button1Click(object sender, EventArgs e)   // "com aç"
+    {
+        if (!serialPort1.IsOpen)
+        {
+            serialPort1.BaudRate = Convert.ToInt32(textBox2.Text);  // ör. 9600: Tiva ile aynı olmalı
+            serialPort1.PortName = textBox1.Text;                   // ör. "COM4"
+            serialPort1.Open();             // port yoksa ya da başka programdaysa istisna fırlatır
+        }
+    }
+    void Button2Click(object sender, EventArgs e)   // "com kapat"
+    {
+        serialPort1.Close();
+    }
+    void Button3Click(object sender, EventArgs e)   // "Gönder"
+    {
+        serialPort1.Write(textBox5.Text);           // metni bayt dizisi olarak gönder
+    }
+    void SerialPort1DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+    {
+        s = serialPort1.ReadExisting();             // alma arabelleğinde ne varsa al
+        this.Invoke(new EventHandler(veriyigoster));  // arayüz iş parçacığına geç
+    }
+    void veriyigoster(object sender, EventArgs e)
+    {
+        textBox3.Text = textBox3.Text + s;          // gelen veriyi kutuya ekle
+    }
+}</code></pre>
+<p>Sadeleştirmeler: <code>using</code> satırları, ad alanı, SharpDevelop'un eklediği başlık yorumu (yazar adı ve tarih içerir), yapıcı ve boş bir olay fonksiyonu çıkarıldı.</p>
+<ul>
+<li><b>Ayarların uyumu:</b> Yalnız <code>BaudRate</code> ve <code>PortName</code> verilir; diğerleri .NET varsayılanında kalır (<code>DataBits = 8</code>, <code>Parity.None</code>, <code>StopBits.One</code>, <code>Handshake.None</code>), yani 8N1. Tiva'da eşlik ya da 2 durma biti seçilirse PC'de de ayarlanır.</li>
+<li><b>Neden <code>Invoke</code>?</b> <code>DataReceived</code> arka plandaki bir iş parçacığında çalışır; WinForms kontrollerine yalnız arayüz iş parçacığından dokunulabilir. <code>Invoke</code> fonksiyonu orada çalıştırıp bitmesini bekler. Olay <code>Invoke</code>'ta beklerken arayüzden <code>Close()</code> çağrılırsa kilitlenme olabilir; beklemeyen <code>BeginInvoke</code> bunu önler, veri de yerel değişkenle aktarılır: <code>string v = serialPort1.ReadExisting(); BeginInvoke((Action)(() =&gt; textBox3.AppendText(v)));</code> (not için yazıldı).</li>
+<li><b>Kodlama ve port listesi:</b> Varsayılan ASCII kodlamasında 127'den büyük baytlar (ç, ğ…) <code>?</code> olur. Var olan portlar <code>SerialPort.GetPortNames()</code> ile listelenebilir (ders kodlarında yoktur).</li>
+</ul>
+
+<h3 id="csharp-protokol">Satır tabanlı protokol: ödevin PC tarafı</h3>
+<p><code>PC_CSharp/seri2ogr c# derste yapılan</code> projesi, <a href="#ornek-odev">8.6</a>'daki Tiva programının karşılığıdır. Tiva her kaydı <code>'\n'</code> ile bitirdiği için PC, <code>ReadLine</code> ile satır satır okur ve ilk karaktere göre veriyi ilgili kutuya yazar:</p>
+<div class="code-head"><span class="file">seri2ogr c# derste yapılan/deneme/MainForm.cs (kısaltılmış)</span><span class="tag api">PC · C#</span></div><pre><code class="language-csharp">void BtnSaatGonderClick(object sender, EventArgs e)
+{
+    serialPort1.Write("%" + textBaslangicSaati.Text + "/");   // "%12:34:56/"
+}
+
+void SerialPort1DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+{
+    gelenveri = serialPort1.ReadLine();          // '\n' gelene kadar bekler; '\n' atılır
+    this.Invoke(new EventHandler(DisplayText));
+}
+
+private void DisplayText(object sender, EventArgs e)
+{
+    textgelenveriler.Text = gelenveri;
+    if (gelenveri[0] == '[') {                   // "[hh:mm:ss": saat
+        textBoxMCdengelenSaat.Text = gelenveri.Substring(1, 8);
+    }
+    else if (gelenveri[0] == '(') {              // "(dddd)": ADC kodu
+        textADCverisi.Text = gelenveri.Substring(1, 4);
+    }
+    else if (gelenveri[0] == '{') {              // "{metin}": baştaki ve sondaki parantez atılır
+        textBox1.Text = gelenveri.Substring(1, gelenveri.Length - 2);
+    }
+    else if (gelenveri[0] == '*') {              // "*dddd": grafiğe nokta ekle
+        sayici++;
+        chart1.Series["seri"].Points.AddXY(sayici, (Convert.ToDouble(gelenveri.Substring(1, 4)) - 1000) / 1000);
+        /* değer listBox1'e de eklenir; sayici 100'de sıfırlanır */
+    }
+}</code></pre>
+<p>Sadeleştirmeler: port açma/kapama (9.2'dekine ek olarak <code>DataBits</code>'i de formdan okur) çıkarıldı; grafik serisinin adı <code>"seri"</code> olarak sadeleştirildi (tasarımcıdaki ad da buna uymalıdır). <code>seri2ogr ilk proje</code> bu projenin grafiksiz ilk sürümüdür.</p>
+<div class="box warn"><span class="box-title">Sağlamlık</span>
+<p><code>DisplayText</code> satırın biçimini denetlemez: boş satırda <code>gelenveri[0]</code>, kısa satırda <code>Substring(1, 8)</code> istisna fırlatır ve uygulama kapanır. Port ilk açıldığında yarım satır gelmesi olağandır; uzunluk denetimi ya da <code>try</code>/<code>catch</code> eklenmelidir. <code>ReadLine</code>, <code>'\n'</code> gelmezse süresiz bekler; <code>ReadTimeout</code> verilmesi önerilir. Bir olayda arabelleğe iki satır gelirse ikincisi bir sonraki olaya kalır; <code>while (serialPort1.BytesToRead &gt; 0)</code> döngüsüyle ya da <code>ReadExisting</code> ile okuyup satırları kendiniz birleştirerek çözülür.</p></div>
+
+<h2 id="lab12">10. TI Lab 12 uyarlaması <span class="tag ti">TI Lab 12</span></h2>
+<p><b>Amaç:</b> UART0 ve sanal COM portuyla önce yoklamalı, sonra kesmeli bir eko programı yazmak; her ekoda mavi LED'i kısa süre yakmak.</p>
+<p>TI'ın <em>TM4C123G LaunchPad Workshop</em> kitapçığının 12. bölümü UART'ın özelliklerini, API çağrılarını, kesme kaynaklarını, FIFO eşiklerini ve <code>uartstdio</code> fonksiyonlarını özetler. Lab 12'nin yoklamalı kısmı <a href="#ornek-apili">8.2</a>'deki <code>seri1.c</code> ile aynıdır (50 MHz, 115 200 8N1; karşılama metni "Enter Text: "). Kesmeli kısmı ders klasöründeki <code>drive_seriport/seri2.c</code>'nin aynısıdır: <code>IntMasterEnable</code>, <code>IntEnable(INT_UART0)</code> ve <code>UARTIntEnable(…, UART_INT_RX | UART_INT_RT)</code> çağrılır; ISR (<code>UARTIntHandler</code>) durumu okuyup temizler, FIFO boşalana kadar her karakteri <code>UARTCharPutNonBlocking</code> ile geri gönderir ve her karakterde PF2'yi ≈ 1 ms yakar; ISR startup dosyasında <code>extern</code> bildirimiyle "UART0 Rx and Tx" girişine bağlanır.</p>
+<div class="box"><span class="box-title">Kitapçıktan ve ders kodlarından notlar</span>
+<ul>
+<li><code>seri2.c</code> <code>UARTIntRegister</code> çağırmaz ve klasörde startup dosyası yoktur; ISR startup dosyasına yazılmazsa program ilk karakterde <code>IntDefaultHandler</code>'da takılır. <code>seri2_2.c</code>'de <code>gelenveri</code> tanımsızdır; derlenmez.</li>
+<li><code>UARTIntEnable</code> yorumu ("only enable RX and TX interrupts", "Hem RX ve Hem de TX") yanlıştır: açılanlar RX ve <b>RT</b>'dir.</li>
+<li>ISR'deki ≈ 1 ms'lik <code>SysCtlDelay</code> <a href="../timer/#isr-kurallari">ISR kurallarına</a> aykırıdır: 115 200 baud'da karakterler 86,8 µs'de bir gelir; yapıştırılan metinde FIFO taşar.</li>
+<li>Kitapçığın kesmelerin "otomatik temizlendiğini" söyleyen slaytı datasheet'le uyuşmaz (s. 901); kendi ISR'si de <code>UARTIntClear</code> çağırır. <code>UARTCharPutNonBlocking</code> TX FIFO doluysa karakteri sessizce atar.</li>
+</ul></div>
+
+<h2 id="exp10">11. Experiment 10 uygulama görevi</h2>
+<p>"Experiment 10: Asynchronous Serial Interfacing (UART)" föyünün amacı, klavyeden gönderilen karakterleri mikrodenetleyiciden geri yansıtıp terminalde göstermektir. Föy <b>Stellaris LaunchPad (LM4F120)</b> için yazılmıştır; register adresleri TM4C123GH6PM ile aynıdır, sayfa numaraları LM4F120 datasheet'ine aittir. Föy asenkron çerçeveyi ve 16× örneklemeyi anlatır, iki tarafın saat farkının %2'den küçük olmasını ister ve <b>UART2</b>'yi (PD6/PD7) register düzeyinde kurar: PD7 kilidi açılır, IBRD = 8, FBRD = 44 (16 MHz, 115 200), LCRH = <code>0x70</code>; gönderme TXFF, alma RXFE yoklamasıyla yapılır.</p>
+<div class="box warn"><span class="box-title">Föydeki hatalar ve TM4C123 farkları</span>
+<ul>
+<li>Durma bitinin ortası düşen kenardan 9,5 bit sonradır; föydeki "10,5 bit" yanlıştır (<a href="#tolerans">Bölüm 4</a>).</li>
+<li>Föy UARTEN bitinin "asserting" ile kapatıldığını yazar; doğrusu biti <b>temizlemektir</b> (kodu doğrudur).</li>
+<li>PCTL'ye <code>|=</code> ile yazılır; alanın eski değeri 0 değilse sonuç yanlış olur. Saatler açıldıktan sonra PRUART/PRGPIO beklenmez.</li>
+<li><code>UART_Rx_String</code> adına rağmen yalnız <b>bir</b> karakter okur: okuma <code>while</code> değil <code>if</code> içindedir.</li>
+<li>LaunchPad'de UART2 sanal COM portuna bağlı değildir; föyü olduğu gibi denemek için PD6/PD7'ye (J4.08/J4.09) 3,3 V'luk bir USB–TTL dönüştürücü çapraz bağlanır, topraklar birleştirilir.</li>
+</ul></div>
+<h4>Uygulama görevi</h4>
+<p>Föyde örnek kodu çalıştırmak dışında ayrı bir görev yoktur; aşağıdaki görevler bu not için hazırlanmıştır.</p>
+<ol>
+<li>Föydeki kodu ek donanım gerekmeyecek şekilde <b>UART0</b>'a (PA0/PA1) taşıyın: saat bitleri, Port A register'ları, PCTL, taban adres. Kilit açmaya gerek kalır mı?</li>
+<li><code>UART_Rx_String</code>'i düzeltin: <code>'\r'</code> gelene ya da <code>max</code> karaktere kadar okusun, her karakteri geri göndersin (eko), Backspace'te (<code>0x08</code>) son karakteri silsin, satırı <code>"Girdiniz: …"</code> diye geri göndersin.</li>
+<li>UARTCTL.LBE ile (UART kapalıyken) iç geri döngüyü açın; gönderilen karakterin kendi RX'inize geldiğini gösterin.</li>
+<li>UARTCC = 0x5 (PIOSC) yapıp sistem saatini <code>SysCtlClockSet</code> ile 40 MHz'e çıkarın; IBRD/FBRD değişmeden haberleşme neden sürer? Bu durumda baud doğruluğu neye bağlıdır?</li>
+<li>Baud'u kasıtlı yanlış ayarlayın (Tiva 9 600, terminal 115 200); karakterleri ve UARTRSR.FE'yi gözleyin.</li>
+</ol>
+
+<h2 id="hatalar">12. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Pin ayarını eksik yapmak.</b> AFSEL = 0 ise pin GPIO kalır, PCTL yanlışsa başka bir birime bağlanır, DEN = 0 ise sinyal geçmez; API'de <code>GPIOPinConfigure</code> ve <code>GPIOPinTypeUART</code> ikisi de gerekir. UART0'ın açılış PCTL değeri AFSEL ve DEN'i 1 yapmaz (<a href="#pin-ayari">Bölüm 3</a>).</li>
+<li><b>Baud uyumsuzluğu: çöp karakterler.</b> İki taraf farklı hız, veri biti ya da eşlikle ayarlıysa anlamsız karakterler görülür. Saat değişince bölücü yeniden hesaplanmalıdır (<code>SysCtlClockSet</code>'ten <b>sonra</b> <code>SysCtlClockGet()</code>); PIOSC'den çalışmak ±%3 hata getirir (<a href="#tolerans">Bölüm 4</a>).</li>
+<li><b>Yapılandırma sırası.</b> Bölücü ancak LCRH'ye yazılınca etkin olur; UARTCTL, LCRH ve bölücü UARTEN = 0 iken değiştirilir (s. 918).</li>
+<li><b>FIFO açık/kapalı farkını bilmemek.</b> API'li kodda FIFO açıktır; RX kesmesi ≈ 8 karakterde gelir, tek karakter için RT de açılmalıdır (<a href="#fifo-esik">Bölüm 7</a>). LCRH = <code>0x60</code> ise FIFO kapalıdır.</li>
+<li><b>RXFE'yi denetlemeden okumak.</b> FIFO boşken UARTDR anlamsız değer verir; <code>UARTCharGetNonBlocking</code>'in −1 dönüşü denetlenir.</li>
+<li><b>ICR'ye <code>|=</code> ile yazmak.</b> <code>|=</code> okuma-değiştirme-yazma yapar; W1C register'ını okumak anlamlı değer döndürmez (s. 43). Gereksiz ve yanıltıcıdır; <code>=</code> kullanın (<a href="../timer/#bayrak">Timer notu</a>). UARTECR'ye de herhangi bir değer <code>=</code> ile yazılır.</li>
+<li><b>ISR'yi bağlamamak ya da FIFO'yu boşaltmamak.</b> Vektör girişi <code>IntDefaultHandler</code> kalırsa ilk kesmede program sonsuz döngüye düşer; <code>UARTIntRegister</code> kaynak açılmadan önce çağrılır. ISR <code>while</code> ile RXFE = 1 olana kadar okumalıdır (<a href="#isr">Bölüm 7</a>).</li>
+<li><b>Bağlantı hataları.</b> TX karşı tarafın RX'ine çapraz bağlanır, GND'ler birleştirilir. RS-232'nin ±12 V'u pine zarar verir; PB0, PB1, PD4, PD5 en çok 3,6 V'a dayanır.</li>
+<li><b>PC tarafı.</b> Terminal açıkken C# uygulaması portu açamaz (<code>Open()</code> istisna fırlatır); COM numarası Aygıt Yöneticisi'nden kontrol edilir. Sayı ham bayt olarak değil metin olarak gönderilir (<a href="#ornek-sayi">8.5</a>).</li>
+</ol></div>
+
+<h2 id="alistirmalar">13. Alıştırmalar</h2>
+<ol>
+<li><b>Baud hesabı:</b> Sistem saati 80 MHz, istenen baud 57 600, HSE = 0. BRD, IBRD, FBRD, gerçek baud ve hata yüzdesini bulun. (Cevap: BRD = 86,8056; IBRD = 86, FBRD = 52; gerçek ≈ 57 595; hata ≈ −%0,008.)</li>
+<li><b>Ters hesap:</b> 40 MHz'te IBRD = 260, FBRD = 27 yazılmıştır. Baud kaçtır? Aynı değerler saat 50 MHz'e çıkarılınca hangi baud'u verir ve 9 600 baud'luk bir terminalle haberleşme sürer mi? (Cevap: ≈ 9 600; ≈ 12 000, hata +%25, sürmez.)</li>
+<li><b>Çerçeve:</b> 8E1 ayarında (çift eşlik) <code>'5'</code> karakteri (<code>0x35</code>) gönderiliyor. TX hattındaki 11 biti başlangıçtan durma bitine kadar sırayla yazın; 115 200 baud'da çerçeve kaç µs sürer? (Cevap: 0 1 0 1 0 1 1 0 0 0 1; 0x35'te dört tane 1 olduğu için eşlik 0; ≈ 95,5 µs.)</li>
+<li><b>Veri hızı:</b> 115 200 baud, 8N1 ile 1 saniyede en çok kaç bayt gönderilebilir? Her saniye <code>"[hh:mm:ss\n"</code> ve <code>"(dddd)\n"</code> gönderen 8.6 programı hattın yüzde kaçını kullanır? (Cevap: 11 520 bayt/s; 17 bayt/s, ≈ %0,15.)</li>
+<li><b>Register düzeyi:</b> UART5'i (PE4 = U5Rx, PE5 = U5Tx) 50 MHz'te 9 600 baud, 8N1, FIFO kapalı olarak kuran API'siz fonksiyonu yazın. RCGCUART ve RCGCGPIO bitleri, PCTL maskesi ve değeri, IBRD, FBRD, LCRH değerleri nelerdir? (Cevap: RCGCUART bit5, RCGCGPIO bit4; PCTL bit23:16 = 0x11; IBRD = 325, FBRD = 33, LCRH = 0x60.)</li>
+<li><b>Kesme:</b> 8.4'teki programı UART1 (PB0/PB1) için uyarlayın. NVIC'te hangi bit açılır, startup dosyasında hangi giriş değişir? PB0/PB1'e 5 V'luk bir modül bağlanabilir mi? (Cevap: EN0 bit6; vektör 22 "UART1 Rx and Tx"; hayır, 3,6 V sınırı.)</li>
+<li><b>Timer + ADC + UART (Final tarzı):</b> Timer0A kesmesi her 500 ms'de iç sıcaklık sensörünü okusun; sonuç <code>"T=27\r\n"</code> biçiminde UART0'dan (115 200) gönderilsin. PC'den <code>'+'</code> gelince periyot 100 ms artsın, <code>'-'</code> gelince azalsın (100 ms – 2 s); alma kesmeyle yapılsın. Sıcaklık 30 °C'yi aşınca kırmızı LED yansın. (a) Başlatma adımlarını numaralı yazın; (b) Timer ve UART ISR'lerini yazın; ISR'de hangi işler yapılmamalıdır? (c) Paylaşılan değişkenleri belirtin. (İpucu: <a href="../timer/#sure">Timer notu, süre hesabı</a>; <a href="../adc/#sicaklik">ADC notu, sıcaklık</a>.)</li>
+<li><b>(Ödev) Seri port ödevi:</b> PC'de bir WinForms arayüzü, Tiva'da bir program yazın. (1) Arayüzde yazılan metin bir düğmeyle gönderilsin ve LCD'nin 2. satırında görünsün. (2) İkinci düğmeyle <code>12:01:54</code> gibi 8 karakterlik bir saat gönderilsin; Tiva bu saatten saymaya başlayıp saati LCD'nin 1. satırında göstersin. (3) Tiva her saniye sıcaklığı (iç sensör ya da LM35) göndersin, arayüzde görünsün. 8.6 ve 9.3'teki çözümlerden yola çıkılabilir; yüzler hanesi hatası düzeltilmeli, sıcaklık °C'ye çevrilmeli, LCD kısmı eklenmelidir (LCD ayrı notta işlenecektir).</li>
+<li><b>PC'den komutla LED:</b> 8.1'deki fonksiyonları kullanarak terminalden gelen tek karakterlik komutlarla RGB LED'i sürün: <code>r</code> kırmızı (PF1), <code>b</code> mavi (PF2), <code>g</code> yeşil (PF3), <code>0</code> söndür; her komuta <code>"OK\r\n"</code>, bilinmeyen karaktere <code>"?\r\n"</code> yanıtı verilsin. Enter'ın gönderdiği <code>'\r'</code> ne yanıt alır? Ardından <code>LED=1</code> gibi çok karakterli komutları, karakterleri <code>'\r'</code> gelene kadar bir diziye toplayarak işleyin.</li>
+</ol>
+
+<h2 id="kaynaklar">14. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): Bölüm 14 "UART" (s. 893–951; ayrıntılı sayfalar metinde ve <a href="#register-tablosu">register tablosunda</a>); kesme tablosu Tablo 2-9; RCGCUART s. 344, PRUART s. 410; GPIO s. 649–650; Tablo 23-5 s. 1351; Tablo 24-15 s. 1375.</li>
+<li>Texas Instruments, <em>Tiva C Series TM4C123G LaunchPad Evaluation Board User's Guide</em> (SPMU296): konnektörler Tablo 2-3 – 2-6; sanal COM portu §2.3.1, Tablo 2-8.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, Bölüm 12 "UART" ve Lab 12.</li>
+<li>Texas Instruments, <em>TivaWare Peripheral Driver Library User's Guide</em> (SPMU298E, TivaWare 2.2.0 kılavuzu). Yerel kaynak 2.1.4'tür; fonksiyon davranışları bu sürümün <code>driverlib/uart.c</code>, <code>gpio.c</code>, <code>pin_map.h</code>, <code>inc/hw_uart.h</code> dosyalarından doğrulanmıştır.</li>
+<li>"Experiment 10: Asynchronous Serial Interfacing (UART)", laboratuvar föyü (LM4F120).</li>
+<li>Ders örnek kodları: <code>hafta0A_seriport_basla</code>, <code>hafta0A_seriport_KESME</code>, <code>drive_seriport</code>; <code>PC_CSharp</code> (beş SharpDevelop projesi); <code>hafta0c_seriodevi</code>, <code>hafta0c_seriodevi2</code>; "seri port ödevi" metni. Microsoft .NET belgeleri: <code>System.IO.Ports.SerialPort</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../timer/">6. Zamanlayıcılar</a> (kesme altyapısı), <a href="../adc/">7. ADC</a> (iç sıcaklık sensörü).</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 8. UART. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

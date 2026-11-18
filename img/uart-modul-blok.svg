@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 572" class="umb-svg" role="img" aria-labelledby="umb-title umb-desc">
+<title id="umb-title">UART modülü blok şeması</title>
+<desc id="umb-desc">Sadeleştirilmiş UART modülü (datasheet Şekil 14-1’in yeniden çizimi); sekiz modül aynı yapıda, RTS/CTS yalnız UART1’de. Saat: sistem saati ya da PIOSC, UARTCC.CS ile seçilir (0x0 sistem, 0x5 PIOSC) ve UARTIBRD/UARTFBRD bölücülü baud üretecine gider; üreteç Baud16 (HSE = 1 ise Baud8) saatini gönderici ve alıcıya verir. Gönderici: UARTDR yazması TX FIFO’ya (16 × 8), oradan kaydırma yazmacına ve UnTx pinine. Alıcı: UnRx pininden kaydırma yazmacına, oradan RX FIFO’ya (16 × (8 + 4): 8 veri + 4 hata biti OE, BE, PE, FE) ve UARTDR okumasına. Denetim: UARTLCRH, UARTCTL, UARTIFLS, UARTFR, UARTRSR/ECR. Kesme: UARTRIS, UARTIM ile maskelenir, UARTMIS NVIC’e gider, UARTICR’ye 1 yazarak silinir; kesme kaynakları TX FIFO, RX FIFO ve alıcıdan gelir. μDMA istekleri UARTDMACTL ile açılır. UART0 kesmesi IRQ 5 (vektör 21).</desc>
+<defs>
+<marker id="umb-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="umb-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="umb-arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="umb-headb" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="umb-ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="umb-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.umb-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.umb-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.umb-svg .umb-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.umb-svg .umb-b{font-weight:700}
+.umb-svg .umb-s13{font-size:13px}
+.umb-svg .umb-s15{font-size:15px}
+.umb-svg .umb-s16{font-size:16px}
+.umb-svg .umb-mut{fill:var(--fig-muted,#76746c)}
+.umb-svg .umb-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.umb-svg .umb-box2{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.umb-svg .umb-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.umb-svg .umb-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.umb-svg .umb-head{fill:var(--fig-stroke,#2b2b29)}
+.umb-svg .umb-heada{fill:var(--fig-accent,#b4481f)}
+.umb-svg .umb-headb{fill:var(--fig-blue,#1f5fa8)}
+.umb-svg .umb-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.umb-svg .umb-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.umb-svg .umb-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.umb-svg .umb-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.umb-svg .umb-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:.9}
+.umb-svg .umb-cellh{fill:var(--fig-accent,#b4481f);fill-opacity:.35;stroke:var(--fig-stroke,#2b2b29);stroke-width:.9}
+.umb-svg .umb-cellb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.35;stroke:var(--fig-stroke,#2b2b29);stroke-width:.9}
+.umb-svg .umb-jdot{fill:var(--fig-stroke,#2b2b29)}
+</style>
+<text x="12" y="22"><tspan class="umb-s16 umb-b">UART modülü</tspan><tspan class="umb-s15"> — sadeleştirilmiş; UART0–UART7 aynı yapıda (RTS/CTS yalnız UART1)</tspan></text>
+<rect class="umb-box2" x="16" y="34" width="524" height="90" rx="6"/>
+<text class="umb-b" x="26" y="54">Denetim ve durum</text>
+<text class="umb-mono umb-b" x="26" y="76">UARTLCRH</text>
+<text class="umb-s13" x="114" y="76">WLEN, STP2, PEN, EPS, FEN</text>
+<text class="umb-mono umb-b" x="26" y="96">UARTCTL</text>
+<text class="umb-s13" x="114" y="96">UARTEN, TXE, RXE, HSE, EOT</text>
+<text class="umb-mono umb-b" x="26" y="116">UARTFR</text>
+<text class="umb-s13" x="114" y="116">TXFE, RXFF, TXFF, RXFE, BUSY</text>
+<text class="umb-mono umb-b" x="332" y="76">UARTIFLS</text>
+<text class="umb-s13" x="436" y="76">FIFO eşikleri</text>
+<text class="umb-mono umb-b" x="332" y="96">UARTRSR/ECR</text>
+<text class="umb-s13" x="436" y="96">hata durumu</text>
+<text class="umb-mono umb-b" x="332" y="116">UARTCC</text>
+<text class="umb-s13" x="436" y="116">saat kaynağı</text>
+<rect class="umb-box" x="556" y="34" width="192" height="90" rx="6"/>
+<text x="566" y="54"><tspan class="umb-b">μDMA istekleri</tspan></text>
+<text class="umb-s13" x="566" y="72">TX ve RX FIFO’dan, ayrı kanal</text>
+<text class="umb-s13" x="566" y="90">tek / burst (FIFO eşiğine göre)</text>
+<text class="umb-s13" x="566" y="108">açma: UARTDMACTL</text>
+<rect class="umb-box" x="16" y="142" width="124" height="220" rx="6"/>
+<text class="umb-mono umb-b" x="78" y="162" text-anchor="middle">UARTDR</text>
+<text class="umb-s13 umb-mut" x="78" y="178" text-anchor="middle">ofset 0x000</text>
+<text class="umb-s13 umb-b" x="26" y="206">yazma:</text>
+<text class="umb-s13" x="26" y="222">8 bit → TX FIFO</text>
+<text class="umb-s13 umb-b" x="26" y="270">okuma: 12 bit</text>
+<text class="umb-s13" x="26" y="288">bit 7:0 veri</text>
+<text class="umb-s13" x="26" y="306">bit 8 FE · 9 PE</text>
+<text class="umb-s13" x="26" y="322">bit 10 BE · 11 OE</text>
+<text class="umb-s13 umb-mut" x="78" y="352" text-anchor="middle">işlemci (APB)</text>
+<rect class="umb-box" x="176" y="142" width="144" height="60" rx="6"/>
+<text class="umb-b" x="186" y="161">TX FIFO</text>
+<text class="umb-mono" x="310" y="161" text-anchor="end">16×8</text>
+<rect class="umb-cellb" x="186" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellb" x="193.75" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellb" x="201.5" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellb" x="209.25" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellb" x="217" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="224.75" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="232.5" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="240.25" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="248" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="255.75" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="263.5" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="271.25" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="279" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="286.75" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="294.5" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="302.25" y="180" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-box" x="360" y="142" width="180" height="60" rx="6"/>
+<text class="umb-b" x="450" y="162" text-anchor="middle">Gönderici</text>
+<text class="umb-s13" x="450" y="179" text-anchor="middle">kaydırma yazmacı</text>
+<text class="umb-s13 umb-mut" x="450" y="195" text-anchor="middle">başl. + veri + (P) + durma</text>
+<path class="umb-wb" d="M140,172 L174,172" marker-end="url(#umb-arb)"/>
+<path class="umb-wb" d="M320,172 L358,172" marker-end="url(#umb-arb)"/>
+<path class="umb-wb" d="M540,172 L582,172" marker-end="url(#umb-arb)"/>
+<rect class="umb-pill" x="584" y="160" width="56" height="24" rx="4"/>
+<text class="umb-mono umb-b" x="612" y="177" text-anchor="middle">UnTx</text>
+<text class="umb-s13" x="650" y="169">UART0: PA1</text>
+<text class="umb-s13 umb-mut" x="650" y="185">GPIO alt. işlev</text>
+<rect class="umb-box" x="176" y="302" width="144" height="72" rx="6"/>
+<text class="umb-b" x="186" y="321">RX FIFO</text>
+<text class="umb-mono" x="310" y="321" text-anchor="end">16×(8+4)</text>
+<text class="umb-s13 umb-mut" x="186" y="339">+4 hata: OE BE PE FE</text>
+<rect class="umb-cellh" x="186" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellh" x="193.75" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cellh" x="201.5" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="209.25" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="217" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="224.75" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="232.5" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="240.25" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="248" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="255.75" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="263.5" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="271.25" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="279" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="286.75" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="294.5" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-cell" x="302.25" y="352" width="7.75" height="13" data-nochk="1"/>
+<rect class="umb-box" x="360" y="302" width="180" height="72" rx="6"/>
+<text class="umb-b" x="450" y="326" text-anchor="middle">Alıcı</text>
+<text class="umb-s13" x="450" y="344" text-anchor="middle">kaydırma yazmacı</text>
+<text class="umb-s13 umb-mut" x="450" y="362" text-anchor="middle">örnekler, hata bitlerini ekler</text>
+<path class="umb-wa" d="M582,332 L542,332" marker-end="url(#umb-ara)"/>
+<path class="umb-wa" d="M360,332 L322,332" marker-end="url(#umb-ara)"/>
+<path class="umb-wa" d="M176,332 L142,332" marker-end="url(#umb-ara)"/>
+<rect class="umb-pill" x="584" y="320" width="56" height="24" rx="4"/>
+<text class="umb-mono umb-b" x="612" y="337" text-anchor="middle">UnRx</text>
+<text class="umb-s13" x="650" y="329">UART0: PA0</text>
+<text class="umb-s13 umb-mut" x="650" y="345">GPIO alt. işlev</text>
+<text class="umb-s13" x="180" y="238">sistem saati</text>
+<path class="umb-w" d="M180,244 L330,244" marker-end="url(#umb-arr)"/>
+<text class="umb-s13" x="180" y="264">PIOSC 16 MHz</text>
+<path class="umb-w" d="M180,270 L330,270" marker-end="url(#umb-arr)"/>
+<path class="umb-box2" d="M332,226 L352,236 L352,278 L332,288 Z"/>
+<text class="umb-mono" x="328" y="222" text-anchor="end">UARTCC.CS</text>
+<path class="umb-w" d="M352,257 L368,257" marker-end="url(#umb-arr)"/>
+<rect class="umb-hl" x="370" y="222" width="170" height="66" rx="6"/>
+<text class="umb-b" x="455" y="240" text-anchor="middle">Baud üreteci</text>
+<text class="umb-mono" x="455" y="258" text-anchor="middle">UARTIBRD (16 bit)</text>
+<text class="umb-mono" x="455" y="276" text-anchor="middle">UARTFBRD (6 bit)</text>
+<path class="umb-w" d="M455,222 L455,204" marker-end="url(#umb-arr)"/>
+<path class="umb-w" d="M455,288 L455,300" marker-end="url(#umb-arr)"/>
+<text x="552" y="238"><tspan class="umb-mono umb-b">Baud16</tspan></text>
+<text class="umb-s13" x="552" y="255">= 16 × baud</text>
+<text class="umb-s13 umb-mut" x="552" y="272">HSE = 1: Baud8</text>
+<text class="umb-s13 umb-mut" x="552" y="289">(8 × baud)</text>
+<path class="umb-wm" d="M300,142 V133 H654 V126" marker-end="url(#umb-arr)"/>
+<path class="umb-w" d="M176,190 H158 V326 A6,6 0 0 1 158,338 V392 H450"/>
+<path class="umb-w" d="M250,374 V392"/>
+<path class="umb-w" d="M450,374 V392"/>
+<path class="umb-w" d="M300,392 V408" marker-end="url(#umb-arr)"/>
+<circle class="umb-jdot" cx="250" cy="392" r="3"/>
+<circle class="umb-jdot" cx="300" cy="392" r="3"/>
+<rect class="umb-box2" x="16" y="410" width="524" height="130" rx="6"/>
+<text class="umb-b" x="26" y="430">Kesme denetimi</text>
+<text class="umb-s13" x="150" y="430">olaylar: RX · TX · RT · OE · BE · PE · FE · 9BIT; UART1’de CTS</text>
+<rect class="umb-box" x="26" y="444" width="148" height="46" rx="5"/>
+<text class="umb-mono umb-b" x="100" y="463" text-anchor="middle">UARTRIS</text>
+<text class="umb-s13" x="100" y="481" text-anchor="middle">ham bayrak</text>
+<rect class="umb-box" x="196" y="444" width="148" height="46" rx="5"/>
+<text class="umb-mono umb-b" x="270" y="463" text-anchor="middle">UARTIM</text>
+<text class="umb-s13" x="270" y="481" text-anchor="middle">maske (1 = izin)</text>
+<rect class="umb-box" x="366" y="444" width="148" height="46" rx="5"/>
+<text class="umb-mono umb-b" x="440" y="463" text-anchor="middle">UARTMIS</text>
+<text class="umb-s13" x="440" y="481" text-anchor="middle">= RIS ∧ IM</text>
+<path class="umb-w" d="M174,467 L194,467" marker-end="url(#umb-arr)"/>
+<path class="umb-w" d="M344,467 L364,467" marker-end="url(#umb-arr)"/>
+<text x="26" y="512" xml:space="preserve"><tspan class="umb-mono umb-b">UARTICR</tspan><tspan class="umb-s13">  bite 1 yaz → RIS ve MIS silinir (W1C, </tspan><tspan class="umb-mono">=</tspan><tspan class="umb-s13"> ile yaz)</tspan></text>
+<text class="umb-s13 umb-mut" x="26" y="530">EOT ayrı olay değil: UARTCTL.EOT = 1 ise TX kesmesi son bit çıkınca kalkar</text>
+<path class="umb-wa" d="M514,467 L558,467" marker-end="url(#umb-ara)"/>
+<rect class="umb-hl" x="560" y="430" width="188" height="76" rx="6"/>
+<text class="umb-b" x="570" y="450">NVIC</text>
+<text class="umb-s13" x="570" y="468">UART0: IRQ 5 · vektör 21</text>
+<text class="umb-s13" x="570" y="486">tüm olaylar VEYA → tek istek</text>
+<text class="umb-s13 umb-mut" x="748" y="562" text-anchor="end">Kaynak: TI Şekil 14-1’in sade yeniden çizimi; datasheet §14.3.8–14.3.11, UARTIM s. 924; hw_ints.h</text>
+</svg>

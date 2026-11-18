@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 424" class="ukf-svg" role="img" aria-labelledby="ukf-title ukf-desc">
+<title id="ukf-title">UART FIFO’ları ve kesme eşikleri</title>
+<desc id="ukf-desc">Solda: 16 girdilik RX FIFO ve UARTIFLS.RXIFLSEL (bit 5:3) eşikleri: 0x0 = 1/8 (2 bayt), 0x1 = 1/4 (4), 0x2 = 1/2 (8, açılış değeri), 0x3 = 3/4 (12), 0x4 = 7/8 (14); FIFO eşiğe ulaşınca RXRIS kalkar. Sağ üstte: alma zaman aşımı (RT): FIFO boş değilken 32 bit süresi (HSE = 1 ise 64) yeni veri gelmezse RTRIS kalkar; eşiğe ulaşmayan son baytlar böylece okunur. Sağ altta: TX FIFO ve TXIFLSEL açılış değeri 1/2; seviye eşiğin altına inerken TXRIS kalkar.</desc>
+<defs>
+<marker id="ukf-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ukf-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ukf-ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ukf-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ukf-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ukf-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.ukf-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ukf-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ukf-svg .ukf-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ukf-svg .ukf-b{font-weight:700}
+.ukf-svg .ukf-s13{font-size:13px}
+.ukf-svg .ukf-s15{font-size:15px}
+.ukf-svg .ukf-s16{font-size:16px}
+.ukf-svg .ukf-mut{fill:var(--fig-muted,#76746c)}
+.ukf-svg .ukf-acc{fill:var(--fig-accent,#b4481f)}
+.ukf-svg .ukf-blu{fill:var(--fig-blue,#1f5fa8)}
+.ukf-svg .ukf-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ukf-svg .ukf-head{fill:var(--fig-stroke,#2b2b29)}
+.ukf-svg .ukf-heada{fill:var(--fig-accent,#b4481f)}
+.ukf-svg .ukf-headm{fill:var(--fig-muted,#76746c)}
+.ukf-svg .ukf-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.ukf-svg .ukf-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ukf-svg .ukf-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ukf-svg .ukf-sep{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.ukf-svg .ukf-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1}
+.ukf-svg .ukf-cellh{fill:var(--fig-accent,#b4481f);fill-opacity:.35;stroke:var(--fig-stroke,#2b2b29);stroke-width:1}
+.ukf-svg .ukf-cellb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.35;stroke:var(--fig-stroke,#2b2b29);stroke-width:1}
+.ukf-svg .ukf-thr{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ukf-svg .ukf-thra{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2}
+.ukf-svg .ukf-frame{fill:var(--fig-blue,#1f5fa8);fill-opacity:.3;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.2}
+.ukf-svg .ukf-line{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2}
+</style>
+<text x="12" y="22"><tspan class="ukf-s16 ukf-b">FIFO’lar ve kesme eşikleri</tspan><tspan class="ukf-s15"> — UART0 örneği</tspan></text>
+<text x="12" y="48"><tspan class="ukf-b">RX FIFO</tspan> · <tspan class="ukf-mono">UARTIFLS.RXIFLSEL</tspan><tspan class="ukf-s13"> (bit 5:3)</tspan></text>
+<rect class="ukf-cellh" x="64" y="280" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cellh" x="64" y="266" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cellh" x="64" y="252" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cellh" x="64" y="238" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cellh" x="64" y="224" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="210" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="196" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="182" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="168" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="154" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="140" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="126" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="112" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="98" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="84" width="52" height="14" data-nochk="1"/>
+<rect class="ukf-cell" x="64" y="70" width="52" height="14" data-nochk="1"/>
+<text class="ukf-s13 ukf-b" x="90" y="250" text-anchor="middle">5 bayt</text>
+<path class="ukf-w" d="M16,217 L62,217" marker-end="url(#ukf-arr)"/>
+<text class="ukf-s13" x="16" y="209">alıcı</text>
+<path class="ukf-w" d="M64,287 L18,287" marker-end="url(#ukf-arr)"/>
+<text x="16" y="312"><tspan class="ukf-mono">UARTDR</tspan><tspan class="ukf-s13"> okuma</tspan></text>
+<path class="ukf-thr" d="M60,98 H130"/>
+<text class="ukf-mono" x="136" y="103">0x4</text>
+<text class="ukf-s15" x="170" y="103">⅞</text>
+<text class="ukf-s13" x="188" y="103">≥ 14 bayt</text>
+<path class="ukf-thr" d="M60,126 H130"/>
+<text class="ukf-mono" x="136" y="131">0x3</text>
+<text class="ukf-s15" x="170" y="131">¾</text>
+<text class="ukf-s13" x="188" y="131">≥ 12 bayt</text>
+<path class="ukf-thra" d="M60,182 H130"/>
+<text class="ukf-mono ukf-b ukf-acc" x="136" y="187">0x2</text>
+<text class="ukf-s15 ukf-b ukf-acc" x="170" y="187">½</text>
+<text class="ukf-s13 ukf-acc" x="188" y="187">≥ 8 bayt</text>
+<text class="ukf-s13 ukf-b ukf-acc" x="252" y="187">açılış</text>
+<path class="ukf-thr" d="M60,238 H130"/>
+<text class="ukf-mono" x="136" y="243">0x1</text>
+<text class="ukf-s15" x="170" y="243">¼</text>
+<text class="ukf-s13" x="188" y="243">≥ 4 bayt</text>
+<path class="ukf-thr" d="M60,266 H130"/>
+<text class="ukf-mono" x="136" y="271">0x0</text>
+<text class="ukf-s15" x="170" y="271">⅛</text>
+<text class="ukf-s13" x="188" y="271">≥ 2 bayt</text>
+<text class="ukf-s13" x="16" y="336">Eşiğe ulaşınca (≥)* RXRIS = 1; eşiğin altına</text>
+<text class="ukf-s13" x="16" y="352">okununca ya da RXIC = 1 ile silinir.</text>
+<rect class="ukf-box" x="300" y="36" width="448" height="198" rx="6"/>
+<text x="312" y="58"><tspan class="ukf-b">Alma zaman aşımı (RT)</tspan><tspan class="ukf-s13"> — neden gerekli?</tspan></text>
+<text class="ukf-mono" x="312" y="86">UnRx</text>
+<path class="ukf-line" d="M312,98 H324"/>
+<rect class="ukf-frame" x="324" y="98" width="40" height="28" rx="2"/>
+<text class="ukf-s13 ukf-b" x="344" y="117" text-anchor="middle">B1</text>
+<rect class="ukf-frame" x="364" y="98" width="40" height="28" rx="2"/>
+<text class="ukf-s13 ukf-b" x="384" y="117" text-anchor="middle">B2</text>
+<rect class="ukf-frame" x="404" y="98" width="40" height="28" rx="2"/>
+<text class="ukf-s13 ukf-b" x="424" y="117" text-anchor="middle">B3</text>
+<rect class="ukf-frame" x="444" y="98" width="40" height="28" rx="2"/>
+<text class="ukf-s13 ukf-b" x="464" y="117" text-anchor="middle">B4</text>
+<rect class="ukf-frame" x="484" y="98" width="40" height="28" rx="2"/>
+<text class="ukf-s13 ukf-b" x="504" y="117" text-anchor="middle">B5</text>
+<path class="ukf-line" d="M524,98 H736"/>
+<path class="ukf-wm" d="M525,138 H652" marker-end="url(#ukf-dim)"/>
+<path class="ukf-wm" d="M651,138 H524" marker-end="url(#ukf-dim)"/>
+<path class="ukf-wm" d="M524,130 V146"/>
+<path class="ukf-wm" d="M652,130 V146"/>
+<text class="ukf-s13 ukf-b" x="588" y="160" text-anchor="middle">32 bit süresi (HSE = 1: 64)</text>
+<text class="ukf-s13 ukf-mut" x="530" y="114">boşta: yeni veri yok</text>
+<path class="ukf-wa" d="M652,56 V94" marker-end="url(#ukf-ara)"/>
+<text class="ukf-s13 ukf-b ukf-acc" x="644" y="72" text-anchor="end">RTRIS = 1 → kesme</text>
+<text x="312" y="196"><tspan class="ukf-s13">Eşiğe ulaşmayan son baytlar (ör. 5 bayt &lt; ½ = 8) RXRIS kaldırmaz;</tspan></text>
+<text x="312" y="218"><tspan class="ukf-s13">RT bunları okutur; IM’de ikisi de açılır: </tspan><tspan class="ukf-mono ukf-blu">UART_INT_RX | UART_INT_RT</tspan></text>
+<text x="300" y="264"><tspan class="ukf-b">TX FIFO</tspan> · <tspan class="ukf-mono">UARTIFLS.TXIFLSEL</tspan><tspan class="ukf-s13"> açılış 0x2 (½)</tspan></text>
+<rect class="ukf-cell" x="372" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="385" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="398" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="411" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="424" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="437" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="450" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="463" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="476" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cell" x="489" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="502" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="515" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="528" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="541" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="554" y="280" width="13" height="22" data-nochk="1"/>
+<rect class="ukf-cellb" x="567" y="280" width="13" height="22" data-nochk="1"/>
+<path class="ukf-w" d="M304,291 L370,291" marker-end="url(#ukf-arr)"/>
+<text x="300" y="318"><tspan class="ukf-mono">UARTDR</tspan><tspan class="ukf-s13"> yazma</tspan></text>
+<path class="ukf-w" d="M580,291 L604,291" marker-end="url(#ukf-arr)"/>
+<text class="ukf-s13" x="608" y="296">gönderici</text>
+<path class="ukf-thra" d="M476,274 V308"/>
+<text class="ukf-s15 ukf-b ukf-acc" x="476" y="322" text-anchor="middle">½</text>
+<text class="ukf-s13" x="300" y="346">Seviye ½’nin altına inerken TXRIS (geçişte tetiklenir);</text>
+<text class="ukf-s13" x="300" y="362">UARTCTL.EOT = 1 ise son bit çıkınca. Silme: TXIC = 1.</text>
+<path class="ukf-sep" d="M12,376 H748"/>
+<text x="12" y="392"><tspan class="ukf-s13 ukf-b">* </tspan><tspan class="ukf-s13 ukf-mut">s. 922 giriş metni ½ için “9. karakter” der; alan tablosu (s. 922) ve hw_uart.h: ≥ 8 bayt.</tspan></text>
+<text class="ukf-s13 ukf-mut" x="748" y="414" text-anchor="end">Kaynak: datasheet §14.3.8–14.3.9 (s. 900–901), UARTIFLS s. 922–923; inc/hw_uart.h</text>
+</svg>

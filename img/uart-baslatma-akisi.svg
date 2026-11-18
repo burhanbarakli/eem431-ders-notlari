@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 816" class="uba-svg" role="img" aria-labelledby="uba-title uba-desc">
+<title id="uba-title">UART0 başlatma adımları</title>
+<desc id="uba-desc">On dört adım, solda doğrudan register, sağda TivaWare: 1 UART saati RCGCUART (0x400F.E618) bit 0 ve hazır bekleme PRUART (0x400F.EA18), 2 GPIO Port A saati RCGCGPIO bit 0, 3 GPIOAFSEL |= 0x03, 4 GPIODEN |= 0x03, 5 GPIOPCTL alanları 0x11 (3–5: GPIOPinConfigure iki kez ve GPIOPinTypeUART), 6 UARTCTL.UARTEN = 0, 7 UARTIBRD = 27, 8 UARTFBRD = 8 (50 MHz, 115 200 baud), 9 UARTLCRH = 0x70 (WLEN 8 bit 0x60 + FEN 0x10), 10 isteğe bağlı UARTCC = 0x0 (sistem saati; 0x5 PIOSC seçilirse bölücü 16 MHz’e göre hesaplanır), 11 yalnız kesmeli UARTIFLS = 0x12, UARTICR = 0x50, UARTIM |= 0x50, 12 UARTCTL |= 0x301 (UARTEN, TXE, RXE), 13 NVIC EN0 bit 5 (IRQ 5, vektör 21), 14 CPSIE I. TivaWare’de 6–9 ve 12 tek UARTConfigSetExpClk çağrısıdır (UARTDisable, HSE seçimi, IBRD/FBRD, LCRH = 0x60, UARTEnable ile FEN = 1); UARTClockSourceSet ondan önce çağrılır ve PIOSC seçilirse saat olarak 16000000 verilir. İsteğe bağlı ve yalnız kesmeli adımlar kesik çizgili.</desc>
+<style>
+.uba-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.uba-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.uba-svg .uba-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.uba-svg .uba-b{font-weight:700}
+.uba-svg .uba-s13{font-size:13px}
+.uba-svg .uba-s15{font-size:15px}
+.uba-svg .uba-mut{fill:var(--fig-muted,#76746c)}
+.uba-svg .uba-acc{fill:var(--fig-accent,#b4481f)}
+.uba-svg .uba-blu{fill:var(--fig-blue,#1f5fa8)}
+.uba-svg .uba-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.uba-svg .uba-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.uba-svg .uba-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.uba-svg .uba-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.uba-svg .uba-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.uba-svg .uba-circ{fill:var(--fig-accent,#b4481f)}
+.uba-svg .uba-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.uba-svg .uba-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+.uba-svg .uba-codeopt{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:6 4}
+.uba-svg .uba-tagacc{fill:var(--fig-accent,#b4481f);fill-opacity:.28;stroke:var(--fig-accent,#b4481f);stroke-width:1.2}
+</style>
+<rect class="uba-pill" x="30" y="6" width="344" height="26" rx="13"/>
+<text class="uba-s15 uba-b" x="202" y="24" text-anchor="middle">API’siz — doğrudan register</text>
+<rect class="uba-pill" x="386" y="6" width="362" height="26" rx="13"/>
+<text class="uba-s15 uba-b" x="567" y="24" text-anchor="middle">API’li — TivaWare (driverlib)</text>
+<rect class="uba-box" x="30" y="38" width="344" height="60" rx="6"/>
+<text class="uba-b" x="50" y="56">Saat: RCGCUART + hazır bekle: PRUART</text>
+<text class="uba-mono" x="50" y="74" xml:space="preserve">SYSCTL_RCGCUART_R |= 0x01;     // UART0</text>
+<text class="uba-mono" x="50" y="90" xml:space="preserve">while(!(SYSCTL_PRUART_R &amp; 0x01));</text>
+<rect class="uba-box" x="30" y="102" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="120">GPIO portunun saati (Port A)</text>
+<text class="uba-mono" x="50" y="138" xml:space="preserve">SYSCTL_RCGCGPIO_R |= 0x01;     // bit 0</text>
+<rect class="uba-box" x="30" y="150" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="168">Alternatif işlev: GPIOAFSEL</text>
+<text class="uba-mono" x="50" y="186" xml:space="preserve">GPIO_PORTA_AFSEL_R |= 0x03;  // PA0,PA1</text>
+<rect class="uba-box" x="30" y="198" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="216">Sayısal etkin: GPIODEN</text>
+<text class="uba-mono" x="50" y="234" xml:space="preserve">GPIO_PORTA_DEN_R |= 0x03;</text>
+<rect class="uba-box" x="30" y="246" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="264">Pin işlevi: GPIOPCTL alanı = 0x11</text>
+<text class="uba-mono" x="50" y="282" xml:space="preserve">GPIO_PORTA_PCTL_R = (… &amp; ~0xFF) | 0x11;</text>
+<rect class="uba-box" x="30" y="294" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="312">UART’ı kapat: UARTEN = 0</text>
+<text class="uba-mono" x="50" y="330" xml:space="preserve">UART0_CTL_R &amp;= ~0x01;</text>
+<rect class="uba-box" x="30" y="342" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="360">Baud tam kısmı: UARTIBRD</text>
+<text class="uba-mono" x="50" y="378" xml:space="preserve">UART0_IBRD_R = 27;  // 50 MHz saat,</text>
+<rect class="uba-box" x="30" y="390" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="408">Baud kesir kısmı: UARTFBRD</text>
+<text class="uba-mono" x="50" y="426" xml:space="preserve">UART0_FBRD_R = 8;   // 115 200 baud</text>
+<rect class="uba-box" x="30" y="438" width="344" height="60" rx="6"/>
+<text class="uba-b" x="50" y="456">Çerçeve: UARTLCRH (8N1 + FIFO)</text>
+<text class="uba-mono" x="50" y="474" xml:space="preserve">UART0_LCRH_R = 0x70; // WLEN_8 | FEN</text>
+<text class="uba-s13 uba-mut" x="50" y="490" xml:space="preserve">bölücü bu yazımla yürürlüğe girer</text>
+<rect class="uba-opt" x="30" y="502" width="344" height="60" rx="6"/>
+<text class="uba-b" x="50" y="520">Baud saati kaynağı: UARTCC</text>
+<rect class="uba-pill" x="284" y="506" width="84" height="19" rx="9"/>
+<text class="uba-s13 uba-b" x="326" y="520" text-anchor="middle">isteğe bağlı</text>
+<text class="uba-mono" x="50" y="538" xml:space="preserve">UART0_CC_R = 0x0;   // sistem saati</text>
+<text class="uba-mono" x="50" y="554" xml:space="preserve">// 0x5: PIOSC → bölücüyü 16 MHz’e göre</text>
+<rect class="uba-opt" x="30" y="566" width="344" height="76" rx="6"/>
+<text class="uba-b" x="50" y="584">Kesme: eşik, sil, maske</text>
+<rect class="uba-tagacc" x="270" y="570" width="98" height="19" rx="9"/>
+<text class="uba-s13 uba-b uba-acc" x="319" y="584" text-anchor="middle">yalnız kesmeli</text>
+<text class="uba-mono" x="50" y="602" xml:space="preserve">UART0_IFLS_R = 0x12;  // RX ½, TX ½</text>
+<text class="uba-mono" x="50" y="618" xml:space="preserve">UART0_ICR_R  = 0x50;  // RX|RT sil (=)</text>
+<text class="uba-mono" x="50" y="634" xml:space="preserve">UART0_IM_R  |= 0x50;  // RXIM|RTIM</text>
+<rect class="uba-box" x="30" y="646" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="664">UART’ı aç: UARTEN | TXE | RXE</text>
+<text class="uba-mono" x="50" y="682" xml:space="preserve">UART0_CTL_R |= 0x301;</text>
+<rect class="uba-opt" x="30" y="694" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="712">NVIC: IRQ 5’i aç</text>
+<rect class="uba-tagacc" x="270" y="698" width="98" height="19" rx="9"/>
+<text class="uba-s13 uba-b uba-acc" x="319" y="712" text-anchor="middle">yalnız kesmeli</text>
+<text class="uba-mono" x="50" y="730" xml:space="preserve">NVIC_EN0_R = 1 &lt;&lt; 5;  // UART0</text>
+<rect class="uba-opt" x="30" y="742" width="344" height="44" rx="6"/>
+<text class="uba-b" x="50" y="760">Global kesmeleri aç</text>
+<rect class="uba-tagacc" x="270" y="746" width="98" height="19" rx="9"/>
+<text class="uba-s13 uba-b uba-acc" x="319" y="760" text-anchor="middle">yalnız kesmeli</text>
+<text class="uba-mono" x="50" y="778" xml:space="preserve">__asm(" CPSIE I");</text>
+<rect class="uba-code" x="386" y="38" width="362" height="60" rx="6"/>
+<text class="uba-mono uba-blu" x="398" y="56" xml:space="preserve">SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);</text>
+<text class="uba-mono uba-blu" x="398" y="72" xml:space="preserve">while(!SysCtlPeripheralReady(</text>
+<text class="uba-mono uba-blu" x="398" y="88" xml:space="preserve">        SYSCTL_PERIPH_UART0));</text>
+<path class="uba-con" d="M374,54 H386"/>
+<rect class="uba-code" x="386" y="102" width="362" height="44" rx="6"/>
+<text class="uba-mono uba-blu" x="398" y="120" xml:space="preserve">SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);</text>
+<path class="uba-con" d="M374,118 H386"/>
+<rect class="uba-code" x="386" y="150" width="362" height="140" rx="6"/>
+<text class="uba-mono uba-blu" x="398" y="168" xml:space="preserve">GPIOPinConfigure(GPIO_PA0_U0RX);</text>
+<text class="uba-mono uba-blu" x="398" y="184" xml:space="preserve">GPIOPinConfigure(GPIO_PA1_U0TX);  // PCTL</text>
+<text class="uba-mono uba-blu" x="398" y="200" xml:space="preserve">GPIOPinTypeUART(GPIO_PORTA_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="216" xml:space="preserve">    GPIO_PIN_0 | GPIO_PIN_1);</text>
+<text class="uba-s13 uba-mut" x="398" y="232" xml:space="preserve">DIR=0, AFSEL=1, 2 mA, PUR=PDR=0, DEN=1</text>
+<path class="uba-con" d="M374,166 H386"/>
+<path class="uba-con" d="M374,214 H386"/>
+<path class="uba-con" d="M374,262 H386"/>
+<text class="uba-s13 uba-b" x="738" y="168" text-anchor="end">3–5</text>
+<rect class="uba-codeopt" x="386" y="294" width="362" height="92" rx="6"/>
+<text class="uba-s13 uba-b" x="398" y="312">adım 10 · isteğe bağlı</text>
+<text class="uba-mono uba-blu" x="398" y="328" xml:space="preserve">UARTClockSourceSet(UART0_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="344" xml:space="preserve">    UART_CLOCK_PIOSC);</text>
+<text class="uba-s13 uba-mut" x="398" y="360" xml:space="preserve">UARTConfigSetExpClk’ten önce; PIOSC ise clk =</text>
+<text class="uba-s13 uba-mut" x="398" y="376" xml:space="preserve">16000000 verilir (SysCtlClockGet() değil)</text>
+<rect class="uba-code" x="386" y="390" width="362" height="140" rx="6"/>
+<text class="uba-s13 uba-b" x="398" y="408">adım 6–9 + 12</text>
+<text class="uba-mono uba-blu" x="398" y="424" xml:space="preserve">UARTConfigSetExpClk(UART0_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="440" xml:space="preserve">  SysCtlClockGet(), 115200,</text>
+<text class="uba-mono uba-blu" x="398" y="456" xml:space="preserve">  UART_CONFIG_WLEN_8|UART_CONFIG_STOP_ONE</text>
+<text class="uba-mono uba-blu" x="398" y="472" xml:space="preserve">  | UART_CONFIG_PAR_NONE);</text>
+<text class="uba-s13 uba-mut" x="398" y="488" xml:space="preserve">içi: UARTDisable → HSE → IBRD/FBRD → LCRH 0x60</text>
+<text class="uba-s13 uba-mut" x="398" y="504" xml:space="preserve">→ UARTEnable: FEN = 1 (LCRH 0x70), CTL |= 0x301</text>
+<rect class="uba-codeopt" x="386" y="534" width="362" height="156" rx="6"/>
+<text class="uba-s13 uba-b" x="398" y="552">adım 11 · yalnız kesmeli</text>
+<text class="uba-mono uba-blu" x="398" y="568" xml:space="preserve">UARTFIFOLevelSet(UART0_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="584" xml:space="preserve">    UART_FIFO_TX4_8, UART_FIFO_RX4_8);</text>
+<text class="uba-mono uba-blu" x="398" y="600" xml:space="preserve">UARTIntClear(UART0_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="616" xml:space="preserve">    UART_INT_RX | UART_INT_RT);  // ICR = …</text>
+<text class="uba-mono uba-blu" x="398" y="632" xml:space="preserve">UARTIntEnable(UART0_BASE,</text>
+<text class="uba-mono uba-blu" x="398" y="648" xml:space="preserve">    UART_INT_RX | UART_INT_RT);  // IM |= …</text>
+<text class="uba-s13 uba-mut" x="398" y="664" xml:space="preserve">UARTIntEnable bayrak silmez → önce UARTIntClear</text>
+<rect class="uba-codeopt" x="386" y="694" width="362" height="44" rx="6"/>
+<text class="uba-s13 uba-b" x="398" y="712">adım 13</text>
+<text class="uba-mono uba-blu" x="398" y="728" xml:space="preserve">IntEnable(INT_UART0);    // vektör 21</text>
+<path class="uba-con" d="M374,710 H386"/>
+<rect class="uba-codeopt" x="386" y="742" width="362" height="44" rx="6"/>
+<text class="uba-s13 uba-b" x="398" y="760">adım 14</text>
+<text class="uba-mono uba-blu" x="398" y="776" xml:space="preserve">IntMasterEnable();</text>
+<path class="uba-con" d="M374,758 H386"/>
+<path class="uba-w" d="M16,65 V107"/>
+<path class="uba-w" d="M16,129 V155"/>
+<path class="uba-w" d="M16,177 V203"/>
+<path class="uba-w" d="M16,225 V251"/>
+<path class="uba-w" d="M16,273 V299"/>
+<path class="uba-w" d="M16,321 V347"/>
+<path class="uba-w" d="M16,369 V395"/>
+<path class="uba-w" d="M16,417 V443"/>
+<path class="uba-w" d="M16,465 V507"/>
+<path class="uba-w" d="M16,529 V571"/>
+<path class="uba-w" d="M16,593 V651"/>
+<path class="uba-w" d="M16,673 V699"/>
+<path class="uba-w" d="M16,721 V747"/>
+<circle class="uba-circ" cx="16" cy="54" r="11"/>
+<text class="uba-num" x="16" y="59" text-anchor="middle">1</text>
+<circle class="uba-circ" cx="16" cy="118" r="11"/>
+<text class="uba-num" x="16" y="123" text-anchor="middle">2</text>
+<circle class="uba-circ" cx="16" cy="166" r="11"/>
+<text class="uba-num" x="16" y="171" text-anchor="middle">3</text>
+<circle class="uba-circ" cx="16" cy="214" r="11"/>
+<text class="uba-num" x="16" y="219" text-anchor="middle">4</text>
+<circle class="uba-circ" cx="16" cy="262" r="11"/>
+<text class="uba-num" x="16" y="267" text-anchor="middle">5</text>
+<circle class="uba-circ" cx="16" cy="310" r="11"/>
+<text class="uba-num" x="16" y="315" text-anchor="middle">6</text>
+<circle class="uba-circ" cx="16" cy="358" r="11"/>
+<text class="uba-num" x="16" y="363" text-anchor="middle">7</text>
+<circle class="uba-circ" cx="16" cy="406" r="11"/>
+<text class="uba-num" x="16" y="411" text-anchor="middle">8</text>
+<circle class="uba-circ" cx="16" cy="454" r="11"/>
+<text class="uba-num" x="16" y="459" text-anchor="middle">9</text>
+<circle class="uba-circ" cx="16" cy="518" r="11"/>
+<text class="uba-num uba-s13" x="16" y="523" text-anchor="middle">10</text>
+<circle class="uba-circ" cx="16" cy="582" r="11"/>
+<text class="uba-num uba-s13" x="16" y="587" text-anchor="middle">11</text>
+<circle class="uba-circ" cx="16" cy="662" r="11"/>
+<text class="uba-num uba-s13" x="16" y="667" text-anchor="middle">12</text>
+<circle class="uba-circ" cx="16" cy="710" r="11"/>
+<text class="uba-num uba-s13" x="16" y="715" text-anchor="middle">13</text>
+<circle class="uba-circ" cx="16" cy="758" r="11"/>
+<text class="uba-num uba-s13" x="16" y="763" text-anchor="middle">14</text>
+<text x="748" y="806" text-anchor="end"><tspan class="uba-s13 uba-mut">Sıra: datasheet §14.4; NVIC ve global izin UARTEN’den sonra. </tspan><tspan class="uba-s13 uba-mut">RCGCUART </tspan><tspan class="uba-mono uba-mut">0x400F.E618</tspan><tspan class="uba-s13 uba-mut"> · PRUART </tspan><tspan class="uba-mono uba-mut">0x400F.EA18</tspan></text>
+</svg>
