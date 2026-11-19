@@ -1,0 +1,664 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GPIO Kesmeleri — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad üzerinde GPIO kesmeleri: tetikleme türleri, GPIOIS/IBE/IEV/IM/RIS/MIS/ICR register'ları, NVIC, ISR yazımı, kontak sıçraması ve buton örnekleri (API'siz ve TivaWare API'li).">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 2. GPIO Kesmeleri</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#yoklamadan-kesmeye">1. Yoklamadan kesmeye</a><ol>
+  <li><a href="#yoklama-sorunu">Butonu yoklamanın sorunu</a></li>
+  <li><a href="#uc-gecit">Kesmeye kısa giriş: üç geçit</a></li></ol></li>
+<li><a href="#donanim">2. GPIO kesme donanımı</a><ol>
+  <li><a href="#port-irq">Port başına tek kesme hattı</a></li></ol></li>
+<li><a href="#tetikleme">3. Tetikleme türleri</a><ol>
+  <li><a href="#kenar-seviye">Kenar ve seviye tetikleme</a></li></ol></li>
+<li><a href="#registerlar">4. Register'lar</a><ol>
+  <li><a href="#register-tablosu">GPIO kesme register'ları</a></li>
+  <li><a href="#nvic-registerlari">NVIC: EN0, DIS0 ve PRI7</a></li></ol></li>
+<li><a href="#baslatma">5. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">Adım adım</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#isr">6. ISR yazımı</a><ol>
+  <li><a href="#isr-baglama">ISR'yi vektör tablosuna bağlamak</a></li>
+  <li><a href="#isr-govdesi">ISR gövdesi: MIS, ICR ve volatile</a></li></ol></li>
+<li><a href="#sicrama">7. Kontak sıçraması</a></li>
+<li><a href="#ornekler">8. Örnekler</a><ol>
+  <li><a href="#ornek-tek-apisiz">8.1 SW1 ile LED tersleme, API'siz</a></li>
+  <li><a href="#ornek-tek-apili">8.2 SW1 kesmesi, API'li</a></li>
+  <li><a href="#ornek-iki-buton">8.3 İki buton, MIS ile ayırt etme</a></li>
+  <li><a href="#ornek-kenar">8.4 Yükselen kenar ve iki kenar</a></li>
+  <li><a href="#ornek-degisken">8.5 Kesmede değişken, ana döngüde kullanım</a></li>
+  <li><a href="#ornek-sayac">8.6 Sıçrama önlemeli basış sayacı</a></li></ol></li>
+<li><a href="#exp11">9. Experiment 11 uyarlaması</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>GPIO Kesmeleri</h1>
+<p class="lead">GPIO notunda butonları ana döngüde sürekli okuyorduk. Bu notta aynı butonların bir kenarını donanıma yakalatıp işlemciyi yalnız gerektiğinde çağıracağız. Önce bir pinin kesme yolunu ve register'larını, sonra başlatma sırasını ve ISR yazımını, en sonda da LaunchPad'in SW1/SW2 butonlarıyla API'siz ve API'li örnekleri göreceğiz.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Butonu yoklamanın neden basış kaçırdığını ve CPU'yu boşa harcadığını açıklayabilir; bir GPIO olayının ISR'ye ulaşması için açılması gereken üç geçidi (GPIOIM → NVIC EN0 → PRIMASK) sayabilir.</li>
+<li>Bir pinin kesme yolunu (algılama → GPIORIS → GPIOIM → GPIOMIS → port kesmesi → NVIC) çizebilir; Port A–F'nin kesme ve vektör numaralarını (Port F: kesme 30, vektör 46) bulabilir.</li>
+<li>GPIOIS, GPIOIBE ve GPIOIEV ile beş tetikleme türünü (düşen, yükselen, iki kenar, düşük, yüksek seviye) seçebilir; kenar ve seviye tetiklemede GPIOICR'nin etkisini ayırt edebilir.</li>
+<li>Port F kesmesini datasheet sırasıyla başlatabilir: 1 saat → 2 kilit → 3 yön/dijital → 4 pull-up → 5 IM = 0 → 6 IS/IBE/IEV → 7 ICR → 8 IM = 1 → 9 NVIC → 10 global izin.</li>
+<li>ISR'yi startup dosyasına ya da <code>GPIOIntRegister</code> ile bağlayabilir; ISR içinde GPIOMIS ile pini ayırt edip bayrağı <code>=</code> ile ve en başta temizleyebilir, paylaşılan değişkenleri <code>volatile</code> tanımlayabilir.</li>
+<li>Kontak sıçramasının bir basışta birden çok kesme üretmesini açıklayıp ISR içinde beklemeden sıçramayı önleyebilir.</li>
+<li>Aynı programı doğrudan register erişimiyle ve TivaWare fonksiyonlarıyla (<code>GPIOIntTypeSet</code>, <code>GPIOIntEnable</code>, <code>GPIOIntClear</code>, <code>GPIOIntStatus</code>, <code>IntEnable</code>, <code>IntMasterEnable</code>) yazabilir.</li>
+</ol></div>
+
+<h2 id="yoklamadan-kesmeye">1. Yoklamadan kesmeye</h2>
+<h3 id="yoklama-sorunu">Butonu yoklamanın sorunu</h3>
+<p>GPIO notundaki buton örneklerinde (<a href="../gpio/#ornek-buton">GPIO notu 6.3</a>) program ana döngüde butonun pinini durmadan okuyordu. Buna <b>yoklama</b> (polling) denir. Ders kodlarındaki <code>drive_gpio_interrupt_tekrari</code> klasörü, yoklamadan kesmeye geçişi numaralı dosyalarla adım adım gösterir: <code>001</code>–<code>003_switch.c</code> SW1/SW2'yi yoklar (003'te LED buton basılı kaldıkça yanar); <code>004_k.c</code> butonsuz kayan ışıktır; <code>005_k.c</code> kayan ışığın hızını SW1 (yavaşlat) ve SW2 (hızlandır) ile değiştirir ve <b>sorun burada görülür</b> (<code>005_k_1</code>–<code>6</code> aynı programı fonksiyonlara böler); <code>006</code>/<code>007</code> LED'leri <code>HWREG</code> ve <a href="../gpio/#maskeleme">adres maskelemesiyle</a> sürer; <code>008_main_interrupt.c</code> buton işini kesmeyle yapar, ana döngüsü boştur.</p>
+<p><code>005_k.c</code>'nin ana döngüsü şöyledir (başlatma kısmı GPIO notundaki gibidir):</p>
+<div class="code-head"><span class="file">drive_gpio_interrupt_tekrari/005_k.c (ana döngü)</span><span class="tag api">API&#x27;li · yoklama</span></div><pre><code class="language-c">while(1)
+{
+    if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)==0)   // SW1 basılı mı? (turda bir kez bakılır)
+    {
+        a=a+50000;                                    // gecikmeyi uzat: ışık yavaşlar
+    }
+    if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)==0)   // SW2 basılı mı?
+    {
+        a=a-50000;                                    // gecikmeyi kısalt
+        if (a&lt;100001)
+            a=100000;                                 // alt sınır
+    }
+    while (k&lt;9)                                       // kırmızı -&gt; mavi -&gt; yeşil
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, k);
+        SysCtlDelay(a);                               // bu sürede butonlara bakılmaz
+        k=k*2;
+    }
+    k=8;
+    while (k&gt;1)                                       // yeşil -&gt; mavi -&gt; kırmızı
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, k);
+        SysCtlDelay(a);
+        k=k/2;
+    }
+    k=2;
+}</code></pre>
+<p>Saat 40 MHz'tir (<code>SYSCTL_SYSDIV_5</code> + PLL) ve <code>SysCtlDelay(n)</code> yaklaşık 3n çevrim sürer. a = 100 000 iken her dilim 7,5 ms, bir tur (6 dilim) 45 ms sürer. SW1 basılı tutulup a = 1 000 000'e çıkınca bir dilim 75 ms, bir tur 450 ms olur. Butonlara <b>turda bir kez</b> bakıldığı için:</p>
+<ul>
+<li>Tur içindeki <code>SysCtlDelay</code> sırasında yapılan kısa bir basış <b>hiç görülmez</b>.</li>
+<li>Basılı tutulan buton her turda yeniden sayılır; bir basış birden çok adım ilerletir.</li>
+<li>CPU zamanının neredeyse tamamı bekleme döngüsünde geçer.</li>
+</ul>
+<p><code>005_k_1.c</code> butonlara daha sık bakar, ama gecikmeler sırasındaki boşluk kalır. Kalıcı çözüm, kenarı donanıma yakalatmaktır. Her GPIO pininin kenar algılayıcısı vardır ve yakaladığı olayı <b>GPIORIS</b> register'ındaki bir bitte, yazılım temizleyene kadar tutar. Bu bit yoklansa bile kısa basış artık kaçmaz; ama asıl kazanç bu bitin işlemciyi kendiliğinden çağırmasıdır: <b>kesme</b>.</p>
+<p>Not: 001–008 dosyaları StellarisWare dönemine aittir. <code>GPIO_LOCK_KEY_DD</code>, <code>GPIOPinIntClear</code> gibi eski adlar TivaWare 2.1.4'te yoktur; yeni karşılıkları <a href="#ornek-kenar">8.4</a>'tedir.</p>
+
+<h3 id="uc-gecit">Kesmeye kısa giriş: üç geçit</h3>
+<p><b>Kesme</b>, bir donanım olayının işlemciyi o anki işinden alıp <b>kesme servis programını</b> (ISR) çalıştırması, ISR bitince de kaldığı yere döndürmesidir. ISR, <code>void Ad(void)</code> biçiminde sıradan bir C fonksiyonudur. <b>Vektör tablosu</b>, flash'ın başındaki (0x0000.0000) bir adres dizisidir; her girişte bir ISR'nin adresi bulunur. Port F'nin girişi vektör 46, yani 0x0B8 ofsetindedir. Kesme gelince çekirdek bu adresi okuyup ISR'ye dallanır, ISR bitince kaldığı yere döner. İstisna/kesme ayrımı, NVIC, öncelikler ve ISR kurallarının ayrıntısı 6. konudaki <a href="../timer/#kesme">zamanlayıcı notundadır</a>; burada yalnız GPIO'ya özgü kısmı işliyoruz.</p>
+<p>Bir buton kenarının ISR'ye ulaşması için yol üzerindeki <b>üç geçidin</b> de açık olması gerekir:</p>
+<ol>
+<li><b>Geçit 1, GPIOIM (pin maskesi):</b> İlgili pinin biti 1 olmalı. TivaWare: <code>GPIOIntEnable(GPIO_PORTF_BASE, GPIO_INT_PIN_4)</code>.</li>
+<li><b>Geçit 2, NVIC EN0:</b> Port F'nin kesme numarası 30'dur; EN0'ın (0xE000E100) bit30'u 1 olmalı. TivaWare: <code>IntEnable(INT_GPIOF)</code>.</li>
+<li><b>Geçit 3, PRIMASK:</b> Çekirdeğin bütün kesmeleri tek bitle kapatan maskesi 0 olmalı. Açılış değeri zaten 0'dır. TivaWare: <code>IntMasterEnable()</code>.</li>
+</ol>
+<p>Ayrıca ISR'nin adresi vektör tablosunda bulunmalıdır (<a href="#isr-baglama">Bölüm 6</a>). Ders kodlarındaki "beş fonksiyon" kuralı bu yapının TivaWare karşılığıdır: iki global ayar (<code>IntMasterEnable</code>, <code>IntEnable</code>) ve üç çevre birimi ayarı (<code>GPIOIntTypeSet</code>, <code>GPIOIntEnable</code>, <code>GPIOIntRegister</code>).</p>
+
+<h2 id="donanim">2. GPIO kesme donanımı</h2>
+<p>Her portun kesme davranışı yedi register ile yönetilir (datasheet §10.2.2, s. 654–655). Bir pinin yolu Şekil 1'de görülür:</p>
+<figure><img class="fig" src="../img/gpiok-kesme-mantigi.svg" alt="Bir pinin kesme yolu: algılama mantığı, GPIORIS, GPIOIM ile VE, GPIOMIS, sekiz pinin VEYA'sı ve NVIC; GPIOICR temizleme"><figcaption><b>Şekil 1.</b> Bir GPIO pininin kesme yolu. Algılama mantığı (GPIOIS, GPIOIBE, GPIOIEV) koşulu görünce GPIORIS biti 1 olur; GPIOIM ile VE'lenen sonuç GPIOMIS'tir. Portun sekiz MIS bitinin VEYA'sı tek bir kesme isteği olarak NVIC'e gider (Port F için kesme 30). GPIOICR'ye 1 yazmak kenar tetiklemede RIS ve MIS bitini temizler.</figcaption></figure>
+<ol>
+<li><b>Algılama:</b> Her pinin kendi algılayıcısı vardır; ne algılanacağını GPIOIS, GPIOIBE ve GPIOIEV'deki aynı numaralı bitler seçer (<a href="#tetikleme">Bölüm 3</a>).</li>
+<li><b>Ham durum (GPIORIS):</b> Koşul oluşunca pinin RIS biti 1 olur. Bu bit <b>GPIOIM'den bağımsızdır</b>: maske kapalıyken de kalkar. Açılışta IS = IBE = IEV = 0 olduğundan bütün pinler zaten düşen kenarı algılar; ayar sırasında butona basılırsa ya da pull-up açılmadan önce boşta kalan pin gürültü toplarsa RIS biti önceden 1 olabilir. Başlatmadaki ICR adımı bu yüzden vardır.</li>
+<li><b>Maske (GPIOIM) ve maskeli durum (GPIOMIS):</b> MIS = RIS VE IM. Yalnız MIS'teki bitler kesme isteği üretir.</li>
+<li><b>Port kesmesi:</b> Portun sekiz MIS bitinin VEYA'sı tek bir hat olarak NVIC'e gider. Datasheet'in ifadesiyle "tüm port için tek bir kesme çıkışı" vardır (s. 654). PF4 ile PF0 aynı ISR'yi çalıştırır; hangisinin geldiğini ISR, GPIOMIS'i okuyarak bulur.</li>
+<li><b>Temizleme (GPIOICR):</b> Kenar tetiklemede bit, yazılım GPIOICR'ye 1 yazana kadar 1 kalır. Seviye tetiklemede ise RIS pinin seviyesini izler (<a href="#kenar-seviye">aşağıda</a>).</li>
+</ol>
+<p>IM biti açık bir pin ADC dönüşümünü (GPIOADCCTL) ya da µDMA aktarımını (GPIODMACTL) da tetikleyebilir (§10.2.2.1–2); bu not yalnız işlemci kesmesini ele alır.</p>
+
+<h3 id="port-irq">Port başına tek kesme hattı</h3>
+<p>Her portun NVIC'te ayrı bir girişi vardır. Port F, numara sırasıyla beklenen 5 değil <b>30</b>'dur; aradaki numaralar başka çevre birimlerine (UART, SSI, I2C, PWM, QEI, ADC, watchdog, zamanlayıcılar, karşılaştırıcılar…) verilmiştir.</p>
+<table>
+<thead><tr><th>Port</th><th>APB taban</th><th>Kesme no (EN0 biti)</th><th>Vektör no</th><th>Vektör ofseti</th><th>Öncelik alanı</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><code>0x40004000</code></td><td>0</td><td>16</td><td><code>0x040</code></td><td>PRI0 bit7:5</td><td><code>INT_GPIOA</code> (16)</td></tr>
+<tr><td>B</td><td><code>0x40005000</code></td><td>1</td><td>17</td><td><code>0x044</code></td><td>PRI0 bit15:13</td><td><code>INT_GPIOB</code> (17)</td></tr>
+<tr><td>C</td><td><code>0x40006000</code></td><td>2</td><td>18</td><td><code>0x048</code></td><td>PRI0 bit23:21</td><td><code>INT_GPIOC</code> (18)</td></tr>
+<tr><td>D</td><td><code>0x40007000</code></td><td>3</td><td>19</td><td><code>0x04C</code></td><td>PRI0 bit31:29</td><td><code>INT_GPIOD</code> (19)</td></tr>
+<tr><td>E</td><td><code>0x40024000</code></td><td>4</td><td>20</td><td><code>0x050</code></td><td>PRI1 bit7:5</td><td><code>INT_GPIOE</code> (20)</td></tr>
+<tr><td><b>F</b></td><td><b><code>0x40025000</code></b></td><td><b>30</b></td><td><b>46</b></td><td><b><code>0x0B8</code></b></td><td><b>PRI7 bit23:21</b></td><td><b><code>INT_GPIOF</code> (46)</b></td></tr>
+</tbody></table>
+<p>Kaynak: datasheet Tablo 2-9 (s. 104–105), s. 658–659, s. 152; <code>inc/hw_ints.h</code>. Vektör no = kesme no + 16, ofset = 4 × vektör no. NVIC register'larında <b>kesme numarası</b> (30), TivaWare'in <code>INT_GPIOF</code> sabitinde <b>vektör numarası</b> (46) kullanılır; <code>IntEnable</code> 46 − 16 = 30 hesabını kendisi yapar.</p>
+
+<h2 id="tetikleme">3. Tetikleme türleri</h2>
+<p>Pinin hangi olayda RIS bitini kaldıracağını üç register'ın aynı numaralı bitleri belirler (datasheet s. 664–666): <b>GPIOIS</b> 0 = kenar, 1 = seviye; <b>GPIOIBE</b> IS = 0 iken 1 ise her iki kenar (GPIOIEV yok sayılır); <b>GPIOIEV</b> 0 = düşen kenar / düşük seviye, 1 = yükselen kenar / yüksek seviye.</p>
+<p>LaunchPad butonları <b>negatif mantıklıdır</b>: iç pull-up ile pin boşta 1, basılıyken 0 okunur (<a href="../gpio/#devreler">GPIO notu</a>). Bu yüzden basış düşen kenar, bırakma yükselen kenardır (Şekil 2).</p>
+<figure><img class="fig" src="../img/gpiok-tetikleme.svg" alt="Negatif mantıklı buton sinyali üzerinde düşen kenar, yükselen kenar, iki kenar, düşük seviye ve yüksek seviye tetiklemede RIS bitinin 1 olduğu yerler"><figcaption><b>Şekil 2.</b> Pull-up'lı, negatif mantıklı bir butonun sinyali ve beş tetikleme türünde RIS bitinin 1 olduğu yerler. Kenar türlerinde RIS, ICR ile temizlenene kadar 1 kalır; seviye türlerinde pin seviyesi sürdükçe 1'dir.</figcaption></figure>
+<table>
+<thead><tr><th>IS</th><th>IBE</th><th>IEV</th><th>Tetikleme</th><th>TivaWare sabiti</th><th>SW1 için anlamı</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0</td><td>0</td><td>Düşen kenar (1 → 0)</td><td><code>GPIO_FALLING_EDGE</code> (0x0)</td><td>basış</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>Yükselen kenar (0 → 1)</td><td><code>GPIO_RISING_EDGE</code> (0x4)</td><td>bırakma</td></tr>
+<tr><td>0</td><td>1</td><td>x</td><td>İki kenar</td><td><code>GPIO_BOTH_EDGES</code> (0x1)</td><td>basış ve bırakma</td></tr>
+<tr><td>1</td><td>x</td><td>0</td><td>Düşük seviye</td><td><code>GPIO_LOW_LEVEL</code> (0x2)</td><td>basılı tutuldukça</td></tr>
+<tr><td>1</td><td>x</td><td>1</td><td>Yüksek seviye</td><td><code>GPIO_HIGH_LEVEL</code> (0x6)</td><td>basılmadıkça (sürekli)</td></tr>
+</tbody></table>
+<p>x: etkisiz. TivaWare sabitlerinin bitleri doğrudan register'lara karşılık gelir: bit0 → IBE, bit1 → IS, bit2 → IEV (<code>driverlib/gpio.c</code>, <code>GPIOIntTypeSet</code>). <code>GPIO_FALLING_EDGE</code> = 0 olduğu için bu çağrı üç biti de sıfırlar.</p>
+
+<h3 id="kenar-seviye">Kenar ve seviye tetikleme</h3>
+<ul>
+<li><b>Kenar tetikleme:</b> Olay bir anlıktır; RIS biti kalkar ve yazılım GPIOICR'ye 1 yazana kadar 1 kalır. ICR yazılmazsa ISR'den dönülür dönülmez aynı kesme yeniden gelir. Butonlar için doğal seçim budur.</li>
+<li><b>Seviye tetikleme:</b> RIS biti pin seviyesini izler. Kaynak (dış devre), kesme servis edilene kadar seviyeyi korumalıdır; seviye kalkınca RIS kendiliğinden 0 olur. <b>GPIOICR'nin seviye tetiklemede etkisi yoktur</b> (s. 670). ISR kaynağı ortadan kaldırmazsa, örneğin buton hâlâ basılıysa, ISR biter bitmez yeniden girilir ve ana program hiç çalışmaz. Çözüm: ISR içinde IM bitini kapatmak ya da IEV'yi ters seviyeye çevirip bırakmayı beklemek. Seviye tetikleme, isteğini servis edilene kadar tutan kaynaklara (ör. bir dış yonganın kesme çıkışı) uygundur.</li>
+</ul>
+<p>Tetikleme ayarı değiştirilirken pinin IM biti kapalı olmalıdır. Datasheet'e göre IM açıkken bu register'lardan birine yazmak sahte bir kesmeye yol açabilir (s. 655); başlatmadaki 5. adım bunun içindir.</p>
+
+<h2 id="registerlar">4. Register'lar</h2>
+<h3 id="register-tablosu">GPIO kesme register'ları</h3>
+<p>Ofsetler port taban adresine eklenir (Port F: 0x40025000 + ofset). Hepsinin açılış değeri <code>0x0000.0000</code>'dır ve bit <i>n</i> pin <i>n</i>'ye karşılık gelir (bit7:0; Port F'de yalnız bit4:0 bağlıdır). Değerler datasheet Tablo 10-6'dan (s. 660):</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Tür</th><th>Bit = 1 olunca</th><th>Port F adresi</th><th>s.</th></tr></thead>
+<tbody>
+<tr><td>GPIOIS</td><td><code>0x404</code></td><td>RW</td><td>Seviye algıla (0: kenar)</td><td><code>0x40025404</code></td><td>664</td></tr>
+<tr><td>GPIOIBE</td><td><code>0x408</code></td><td>RW</td><td>İki kenar, IEV yok sayılır (0: IEV belirler)</td><td><code>0x40025408</code></td><td>665</td></tr>
+<tr><td>GPIOIEV</td><td><code>0x40C</code></td><td>RW</td><td>Yükselen kenar / yüksek seviye (0: düşen / düşük)</td><td><code>0x4002540C</code></td><td>666</td></tr>
+<tr><td>GPIOIM</td><td><code>0x410</code></td><td>RW</td><td>Pinin kesmesi NVIC'e gider (geçit 1)</td><td><code>0x40025410</code></td><td>667</td></tr>
+<tr><td>GPIORIS</td><td><code>0x414</code></td><td>RO</td><td>Pinde kesme koşulu oluştu (IM'den bağımsız)</td><td><code>0x40025414</code></td><td>668</td></tr>
+<tr><td>GPIOMIS</td><td><code>0x418</code></td><td>RO</td><td>RIS VE IM: kesme isteği bu pinden</td><td><code>0x40025418</code></td><td>669</td></tr>
+<tr><td>GPIOICR</td><td><code>0x41C</code></td><td>W1C</td><td>1 yaz: RIS ve MIS bitini temizle (yalnız kenar); 0 yazmak etkisiz</td><td><code>0x4002541C</code></td><td>670</td></tr>
+</tbody></table>
+<p>C adları <code>inc/tm4c123gh6pm.h</code>'de <code>GPIO_PORTF_IS_R</code> … <code>GPIO_PORTF_ICR_R</code>, ofsetler <code>inc/hw_gpio.h</code>'de <code>GPIO_O_IS</code> … <code>GPIO_O_ICR</code> adlarıyla tanımlıdır. GPIORIS ve GPIOMIS'e yazmanın etkisi yoktur. GPIOICR W1C (write-1-to-clear) olduğundan <code>=</code> ile yazılır; <code>|=</code> önce okur ve istenmeyen bayrakları da silebilir (<a href="../timer/#bayrak">zamanlayıcı notu</a>).</p>
+
+<h3 id="nvic-registerlari">NVIC: EN0, DIS0 ve PRI7</h3>
+<table>
+<thead><tr><th>Register</th><th>Adres</th><th>Port F için</th><th>s.</th></tr></thead>
+<tbody>
+<tr><td>EN0 (set enable)</td><td><code>0xE000E100</code></td><td>bit30 = 1: kesme 30'a izin. 0 yazmak etkisizdir; bu yüzden <code>NVIC_EN0_R = 1 &lt;&lt; 30;</code> diğer açık kesmeleri kapatmaz.</td><td>142</td></tr>
+<tr><td>DIS0 (clear enable)</td><td><code>0xE000E180</code></td><td>bit30 = 1: kesme 30'u kapat (<code>IntDisable(INT_GPIOF)</code>).</td><td>144</td></tr>
+<tr><td>PRI7</td><td><code>0xE000E41C</code></td><td>Kesme 30 = 4·7 + 2 → alan bit23:21. 0 en yüksek, 7 en düşük öncelik; açılışta 0.</td><td>152</td></tr>
+</tbody></table>
+<p>Örneğin öncelik 5 için <code>NVIC_PRI7_R = (NVIC_PRI7_R &amp; 0xFF1FFFFF) | (5 &lt;&lt; 21);</code> ya da <code>IntPrioritySet(INT_GPIOF, 5 &lt;&lt; 5);</code> yazılır (<code>IntPrioritySet</code> değerin üst 3 bitini kullanır; 5 &lt;&lt; 5 = 0xA0). <code>inc/tm4c123gh6pm.h</code> bu alan için <code>NVIC_PRI7_INT30_M</code> (0x00E00000) ve <code>NVIC_PRI7_INT30_S</code> (21) sabitlerini de verir. Öncelik kurallarının ayrıntısı 6. konudaki <a href="../timer/#oncelik">zamanlayıcı notundadır</a>; tek kesmeli programda öncelik ayarı gerekmez.</p>
+
+<h2 id="baslatma">5. Başlatma adımları</h2>
+<p>Datasheet §10.3 (s. 656–657) GPIO başlatmasını sıralar; 7. adımı kesme ayarıdır ve sahte kesmeyi önlemek için dört alt adım verir: (a) IM'i temizle, (b) IS ve IBE'yi ayarla, (c) GPIORIS'i temizle, (d) IM'i aç. GPIORIS salt okunur olduğundan (c) adımı pratikte GPIOICR'ye 1 yazılarak yapılır. NVIC ve global izin adımları kesme altyapısından gelir. Şekil 3 iki yolu yan yana gösterir:</p>
+<figure><img class="fig" src="../img/gpiok-baslatma-akisi.svg" alt="GPIO kesmesi başlatma akışı: API'siz register adımları ve TivaWare karşılıkları yan yana"><figcaption><b>Şekil 3.</b> Port F kesmesinin başlatma akışı (SW1 + SW2, PF4 ve PF0), API'siz ↔ API'li (datasheet §10.3 + NVIC): 1 saat (RCGCGPIO) + PRGPIO bekle → 2 kilit (yalnız PF0) → 3 GPIODIR / GPIODEN → 4 GPIOPUR → 5 GPIOIM = 0 → 6 GPIOIS / GPIOIBE / GPIOIEV → 7 GPIOICR → 8 GPIOIM = 1 → 9 NVIC (PRI7, EN0) → 10 global izin. 1–4 GPIO notundaki başlatmadır; 5–8 datasheet'in 7a–7d alt adımlarıdır.</figcaption></figure>
+<h3 id="adimlar">Adım adım</h3>
+<ol>
+<li><b>Saati aç:</b> RCGCGPIO bit5 = 1, PRGPIO bit5'i bekle.</li>
+<li><b>Kilidi aç (yalnız PF0/SW2 kullanılacaksa):</b> GPIOLOCK = 0x4C4F434B, GPIOCR bit0 = 1 (<a href="../gpio/#kilit">GPIO notu</a>).</li>
+<li><b>Yön ve dijital işlev:</b> GPIODIR'de LED pinleri 1, buton pinleri 0; GPIODEN'de hepsi 1.</li>
+<li><b>Pull-up:</b> Buton pinlerinde GPIOPUR = 1. Unutulursa pin boşta kalır (<a href="#hatalar">Bölüm 10</a>).</li>
+<li><b>Pin kesmesini maskele (7a):</b> GPIOIM'de ilgili bit = 0 (açılışta zaten 0; ayar sonradan değişiyorsa şart).</li>
+<li><b>Tetikleme türü (7b):</b> GPIOIS, GPIOIBE, GPIOIEV (<a href="#tetikleme">Bölüm 3</a>).</li>
+<li><b>Bekleyen bayrağı temizle (7c):</b> GPIOICR = pin biti; ayar sırasında kalkmış bir RIS biti sahte kesmeye yol açmasın.</li>
+<li><b>Pin kesmesine izin ver (7d, geçit 1):</b> GPIOIM'de ilgili bit = 1. <code>GPIOIntRegister</code> NVIC iznini (EN0) de verdiği için, IM açılmadan önce çağrılırsa ilk kesme doğru ISR'ye gider; sonra çağrılırsa arada gelen bir kesme startup'taki <code>IntDefaultHandler</code>'a düşer.</li>
+<li><b>NVIC (geçit 2):</b> İsteğe bağlı öncelik PRI7 bit23:21; ardından EN0 bit30 = 1. ISR vektör tablosuna bağlı olmalıdır (<a href="#isr-baglama">Bölüm 6</a>).</li>
+<li><b>Global izin (geçit 3):</b> PRIMASK = 0 (<code>IntMasterEnable()</code> ya da <code>__asm("    cpsie   i");</code>). Açılış değeri 0 olduğu için çoğu API'siz örnekte yazılmaz.</li>
+</ol>
+<p>Her adımın register ve TivaWare karşılığı Şekil 3'te yan yanadır; adımların tamamı API'siz olarak <a href="#ornek-tek-apisiz">8.1</a>'de, API'li olarak <a href="#ornek-kenar">8.4</a>'teki iki kenar örneğinde kullanılmıştır.</p>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<p>Davranışlar TivaWare 2.1.4 kaynak kodundan (<code>driverlib/gpio.c</code>, <code>driverlib/interrupt.c</code>) doğrulanmıştır.</p>
+<table>
+<thead><tr><th>TivaWare çağrısı</th><th>Ne yapar (register düzeyinde)</th></tr></thead>
+<tbody>
+<tr><td><code>GPIOIntDisable(base, flags)</code></td><td><code>GPIOIM &amp;= ~flags</code> (adım 5).</td></tr>
+<tr><td><code>GPIOIntTypeSet(base, pins, tür)</code></td><td>Seçilen pinlerin IBE, IS ve IEV bitlerini türün bit0, bit1, bit2'sine göre 1 ya da 0 yapar (adım 6). IM'e dokunmaz.</td></tr>
+<tr><td><code>GPIOIntClear(base, flags)</code></td><td><code>GPIOICR = flags</code> (adım 7 ve ISR). Atama ile yazar, <code>|=</code> ile değil.</td></tr>
+<tr><td><code>GPIOIntEnable(base, flags)</code></td><td><code>GPIOIM |= flags</code> (adım 8). <code>flags</code> için <code>GPIO_INT_PIN_n</code> sabitleri kullanılır; değerleri <code>GPIO_PIN_n</code> ile aynıdır (0x01 … 0x80), bu yüzden ders kodlarındaki <code>GPIO_PIN_4</code> da doğru çalışır.</td></tr>
+<tr><td><code>GPIOIntStatus(base, true)</code></td><td>GPIOMIS'i döndürür; <code>false</code> verilirse GPIORIS'i (IM biti 0 olan pinler dahil).</td></tr>
+<tr><td><code>GPIOIntRegister(base, f)</code></td><td><code>IntRegister(INT_GPIOF, f)</code> ile vektör tablosunu RAM'e kopyalayıp 46. girişe <code>f</code>'yi yazar, ardından <code>IntEnable(INT_GPIOF)</code>'yi çağırır (adım 9'un EN0 kısmı). IM'i <b>açmaz</b>; pin kesmeleri ayrıca <code>GPIOIntEnable</code> ile açılır.</td></tr>
+<tr><td><code>IntEnable(INT_GPIOF)</code></td><td>EN0'da bit (46 − 16) = 30 (adım 9).</td></tr>
+<tr><td><code>IntMasterEnable()</code></td><td><code>CPSIE I</code>: PRIMASK = 0 (adım 10).</td></tr>
+<tr><td><code>GPIOPadConfigSet(base, pins, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU)</code></td><td>GPIOPUR bitlerini 1 yapar (adım 4). <code>GPIOPinTypeGPIOInput</code> pad'i <code>GPIO_PIN_TYPE_STD</code>'ye, yani pull-up kapalıya ayarladığı için bu çağrı ondan <b>sonra</b> yapılmalıdır.</td></tr>
+</tbody></table>
+
+<h2 id="isr">6. ISR yazımı</h2>
+<h3 id="isr-baglama">ISR'yi vektör tablosuna bağlamak</h3>
+<p>İki yol vardır; ayrıntısı 6. konudaki <a href="../timer/#vektor">zamanlayıcı notundadır</a>.</p>
+<p><b>Yöntem 1, startup dosyası (statik):</b> CCS projesindeki <code>tm4c123gh6pm_startup_ccs.c</code> dosyasında ISR adı <code>extern</code> ile bildirilir ve <code>g_pfnVectors</code> dizisinin <b>"GPIO Port F"</b> yorumlu satırında <code>IntDefaultHandler</code> yerine yazılır. API'siz örnek <code>hafta06GpioApsiziKEsme</code>'deki iki değişiklik:</p>
+<div class="code-head"><span class="file">tm4c123gh6pm_startup_ccs.c (parça)</span><span class="tag reg">startup</span></div><pre><code class="language-c">extern void _c_int00(void);
+extern void haricikesme(void);              // (1) EKLENDİ: ISR main.c'de tanımlı
+
+void (* const g_pfnVectors[])(void) =
+{
+    /* ... vektör 0-19 ... */
+    IntDefaultHandler,                      // vektör 20, 0x050: GPIO Port E (kesme 4)
+    /* ... */
+    IntDefaultHandler,                      // vektör 45, 0x0B4: FLASH Control (kesme 29)
+    haricikesme,                            // vektör 46, 0x0B8: GPIO Port F (kesme 30)  (2) DEĞİŞTİ
+    IntDefaultHandler,                      // vektör 47: GPIO Port G (bu yongada yok)
+    /* ... */
+};</code></pre>
+<p>Satır, yorumdaki adla bulunur; satır saymak hataya açıktır. Bildirim eksikse derleme hata verir; ad yazılmazsa ilk kesmede işlemci <code>IntDefaultHandler</code>'daki sonsuz döngüye düşer ve program donmuş görünür.</p>
+<p><b>Yöntem 2, <code>GPIOIntRegister</code> (dinamik):</b> Startup dosyasına dokunulmaz; tablo çalışma anında RAM'e kopyalanır. Ders kodlarındaki API'li örneklerin çoğu bu yolu, API'siz örnekler ve <code>drive_gpio_interrupt_example</code> birinci yolu kullanır.</p>
+
+<h3 id="isr-govdesi">ISR gövdesi: MIS, ICR ve volatile</h3>
+<p>Port F'nin sekiz pini tek ISR'yi paylaştığı için ISR'nin akışı hep aynıdır (Şekil 4):</p>
+<figure><img class="fig" src="../img/gpiok-isr-akisi.svg" alt="Port F ISR akışı: GPIOMIS oku, GPIOICR'ye eşittir ile yaz, PF4 mü PF0 mı, işi yap; ana döngü ile ISR arasında volatile paylaşılan değişken"><figcaption><b>Şekil 4.</b> Port F ISR'sinin akışı: GPIOMIS'i oku → aynı bitleri GPIOICR'ye <code>=</code> ile yaz → hangi pin (PF4 / PF0) → kısa işi yap ve dön. ISR ile ana döngü arasındaki bilgi <code>volatile</code> bir global değişkenle taşınır.</figcaption></figure>
+<div class="code-head"><span class="file">bu not için hazırlandı: Port F ISR kalıbı</span><span class="tag reg">API&#x27;siz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t basma_sayisi = 0; // ISR artırır, ana döngü okur
+volatile uint32_t sw2_bayrak = 0;   // ISR kaldırır, ana döngü işleyip indirir
+
+void PortF_Handler(void)
+{
+    uint32_t durum = GPIO_PORTF_MIS_R;  // hangi pin(ler)? bir kez oku
+    GPIO_PORTF_ICR_R = durum;           // yalnız gelen bayrakları temizle, en başta
+    if (durum &amp; 0x10)                   // SW1 (PF4): bit testi, '==' değil
+        basma_sayisi++;
+    if (durum &amp; 0x01)                   // SW2 (PF0)
+        sw2_bayrak = 1;
+}</code></pre>
+<ol>
+<li><b>GPIOMIS'i bir kez oku, bit testi yap.</b> İki butona aynı anda basılmışsa MIS = 0x11 olur. <code>if (durum == 0x10)</code> gibi eşitlik testi bu durumda iki dalı da kaçırır; <code>if (durum &amp; 0x10)</code> doğrudur. GPIORIS değil GPIOMIS okunur: RIS'te IM'i kapalı pinlerin bitleri de görünebilir.</li>
+<li><b>Bayrağı <code>=</code> ile ve en başta temizle.</b> Yalnız işlenen pinlerin bitleri yazılır. Yazma tamponu yüzünden son satırda temizlenen bayrak NVIC'e geç ulaşır ve ISR bir kez daha çalışabilir; <code>GPIOIntClear</code>'ın TivaWare açıklaması da başta temizlemeyi önerir (<a href="../timer/#isr-kurallari">ISR kuralları</a>, kural 2).</li>
+<li><b>Kısa tut, paylaşılanı <code>volatile</code> yap.</b> ISR'de <code>SysCtlDelay</code> ya da bırakmayı bekleme olmaz; uzun işi ana döngü yapar. <code>volatile</code> olmayan değişkeni derleyici yazmaçta tutup ISR'nin değişikliğini görmeyebilir.</li>
+</ol>
+
+<h2 id="sicrama">7. Kontak sıçraması</h2>
+<p>Mekanik bir buton kapanırken ve açılırken kontaklar birkaç ms – birkaç on ms (butona göre değişir) sıçrar: pin, kararlı seviyeye oturmadan önce birkaç kez 0 ile 1 arasında gidip gelir. Kenar tetiklemeli algılayıcı bu geçişlerin her birini ayrı bir kenar sayar; bir basış birden çok kesme üretir (Şekil 5). <a href="#ornek-tek-apisiz">8.1</a>'deki LED tersleme örneğinde LED bazen hiç değişmiyormuş gibi görünür: çift sayıda tersleme olmuştur. GPIO girişlerinin Schmitt tetikleyicisi (datasheet s. 649) yavaş kenarlardaki gürültüyü giderir, ama mekanik sıçramayı gidermez.</p>
+<figure><img class="fig" src="../img/gpiok-sicrama.svg" alt="Kontak sıçraması: bir basışta pin sinyali birkaç kez gidip gelir ve birden çok düşen kenar, dolayısıyla birden çok kesme oluşur; yazılımsal sıçrama önleme yaklaşımları"><figcaption><b>Şekil 5.</b> Kontak sıçraması: tek basışta pin birkaç kez 0 ile 1 arasında gidip gelir ve her düşen kenar ayrı bir RIS/kesme üretir. Altta yazılımsal sıçrama önleme yaklaşımları.</figcaption></figure>
+<ul>
+<li><b>ISR içinde beklemek (kötü):</b> Bekleme süresince eşit ve düşük öncelikli bütün kesmeler bekler. Üstelik bayrak başta temizlendiyse bekleme sırasındaki sıçrama kenarları RIS'i yeniden kaldırır ve ISR döner dönmez tekrar çalışır. Ders kodlarındaki <code>SysCtlDelay</code>'li ISR'lerin (<a href="#ornek-tek-apili">8.2</a>) LED'i bazen iki kez yakmasının nedeni budur.</li>
+<li><b>(b) Maskele ve 20 ms sonra oku</b> (Şekil 5): ISR pinin IM bitini kapatır; 20 ms sonra (ana döngüde, <a href="#ornek-sayac">8.6</a>, ya da tek seferlik zamanlayıcı kesmesinde) pin hâlâ 0 ise basış kabul edilir, ICR temizlenip IM açılır.</li>
+<li><b>(a) Zaman damgası</b> (Şekil 5): ISR, SysTick ya da bir <a href="../timer/">zamanlayıcıdan</a> okunan zamana göre son kabul edilen kenardan beri 20 ms geçmemişse kenarı yok sayar. Uzun basışta bırakma sıçramasının düşen kenarı yeni basış sayılabilir; güvenilir yol (b) yöntemi ya da iki kenarda zaman damgası tutmaktır.</li>
+<li><b>Periyodik örnekleme:</b> GPIO kesmesi yerine 5–10 ms'lik bir zamanlayıcı kesmesi pini okur, art arda birkaç aynı okumadan sonra değişikliği kabul eder.</li>
+<li><b>Donanımsal:</b> RC süzgeç (seri direnç + butona paralel kondansatör) kenarı yavaşlatır, pinin kendi Schmitt girişi (s. 649) bunu tek temiz kenara çevirir.</li>
+</ul>
+
+<h2 id="ornekler">8. Örnekler</h2>
+<p>Ders kodlarından alınan örneklerde mantık değiştirilmemiştir; İngilizce yorum blokları ve yoruma alınmış satırlar atılmış, yorumlar Türkçeleştirilmiştir. Yorumlardaki adım numaraları <a href="#adimlar">Bölüm 5</a>'tekilerdir. "Bu not için hazırlandı" diye işaretlenen kodlar ders klasöründe yoktur ve TivaWare 2.1.4 başlıklarıyla uyarısız derlenmiştir. Proje ayarları (include yolu, <code>stdint.h</code> sırası, <code>PART_TM4C123GH6PM</code>) <a href="../timer/#ornekler">zamanlayıcı notundaki</a> gibidir.</p>
+
+<h3 id="ornek-tek-apisiz">8.1 SW1 ile LED tersleme, API'siz</h3>
+<p><b>Amaç:</b> SW1'e (PF4) her basışta kırmızı LED'in (PF1) durumunu değiştirmek; ana döngü boş kalır. <b>Donanım:</b> LaunchPad, SW1 = PF4 (iç pull-up), kırmızı LED = PF1. Ayrıca startup dosyasında "GPIO Port F" satırına <code>PortF_Handler</code> yazılır ve <code>extern void PortF_Handler(void);</code> eklenir.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: sw1_tersle.c</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;                 // tm4c123gh6pm.h uint32_t kullanır; önce eklenmeli
+#include "inc/tm4c123gh6pm.h"
+
+void PortF_Handler(void)            // kesme 30 / vektör 46: startup dosyasına yazılır
+{
+    GPIO_PORTF_ICR_R = 0x10;        // PF4 bayrağını temizle (W1C: '=' ile, en başta)
+    GPIO_PORTF_DATA_R ^= 0x02;      // kırmızı LED'i (PF1) tersle
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;                // 1) Port F saati
+    while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) {}  //    Port F hazır olana kadar bekle
+    GPIO_PORTF_DIR_R |= 0x02;       // 3) PF1 çıkış
+    GPIO_PORTF_DIR_R &amp;= ~0x10;      //    PF4 giriş
+    GPIO_PORTF_DEN_R |= 0x12;       //    PF1 ve PF4 dijital
+    GPIO_PORTF_PUR_R |= 0x10;       // 4) PF4 iç pull-up (SW1 negatif mantık)
+
+    GPIO_PORTF_IM_R  &amp;= ~0x10;      // 5) PF4 kesmesini maskele
+    GPIO_PORTF_IS_R  &amp;= ~0x10;      // 6) IS = 0: kenar duyarlı
+    GPIO_PORTF_IBE_R &amp;= ~0x10;      //    IBE = 0: tek kenar, IEV belirler
+    GPIO_PORTF_IEV_R &amp;= ~0x10;      //    IEV = 0: düşen kenar (basış)
+    GPIO_PORTF_ICR_R  =  0x10;      // 7) bekleyen bayrağı temizle
+    GPIO_PORTF_IM_R  |=  0x10;      // 8) PF4 kesmesine izin (geçit 1)
+
+    NVIC_PRI7_R = (NVIC_PRI7_R &amp; 0xFF1FFFFF) | (5 &lt;&lt; 21);  // 9) kesme 30 önceliği = 5 (isteğe bağlı)
+    NVIC_EN0_R  = 1 &lt;&lt; 30;          // 9) NVIC: kesme 30 (geçit 2)
+    __asm("    cpsie   i");         // 10) PRIMASK = 0 (geçit 3)
+
+    while (1)
+    {
+        /* boş: LED'i ISR değiştiriyor */
+    }
+}</code></pre>
+<p><b>Açıklama:</b> On adımın 2. adımı (kilit) PF0 kullanılmadığı için yoktur. Saat 16 MHz'tir (PIOSC), ama kesmeli bu programda süre hesabı yoktur. Sıçrama yüzünden LED bazen değişmiyormuş gibi görünebilir (<a href="#sicrama">Bölüm 7</a>).</p>
+
+<h3 id="ornek-tek-apili">8.2 SW1 kesmesi, API'li</h3>
+<p><b>Amaç:</b> SW1'in düşen kenarında kırmızı LED'i kısa süre yakmak; ders kodlarında "beş fonksiyon" diye anılan düzen. <b>Donanım:</b> SW1 = PF4, kırmızı LED = PF1; ISR <code>GPIOIntRegister</code> ile bağlanır, startup dosyası değişmez. <code>drive_2017_gpio_int/int1.c</code> bu dosyayla aynıdır (yalnız yorumlar farklı).</p>
+<div class="code-head"><span class="file">drive_2019_gpio_int/int1.c</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_sysctl.h"
+
+void portfkesmesifonksiyonu()
+{
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_4);          // PF4 bayrağını temizle
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 2); // kırmızı yan
+    SysCtlDelay(2000000);                               // ISR içinde ~0,12 s bekleme
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // sön
+}
+
+int main(void)
+{
+    // kesmede her zaman 5 fonksiyon ile ayar yapacağız
+    IntMasterEnable();                                  // global ayar 1 (adım 10)
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 50 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);        // 1)
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3); // 3)
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);  // 3)
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU); // 4)
+    GPIOIntRegister(GPIO_PORTF_BASE,portfkesmesifonksiyonu); // çevre birimi ayar 1: ISR (+ adım 9)
+    GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_4,GPIO_FALLING_EDGE); // çevre birimi ayar 2 (adım 6)
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_4);          // 7)
+    GPIOIntEnable(GPIO_PORTF_BASE, GPIO_PIN_4);         // çevre birimi ayar 3 (adım 8)
+    IntEnable(INT_GPIOF);                               // global ayar 2 (adım 9)
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0); // LED'ler sönük
+    while(1)
+    {
+    }
+}</code></pre>
+<p><b>Açıklama:</b> Sıra Bölüm 5'tekinden farklıdır (global izin en başta), ama IM en son açıldığı için sonuç değişmez. <code>008_main_interrupt.c</code> ve dersin LaTeX notundaki ilk kesme örneği aynı işi StellarisWare adlarıyla (<code>GPIOPinIntClear</code>, <code>GPIOPinIntEnable</code>), 40 MHz'te ve ISR kaydını sona alarak yapar.</p>
+<div class="box warn"><span class="box-title">Ders kodu hakkında</span>
+<ul>
+<li>Dosya <code>driverlib/interrupt.h</code>'yi eklemez; <code>IntMasterEnable</code> ve <code>IntEnable</code> bildirimsiz çağrılır. CCS'deki TI derleyicisi bunu yalnız uyarıyla (#225-D) geçirir; C99'dan beri örtük bildirim yoktur ve güncel GCC/clang varsayılan olarak hata verir. <code>#include "driverlib/interrupt.h"</code> eklenmelidir. Aynı eksik <code>int2.c</code>'de de vardır; <code>int3.c</code>–<code>int5.c</code> bu satırı içerir.</li>
+<li>ISR'de <code>SysCtlDelay(2000000);</code> vardır: 50 MHz'te yaklaşık 0,12 s boyunca diğer kesmeler bekler ve bu sürede gelen sıçrama kenarları ISR'yi bir kez daha çalıştırabilir (<a href="#sicrama">Bölüm 7</a>).</li>
+</ul></div>
+
+<h3 id="ornek-iki-buton">8.3 İki buton, MIS ile ayırt etme</h3>
+<p><b>Amaç:</b> SW1 (PF4) ve SW2 (PF0) aynı Port F ISR'sini çalıştırır; ISR, GPIOMIS ile hangi butona basıldığını bulur. <b>Donanım:</b> SW1, SW2 (PF0 kilitli: <a href="../gpio/#kilit">GPIO notu</a>), RGB LED.</p>
+<h4>API'siz</h4>
+<p>ISR adı <code>haricikesme</code>, startup dosyasına <a href="#isr-baglama">Bölüm 6</a>'daki gibi yazılmıştır. SW1 mavi, SW2 kırmızı LED'i yakar; LED'ler hiç söndürülmez, iki butona da basıldıktan sonra mor kalır.</p>
+<div class="code-head"><span class="file">hafta06GpioApsiziKEsme/main.c</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">#include "stdint.h"
+#include"inc/tm4c123gh6pm.h"
+
+void haricikesme(void)                      // Port F ISR (startup'ta vektör 46)
+{
+    if ((GPIO_PORTF_MIS_R &amp; 0x10))          // SW1 (PF4) kesmesi mi?
+    {
+        GPIO_PORTF_ICR_R=0x10;              // PF4 bayrağını temizle
+        GPIO_PORTF_DATA_R|=0x04;            // mavi LED'i yak
+    }
+
+    if ((GPIO_PORTF_MIS_R &amp; 0x01))          // SW2 (PF0) kesmesi mi?
+    {
+        GPIO_PORTF_ICR_R=0x01;              // PF0 bayrağını temizle
+        GPIO_PORTF_DATA_R|=0x02;            // kırmızı LED'i yak
+    }
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R|=(1&lt;&lt;5);              // 1) Port F saati (0x20)
+
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;         // 2) kilidi aç
+    GPIO_PORTF_CR_R = 0x01;                 //    PF0 artık değiştirilebilir
+
+    GPIO_PORTF_DIR_R &amp;= ~(1&lt;&lt;4)|~(1&lt;&lt;0);    // 3) amaç: PF4, PF0 giriş (uyarıya bakın)
+    GPIO_PORTF_DIR_R |=(1&lt;&lt;3)|(1&lt;&lt;2)|(1&lt;&lt;1);//    PF1-PF3 çıkış
+    GPIO_PORTF_AFSEL_R=0x00;                //    alternatif işlev yok
+    GPIO_PORTF_DEN_R|=(1&lt;&lt;4)|(1&lt;&lt;3)|(1&lt;&lt;2)|(1&lt;&lt;1)|(1&lt;&lt;0); // PF0-PF4 dijital
+    GPIO_PORTF_PUR_R =(1&lt;&lt;4)|(1&lt;&lt;0);        // 4) PF4, PF0 pull-up
+
+    GPIO_PORTF_IS_R &amp;=~(1&lt;&lt;4)|~(1&lt;&lt;0);      // 6) amaç: kenar duyarlı
+    GPIO_PORTF_IBE_R &amp;=~(1&lt;&lt;4)|~(1&lt;&lt;0);     //    amaç: tek kenar (IEV belirler)
+    GPIO_PORTF_IEV_R &amp;=~(1&lt;&lt;4)|~(1&lt;&lt;0);     //    amaç: düşen kenar
+    GPIO_PORTF_ICR_R |=(1&lt;&lt;4)|(1&lt;&lt;0);       // 7) bayrakları temizle
+    GPIO_PORTF_RIS_R=0x00;                  //    RIS salt okunur: etkisiz
+    GPIO_PORTF_IM_R|=(1&lt;&lt;4)|(1&lt;&lt;0);         // 8) PF4, PF0 kesmesine izin
+
+    NVIC_EN0_R=0x40000000;                  // 9) NVIC kesme 30 (8051'deki SETB EX0 karşılığı)
+
+    while(1)
+    {
+    }
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında</span>
+<ul>
+<li><code>GPIO_PORTF_DIR_R &amp;= ~(1&lt;&lt;4)|~(1&lt;&lt;0);</code> ve IS, IBE, IEV için aynı biçimdeki satırlar hiçbir biti temizlemez: <code>~0x10 | ~0x01</code> = <code>0xFFFFFFEF | 0xFFFFFFFE</code> = <code>0xFFFFFFFF</code>, yani register kendisiyle VE'lenir. Program yalnız bu register'ların açılış değeri 0 olduğu için çalışır. Doğrusu: <code>&amp;= ~((1&lt;&lt;4)|(1&lt;&lt;0));</code> ya da <code>&amp;= ~0x11;</code>.</li>
+<li><code>GPIO_PORTF_ICR_R |=(1&lt;&lt;4)|(1&lt;&lt;0);</code>: W1C register'ına <code>=</code> ile yazılmalıdır.</li>
+<li><code>GPIO_PORTF_RIS_R=0x00;</code>: GPIORIS salt okunurdur, bu satırın etkisi yoktur. Datasheet'in "GPIORIS'i temizle" adımı GPIOICR ile yapılır.</li>
+<li>Özgün yorum PF1–PF3 için "input oldu" der; bu pinler çıkıştır.</li>
+<li>PRGPIO beklenmeden <code>GPIO_PORTF_LOCK_R</code>'ye yazılır; datasheet saatten sonra 3 çevrim ister (s. 659).</li>
+</ul></div>
+<p>Ders klasöründeki <b>uzun örnek</b> aynı programdır (datasheet açıklamaları yorum olarak eklenmiş); yukarıdaki uyarılar onun için de geçerlidir.</p>
+<h4>API'li</h4>
+<p>SW1 kırmızı, SW2 mavi LED'i kısa süre yakar. Include satırları <code>int1.c</code>'dekilerle aynıdır, ek olarak <code>driverlib/interrupt.h</code> vardır; başlatmanın 1–4. adımları kısaltılmıştır.</p>
+<div class="code-head"><span class="file">drive_2019_gpio_int/int4.c (parça)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">void kesmefonksiyonu(void)
+{
+    int a;
+    a=GPIOIntStatus(GPIO_PORTF_BASE, true);             // GPIOMIS: hangi pin(ler)?
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4); // iki bayrağı da en başta temizle
+    if (a==16)                                          // yalnız PF4 (SW1)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,2);    // kırmızı yan
+        SysCtlDelay(2000000);                           // ISR içinde ~0,12 s bekleme
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,0);    // sön
+    }
+    else if(a==1)                                       // yalnız PF0 (SW2)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,4);    // mavi yan
+        SysCtlDelay(2000000);
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,0);    // sön
+    }
+}
+
+int main(void)
+{
+    IntMasterEnable();                                  // 10) global izin (kodda en başta)
+    /* 1-4) saat (50 MHz), çıkışlar, PF0 kilidi, PF4+PF0 giriş ve pull-up: int1.c ile aynı düzen */
+    GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_4|GPIO_PIN_0, GPIO_FALLING_EDGE); // yerel 1 (adım 6)
+    GPIOIntRegister(GPIO_PORTF_BASE, kesmefonksiyonu);  // yerel 2: ISR + IntEnable (adım 9)
+    GPIOIntEnable(GPIO_PORTF_BASE, GPIO_PIN_4|GPIO_PIN_0); // yerel 3 (adım 8)
+    IntEnable(INT_GPIOF);                               // 9) yeniden; GPIOIntRegister zaten yaptı
+    while(1)
+    {
+    }
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında</span>
+<ul>
+<li><code>if (a==16)</code> / <code>else if(a==1)</code>: İki bayrak birlikte 1 ise <code>a</code> = 17 olur, iki dal da çalışmaz ama iki bayrak da silinir: basış kaybolur. Bit testi kullanılmalıdır: <code>if (a &amp; GPIO_INT_PIN_4)</code>.</li>
+<li>7. adım (<code>GPIOIntClear</code>) <code>GPIOIntEnable</code>'dan önce yapılmaz; ayar sırasında kalkmış bir bayrak, IM açılır açılmaz ISR'yi çalıştırır.</li>
+<li>ISR içinde <code>SysCtlDelay(2000000);</code> (bkz. 8.2).</li>
+</ul></div>
+<p><code>hafta04_kesmeli_apili/main.c</code> aynı işi yapar, ama son hâli derlenmez (<code>NVIC_EN0_R</code> için <code>inc/tm4c123gh6pm.h</code> eklenmemiş, <code>portfkesmeaktifhale()</code> bildirimsiz çağrılmış, <code>driverlib/sysctl.c</code> doğrudan include edilmiş). ISR'si bayrağı son satırda temizler ve eşitlik testi kullanır; NVIC izni üç kez verilir ve <code>GPIOIntEnable</code>, <code>GPIOIntRegister</code>'dan önce çağrıldığı için arada gelen bir kesme <code>IntDefaultHandler</code>'a düşer.</p>
+
+<h3 id="ornek-kenar">8.4 Yükselen kenar ve iki kenar</h3>
+<p><b>Amaç:</b> Tetikleme türünü değiştirmenin etkisini görmek. <b>Donanım:</b> SW1 = PF4, mavi LED = PF2. <code>drive_gpio_interrupt_example</code> klasöründeki iki LM4F120 projesinin tek farkı tetikleme türüdür: <code>Gpio_interrupt</code> yükselen, <code>Gpio_interrupt_2</code> düşen kenar. Klasördeki açıklama dosyası ikisini ters sıralar (kod esas alınmalı) ve üçüncü deneme olarak <code>GPIO_BOTH_EDGES</code>'i önerir.</p>
+<p><code>Gpio_interrupt</code> aynı işi <code>GPIO_RISING_EDGE</code> ile yapar; LED butona basınca değil bırakınca yanar. Kod StellarisWare adlarını kullandığı için TivaWare 2.1.4 ile derlenmez: <code>GPIOPinIntClear</code> → <code>GPIOIntClear</code>, <code>GPIOPinIntEnable</code> → <code>GPIOIntEnable</code> (001–008 dosyalarındaki <code>GPIO_LOCK_KEY_DD</code> → <code>GPIO_LOCK_KEY</code>).</p>
+<p><b>İki kenar:</b> Aşağıdaki program her iki kenarda kesme alır ve ISR'de pinin o anki seviyesine bakarak kenarın yönünü bulur: LED yalnız buton basılıyken yanar.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: iki_kenar.c</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+
+void PortF_Handler(void)
+{
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_INT_PIN_4);           // bayrağı en başta temizle
+    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0)       // pin 0 ise düşen kenardı: basıldı
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);   // mavi LED yanar
+    else                                                     // pin 1 ise yükselen kenardı: bırakıldı
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);            // mavi LED söner
+}
+
+int main(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);                     // 1) saat
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) {}           //    hazır bekle
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);              // 3) PF2 çıkış
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);               // 3) PF4 giriş
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4,
+                     GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);      // 4) pull-up
+    GPIOIntDisable(GPIO_PORTF_BASE, GPIO_INT_PIN_4);                 // 5) IM biti = 0
+    GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_BOTH_EDGES);    // 6) IS = 0, IBE = 1
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_INT_PIN_4);                   // 7) ICR
+    GPIOIntRegister(GPIO_PORTF_BASE, PortF_Handler);                 // RAM tablosu + IntEnable(INT_GPIOF): 9)
+    GPIOIntEnable(GPIO_PORTF_BASE, GPIO_INT_PIN_4);                  // 8) IM biti = 1
+    IntMasterEnable();                                               // 10) PRIMASK = 0
+
+    while (1)
+    {
+    }
+}</code></pre>
+<p>Sıçrama sırasında ISR birkaç kez çalışır, ama son çalışmada pin kararlı seviyededir ve LED doğru durumda kalır. <code>GPIO_BOTH_EDGES</code>'te IBE = 1 olduğu için IEV'nin değeri önemsizdir.</p>
+
+<h3 id="ornek-degisken">8.5 Kesmede değişken, ana döngüde kullanım</h3>
+<p><b>Amaç:</b> ISR yalnız bir değişkeni günceller, ana döngü bu değeri kullanır. Kırmızı LED yanıp söner; SW1 yavaşlatır, SW2 hızlandırır. Bu, <a href="#yoklama-sorunu">Bölüm 1</a>'deki <code>005_k.c</code>'nin kesmeli karşılığıdır: basışlar artık kaçmaz. <b>Donanım:</b> SW1, SW2, kırmızı LED.</p>
+<div class="code-head"><span class="file">drive_2019_gpio_int/int5.c (parça)</span><span class="tag api">API&#x27;li · kesmeli</span></div><pre><code class="language-c">int b=1000000;                                          // gecikme: ISR değiştirir, ana döngü kullanır
+
+void kesmefonksiyonu(void)
+{
+    int a;
+    a=GPIOIntStatus(GPIO_PORTF_BASE, true);             // GPIOMIS
+    GPIOIntClear(GPIO_PORTF_BASE, GPIO_PIN_0|GPIO_PIN_4);
+    if (a==16)                                          // SW1: yavaşlat
+    {
+        b+=100000;
+    }
+    else if(a==1)                                       // SW2: hızlandır
+    {
+        b-=100000;
+    }
+}
+
+int main(void)
+{
+    /* ... başlatma: int4.c'deki main ile satır satır aynı ... */
+    while(1)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,2);    // kırmızı yan
+        SysCtlDelay(b);                                 // b: ISR'nin bıraktığı son değer
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,0);    // sön
+        SysCtlDelay(b);
+    }
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında</span>
+<ul>
+<li><code>int b=1000000;</code> <code>volatile</code> değildir. Hata burada görünmez, çünkü döngü her turda dış bir fonksiyon (<code>SysCtlDelay</code>) çağırdığından derleyici <code>b</code>'yi yeniden okumak zorundadır; ama <code>while (b == eski) {}</code> gibi bir döngü değişikliği hiç görmeyebilirdi. <code>volatile int b</code> yazılmalıdır.</li>
+<li>Alt sınır yoktur. SW2'ye on kez basılınca (sıçramayla daha az basışta) <code>b</code> = 0 olur; <code>SysCtlDelay(0)</code> sayacı 0'dan bir eksiltip 2<sup>32</sup> tur döner (50 MHz'te yaklaşık 4 dakika). Negatif değerler de büyük işaretsiz sayılara dönüşür ve LED takılı kalır.</li>
+<li><code>a==16</code> / <code>a==1</code> eşitlik testi (bkz. 8.3).</li>
+</ul></div>
+
+<h3 id="ornek-sayac">8.6 Sıçrama önlemeli basış sayacı</h3>
+<p><b>Amaç:</b> SW1 basışlarını sıçramadan etkilenmeden saymak ve sayının alt 3 bitini RGB LED'de ikili göstermek (PF1 = bit0, PF2 = bit1, PF3 = bit2). <a href="#sicrama">Bölüm 7</a>'deki "maskele ve yeniden kontrol et" yöntemi. <b>Donanım:</b> SW1, RGB LED; ISR adı startup dosyasına yazılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: basis_sayaci.c</span><span class="tag reg">API&#x27;siz · kesmeli</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+volatile uint32_t basis_var = 0;    // ISR yazar, ana döngü okur: volatile şart
+uint32_t sayac = 0;                 // yalnız ana döngü kullanır
+
+void PortF_Handler(void)
+{
+    GPIO_PORTF_ICR_R = 0x10;        // PF4 bayrağını temizle
+    GPIO_PORTF_IM_R &amp;= ~0x10;       // sıçrama bitene kadar PF4 kesmesini kapat
+    basis_var = 1;                  // gerisini ana döngü yapsın
+}
+
+static void bekle_ms(uint32_t ms)   // kaba yazılım gecikmesi; yalnız ana döngüde
+{
+    volatile uint32_t i;
+    while (ms--)
+        for (i = 0; i &lt; 1600; i++) {}   // 16 MHz'te yaklaşık 1 ms (derleyiciye bağlı)
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;                // 1) Port F saati
+    while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) {}
+    GPIO_PORTF_DIR_R |= 0x0E;       // 3) PF1-PF3 çıkış
+    GPIO_PORTF_DIR_R &amp;= ~0x10;      //    PF4 giriş
+    GPIO_PORTF_DEN_R |= 0x1E;       //    PF1-PF4 dijital
+    GPIO_PORTF_PUR_R |= 0x10;       // 4) PF4 pull-up
+    GPIO_PORTF_IM_R  &amp;= ~0x10;      // 5)
+    GPIO_PORTF_IS_R  &amp;= ~0x10;      // 6) kenar
+    GPIO_PORTF_IBE_R &amp;= ~0x10;      //    tek kenar
+    GPIO_PORTF_IEV_R &amp;= ~0x10;      //    düşen kenar
+    GPIO_PORTF_ICR_R  =  0x10;      // 7)
+    GPIO_PORTF_IM_R  |=  0x10;      // 8)
+    NVIC_EN0_R = 1 &lt;&lt; 30;           // 9)
+    __asm("    cpsie   i");         // 10)
+
+    while (1)
+    {
+        if (basis_var)
+        {
+            bekle_ms(20);                           // sıçramanın sönmesini bekle
+            if ((GPIO_PORTF_DATA_R &amp; 0x10) == 0)    // hâlâ basılı mı? Evetse gerçek basış
+            {
+                sayac++;
+                GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R &amp; ~0x0E)
+                                  | ((sayac &amp; 0x07) &lt;&lt; 1);   // sayacın alt 3 biti PF1-PF3'te
+            }
+            basis_var = 0;
+            GPIO_PORTF_ICR_R = 0x10;                // beklerken biriken bayrağı sil
+            GPIO_PORTF_IM_R |= 0x10;                // PF4 kesmesini yeniden aç
+        }
+        /* ana döngünün diğer işleri burada */
+    }
+}</code></pre>
+<p><b>Açıklama:</b> ISR üç satırdır ve hiç beklemez. Sıçrama boyunca PF4'ün IM biti kapalı olduğu için sonraki kenarlar kesme üretmez; RIS'te biriken bit ana döngüde ICR ile silinir. Bırakma sıçramasının düşen kenarında ISR yine çalışır, ama 20 ms sonra pin 1 okunduğu için sayaç artmaz. Yalnız paylaşılan <code>basis_var</code> <code>volatile</code>'dır. <code>bekle_ms</code> kabadır; doğru zamanlama için SysTick ya da zamanlayıcı kullanılır.</p>
+
+<h2 id="exp11">9. Experiment 11 uyarlaması <span class="tag ti">Lab föyü</span></h2>
+<p><b>Amaç:</b> föydeki PF4 buton kesmesini tamamlayıp çalıştırmak, ardından ISR kurallarına uyacak biçimde düzeltmek ve iki butona genişletmek. "Experiment 11: External/Internal Interrupts and ISR Programming" föyü, PF4'e bağlı butonun düşen kenarında kesme kurmayı öğretir. Föy LM4F120 için yazılmıştır (sayfa numaraları o yonganın datasheet'ine göre); Port F ve NVIC register adresleri TM4C123GH6PM ile aynıdır. NVIC kısmı ve Timer0A ile birleşik görev <a href="../timer/#exp11">zamanlayıcı notundadır</a>; burada GPIO kısmı ele alınıyor.</p>
+<p>Föyün altı GPIO adımı bu notun 5–8. adımlarına karşılık gelir; tek fark ilk adımdır: föy ayar sırasında kesmeleri global olarak kapatır (<code>DisableInterrupts()</code>, PRIMASK = 1), datasheet ise yalnız pinin IM bitini kapatmayı önerir (adım 5). Ardından IS/IBE/IEV (6), ICR (7), IM (8), NVIC EN0 bit30 ve PRI7 önceliği 5 (9) ve <code>EnableInterrupts()</code> (10) gelir.</p>
+<h4>Föydeki boşluklar</h4>
+<table>
+<thead><tr><th>Sabit / satır</th><th>Değer</th><th>Gerekçe</th></tr></thead>
+<tbody>
+<tr><td><code>PORTF_CLK_EN</code></td><td><code>0x20</code></td><td>RCGCGPIO bit5 = Port F</td></tr>
+<tr><td><code>LEDs</code></td><td><code>0x0E</code></td><td>PF1–PF3</td></tr>
+<tr><td><code>SW1</code>, <code>INT_PF4</code></td><td><code>0x10</code></td><td>PF4</td></tr>
+<tr><td><code>NVIC_EN0_INT30</code></td><td><code>0x40000000</code></td><td>1 &lt;&lt; 30</td></tr>
+<tr><td><code>GPIO_PORTF_DIR_R = …</code></td><td><code>0x0E</code></td><td>PF1–PF3 çıkış, PF4 giriş</td></tr>
+<tr><td><code>NVIC_PRI7_R = …</code></td><td><code>(NVIC_PRI7_R &amp; 0xFF00FFFF) | 0x00A00000</code></td><td>5 &lt;&lt; 21 (föyün maskesi gereğinden geniş, zararsız)</td></tr>
+</tbody></table>
+<div class="box warn"><span class="box-title">Föy kodu hakkında</span>
+<ul>
+<li><code>EnableInterrupts()</code>, <code>DisableInterrupts()</code> ve <code>WaitForInterrupt()</code> bildirilir ama föyde tanımlanmaz (üstelik ilk ikisinin prototip yorumları ters yazılmıştır, satır 30–31); başka ortamların assembly startup dosyasından gelirler. CCS'te sırasıyla <code>__asm("    cpsie   i");</code>, <code>__asm("    cpsid   i");</code> ve <code>__asm("    wfi");</code> ile yazılabilir ya da TivaWare'in <code>IntMasterEnable()</code>, <code>IntMasterDisable()</code>, <code>SysCtlSleep()</code> fonksiyonları kullanılır.</li>
+<li>Başlatmada <code>GPIO_PORTF_ICR_R |= INT_PF4;</code>, ISR'de ise doğru biçim <code>GPIO_PORTF_ICR_R = INT_PF4;</code> kullanılır. W1C register'ına her yerde <code>=</code> ile yazın.</li>
+<li>ISR, LED'i yakıp söndürmek için iki kez <code>Delay(1000000)</code> çağırır; ISR kurallarına aykırıdır. <code>Delay</code>'deki sayaç <code>volatile</code> olmadığından optimizasyonla döngü tamamen silinebilir.</li>
+</ul></div>
+<h4>Uygulama görevi</h4>
+<p>Aşağıdaki görevler bu not için hazırlanmıştır.</p>
+<ol>
+<li>Boşlukları doldurun, startup dosyasında vektör 46'ya (GPIO Port F) <code>GPIOPortF_Handler</code>'ı yazıp programı çalıştırın. SW1'e her basışta sıradaki LED (kırmızı → mavi → yeşil) bir kez yanıp sönmelidir. Sıçrama yüzünden bazen bir renk atlanırsa nedenini açıklayın.</li>
+<li>Gecikmeyi ISR'den çıkarın: ISR yalnız rengi ilerletip <code>volatile</code> bir bayrak kaldırsın, yanıp sönmeyi ana döngü yapsın (<a href="#ornek-sayac">8.6</a>'daki düzen).</li>
+<li>SW2'yi (PF0) ekleyin: kilidi açın, PF0'ı da düşen kenara ayarlayın; ISR'de GPIOMIS'e bakarak SW2 basışında renk sırası tersine dönsün.</li>
+<li>PF4'ü önce yükselen kenara, sonra iki kenara ayarlayın ve davranış farkını gözlemleyin. Düşük seviyeye ayarladığınızda butonu basılı tutunca ne olur, açıklayın.</li>
+<li>Birleşik görev: LED'i Timer0A yakıp söndürsün, SW1 yalnız rengi değiştirsin (<a href="../timer/#exp11">zamanlayıcı notu, Experiment 11 görevi</a>).</li>
+</ol>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>ISR'yi vektör tablosuna bağlamamak.</b> Startup dosyasında "GPIO Port F" satırında hâlâ <code>IntDefaultHandler</code> yazıyor ve <code>GPIOIntRegister</code> da çağrılmamışsa ilk basışta program sonsuz döngüye düşer. ISR <code>extern</code> ile bildirilmeli, doğru satır adıyla seçilmelidir.</li>
+<li><b>ICR'yi hiç temizlememek, <code>|=</code> ile ya da son satırda temizlemek</b> (sürekli kesme, yanlış bayrak, çift giriş): <a href="#isr-govdesi">Bölüm 6</a>.</li>
+<li><b>Geçitlerden birini unutmak.</b> GPIOIM (<code>GPIOIntEnable</code>), NVIC EN0 (<code>IntEnable</code>) ve PRIMASK (<code>IntMasterEnable</code>) üçü de gerekir. Kesme numarası ile vektör numarasını karıştırmak da bu gruptadır: EN0'da Port F bit30'dur, <code>INT_GPIOF</code> ise 46'dır; <code>NVIC_EN0_R = INT_GPIOF;</code> yanlıştır.</li>
+<li><b>PF0 kilidini açmamak.</b> GPIOCR bit0 = 1 olmadan PF0'ın PUR ve DEN bitleri sessizce yazılmaz; SW2 hiç kesme üretmez (<a href="../gpio/#kilit">GPIO notu</a>).</li>
+<li><b>Pull-up'ı unutmak.</b> LaunchPad butonlarında dış çekme direnci yoktur. GPIOPUR = 0 iken pin boşta kalır ve gürültüyle rastgele kesmeler gelir. <code>GPIOPadConfigSet(..., GPIO_PIN_TYPE_STD_WPU)</code>, <code>GPIOPinTypeGPIOInput</code>'tan sonra çağrılmalıdır.</li>
+<li><b>IM'i tetikleme ayarlarından önce açmak.</b> IM açıkken IS/IBE/IEV'ye yazmak ya da önceden kalkmış bir RIS biti sahte kesmeye yol açar. Sıra: 5 IM = 0 → 6 IS/IBE/IEV → 7 ICR → 8 IM = 1.</li>
+<li><b>ISR'de uzun gecikme ya da <code>volatile</code> unutmak:</b> <a href="#isr-govdesi">Bölüm 6</a>, <a href="#sicrama">Bölüm 7</a>.</li>
+<li><b>Seviye tetiklemede takılmak.</b> ICR'nin seviye tetiklemede etkisi yoktur; kaynak kalkmadıkça ISR durmadan yeniden girer. Butonlarda kenar tetikleme kullanın ya da ISR'de IM'i kapatın.</li>
+<li><b>Aynı porttaki pinleri ayırt etmemek</b> (bütün pinler tek IRQ'yu paylaşır; GPIOMIS ve bit testi): <a href="#isr-govdesi">Bölüm 6</a>.</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>Adres ve numaralar:</b> PB3'e bağlı bir butonun düşen kenarında kesme alınacak. GPIOIS ve GPIOICR'nin tam adreslerini, pin maskesini, kesme ve vektör numarasını, vektör ofsetini, EN0 bitini ve öncelik alanını bulun. (Cevap: 0x40005404 ve 0x4000541C; 0x08; kesme 1, vektör 17; 0x044; EN0 bit1; PRI0 bit15:13.)</li>
+<li><b>Öncelik:</b> Port F'ye öncelik 6 verecek API'siz satırı ve TivaWare çağrısını yazın. (Cevap: <code>NVIC_PRI7_R = (NVIC_PRI7_R &amp; 0xFF1FFFFF) | 0x00C00000;</code> ve <code>IntPrioritySet(INT_GPIOF, 0xC0);</code>)</li>
+<li><b>Register değerleri:</b> PF4 iki kenarda, PF0 yükselen kenarda kesme üretecek. GPIOIS, GPIOIBE, GPIOIEV ve GPIOIM'e yazılacak değerleri bulun. (Cevap: IS = 0x00, IBE = 0x10, IEV = 0x01, IM = 0x11.)</li>
+<li><b>Kod okuma:</b> <code>GPIO_PORTF_IS_R &amp;= ~(1&lt;&lt;4)|~(1&lt;&lt;0);</code> satırı hangi bitleri değiştirir? Doğrusunu yazın. (Cevap: hiçbirini, maske 0xFFFFFFFF'tir; <code>&amp;= ~0x11;</code>.)</li>
+<li><b>ISR analizi:</b> <a href="#ornek-iki-buton">8.3</a>'teki <code>int4.c</code>'de iki butona tam aynı anda basılırsa ne olur? ISR'yi düzeltin. (Cevap: <code>a</code> = 17, iki dal da atlanır ve iki bayrak silinir; bit testiyle iki dal da çalışmalıdır.)</li>
+<li><b>Seviye tetikleme:</b> PF4 <code>GPIO_LOW_LEVEL</code> ile ayarlanmış, ISR yalnız <code>GPIO_PORTF_ICR_R = 0x10;</code> ve <code>GPIO_PORTF_DATA_R ^= 0x02;</code> içeriyor. SW1 basılı tutulursa ne gözlenir, neden? İki çözüm önerin. (Cevap: ICR etkisiz olduğundan ISR art arda girer, ana döngü durur, LED çok hızlı terslenip yarı parlak görünür; ISR'de IM'i kapatmak ya da IEV'yi yüksek seviyeye çevirip bırakmayı beklemek.)</li>
+<li><b>Süre:</b> <code>int1.c</code>'deki ISR 50 MHz'te ne kadar sürer? Bu sırada gelen eşit öncelikli bir kesmeye ne olur? (Cevap: yaklaşık 0,12 s; kesme bekler, ISR bitince çalışır.)</li>
+<li><b>Tasarım:</b> SW1 sayacı artırsın, SW2 sıfırlasın; sayaç RGB LED'de ikili gösterilsin. Sıçrama önlemeyi <a href="#ornek-sayac">8.6</a>'daki gibi yapın. Programı önce API'siz (startup dosyasıyla), sonra API'li (<code>GPIOIntRegister</code> ile) yazın.</li>
+<li><b>(Ödev)</b> <a href="#ornek-degisken">8.5</a>'teki programı <code>volatile</code>, alt/üst sınır ve bit testiyle düzeltin; sonra gecikmeyi Timer0A kesmesiyle üretin (<a href="../timer/#alistirmalar">zamanlayıcı notu, alıştırma 7</a>).</li>
+</ol>
+
+<h2 id="kaynaklar">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014).
+<ul>
+<li>Bölüm 2: kesmeler Tablo 2-9 s. 104–105 (GPIO Port A–E: kesme 0–4, Port F: kesme 30).</li>
+<li>Bölüm 3: EN0 s. 142; DIS0 s. 144; PRI0–PRI15 s. 152.</li>
+<li>Bölüm 10 "General-Purpose Input/Outputs": özellikler s. 649; §10.2.2 s. 654–655; §10.3 s. 656–657; taban adresler s. 658–659; Tablo 10-6 s. 660; kesme register'ları s. 664–670.</li>
+</ul></li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em> (öğrenci kitapçığı), Bölüm 3, s. 3-6: GPIO kesme özellikleri (kenar ya da seviye tetikleme, ADC/µDMA tetikleme). Kitapçıkta GPIO kesmesi için ayrı bir lab yoktur; kesme labı zamanlayıcıyla birliktedir (Lab 4, <a href="../timer/#lab4">zamanlayıcı notu</a>).</li>
+<li>Texas Instruments, <em>TivaWare Peripheral Driver Library User's Guide</em> (SW-TM4C-DRL-UG, SPMU298E): Bölüm 14 "GPIO" (<code>GPIOIntClear</code> 14.2.3.7, <code>GPIOIntEnable</code> 14.2.3.9, <code>GPIOIntRegister</code> 14.2.3.10, <code>GPIOIntStatus</code> 14.2.3.12, <code>GPIOIntTypeSet</code> 14.2.3.14), Bölüm 17 "Interrupt Controller (NVIC)". SPMU298E TivaWare 2.2.0 kılavuzudur; fonksiyon davranışları yerel 2.1.4 kaynaklarından (<code>driverlib/gpio.c</code>, <code>interrupt.c</code>, <code>inc/hw_ints.h</code>) doğrulanmıştır.</li>
+<li>"Experiment 11: External/Internal Interrupts and ISR Programming", laboratuvar föyü.</li>
+<li>Ders örnek kodları (EEM 431, GPIO Kesme klasörü): <code>hafta06GpioApsiziKEsme</code>, <code>hafta04_kesmeli_apili</code>, uzun örnek, <code>drive_gpio_interrupt_tekrari</code> (001–008), <code>drive_2017_gpio_int</code> (<code>int1.c</code>–<code>int3.c</code>), <code>drive_2019_gpio_int</code> (<code>int1.c</code>–<code>int5.c</code>), <code>drive_gpio_interrupt_example</code>; dersin LaTeX notu, "Kesme Fonksiyonları" ve "Gpio Kesme Fonksiyonları" bölümleri.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a> (port yapısı, register'lar, PF0 kilidi, buton devreleri), <a href="../timer/">6. Zamanlayıcılar</a> (kesme kavramı, NVIC, vektör tablosu, öncelik, ISR kuralları).</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 2. GPIO Kesmeleri. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

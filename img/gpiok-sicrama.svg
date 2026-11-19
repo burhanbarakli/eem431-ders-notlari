@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 668" class="gks-svg" role="img" aria-labelledby="gks-title gks-desc">
+<title id="gks-title">Kontak sıçraması ve yazılımla önlenmesi</title>
+<desc id="gks-desc">İdeal buton sinyali tek düşen ve tek yükselen kenardır; gerçek kontak basışta ve bırakmada birkaç ms ile birkaç on ms süren sıçramalar yapar. Düşen kenar tetiklemede tek basış ve bırakma birden çok kesme üretir (sayaç 1…7). (a) Zaman damgası: ilk kenarda iş yapılır, 20 ms boyunca yeni kenarlar yok sayılır; uzun basışta bırakma sıçraması yeni basış sayılabilir. (b) İlk kenarda GPIOIM biti kapatılır, 20 ms’lik tek seferlik zamanlayıcı sonunda pin okunur; hâlâ 0 ise basış kabul edilir, ICR silinip kesme yeniden açılır. ISR içinde uzun gecikmenin diğer kesmeleri bekletmesi uyarısı ve donanımsal çözüm: RC süzgeç + pinin kendi Schmitt tetiklemeli girişi.</desc>
+<style>
+.gks-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.gks-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.gks-svg .gks-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.gks-svg .gks-b{font-weight:700}
+.gks-svg .gks-s13{font-size:13px}
+.gks-svg .gks-s16{font-size:16px}
+.gks-svg .gks-mut{fill:var(--fig-muted,#76746c)}
+.gks-svg .gks-acc{fill:var(--fig-accent,#b4481f)}
+.gks-svg .gks-grn{fill:var(--fig-green,#2f7d4f)}
+.gks-svg .gks-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.gks-svg .gks-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.gks-svg .gks-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.gks-svg .gks-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.gks-svg .gks-circ{fill:var(--fig-accent,#b4481f)}
+.gks-svg .gks-barb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.28}
+.gks-svg .gks-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.gks-svg .gks-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.gks-svg .gks-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.gks-svg .gks-wg{fill:none;stroke:var(--fig-green,#2f7d4f);stroke-width:2}
+.gks-svg .gks-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.gks-svg .gks-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+</style>
+<text class="gks-s16 gks-b" x="16" y="29">Kontak sıçraması: bir basış, birden çok kesme</text>
+<text class="gks-s13 gks-mut" x="744" y="29" text-anchor="end">zaman ekseni ölçeksiz</text>
+<text class="gks-b" x="16" y="66">İdeal buton</text>
+<path class="gks-w" d="M186,52 L262,52 L262,78 L532,78 L532,52 L740,52"/>
+<text class="gks-b" x="16" y="114">Gerçek sinyal</text>
+<text x="16" y="131"><tspan class="gks-mono">PF4</tspan><tspan class="gks-s13 gks-mut"> pini</tspan></text>
+<path class="gks-w" d="M186,104 L262,104 L262,130 L274,130 L274,104 L286,104 L286,130 L298,130 L298,104 L312,104 L312,130 L326,130 L326,104 L342,104 L342,130 L532,130 L532,104 L544,104 L544,130 L556,130 L556,104 L568,104 L568,130 L582,130 L582,104 L596,104 L596,130 L612,130 L612,104 L740,104"/>
+<path class="gks-wm" d="M262,138 L262,144 L342,144 L342,138"/>
+<text class="gks-s13 gks-mut" x="302" y="160" text-anchor="middle">birkaç ms – birkaç on ms</text>
+<path class="gks-wm" d="M532,138 L532,144 L612,144 L612,138"/>
+<text class="gks-s13 gks-mut" x="572" y="160" text-anchor="middle">birkaç ms – birkaç on ms</text>
+<text class="gks-s13 gks-mut" x="437" y="124" text-anchor="middle">basılı (0)</text>
+<text class="gks-b" x="16" y="188">Düşen kenar kesmesi</text>
+<text class="gks-s13 gks-mut" x="16" y="205">kesme sayacı</text>
+<path class="gks-con" d="M262,166 L262,182"/>
+<circle class="gks-circ" cx="262" cy="192" r="10"/>
+<text class="gks-num" x="262" y="197" text-anchor="middle">1</text>
+<path class="gks-con" d="M286,166 L286,182"/>
+<circle class="gks-circ" cx="286" cy="192" r="10"/>
+<text class="gks-num" x="286" y="197" text-anchor="middle">2</text>
+<path class="gks-con" d="M312,166 L312,182"/>
+<circle class="gks-circ" cx="312" cy="192" r="10"/>
+<text class="gks-num" x="312" y="197" text-anchor="middle">3</text>
+<path class="gks-con" d="M342,166 L342,182"/>
+<circle class="gks-circ" cx="342" cy="192" r="10"/>
+<text class="gks-num" x="342" y="197" text-anchor="middle">4</text>
+<path class="gks-con" d="M544,166 L544,182"/>
+<circle class="gks-circ" cx="544" cy="192" r="10"/>
+<text class="gks-num" x="544" y="197" text-anchor="middle">5</text>
+<path class="gks-con" d="M568,166 L568,182"/>
+<circle class="gks-circ" cx="568" cy="192" r="10"/>
+<text class="gks-num" x="568" y="197" text-anchor="middle">6</text>
+<path class="gks-con" d="M596,166 L596,182"/>
+<circle class="gks-circ" cx="596" cy="192" r="10"/>
+<text class="gks-num" x="596" y="197" text-anchor="middle">7</text>
+<text x="626" y="197"><tspan class="gks-b gks-acc">1 basış = 7 kesme</tspan></text>
+<text class="gks-b" x="16" y="249">(a) zaman damgası</text>
+<text class="gks-s13 gks-mut" x="16" y="266">ilk kenar + 20 ms yok say</text>
+<rect class="gks-barb" x="262" y="236" width="110" height="20" rx="3"/>
+<text class="gks-s13" x="317" y="251" text-anchor="middle">20 ms yok say</text>
+<rect class="gks-barb" x="544" y="236" width="110" height="20" rx="3"/>
+<text class="gks-s13" x="599" y="251" text-anchor="middle">20 ms yok say</text>
+<path class="gks-wg" d="M262,232 L262,260"/>
+<path class="gks-wa" d="M544,232 L544,260"/>
+<text class="gks-s13 gks-b gks-grn" x="256" y="274">iş yapılır</text>
+<text class="gks-s13 gks-b gks-acc" x="538" y="274">uzun basışta bırakma da sayılır!</text>
+<text class="gks-b" x="16" y="313">(b) maskele + 20 ms</text>
+<text class="gks-s13 gks-mut" x="16" y="330">sonra pini oku</text>
+<rect class="gks-barb" x="262" y="300" width="110" height="20" rx="3"/>
+<text x="317" y="315" text-anchor="middle"><tspan class="gks-mono">IM</tspan><tspan class="gks-s13"> biti 0</tspan></text>
+<path class="gks-wb" d="M262,296 L262,324"/>
+<path class="gks-wg" d="M372,296 L372,324"/>
+<text x="256" y="338"><tspan class="gks-s13 gks-b gks-grn">PF4 = 0 → basış</tspan><tspan class="gks-s13 gks-mut"> · </tspan><tspan class="gks-mono">ICR</tspan><tspan class="gks-s13"> sil, </tspan><tspan class="gks-mono">IM</tspan><tspan class="gks-s13"> aç</tspan></text>
+<rect class="gks-barb" x="544" y="300" width="110" height="20" rx="3"/>
+<text x="599" y="315" text-anchor="middle"><tspan class="gks-mono">IM</tspan><tspan class="gks-s13"> biti 0</tspan></text>
+<path class="gks-wb" d="M544,296 L544,324"/>
+<path class="gks-wm" d="M654,296 L654,324"/>
+<text class="gks-s13 gks-b gks-mut" x="538" y="338">PF4 = 1 → yok say</text>
+<rect class="gks-code" x="16" y="360" width="356" height="176" rx="8"/>
+<text class="gks-b" x="28" y="381">(a) PortF_Handler — zaman damgası</text>
+<text class="gks-mono" x="28" y="402" xml:space="preserve">GPIO_PORTF_ICR_R = 0x10;  // önce sil</text>
+<text class="gks-mono" x="28" y="419" xml:space="preserve">uint32_t t = ms_sayac;    // SysTick: 1 ms</text>
+<text class="gks-mono" x="28" y="436">if (t - son_t &gt;= 20) {</text>
+<text class="gks-mono" x="28" y="453" xml:space="preserve">    son_t = t;</text>
+<text class="gks-mono" x="28" y="470" xml:space="preserve">    is_yap();</text>
+<text class="gks-mono" x="28" y="487">}</text>
+<text x="28" y="522"><tspan class="gks-mono">ms_sayac</tspan><tspan class="gks-s13"> ve </tspan><tspan class="gks-mono">son_t</tspan><tspan class="gks-s13">: volatile uint32_t</tspan></text>
+<rect class="gks-code" x="388" y="360" width="356" height="176" rx="8"/>
+<text class="gks-b" x="400" y="381">(b) maskele + tek seferlik zamanlayıcı</text>
+<text class="gks-mono gks-mut" x="400" y="400">// PortF_Handler</text>
+<text class="gks-mono" x="400" y="416">GPIO_PORTF_ICR_R = 0x10;</text>
+<text class="gks-mono" x="400" y="432">GPIO_PORTF_IM_R &amp;= ~0x10; // kapat</text>
+<text class="gks-mono gks-mut" x="400" y="448">// + Timer0A: 20 ms tek seferlik başlat</text>
+<text class="gks-mono gks-mut" x="400" y="464">// Timer0A_Handler</text>
+<text class="gks-mono" x="400" y="480">TIMER0_ICR_R = 0x01;</text>
+<text class="gks-mono" x="400" y="496">if (!(GPIO_PORTF_DATA_R &amp; 0x10)) is_yap();</text>
+<text class="gks-mono" x="400" y="512">GPIO_PORTF_ICR_R = 0x10; // biriken</text>
+<text class="gks-mono" x="400" y="528" xml:space="preserve">GPIO_PORTF_IM_R |= 0x10;  // aç</text>
+<rect class="gks-hl" x="16" y="552" width="476" height="106" rx="8"/>
+<circle class="gks-circ" cx="36" cy="572" r="10"/>
+<text class="gks-num" x="36" y="577" text-anchor="middle">!</text>
+<text class="gks-b gks-acc" x="54" y="577">ISR içinde 20 ms gecikme döngüsü kurma</text>
+<text class="gks-s13" x="54" y="597">O süre boyunca aynı ya da daha düşük öncelikli kesmeler bekler,</text>
+<text class="gks-s13" x="54" y="614">ana döngü durur. Sıçramalar bu sırada RIS’i yine kurar: dönüşte</text>
+<text x="54" y="631"><tspan class="gks-mono">ICR</tspan><tspan class="gks-s13"> yeniden silinmezse ISR’ye hemen tekrar girilir.</tspan></text>
+<text class="gks-s13" x="54" y="648">Bekleme işini zamanlayıcıya ya da zaman damgasına bırak.</text>
+<rect class="gks-opt" x="504" y="552" width="240" height="106" rx="8"/>
+<text class="gks-b" x="516" y="577">Donanım çözümü (isteğe bağlı)</text>
+<text class="gks-s13" x="516" y="597">RC alçak geçiren süzgeç + pinin kendi</text>
+<text class="gks-s13" x="516" y="614">Schmitt girişi (datasheet s. 649)</text>
+<text class="gks-s13" x="516" y="631">tek temiz kenar verir.</text>
+<text class="gks-s13 gks-mut" x="516" y="648">Yazılımda önleme gerekmez.</text>
+</svg>

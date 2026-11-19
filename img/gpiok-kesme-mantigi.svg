@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 640" class="gkm-svg" role="img" aria-labelledby="gkm-title gkm-desc">
+<title id="gkm-title">GPIO kesme mantığı (Port F)</title>
+<desc id="gkm-desc">Bir GPIO pininin kesme yolu: pin girişi, GPIOIS/GPIOIBE/GPIOIEV ile ayarlanan kenar/seviye algılayıcı, GPIORIS bitini (ham durum) kurar; GPIOIM biti ile VE işleminden GPIOMIS biti çıkar; portun 8 pininin MIS bitleri VEYA ile tek kesme hattında birleşir. NVIC’te kesme 30 (vektör 46) beklemeye girer (PEND0 bit 30); geçit 1 = GPIOIM, geçit 2 = EN0 bit 30, geçit 3 = PRIMASK; EN0 bit 30 ve PRI7 bit 23:21 önceliği, çekirdekte PRIMASK = 0 iken PortF_Handler çalışır. ISR’nin GPIOICR’ye 1 yazması RIS ve MIS bitini temizler (kenar tetiklemede; seviye tetiklemede ICR etkisizdir). Sağ altta Port A–F kesme numaraları.</desc>
+<defs>
+<marker id="gkm-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="gkm-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="gkm-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="gkm-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.gkm-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.gkm-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.gkm-svg .gkm-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.gkm-svg .gkm-b{font-weight:700}
+.gkm-svg .gkm-s13{font-size:13px}
+.gkm-svg .gkm-s16{font-size:16px}
+.gkm-svg .gkm-mut{fill:var(--fig-muted,#76746c)}
+.gkm-svg .gkm-acc{fill:var(--fig-accent,#b4481f)}
+.gkm-svg .gkm-blu{fill:var(--fig-blue,#1f5fa8)}
+.gkm-svg .gkm-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.gkm-svg .gkm-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.gkm-svg .gkm-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.gkm-svg .gkm-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.gkm-svg .gkm-gate{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.gkm-svg .gkm-circ{fill:var(--fig-accent,#b4481f)}
+.gkm-svg .gkm-circb{fill:var(--fig-blue,#1f5fa8)}
+.gkm-svg .gkm-dot{fill:var(--fig-stroke,#2b2b29)}
+.gkm-svg .gkm-head{fill:var(--fig-stroke,#2b2b29)}
+.gkm-svg .gkm-heada{fill:var(--fig-accent,#b4481f)}
+.gkm-svg .gkm-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.gkm-svg .gkm-wad{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.6;stroke-dasharray:5 4}
+.gkm-svg .gkm-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.gkm-svg .gkm-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="gkm-s16 gkm-b" x="16" y="29">Bir GPIO pininden çekirdeğe kesme yolu</text>
+<rect class="gkm-dot" x="438" y="19" width="12" height="12" rx="2"/>
+<text x="456" y="29"><tspan class="gkm-b">düz</tspan><tspan class="gkm-s13"> = register</tspan></text>
+<rect class="gkm-circb" x="560" y="19" width="12" height="12" rx="2"/>
+<text x="578" y="29"><tspan class="gkm-b gkm-blu">mavi</tspan><tspan class="gkm-s13"> = TivaWare çağrısı</tspan></text>
+<rect class="gkm-zone" x="16" y="44" width="728" height="290" rx="10"/>
+<text class="gkm-s13 gkm-b gkm-mut" x="28" y="63">GPIO Port F · taban 0x4002.5000 (APB)</text>
+<text class="gkm-s13 gkm-mut" x="732" y="63" text-anchor="end">her pin için ayrı (n = 0…7)</text>
+<rect class="gkm-code" x="76" y="74" width="236" height="84" rx="8"/>
+<text class="gkm-mono" x="88" y="95">GPIOIS</text>
+<text class="gkm-mono gkm-mut" x="150" y="95">0x404</text>
+<text class="gkm-s13" x="200" y="95">kenar / seviye</text>
+<text class="gkm-mono" x="88" y="112">GPIOIBE</text>
+<text class="gkm-mono gkm-mut" x="150" y="112">0x408</text>
+<text class="gkm-s13" x="200" y="112">tek / iki kenar</text>
+<text class="gkm-mono" x="88" y="129">GPIOIEV</text>
+<text class="gkm-mono gkm-mut" x="150" y="129">0x40C</text>
+<text class="gkm-s13" x="200" y="129">düşen / yükselen</text>
+<text class="gkm-mono gkm-blu" x="88" y="146">GPIOIntTypeSet()</text>
+<path class="gkm-w" d="M156,158 L156,171" marker-end="url(#gkm-arr)"/>
+<text class="gkm-mono gkm-b" x="34" y="187" text-anchor="middle">PFn</text>
+<rect class="gkm-box" x="24" y="195" width="20" height="20" rx="3"/>
+<path class="gkm-w" d="M44,205 L75,205" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="76" y="172" width="160" height="66" rx="8"/>
+<text class="gkm-b" x="156" y="200" text-anchor="middle">Kenar / seviye</text>
+<text class="gkm-b" x="156" y="218" text-anchor="middle">algılayıcı</text>
+<path class="gkm-w" d="M236,205 L269,205" marker-end="url(#gkm-arr)"/>
+<text class="gkm-s13 gkm-mut" x="252" y="198" text-anchor="middle">kur</text>
+<rect class="gkm-box" x="270" y="172" width="110" height="66" rx="8"/>
+<text class="gkm-mono gkm-b" x="325" y="194" text-anchor="middle">GPIORIS</text>
+<text class="gkm-s13" x="325" y="211" text-anchor="middle">bit n · ham</text>
+<text class="gkm-mono gkm-mut" x="325" y="228" text-anchor="middle">0x414</text>
+<path class="gkm-gate" d="M416,183 L432,183 A22,22 0 0 1 432,227 L416,227 Z"/>
+<text class="gkm-s13 gkm-b" x="433" y="210" text-anchor="middle">VE</text>
+<text class="gkm-s13 gkm-mut" x="435" y="175" text-anchor="middle">geçit 1</text>
+<path class="gkm-w" d="M380,194 L415,194" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="386" y="262" width="186" height="50" rx="8"/>
+<text x="398" y="282"><tspan class="gkm-mono gkm-b">GPIOIM</tspan><tspan class="gkm-s13"> bit n · 0x410</tspan></text>
+<text class="gkm-mono gkm-blu" x="398" y="300">GPIOIntEnable()</text>
+<path class="gkm-w" d="M400,262 L400,216 L415,216" marker-end="url(#gkm-arr)"/>
+<text class="gkm-s13 gkm-mut" x="408" y="250">1 = geçir</text>
+<path class="gkm-w" d="M454,205 L481,205" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="482" y="172" width="110" height="66" rx="8"/>
+<text class="gkm-mono gkm-b" x="537" y="194" text-anchor="middle">GPIOMIS</text>
+<text class="gkm-s13" x="537" y="211" text-anchor="middle">bit n · maskeli</text>
+<text class="gkm-mono gkm-mut" x="537" y="228" text-anchor="middle">0x418</text>
+<path class="gkm-gate" d="M628,169 Q646,205 628,241 Q668,241 686,205 Q668,169 628,169 Z"/>
+<text class="gkm-s13 gkm-b" x="659" y="210" text-anchor="middle">VEYA</text>
+<path class="gkm-w" d="M592,205 L637,205" marker-end="url(#gkm-arr)"/>
+<path class="gkm-wm" d="M606,181 L633,181"/>
+<path class="gkm-wm" d="M606,193 L636,193"/>
+<path class="gkm-wm" d="M606,217 L636,217"/>
+<path class="gkm-wm" d="M606,229 L633,229"/>
+<text class="gkm-s13 gkm-mut" x="650" y="260" text-anchor="middle">diğer 7 pinin</text>
+<text class="gkm-s13 gkm-mut" x="650" y="276" text-anchor="middle">MIS bitleri de</text>
+<path class="gkm-w" d="M686,205 L716,205 L716,391" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-hl" x="140" y="262" width="214" height="60" rx="8"/>
+<text x="152" y="283"><tspan class="gkm-mono gkm-b">GPIOICR</tspan><tspan class="gkm-s13"> bit n ← 1 · 0x41C</tspan></text>
+<text class="gkm-mono gkm-blu" x="152" y="303">GPIOIntClear()</text>
+<path class="gkm-wad" d="M330,262 L330,239" marker-end="url(#gkm-arra)"/>
+<text class="gkm-s13 gkm-b gkm-acc" x="304" y="255" text-anchor="end">siler</text>
+<text class="gkm-s13 gkm-b gkm-mut" x="706" y="352" text-anchor="end">portun tek kesme hattı → NVIC</text>
+<rect class="gkm-zone" x="312" y="364" width="432" height="150" rx="10"/>
+<text class="gkm-s13 gkm-b gkm-mut" x="324" y="383">NVIC · 0xE000.E000</text>
+<rect class="gkm-zone" x="16" y="364" width="284" height="150" rx="10"/>
+<text class="gkm-s13 gkm-b gkm-mut" x="28" y="383">Cortex-M4F çekirdeği</text>
+<rect class="gkm-box" x="600" y="392" width="136" height="64" rx="8"/>
+<text class="gkm-b" x="668" y="416" text-anchor="middle">Kesme 30</text>
+<text class="gkm-s13" x="668" y="434" text-anchor="middle">bekler (pending)</text>
+<text class="gkm-mut" x="668" y="450" text-anchor="middle"><tspan class="gkm-mono">PEND0</tspan><tspan class="gkm-s13"> bit 30</tspan></text>
+<path class="gkm-gate" d="M556,403 L540,403 A22,22 0 0 0 540,447 L556,447 Z"/>
+<text class="gkm-s13 gkm-b" x="539" y="430" text-anchor="middle">VE</text>
+<text class="gkm-s13 gkm-mut" x="537" y="395" text-anchor="middle">geçit 2</text>
+<path class="gkm-w" d="M600,414 L557,414" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="560" y="466" width="176" height="40" rx="8"/>
+<text x="572" y="482"><tspan class="gkm-mono gkm-b">EN0</tspan><tspan class="gkm-s13"> bit 30 · </tspan><tspan class="gkm-mono">0xE000.E100</tspan></text>
+<text class="gkm-mono gkm-blu" x="572" y="499">IntEnable(INT_GPIOF)</text>
+<path class="gkm-w" d="M580,466 L580,436 L557,436" marker-end="url(#gkm-arr)"/>
+<path class="gkm-w" d="M518,425 L483,425" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="322" y="392" width="160" height="66" rx="8"/>
+<text class="gkm-b" x="334" y="413">Öncelik yeterli mi?</text>
+<text x="334" y="430"><tspan class="gkm-mono">PRI7</tspan><tspan class="gkm-s13"> bit 23:21</tspan></text>
+<text class="gkm-mono gkm-blu" x="334" y="447">IntPrioritySet()</text>
+<path class="gkm-gate" d="M268,403 L252,403 A22,22 0 0 0 252,447 L268,447 Z"/>
+<text class="gkm-s13 gkm-b" x="251" y="430" text-anchor="middle">VE</text>
+<text class="gkm-s13 gkm-mut" x="249" y="395" text-anchor="middle">geçit 3</text>
+<path class="gkm-w" d="M322,414 L269,414" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="96" y="466" width="200" height="40" rx="8"/>
+<text x="108" y="482"><tspan class="gkm-mono gkm-b">PRIMASK</tspan><tspan class="gkm-s13"> = 0 (</tspan><tspan class="gkm-mono">CPSIE I</tspan><tspan class="gkm-s13">)</tspan></text>
+<text class="gkm-mono gkm-blu" x="108" y="499">IntMasterEnable()</text>
+<path class="gkm-w" d="M288,466 L288,436 L269,436" marker-end="url(#gkm-arr)"/>
+<path class="gkm-w" d="M230,425 L207,425" marker-end="url(#gkm-arr)"/>
+<rect class="gkm-box" x="24" y="390" width="182" height="70" rx="8"/>
+<text class="gkm-b" x="34" y="411">ISR’ye dallanır</text>
+<text x="34" y="429"><tspan class="gkm-s13">vektör 46 · </tspan><tspan class="gkm-mono">0x0000.00B8</tspan></text>
+<text class="gkm-mono" x="34" y="447">PortF_Handler()</text>
+<path class="gkm-wad" d="M190,390 L190,323" marker-end="url(#gkm-arra)"/>
+<text class="gkm-s13 gkm-b gkm-acc" x="198" y="352">ISR yazar</text>
+<rect class="gkm-hl" x="16" y="528" width="444" height="102" rx="8"/>
+<circle class="gkm-circ" cx="36" cy="548" r="10"/>
+<text class="gkm-num" x="36" y="553" text-anchor="middle">!</text>
+<text x="54" y="553"><tspan class="gkm-b gkm-acc">Kenar tetikleme:</tspan><tspan class="gkm-s13"> RIS, ICR’ye 1 yazılana dek 1 kalır.</tspan></text>
+<text x="54" y="573"><tspan class="gkm-b gkm-acc">Seviye tetikleme:</tspan><tspan class="gkm-s13"> ICR etkisiz; pin seviyeyi sürdükçe</tspan></text>
+<text class="gkm-s13" x="54" y="590">RIS = 1 kalır, seviye kalkınca kendiliğinden 0 olur.</text>
+<text x="54" y="611"><tspan class="gkm-s13 gkm-b">IM = 0 iken de RIS kurulur;</tspan><tspan class="gkm-s13"> yalnız MIS ve NVIC’e gitmez.</tspan></text>
+<rect class="gkm-code" x="476" y="528" width="268" height="102" rx="8"/>
+<text class="gkm-s13 gkm-b" x="488" y="547">Port → kesme numarası</text>
+<rect class="gkm-hl" x="708" y="554" width="30" height="60" rx="4"/>
+<text class="gkm-s13 gkm-mut" x="488" y="569">Port</text>
+<text class="gkm-s13 gkm-mut" x="488" y="587">IRQ</text>
+<text class="gkm-s13 gkm-mut" x="488" y="605">vektör</text>
+<text class="gkm-mono gkm-b" x="572" y="569" text-anchor="middle">A</text>
+<text class="gkm-mono" x="572" y="587" text-anchor="middle">0</text>
+<text class="gkm-mono" x="572" y="605" text-anchor="middle">16</text>
+<text class="gkm-mono gkm-b" x="602" y="569" text-anchor="middle">B</text>
+<text class="gkm-mono" x="602" y="587" text-anchor="middle">1</text>
+<text class="gkm-mono" x="602" y="605" text-anchor="middle">17</text>
+<text class="gkm-mono gkm-b" x="632" y="569" text-anchor="middle">C</text>
+<text class="gkm-mono" x="632" y="587" text-anchor="middle">2</text>
+<text class="gkm-mono" x="632" y="605" text-anchor="middle">18</text>
+<text class="gkm-mono gkm-b" x="662" y="569" text-anchor="middle">D</text>
+<text class="gkm-mono" x="662" y="587" text-anchor="middle">3</text>
+<text class="gkm-mono" x="662" y="605" text-anchor="middle">19</text>
+<text class="gkm-mono gkm-b" x="692" y="569" text-anchor="middle">E</text>
+<text class="gkm-mono" x="692" y="587" text-anchor="middle">4</text>
+<text class="gkm-mono" x="692" y="605" text-anchor="middle">20</text>
+<text class="gkm-mono gkm-b" x="722" y="569" text-anchor="middle">F</text>
+<text class="gkm-mono" x="722" y="587" text-anchor="middle">30</text>
+<text class="gkm-mono" x="722" y="605" text-anchor="middle">46</text>
+<text class="gkm-s13 gkm-mut" x="488" y="623">kaynak: datasheet Tablo 2-9</text>
+</svg>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 734" class="gki-svg" role="img" aria-labelledby="gki-title gki-desc">
+<title id="gki-title">Port F ISR akış şeması</title>
+<desc id="gki-desc">PortF_Handler girişinde durum = GPIOMIS okunur (GPIOIntStatus(GPIO_PORTF_BASE, true)); hemen ardından GPIOICR = durum ile bayraklar silinir (W1C, = ile; GPIOIntClear). Sonra durum &amp; 0x10 (PF4, SW1) ise iş A, durum &amp; 0x01 (PF0, SW2) ise iş B yapılır ve dönülür. Sağda: ISR’de değişen, ana döngüde okunan volatile uint32_t basma_sayisi ve sw2_bayrak; startup dosyasının vektör tablosunda (tm4c123gh6pm_startup_ccs.c, extern bildirimiyle) IntDefaultHandler yerine PortF_Handler (vektör 46); ya da TivaWare GPIOIntRegister ile çalışma anında RAM vektör tablosuna kayıt (IntEnable’ı kendisi çağırır). Altta bayrağı işten önce silmenin nedeni.</desc>
+<defs>
+<marker id="gki-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="gki-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.gki-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.gki-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.gki-svg .gki-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.gki-svg .gki-b{font-weight:700}
+.gki-svg .gki-s13{font-size:13px}
+.gki-svg .gki-s16{font-size:16px}
+.gki-svg .gki-mut{fill:var(--fig-muted,#76746c)}
+.gki-svg .gki-acc{fill:var(--fig-accent,#b4481f)}
+.gki-svg .gki-blu{fill:var(--fig-blue,#1f5fa8)}
+.gki-svg .gki-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.gki-svg .gki-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.gki-svg .gki-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.gki-svg .gki-codeo{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:6 4}
+.gki-svg .gki-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.gki-svg .gki-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.gki-svg .gki-circ{fill:var(--fig-accent,#b4481f)}
+.gki-svg .gki-circb{fill:var(--fig-blue,#1f5fa8)}
+.gki-svg .gki-dot{fill:var(--fig-stroke,#2b2b29)}
+.gki-svg .gki-head{fill:var(--fig-stroke,#2b2b29)}
+.gki-svg .gki-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.gki-svg .gki-con{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:3 3}
+</style>
+<text class="gki-s16 gki-b" x="16" y="29">Port F ISR’si: önce bayrak, sonra iş</text>
+<rect class="gki-dot" x="438" y="19" width="12" height="12" rx="2"/>
+<text x="456" y="29"><tspan class="gki-b">düz</tspan><tspan class="gki-s13"> = register</tspan></text>
+<rect class="gki-circb" x="560" y="19" width="12" height="12" rx="2"/>
+<text x="578" y="29"><tspan class="gki-b gki-blu">mavi</tspan><tspan class="gki-s13"> = TivaWare çağrısı</tspan></text>
+<rect class="gki-pill" x="20" y="48" width="220" height="32" rx="16"/>
+<text x="130" y="69" text-anchor="middle"><tspan class="gki-b">Giriş: </tspan><tspan class="gki-mono">PortF_Handler()</tspan></text>
+<path class="gki-w" d="M130,80 L130,95" marker-end="url(#gki-arr)"/>
+<rect class="gki-box" x="16" y="96" width="408" height="68" rx="8"/>
+<circle class="gki-circ" cx="36" cy="116" r="12"/>
+<text class="gki-num" x="36" y="121" text-anchor="middle">1</text>
+<text class="gki-b" x="56" y="121">Hangi pin(ler)? Maskeli durumu oku</text>
+<text class="gki-mono" x="56" y="141">uint32_t durum = GPIO_PORTF_MIS_R;</text>
+<text class="gki-mono gki-blu" x="56" y="158">durum = GPIOIntStatus(GPIO_PORTF_BASE, true);</text>
+<path class="gki-w" d="M130,164 L130,179" marker-end="url(#gki-arr)"/>
+<rect class="gki-hl" x="16" y="180" width="408" height="68" rx="8"/>
+<circle class="gki-circ" cx="36" cy="200" r="12"/>
+<text class="gki-num" x="36" y="205" text-anchor="middle">2</text>
+<text x="56" y="205"><tspan class="gki-b gki-acc">Önce bayrağı sil</tspan><tspan class="gki-s13"> — W1C, </tspan><tspan class="gki-mono gki-b">=</tspan><tspan class="gki-s13"> ile yaz</tspan></text>
+<text class="gki-mono" x="56" y="225">GPIO_PORTF_ICR_R = durum;</text>
+<text class="gki-mono gki-blu" x="56" y="242">GPIOIntClear(GPIO_PORTF_BASE, durum);</text>
+<path class="gki-w" d="M130,248 L130,263" marker-end="url(#gki-arr)"/>
+<path class="gki-box" d="M130,264 L226,304 L130,344 L34,304 Z"/>
+<text class="gki-mono gki-b" x="130" y="302" text-anchor="middle">durum &amp; 0x10</text>
+<text class="gki-s13" x="130" y="320" text-anchor="middle">PF4 · SW1 ?</text>
+<path class="gki-w" d="M226,304 L261,304" marker-end="url(#gki-arr)"/>
+<text class="gki-s13 gki-b" x="244" y="298" text-anchor="middle">evet</text>
+<rect class="gki-box" x="262" y="278" width="162" height="52" rx="8"/>
+<text class="gki-b" x="274" y="299">İş A (SW1)</text>
+<text class="gki-mono" x="274" y="318">basma_sayisi++;</text>
+<path class="gki-w" d="M343.0,330 L343.0,366 L134,366"/>
+<circle class="gki-dot" cx="130" cy="366" r="3.5"/>
+<path class="gki-w" d="M130,344 L130,383" marker-end="url(#gki-arr)"/>
+<text class="gki-s13 gki-b" x="122" y="362" text-anchor="end">hayır</text>
+<path class="gki-box" d="M130,384 L226,424 L130,464 L34,424 Z"/>
+<text class="gki-mono gki-b" x="130" y="422" text-anchor="middle">durum &amp; 0x01</text>
+<text class="gki-s13" x="130" y="440" text-anchor="middle">PF0 · SW2 ?</text>
+<path class="gki-w" d="M226,424 L261,424" marker-end="url(#gki-arr)"/>
+<text class="gki-s13 gki-b" x="244" y="418" text-anchor="middle">evet</text>
+<rect class="gki-box" x="262" y="398" width="162" height="52" rx="8"/>
+<text class="gki-b" x="274" y="419">İş B (SW2)</text>
+<text class="gki-mono" x="274" y="438">sw2_bayrak = 1;</text>
+<path class="gki-w" d="M343.0,450 L343.0,486 L134,486"/>
+<circle class="gki-dot" cx="130" cy="486" r="3.5"/>
+<path class="gki-w" d="M130,464 L130,501" marker-end="url(#gki-arr)"/>
+<text class="gki-s13 gki-b" x="122" y="482" text-anchor="end">hayır</text>
+<rect class="gki-pill" x="16" y="502" width="228" height="32" rx="16"/>
+<text x="130" y="523" text-anchor="middle"><tspan class="gki-b">Dönüş</tspan><tspan class="gki-s13"> — bağlam geri yüklenir</tspan></text>
+<rect class="gki-code" x="436" y="96" width="308" height="256" rx="8"/>
+<text class="gki-b" x="448" y="117">Ana döngü ↔ ISR paylaşımı</text>
+<text class="gki-mono" x="448" y="138">volatile uint32_t basma_sayisi,</text>
+<text class="gki-mono" x="448" y="154" xml:space="preserve">                  sw2_bayrak;</text>
+<text class="gki-mono gki-mut" x="448" y="170">// ISR, iş A:</text>
+<text class="gki-mono" x="448" y="186">basma_sayisi++;</text>
+<text class="gki-mono gki-mut" x="448" y="202">// main():</text>
+<text class="gki-mono" x="448" y="218">while (1) {</text>
+<text class="gki-mono" x="448" y="234" xml:space="preserve">  if (basma_sayisi != eski) {</text>
+<text class="gki-mono" x="448" y="250" xml:space="preserve">    eski = basma_sayisi; …</text>
+<text class="gki-mono" x="448" y="266" xml:space="preserve">  }</text>
+<text class="gki-mono" x="448" y="282">}</text>
+<text x="448" y="304"><tspan class="gki-mono gki-b">volatile</tspan><tspan class="gki-s13">: ISR değiştirir;</tspan></text>
+<text class="gki-s13" x="448" y="321">derleyici değeri yazmaçta tutmasın,</text>
+<text class="gki-s13" x="448" y="338">her seferinde bellekten oku.</text>
+<path class="gki-con" d="M424,304 L436,304"/>
+<rect class="gki-code" x="436" y="366" width="308" height="152" rx="8"/>
+<text class="gki-b" x="448" y="387">Vektör tablosu</text>
+<text class="gki-s13 gki-mut" x="448" y="405">tm4c123gh6pm_startup_ccs.c</text>
+<text class="gki-mono gki-mut" x="448" y="426">extern void PortF_Handler(void);</text>
+<text class="gki-mono gki-mut" x="448" y="446">IntDefaultHandler, // FLASH Control</text>
+<rect class="gki-hl" x="442" y="451" width="296" height="20" rx="4"/>
+<text class="gki-mono gki-b" x="448" y="466" xml:space="preserve">PortF_Handler,     // GPIO Port F</text>
+<text class="gki-mono gki-mut" x="448" y="486">IntDefaultHandler, // GPIO Port G</text>
+<text class="gki-s13" x="448" y="507">IntDefaultHandler yerine · vektör 46</text>
+<rect class="gki-codeo" x="436" y="532" width="308" height="104" rx="8"/>
+<text x="448" y="553"><tspan class="gki-s13">ya da </tspan><tspan class="gki-b">çalışma anında kaydet</tspan></text>
+<text class="gki-mono gki-blu" x="448" y="574">GPIOIntRegister(GPIO_PORTF_BASE,</text>
+<text class="gki-mono gki-blu" x="448" y="590" xml:space="preserve">                PortF_Handler);</text>
+<text class="gki-s13" x="448" y="610">tabloyu RAM’e taşır (VTABLE), işleyiciyi</text>
+<text x="448" y="627"><tspan class="gki-s13">yazar; </tspan><tspan class="gki-mono">IntEnable()</tspan><tspan class="gki-s13">’ı kendisi çağırır</tspan></text>
+<rect class="gki-hl" x="16" y="652" width="728" height="74" rx="8"/>
+<circle class="gki-circ" cx="36" cy="672" r="10"/>
+<text class="gki-num" x="36" y="677" text-anchor="middle">!</text>
+<text x="54" y="677"><tspan class="gki-b gki-acc">Neden işten önce? </tspan><tspan class="gki-s13">Yazma tamponu yüzünden ICR yazımı birkaç çevrim gecikebilir; ISR’nin</tspan></text>
+<text class="gki-s13" x="54" y="695">son satırı olursa dönüşte NVIC isteği hâlâ görüp ISR’ye yeniden girebilir (TivaWare GPIOIntClear notu).</text>
+<text x="54" y="713"><tspan class="gki-s13">İş sırasında gelen yeni kenar kaybolmaz: RIS yeniden kurulur. · </tspan><tspan class="gki-mono gki-b">=</tspan><tspan class="gki-s13"> ile yaz: 0 yazılan bitlere dokunulmaz.</tspan></text>
+</svg>

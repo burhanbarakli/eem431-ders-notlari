@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 590" class="gkt-svg" role="img" aria-labelledby="gkt-title gkt-desc">
+<title id="gkt-title">GPIO tetikleme türleri</title>
+<desc id="gkt-desc">Negatif mantıklı buton (PF4/SW1, iç çekme direnci: boşta 1, basılı 0) tek basışta düşen, bırakmada yükselen kenar üretir. Beş satır GPIORIS bit 4’ün davranışını gösterir: düşen kenar (IS=0, IBE=0, IEV=0, GPIO_FALLING_EDGE), yükselen kenar (IEV=1, GPIO_RISING_EDGE), iki kenar (IBE=1, IEV etkisiz, GPIO_BOTH_EDGES) satırlarında bit kenarda 1 olur ve ISR GPIOICR’ye yazana dek kalır; düşük seviye (IS=1, IEV=0, GPIO_LOW_LEVEL) ve yüksek seviye (IS=1, IEV=1, GPIO_HIGH_LEVEL) satırlarında bit, seviye sürdükçe 1’dir ve ICR etkisizdir.</desc>
+<style>
+.gkt-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.gkt-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.gkt-svg .gkt-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.gkt-svg .gkt-b{font-weight:700}
+.gkt-svg .gkt-s13{font-size:13px}
+.gkt-svg .gkt-s16{font-size:16px}
+.gkt-svg .gkt-mut{fill:var(--fig-muted,#76746c)}
+.gkt-svg .gkt-acc{fill:var(--fig-accent,#b4481f)}
+.gkt-svg .gkt-blu{fill:var(--fig-blue,#1f5fa8)}
+.gkt-svg .gkt-bar{fill:var(--fig-accent,#b4481f);fill-opacity:.28}
+.gkt-svg .gkt-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.gkt-svg .gkt-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.gkt-svg .gkt-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="gkt-s16 gkt-b" x="16" y="29">Tetikleme türleri: aynı basışta RIS biti ne zaman 1 olur?</text>
+<path class="gkt-grid" d="M380,64 L380,118"/>
+<path class="gkt-grid" d="M380,170 L380,516"/>
+<path class="gkt-grid" d="M594,64 L594,118"/>
+<path class="gkt-grid" d="M594,170 L594,516"/>
+<text class="gkt-b" x="16" y="86">Buton SW1 (PF4)</text>
+<text class="gkt-s13 gkt-mut" x="16" y="104">iç çekme direnci: boşta 1, basılı 0</text>
+<text class="gkt-mono gkt-mut" x="240" y="83" text-anchor="end">1</text>
+<text class="gkt-mono gkt-mut" x="240" y="115" text-anchor="end">0</text>
+<path class="gkt-w" d="M250,78 L380,78 L380,110 L594,110 L594,78 L740,78"/>
+<text class="gkt-s13 gkt-mut" x="315" y="100" text-anchor="middle">boşta</text>
+<text class="gkt-s13 gkt-mut" x="487" y="100" text-anchor="middle">basılı</text>
+<text class="gkt-s13 gkt-mut" x="667" y="100" text-anchor="middle">boşta</text>
+<text class="gkt-s13 gkt-b" x="374" y="132" text-anchor="end">basış: düşen kenar</text>
+<text class="gkt-s13 gkt-b" x="600" y="132">bırakma: yükselen kenar</text>
+<path class="gkt-grid" d="M16,144 L740,144"/>
+<text class="gkt-s13 gkt-b gkt-mut" x="16" y="162">tür · IS IBE IEV · TivaWare sabiti</text>
+<text x="250" y="162"><tspan class="gkt-mono gkt-b gkt-mut">GPIORIS</tspan><tspan class="gkt-s13 gkt-b gkt-mut"> bit 4 (ham durum)</tspan></text>
+<text class="gkt-b" x="16" y="194">Düşen kenar</text>
+<text x="16" y="212"><tspan class="gkt-mono gkt-mut">IS=</tspan><tspan class="gkt-mono gkt-b">0</tspan><tspan class="gkt-mono gkt-mut"> IBE=</tspan><tspan class="gkt-mono gkt-b">0</tspan><tspan class="gkt-mono gkt-mut"> IEV=</tspan><tspan class="gkt-mono gkt-b">0</tspan></text>
+<text class="gkt-mono gkt-blu" x="16" y="229">GPIO_FALLING_EDGE</text>
+<rect class="gkt-bar" x="380" y="186" width="40" height="32" rx="0"/>
+<path class="gkt-wa" d="M250,218 L380,218 L380,186 L420,186 L420,218 L740,218"/>
+<text class="gkt-s13 gkt-b gkt-acc" x="420" y="181" text-anchor="middle">ICR</text>
+<text class="gkt-s13 gkt-mut" x="507" y="210" text-anchor="middle">ICR’ye dek 1</text>
+<text class="gkt-b" x="16" y="264">Yükselen kenar</text>
+<text x="16" y="282"><tspan class="gkt-mono gkt-mut">IS=</tspan><tspan class="gkt-mono gkt-b">0</tspan><tspan class="gkt-mono gkt-mut"> IBE=</tspan><tspan class="gkt-mono gkt-b">0</tspan><tspan class="gkt-mono gkt-mut"> IEV=</tspan><tspan class="gkt-mono gkt-b">1</tspan></text>
+<text class="gkt-mono gkt-blu" x="16" y="299">GPIO_RISING_EDGE</text>
+<rect class="gkt-bar" x="594" y="256" width="40" height="32" rx="0"/>
+<path class="gkt-wa" d="M250,288 L594,288 L594,256 L634,256 L634,288 L740,288"/>
+<text class="gkt-s13 gkt-b gkt-acc" x="634" y="251" text-anchor="middle">ICR</text>
+<text class="gkt-s13 gkt-mut" x="487" y="280" text-anchor="middle">yalnız bırakmada</text>
+<text class="gkt-b" x="16" y="334">İki kenar</text>
+<text x="16" y="352"><tspan class="gkt-mono gkt-mut">IS=</tspan><tspan class="gkt-mono gkt-b">0</tspan><tspan class="gkt-mono gkt-mut"> IBE=</tspan><tspan class="gkt-mono gkt-b">1</tspan><tspan class="gkt-mono gkt-mut"> IEV=</tspan><tspan class="gkt-mono gkt-b">x</tspan></text>
+<text class="gkt-mono gkt-blu" x="16" y="369">GPIO_BOTH_EDGES</text>
+<rect class="gkt-bar" x="380" y="326" width="40" height="32" rx="0"/>
+<rect class="gkt-bar" x="594" y="326" width="40" height="32" rx="0"/>
+<path class="gkt-wa" d="M250,358 L380,358 L380,326 L420,326 L420,358 L594,358 L594,326 L634,326 L634,358 L740,358"/>
+<text class="gkt-s13 gkt-b gkt-acc" x="420" y="321" text-anchor="middle">ICR</text>
+<text class="gkt-s13 gkt-b gkt-acc" x="634" y="321" text-anchor="middle">ICR</text>
+<text class="gkt-s13 gkt-mut" x="507" y="350" text-anchor="middle">iki kenarda da</text>
+<text class="gkt-b" x="16" y="404">Düşük seviye</text>
+<text x="16" y="422"><tspan class="gkt-mono gkt-mut">IS=</tspan><tspan class="gkt-mono gkt-b">1</tspan><tspan class="gkt-mono gkt-mut"> IBE=</tspan><tspan class="gkt-mono gkt-b">x</tspan><tspan class="gkt-mono gkt-mut"> IEV=</tspan><tspan class="gkt-mono gkt-b">0</tspan></text>
+<text class="gkt-mono gkt-blu" x="16" y="439">GPIO_LOW_LEVEL</text>
+<rect class="gkt-bar" x="380" y="396" width="214" height="32" rx="0"/>
+<path class="gkt-wa" d="M250,428 L380,428 L380,396 L594,396 L594,428 L740,428"/>
+<text class="gkt-s13" x="487" y="420" text-anchor="middle">basılı kaldıkça 1 · ICR silemez</text>
+<text class="gkt-s13 gkt-mut" x="667" y="420" text-anchor="middle">kendiliğinden 0</text>
+<text class="gkt-b" x="16" y="474">Yüksek seviye</text>
+<text x="16" y="492"><tspan class="gkt-mono gkt-mut">IS=</tspan><tspan class="gkt-mono gkt-b">1</tspan><tspan class="gkt-mono gkt-mut"> IBE=</tspan><tspan class="gkt-mono gkt-b">x</tspan><tspan class="gkt-mono gkt-mut"> IEV=</tspan><tspan class="gkt-mono gkt-b">1</tspan></text>
+<text class="gkt-mono gkt-blu" x="16" y="509">GPIO_HIGH_LEVEL</text>
+<rect class="gkt-bar" x="250" y="466" width="130" height="32" rx="0"/>
+<rect class="gkt-bar" x="594" y="466" width="146" height="32" rx="0"/>
+<path class="gkt-wa" d="M250,466 L380,466 L380,498 L594,498 L594,466 L740,466"/>
+<text class="gkt-s13" x="315" y="490" text-anchor="middle">boşta kaldıkça 1</text>
+<text class="gkt-s13 gkt-mut" x="487" y="490" text-anchor="middle">kendiliğinden 0</text>
+<text class="gkt-s13" x="667" y="490" text-anchor="middle">ICR silemez</text>
+<text x="16" y="536"><tspan class="gkt-s13 gkt-b gkt-acc">ICR</tspan><tspan class="gkt-s13"> = ISR’nin </tspan><tspan class="gkt-mono">GPIO_PORTF_ICR_R = 0x10;</tspan><tspan class="gkt-s13"> yazdığı an (kenar satırları).</tspan></text>
+<text x="16" y="555"><tspan class="gkt-mono gkt-b">x</tspan><tspan class="gkt-s13"> = etkisiz (TivaWare 0 yazar).</tspan></text>
+<text class="gkt-s13" x="16" y="574">Seviye türünde kaynak sürdükçe kesme tekrar tekrar gelir.</text>
+</svg>
