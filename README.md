@@ -15,6 +15,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `timer/` | 6. Zamanlayıcılar (GPTM) ve kesmelere giriş |
 | `adc/` | 7. ADC |
 | `uart/` | 8. UART ve seri port (PC tarafı C# dahil) |
+| `uyku-hibernate/` | 9. Uyku modları ve Hibernate |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

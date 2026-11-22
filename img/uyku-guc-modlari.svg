@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 560" class="ugm-svg" role="img" aria-labelledby="ugm-title ugm-desc">
+<title id="ugm-title">Güç modları merdiveni: Run, Sleep, Deep-Sleep, Hibernate</title>
+<desc id="ugm-desc">Dört mod soldan sağa bir merdiven gibi iner. Run: çekirdek saatli ve kod çalışır, çevre birimleri RCGCx bitleriyle saatlenir, sistem saati PLL dahil her kaynaktan olabilir. Sleep: WFI ile girilir (SLEEPDEEP = 0, TivaWare SysCtlSleep); çekirdek ve bellek saati durur, çevre birimleri RCC.ACG = 1 ise SCGCx, ACG = 0 ise RCGCx bitleriyle saatlenir, sistem saati Run ile aynı kaynak ve frekanstır. Deep-Sleep: SLEEPDEEP = 1 ve WFI ile girilir (SysCtlDeepSleep); çevre birimleri ACG = 1 ise DCGCx, ACG = 0 ise RCGCx ile saatlenir, sistem saati DSLPCLKCFG ile seçilir, PLL çalışıyorsa kapanır. Sleep ve Deep-Sleep’te SRAM ve register içeriği korunur; kesme gelince işleyici çalışır ve program WFI’dan sonraki komuttan sürer. Hibernate: HIBCTL.HIBREQ = 1 ile girilir (HibernateRequest); yalnız Hibernation modülü çalışır, 32,768 kHz osilatörü RTC’yi sayar; SRAM silinir, 16 sözcüklük HIBDATA ve RTC kalır, VDD3ON modunda pin durumları tutulur. WAKE pini ya da RTC eşleşmesi gücü geri getirir, normal güç açma reset’i olur ve main baştan çalışır. Altta Workbook Lab 6 ölçümleri log ölçekte: Run 40 MHz 21,9 mA, Hibernate VDD3ON RTC’siz 6,7 µA, RTC’li 6,9 µA; Sleep ve Deep-Sleep Lab 6’da ölçülmedi.</desc>
+<defs>
+<marker id="ugm-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ugm-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="ugm-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ugm-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.ugm-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ugm-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ugm-svg .ugm-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.ugm-svg .ugm-b{font-weight:700}
+.ugm-svg .ugm-ovl{text-decoration:overline}
+.ugm-svg .ugm-s12{font-size:12px}
+.ugm-svg .ugm-s13{font-size:13px}
+.ugm-svg .ugm-s16{font-size:16px}
+.ugm-svg .ugm-mut{fill:var(--fig-muted,#76746c)}
+.ugm-svg .ugm-acc{fill:var(--fig-accent,#b4481f)}
+.ugm-svg .ugm-blu{fill:var(--fig-blue,#1f5fa8)}
+.ugm-svg .ugm-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ugm-svg .ugm-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ugm-svg .ugm-circ{fill:var(--fig-accent,#b4481f)}
+.ugm-svg .ugm-dot{fill:var(--fig-stroke,#2b2b29)}
+.ugm-svg .ugm-head{fill:var(--fig-stroke,#2b2b29)}
+.ugm-svg .ugm-heada{fill:var(--fig-accent,#b4481f)}
+.ugm-svg .ugm-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.ugm-svg .ugm-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.ugm-svg .ugm-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ugm-svg .ugm-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+</style>
+<text class="ugm-s16 ugm-b" x="16" y="29">Güç modları merdiveni</text>
+<text class="ugm-s13 ugm-mut" x="16" y="50">Her basamakta daha çok saat ve güç kesilir; en alttan dönüş reset ile olur.</text>
+<rect class="ugm-box" x="16" y="70" width="164" height="122" rx="8"/>
+<text class="ugm-s16 ugm-b" x="28" y="96">Run</text>
+<text class="ugm-s13" x="28" y="120">kod çalışır</text>
+<text x="28" y="139"><tspan class="ugm-m12">RCGCx</tspan><tspan class="ugm-s13"> çevre saati</tspan></text>
+<text class="ugm-s13" x="28" y="158">PLL dahil her saat</text>
+<rect class="ugm-box" x="204" y="114" width="164" height="122" rx="8"/>
+<text class="ugm-s16 ugm-b" x="216" y="140">Sleep</text>
+<text class="ugm-s13" x="216" y="164">çekirdek durur</text>
+<text class="ugm-s13" x="216" y="183">sistem saati aynı</text>
+<text class="ugm-s13" x="216" y="202">bellek korunur</text>
+<rect class="ugm-box" x="392" y="158" width="164" height="122" rx="8"/>
+<text class="ugm-s16 ugm-b" x="404" y="184">Deep-Sleep</text>
+<text class="ugm-s13" x="404" y="208">çekirdek durur</text>
+<text class="ugm-s13" x="404" y="227">PLL çalışıyorsa</text>
+<text class="ugm-s13" x="404" y="246">kapanır</text>
+<text class="ugm-s13" x="404" y="265">bellek korunur</text>
+<rect class="ugm-hl" x="580" y="202" width="164" height="122" rx="8"/>
+<text class="ugm-s16 ugm-b" x="592" y="228">Hibernate</text>
+<text class="ugm-s13" x="592" y="252">yalnız Hibernation</text>
+<text class="ugm-s13" x="592" y="271">modülü; RTC sayar</text>
+<text class="ugm-s13" x="592" y="290">SRAM silinir,</text>
+<text x="592" y="309"><tspan class="ugm-m12">HIBDATA</tspan><tspan class="ugm-s13"> kalır</tspan></text>
+<path class="ugm-w" d="M180,92 L350,92 L350,113" marker-end="url(#ugm-arr)"/>
+<text x="188" y="85"><tspan class="ugm-m12">SLEEPDEEP = 0 + </tspan><tspan class="ugm-m12 ugm-b">WFI</tspan></text>
+<text class="ugm-m12 ugm-blu" x="188" y="105">SysCtlSleep()</text>
+<path class="ugm-w" d="M368,136 L538,136 L538,157" marker-end="url(#ugm-arr)"/>
+<text x="376" y="129"><tspan class="ugm-m12">SLEEPDEEP = 1 + </tspan><tspan class="ugm-m12 ugm-b">WFI</tspan></text>
+<text class="ugm-m12 ugm-blu" x="376" y="149">SysCtlDeepSleep()</text>
+<path class="ugm-w" d="M556,180 L726,180 L726,201" marker-end="url(#ugm-arr)"/>
+<text x="564" y="173"><tspan class="ugm-m12 ugm-b">HIBCTL.HIBREQ = 1</tspan></text>
+<text class="ugm-m12 ugm-blu" x="564" y="193">HibernateRequest()</text>
+<path class="ugm-w" d="M286,236 L286,346 L128,346 L128,193" marker-end="url(#ugm-arr)"/>
+<path class="ugm-w" d="M474,280 L474,346 L286,346"/>
+<circle class="ugm-dot" cx="286" cy="346" r="3.4"/>
+<text x="300" y="367"><tspan class="ugm-s13 ugm-b">kesme</tspan><tspan class="ugm-s13"> → işleyici → WFI’dan sonraki komut: </tspan><tspan class="ugm-s13 ugm-b">kaldığı yerden</tspan></text>
+<path class="ugm-wa" d="M662,324 L662,382 L68,382 L68,193" marker-end="url(#ugm-arra)"/>
+<text x="300" y="405"><tspan class="ugm-s13 ugm-b ugm-acc ugm-ovl">WAKE</tspan><tspan class="ugm-s13 ugm-b ugm-acc"> pini</tspan><tspan class="ugm-s13"> ya da </tspan><tspan class="ugm-s13 ugm-b ugm-acc">RTC eşleşmesi</tspan><tspan class="ugm-s13"> → güç gelir, POR → </tspan><tspan class="ugm-s13 ugm-b ugm-acc">main baştan</tspan></text>
+<text x="16" y="438" xml:space="preserve"><tspan class="ugm-s13 ugm-b">VDD akımı</tspan><tspan class="ugm-s13 ugm-mut">  · Workbook Lab 6 ölçümü, LaunchPad, log ölçek</tspan></text>
+<path class="ugm-wm" d="M60,500 L730,500"/>
+<path class="ugm-wm" d="M60,496 L60,504"/>
+<text class="ugm-s12 ugm-mut" x="60" y="520" text-anchor="middle">1 µA</text>
+<path class="ugm-wm" d="M194,496 L194,504"/>
+<text class="ugm-s12 ugm-mut" x="194" y="520" text-anchor="middle">10 µA</text>
+<path class="ugm-wm" d="M328,496 L328,504"/>
+<text class="ugm-s12 ugm-mut" x="328" y="520" text-anchor="middle">100 µA</text>
+<path class="ugm-wm" d="M462,496 L462,504"/>
+<text class="ugm-s12 ugm-mut" x="462" y="520" text-anchor="middle">1 mA</text>
+<path class="ugm-wm" d="M596,496 L596,504"/>
+<text class="ugm-s12 ugm-mut" x="596" y="520" text-anchor="middle">10 mA</text>
+<path class="ugm-wm" d="M730,496 L730,504"/>
+<text class="ugm-s12 ugm-mut" x="730" y="520" text-anchor="middle">100 mA</text>
+<circle class="ugm-circ" cx="641.62" cy="500" r="6"/>
+<circle class="ugm-circ" cx="171.556" cy="500" r="6"/>
+<path class="ugm-wt" d="M641.62,492 L641.62,478"/>
+<path class="ugm-wt" d="M171.556,492 L171.556,478"/>
+<text x="641.62" y="472" text-anchor="middle"><tspan class="ugm-s13">Run 40 MHz: </tspan><tspan class="ugm-s13 ugm-b">21,9 mA</tspan></text>
+<text x="173.556" y="472" text-anchor="start"><tspan class="ugm-s13">Hibernate VDD3ON: </tspan><tspan class="ugm-s13 ugm-b">6,7 µA</tspan><tspan class="ugm-s13"> RTC’siz · </tspan><tspan class="ugm-s13 ugm-b">6,9 µA</tspan><tspan class="ugm-s13"> RTC’li</tspan></text>
+<text class="ugm-s12 ugm-mut" x="502" y="544" text-anchor="middle">Sleep ve Deep-Sleep Lab 6’da ölçülmedi.</text>
+</svg>

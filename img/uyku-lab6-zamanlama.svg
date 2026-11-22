@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 452" class="ulz-svg" role="img" aria-labelledby="ulz-title ulz-desc">
+<title id="ulz-title">Workbook Lab 6 main2 zaman çizelgesi</title>
+<desc id="ulz-desc">Ders kodu ile Workbook main2 aynıdır. Açılışta yeşil LED (PF3) yanar ve işlemci Run modunda SysCtlDelay(64 000 000) yazılım gecikmesinde bekler: döngü başına 3 çevrim varsayımıyla 64 000 000 × 3 / 40 MHz ≈ 4,8 s (Workbook yaklaşık 4 s der). Sonra HibernateRTCSet(0), HibernateRTCEnable, HibernateRTCMatchSet(0, 5) ve HibernateWakeSet çalışır, LED söner ve HibernateRequest ile Hibernate’e girilir. RTC LED sönmeden hemen önce 0’a yüklendiği için eşleşme yaklaşık 5 s sonra olur; güç gelir, POR olur ve main baştan çalışır, döngü tekrar eder. Hibernation modülü sıfırlanmadığından RTC uyanıştan sonra Run sırasında da saymayı sürdürür ve bir sonraki HibernateRTCSet(0) ile yeniden 0 olur. İkinci Hibernate’te SW2 (WAKE pini) basılınca erken uyanılır. VDD akımı kesik eksende: Run’da yaklaşık 21,9 mA (Lab 6 ölçümü, LED kapalıyken), Hibernate’te VDD3ON ve RTC açıkken 6,9 µA.</desc>
+<style>
+.ulz-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ulz-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ulz-svg .ulz-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.ulz-svg .ulz-b{font-weight:700}
+.ulz-svg .ulz-ovl{text-decoration:overline}
+.ulz-svg .ulz-s12{font-size:12px}
+.ulz-svg .ulz-s13{font-size:13px}
+.ulz-svg .ulz-s16{font-size:16px}
+.ulz-svg .ulz-mut{fill:var(--fig-muted,#76746c)}
+.ulz-svg .ulz-acc{fill:var(--fig-accent,#b4481f)}
+.ulz-svg .ulz-blu{fill:var(--fig-blue,#1f5fa8)}
+.ulz-svg .ulz-grn{fill:var(--fig-green,#2f7d4f)}
+.ulz-svg .ulz-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ulz-svg .ulz-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ulz-svg .ulz-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.ulz-svg .ulz-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.ulz-svg .ulz-wg{fill:none;stroke:var(--fig-green,#2f7d4f);stroke-width:2}
+.ulz-svg .ulz-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.ulz-svg .ulz-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.ulz-svg .ulz-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="ulz-s16 ulz-b" x="16" y="29">Lab 6 main2: LED, RTC ve akım</text>
+<text class="ulz-s13 ulz-mut" x="16" y="50">Ders kodu = Workbook main2. Zaman ölçeği yaklaşık; SW2 basma anı örnek.</text>
+<path class="ulz-wmd" d="M132,66 L132,338"/>
+<path class="ulz-wmd" d="M254.88,66 L254.88,338"/>
+<path class="ulz-wmd" d="M382.88,66 L382.88,338"/>
+<path class="ulz-wmd" d="M505.76,66 L505.76,338"/>
+<path class="ulz-wmd" d="M567.2,66 L567.2,338"/>
+<path class="ulz-wmd" d="M690.08,66 L690.08,338"/>
+<text class="ulz-s13" x="16" y="90">mod</text>
+<rect class="ulz-box" x="132" y="72" width="122.88" height="26" rx="3"/>
+<text class="ulz-s12" x="193.44" y="90" text-anchor="middle">Run ≈ 4,8 s</text>
+<rect class="ulz-box" x="382.88" y="72" width="122.88" height="26" rx="3"/>
+<text class="ulz-s12" x="444.32" y="90" text-anchor="middle">Run ≈ 4,8 s</text>
+<rect class="ulz-box" x="567.2" y="72" width="122.88" height="26" rx="3"/>
+<text class="ulz-s12" x="628.64" y="90" text-anchor="middle">Run ≈ 4,8 s</text>
+<rect class="ulz-hl" x="254.88" y="72" width="128" height="26" rx="3"/>
+<rect class="ulz-hl" x="505.76" y="72" width="61.44" height="26" rx="3"/>
+<rect class="ulz-hl" x="690.08" y="72" width="30.72" height="26" rx="3"/>
+<text class="ulz-s12 ulz-b" x="318.88" y="90" text-anchor="middle">Hibernate ≈ 5 s</text>
+<text class="ulz-s12 ulz-b" x="536.48" y="90" text-anchor="middle">Hibernate</text>
+<text class="ulz-s13" x="16" y="132">yeşil LED</text>
+<text class="ulz-m12 ulz-mut" x="16" y="148">PF3</text>
+<path class="ulz-wg" d="M132,148 L132,148 L132,122 L254.88,122 L254.88,148 L382.88,148 L382.88,122 L505.76,122 L505.76,148 L567.2,148 L567.2,122 L690.08,122 L690.08,148 L720.8,148"/>
+<text class="ulz-s12 ulz-grn" x="138" y="116">yanar</text>
+<text class="ulz-s12 ulz-grn" x="260.88" y="142">söner</text>
+<text class="ulz-s13" x="16" y="208">RTC</text>
+<text class="ulz-m12 ulz-mut" x="16" y="224">HIBRTCC</text>
+<path class="ulz-grid" d="M132,203 L720.8,203"/>
+<text class="ulz-m12 ulz-mut" x="126" y="207" text-anchor="end">5</text>
+<text class="ulz-m12 ulz-mut" x="126" y="242" text-anchor="end">0</text>
+<path class="ulz-wmd" d="M132,238 L254.88,238"/>
+<text class="ulz-s12 ulz-mut" x="138" y="230">kapalı (soğuk açılış)</text>
+<path class="ulz-wb" d="M254.88,238 L280.48,238 L280.48,231 L306.08,231 L306.08,224 L331.68,224 L331.68,217 L357.28,217 L357.28,210 L382.88,210 L382.88,203 L408.48,203 L408.48,196 L434.08,196 L434.08,189 L459.68,189 L459.68,182 L485.28,182 L485.28,175 L505.76,175 L505.76,238 L531.36,238 L531.36,231 L556.96,231 L556.96,224 L582.56,224 L582.56,217 L608.16,217 L608.16,210 L633.76,210 L633.76,203 L659.36,203 L659.36,196 L684.96,196 L684.96,189 L690.08,189 L690.08,238 L715.68,238 L715.68,231 L720.8,231"/>
+<text class="ulz-s12 ulz-blu" x="388.88" y="171">uyanınca da sayar</text>
+<text class="ulz-s12 ulz-mut" x="260.88" y="197">eşleşme = 5</text>
+<text class="ulz-s13" x="16" y="292">VDD akımı</text>
+<text class="ulz-s12 ulz-mut" x="16" y="308">kesik eksen</text>
+<path class="ulz-wm" d="M122,262 L122,292 M122,300 L122,328"/>
+<path class="ulz-wm" d="M117,294 L127,290 M117,302 L127,298"/>
+<path class="ulz-wa" d="M132,272 L254.88,272 L254.88,320 L382.88,320 L382.88,272 L505.76,272 L505.76,320 L567.2,320 L567.2,272 L690.08,272 L690.08,320 L720.8,320"/>
+<text x="138" y="266"><tspan class="ulz-s12 ulz-b ulz-acc">≈ 21,9 mA</tspan><tspan class="ulz-s12 ulz-acc">*</tspan></text>
+<text x="260.88" y="314"><tspan class="ulz-s12 ulz-b ulz-acc">6,9 µA</tspan></text>
+<text class="ulz-s12 ulz-b" x="128" y="358" text-anchor="start">reset</text>
+<text class="ulz-s12" x="128" y="374" text-anchor="start">(açılış)</text>
+<text class="ulz-s12 ulz-b" x="254.88" y="358" text-anchor="middle">LED söner +</text>
+<text class="ulz-m12" x="254.88" y="374" text-anchor="middle">HibernateRequest</text>
+<text class="ulz-s12 ulz-b" x="382.88" y="358" text-anchor="middle">RTC eşleşmesi</text>
+<text class="ulz-s12" x="382.88" y="374" text-anchor="middle">→ POR, main</text>
+<text x="567.2" y="358" text-anchor="middle"><tspan class="ulz-s12 ulz-b">SW2 (</tspan><tspan class="ulz-s12 ulz-b ulz-ovl">WAKE</tspan><tspan class="ulz-s12 ulz-b">) basıldı</tspan></text>
+<text class="ulz-s12" x="567.2" y="374" text-anchor="middle">→ POR, main</text>
+<path class="ulz-wm" d="M132,394 L720.8,394"/>
+<path class="ulz-wm" d="M132,390 L132,398"/>
+<text class="ulz-m12 ulz-mut" x="132" y="412" text-anchor="middle">0</text>
+<path class="ulz-wm" d="M260,390 L260,398"/>
+<text class="ulz-m12 ulz-mut" x="260" y="412" text-anchor="middle">5</text>
+<path class="ulz-wm" d="M388,390 L388,398"/>
+<text class="ulz-m12 ulz-mut" x="388" y="412" text-anchor="middle">10</text>
+<path class="ulz-wm" d="M516,390 L516,398"/>
+<text class="ulz-m12 ulz-mut" x="516" y="412" text-anchor="middle">15</text>
+<path class="ulz-wm" d="M644,390 L644,398"/>
+<text class="ulz-m12 ulz-mut" x="644" y="412" text-anchor="middle">20</text>
+<text class="ulz-s12 ulz-mut" x="122" y="412" text-anchor="end">t (s)</text>
+<text class="ulz-s12 ulz-mut" x="16" y="436">* 21,9 mA LED kapalıyken ölçüldü (Lab 6); LED yanarken biraz daha yüksek.</text>
+</svg>

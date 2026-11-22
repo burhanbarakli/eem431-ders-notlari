@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 632" class="usg-svg" role="img" aria-labelledby="usg-title usg-desc">
+<title id="usg-title">Çevre birimi saat geçitleme: RCGC, SCGC, DCGC ve RCC.ACG</title>
+<desc id="usg-desc">GPIOF örneği. Üç geçitleme biti: RCGCGPIO bit 5 (ofset 0x608, TivaWare SysCtlPeripheralEnable), SCGCGPIO bit 5 (ofset 0x708, SysCtlPeripheralSleepEnable), DCGCGPIO bit 5 (ofset 0x808, SysCtlPeripheralDeepSleepEnable). RCC register’ındaki ACG biti (bit 27, reset 0; SysCtlPeripheralClockGating) iki seçiciyi yönetir: Sleep’te ACG = 1 ise SCGC biti, ACG = 0 ise RCGC biti kullanılır; Deep-Sleep’te ACG = 1 ise DCGC biti, ACG = 0 ise RCGC biti. Run’da her zaman RCGC biti kullanılır. Mod seçicisinin çıkışı bir VE kapısında sistem saatiyle birleşir ve GPIOF modül saatini verir. Sistem saati Run ve Sleep’te RCC/RCC2 ile seçilen kaynaktır (Sleep’te Run ile aynı kaynak ve frekans); Deep-Sleep’te DSLPCLKCFG ile seçilir: DSOSCSRC kaynağı (MOSC, PIOSC, LFIOSC ya da Hibernation modülünün 32,768 kHz osilatörü) ve DSDIVORIDE bölücüsü. PLL çalışıyorsa Deep-Sleep girişinde donanım kapatır; çıkışta sistem saati önce eski kaynak ve frekansa döner, sonra durdurulan saatler açılır. İşlemci ve bellek saati Sleep ve Deep-Sleep’te durur.</desc>
+<defs>
+<marker id="usg-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="usg-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.usg-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.usg-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.usg-svg .usg-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.usg-svg .usg-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.usg-svg .usg-b{font-weight:700}
+.usg-svg .usg-s12{font-size:12px}
+.usg-svg .usg-s13{font-size:13px}
+.usg-svg .usg-s16{font-size:16px}
+.usg-svg .usg-mut{fill:var(--fig-muted,#76746c)}
+.usg-svg .usg-blu{fill:var(--fig-blue,#1f5fa8)}
+.usg-svg .usg-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.usg-svg .usg-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.usg-svg .usg-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.usg-svg .usg-gate{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.usg-svg .usg-dot{fill:var(--fig-stroke,#2b2b29)}
+.usg-svg .usg-head{fill:var(--fig-stroke,#2b2b29)}
+.usg-svg .usg-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.usg-svg .usg-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+</style>
+<text class="usg-s16 usg-b" x="16" y="29">Çevre birimi saat geçitleme (GPIOF örneği)</text>
+<text x="744" y="29" text-anchor="end" xml:space="preserve"><tspan class="usg-s13 usg-b">düz</tspan><tspan class="usg-s13"> = register   </tspan><tspan class="usg-s13 usg-b usg-blu">mavi</tspan><tspan class="usg-s13"> = TivaWare</tspan></text>
+<text class="usg-s13 usg-mut" x="16" y="50">Hangi bitin geçerli olduğunu mod ve RCC.ACG seçer.</text>
+<rect class="usg-box" x="16" y="98" width="252" height="66" rx="8"/>
+<text x="28" y="119" xml:space="preserve"><tspan class="usg-mono usg-b">RCGCGPIO</tspan><tspan class="usg-mono">.R5</tspan><tspan class="usg-s12 usg-mut">  ofset 0x608</tspan></text>
+<text class="usg-s12" x="28" y="137">Run modu için GPIOF saat biti</text>
+<text class="usg-m12 usg-blu" x="28" y="154">SysCtlPeripheralEnable</text>
+<rect class="usg-box" x="16" y="184" width="252" height="66" rx="8"/>
+<text x="28" y="205" xml:space="preserve"><tspan class="usg-mono usg-b">SCGCGPIO</tspan><tspan class="usg-mono">.S5</tspan><tspan class="usg-s12 usg-mut">  ofset 0x708</tspan></text>
+<text class="usg-s12" x="28" y="223">Sleep modu için GPIOF saat biti</text>
+<text class="usg-m12 usg-blu" x="28" y="240">SysCtlPeripheralSleepEnable</text>
+<rect class="usg-box" x="16" y="270" width="252" height="66" rx="8"/>
+<text x="28" y="291" xml:space="preserve"><tspan class="usg-mono usg-b">DCGCGPIO</tspan><tspan class="usg-mono">.D5</tspan><tspan class="usg-s12 usg-mut">  ofset 0x808</tspan></text>
+<text class="usg-s12" x="28" y="309">Deep-Sleep modu için GPIOF saat biti</text>
+<text class="usg-m12 usg-blu" x="28" y="326">SysCtlPeripheralDeepSleepEnable</text>
+<rect class="usg-box" x="16" y="368" width="284" height="62" rx="8"/>
+<text x="28" y="389"><tspan class="usg-mono usg-b">RCC.ACG</tspan><tspan class="usg-s12 usg-mut"> (bit 27, reset 0)</tspan></text>
+<text class="usg-s12" x="28" y="407">otomatik saat geçitleme</text>
+<text class="usg-m12 usg-blu" x="28" y="423">SysCtlPeripheralClockGating(true)</text>
+<path class="usg-gate" d="M330,150 L356,162 L356,224 L330,236 Z"/>
+<path class="usg-gate" d="M382,246 L408,258 L408,310 L382,322 Z"/>
+<text class="usg-m12" x="335" y="170">0</text>
+<text class="usg-m12" x="335" y="221">1</text>
+<text class="usg-m12" x="387" y="266">0</text>
+<text class="usg-m12" x="387" y="307">1</text>
+<path class="usg-w" d="M268,131 L476,131"/>
+<path class="usg-w" d="M296,131 L296,262 L382,262"/>
+<path class="usg-w" d="M296,166 L330,166"/>
+<circle class="usg-dot" cx="296" cy="131" r="3.4"/>
+<circle class="usg-dot" cx="296" cy="166" r="3.4"/>
+<path class="usg-w" d="M268,217 L330,217"/>
+<path class="usg-w" d="M268,303 L382,303"/>
+<path class="usg-wt" d="M300,399.0 L395,399.0"/>
+<circle class="usg-dot" cx="343" cy="399" r="3.2"/>
+<path class="usg-wt" d="M343,399.0 L343,308 A5,5 0 0 1 343,298 L343,267 A5,5 0 0 1 343,257 L343,230"/>
+<path class="usg-wt" d="M395,399.0 L395,316"/>
+<text class="usg-m12 usg-b" x="403" y="391">ACG</text>
+<path class="usg-gate" d="M476,110 L506,124 L506,286 L476,300 Z"/>
+<path class="usg-w" d="M356,193.0 L476,193.0"/>
+<path class="usg-w" d="M408,284.0 L476,284.0"/>
+<text class="usg-s12 usg-b" x="468" y="125" text-anchor="end">Run</text>
+<text class="usg-s12 usg-b" x="468" y="187" text-anchor="end">Sleep</text>
+<text class="usg-s12 usg-b" x="468" y="278" text-anchor="end">Deep-Sleep</text>
+<path class="usg-wt" d="M491,80 L491,117"/>
+<text class="usg-s12 usg-mut" x="491" y="74" text-anchor="middle">çalışma modu</text>
+<path class="usg-gate" d="M566,194 L584,194 A23,23 0 0 1 584,240 L566,240 Z"/>
+<path class="usg-w" d="M506,205.0 L546,205.0 L546,205 L566,205"/>
+<path class="usg-w" d="M607,217.0 L629,217.0" marker-end="url(#usg-arr)"/>
+<rect class="usg-hl" x="630" y="186" width="114" height="62" rx="8"/>
+<text class="usg-b" x="642" y="211">GPIOF</text>
+<text class="usg-s13" x="642" y="230">modül saati</text>
+<rect class="usg-box" x="236" y="446" width="210" height="66" rx="8"/>
+<text x="248" y="466"><tspan class="usg-s13 usg-b">Run ve Sleep kaynağı</tspan></text>
+<text x="248" y="484"><tspan class="usg-m12">RCC/RCC2</tspan><tspan class="usg-s12">:</tspan></text>
+<text class="usg-s12" x="248" y="501">MOSC, PIOSC(/4), LFIOSC, PLL</text>
+<rect class="usg-box" x="236" y="524" width="210" height="92" rx="8"/>
+<text x="248" y="546"><tspan class="usg-mono usg-b">DSLPCLKCFG</tspan><tspan class="usg-s12 usg-mut"> (Deep-Sleep)</tspan></text>
+<text x="248" y="565"><tspan class="usg-m12">DSOSCSRC</tspan><tspan class="usg-s12">: MOSC, PIOSC,</tspan></text>
+<text class="usg-s12" x="248" y="581">LFIOSC ya da 32,768 kHz</text>
+<text x="248" y="600"><tspan class="usg-s12">÷ </tspan><tspan class="usg-m12">DSDIVORIDE</tspan></text>
+<path class="usg-gate" d="M476,460 L502,472 L502,588 L476,600 Z"/>
+<path class="usg-w" d="M446,480 L476,480"/>
+<path class="usg-w" d="M446,570 L476,570"/>
+<text class="usg-m12" x="481" y="484">0</text>
+<text class="usg-m12" x="481" y="574">1</text>
+<path class="usg-wt" d="M489,430 L489,466"/>
+<text class="usg-s12 usg-mut" x="489" y="424" text-anchor="middle">Deep-Sleep’te 1</text>
+<path class="usg-w" d="M502,530.0 L534,530.0 L534,229 L566,229"/>
+<text class="usg-s12 usg-b" x="542" y="352">sistem</text>
+<text class="usg-s12 usg-b" x="542" y="367">saati</text>
+<rect class="usg-code" x="584" y="282" width="160" height="298" rx="6"/>
+<text class="usg-s13 usg-b" x="596" y="304">Sleep</text>
+<text class="usg-s12" x="596" y="320">sistem saati Run ile</text>
+<text class="usg-s12" x="596" y="336">aynı kaynak ve frekans</text>
+<text class="usg-s13 usg-b" x="596" y="360">Deep-Sleep girişi</text>
+<text class="usg-s12" x="596" y="376">PLL çalışıyorsa</text>
+<text class="usg-s12" x="596" y="392">donanım kapatır;</text>
+<text class="usg-s12" x="596" y="408">SYSDIV yerine</text>
+<text class="usg-s12" x="596" y="424">DSDIVORIDE geçer</text>
+<text class="usg-s13 usg-b" x="596" y="448">Deep-Sleep çıkışı</text>
+<text class="usg-s12" x="596" y="464">önce eski kaynak ve</text>
+<text class="usg-s12" x="596" y="480">frekans geri gelir,</text>
+<text class="usg-s12" x="596" y="496">sonra durdurulan</text>
+<text class="usg-s12" x="596" y="512">saatler açılır</text>
+<text class="usg-s13 usg-b" x="596" y="536">İşlemci + bellek</text>
+<text class="usg-s12" x="596" y="552">Sleep ve Deep-Sleep’te</text>
+<text class="usg-s12" x="596" y="568">saatsiz</text>
+</svg>

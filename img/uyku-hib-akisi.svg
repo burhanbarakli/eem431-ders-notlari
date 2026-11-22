@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 790" class="uha-svg" role="img" aria-labelledby="uha-title uha-desc">
+<title id="uha-title">Hibernate’e giriş ve uyanış akışı</title>
+<desc id="uha-desc">Adım numaraları veri sayfası 7.4.5 (RTC ya da harici uyanma) sırasıdır. Ön adım (numarasız): RCGCHIB ile modülün sistem saati; reset’te zaten açıktır (SysCtlPeripheralEnable). 1: HIBCTL = 0x40, CLK32EN ile 32,768 kHz osilatör açılır; kristalde tHIBOSC_START beklenir (HibernateEnableExpClk). LaunchPad adımı (numarasız): HIBCTL.VDD3ON = 1 ve RETCLR; kartta pil olmadığından VDD3ON kullanılır, pinler Hibernate boyunca tutulur (HibernateGPIORetentionEnable). 2: HIBRTCM0’a eşleşme değeri, HIBRTCSS.RTCSSM’e alt saniye eşleşmesi yazılır (HibernateRTCMatchSet(0, 5)). 3: HIBRTCLD’ye yükleme değeri yazılır; alt saniye sayacı sıfırlanır (HibernateRTCSet(0)); Lab 6 kodu 3’ü 2’den önce yapar. 4: saklanacak veri HIBDATA’ya yazılır (HibernateDataSet; Lab 6’da yok). Numarasız adım: HIBIC’e RTCALT0 ve EXTW yazılarak bekleyen bayraklar temizlenir; geçerli bir eşleşme bayrağı varken HIBREQ yazılırsa modül hemen uyanır (HibernateIntClear; Lab 6’da yok). 5: HIBCTL’de CLK32EN, RTCEN, RTCWEN, PINWEN ve HIBREQ 1 olur, yani 0x5B; VDD3ON ve RETCLR korunduğundan LaunchPad’de register değeri 0x4000.015B olur (HibernateRTCEnable, HibernateWakeSet, HibernateRequest); uyanma kaynağı yoksa HIBREQ yok sayılır. Her Hibernate register yazımından sonra HIBCTL.WRC = 1 beklenir. Ardından Hibernate: çekirdek ve çevre gücü kesilir, pinler tutulur, RTC sayar. Uyanma olayı: WAKE pini (LaunchPad’de SW2) ya da RTC eşleşmesi (HIBRTCC = HIBRTCM0). Güç geri gelir, normal güç açma reset’i olur; Hibernation modülü ve RTC sıfırlanmaz. main baştan çalışır ve uyanma nedenini okur: RESC’te POR (SysCtlResetCauseGet); HIBCTL.CLK32EN = 1 modülün açık olduğunu gösterir ama RESET düğmesinden sonra da 1’dir; HIBRIS’te EXTW (WAKE) ya da RTCALT0 (eşleşme) okunur ve HIBIC ile temizlenir; HIBDATA’dan durum geri yüklenir.</desc>
+<defs>
+<marker id="uha-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="uha-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="uha-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="uha-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.uha-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.uha-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.uha-svg .uha-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.uha-svg .uha-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.uha-svg .uha-b{font-weight:700}
+.uha-svg .uha-ovl{text-decoration:overline}
+.uha-svg .uha-s12{font-size:12px}
+.uha-svg .uha-s13{font-size:13px}
+.uha-svg .uha-s16{font-size:16px}
+.uha-svg .uha-mut{fill:var(--fig-muted,#76746c)}
+.uha-svg .uha-blu{fill:var(--fig-blue,#1f5fa8)}
+.uha-svg .uha-grn{fill:var(--fig-green,#2f7d4f)}
+.uha-svg .uha-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.uha-svg .uha-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.uha-svg .uha-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.uha-svg .uha-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.uha-svg .uha-optg{fill:var(--fig-fill,#ffffff);stroke:var(--fig-green,#2f7d4f);stroke-width:1.5;stroke-dasharray:6 4}
+.uha-svg .uha-circ{fill:var(--fig-accent,#b4481f)}
+.uha-svg .uha-head{fill:var(--fig-stroke,#2b2b29)}
+.uha-svg .uha-heada{fill:var(--fig-accent,#b4481f)}
+.uha-svg .uha-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.uha-svg .uha-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+</style>
+<text class="uha-s16 uha-b" x="16" y="29">Hibernate’e giriş ve uyanış</text>
+<text x="16" y="50"><tspan class="uha-s13 uha-mut">Numaralar veri sayfası 7.4.5 sırası. Her Hibernate register yazımından sonra </tspan><tspan class="uha-m12 uha-mut">HIBCTL.WRC = 1</tspan><tspan class="uha-s13 uha-mut"> beklenir.</tspan></text>
+<text x="16" y="70" xml:space="preserve"><tspan class="uha-s12 uha-b">düz</tspan><tspan class="uha-s12"> = register   </tspan><tspan class="uha-s12 uha-b uha-blu">mavi</tspan><tspan class="uha-s12"> = TivaWare   </tspan><tspan class="uha-s12 uha-b uha-mut">gri kesikli</tspan><tspan class="uha-s12"> = numarasız ek adım   </tspan><tspan class="uha-s12 uha-b uha-grn">yeşil kesikli</tspan><tspan class="uha-s12"> = LaunchPad’e özgü</tspan></text>
+<rect class="uha-opt" x="16" y="84" width="728" height="44" rx="8"/>
+<text x="32" y="103"><tspan class="uha-mono uha-b">RCGCHIB</tspan><tspan>: modülün sistem saati</tspan></text>
+<text class="uha-s13 uha-mut" x="32" y="122">reset’te zaten açık (7.4.1)</text>
+<text class="uha-m12 uha-blu" x="732" y="110" text-anchor="end">SysCtlPeripheralEnable</text>
+<path class="uha-w" d="M206,128 L206,137" marker-end="url(#uha-arr)"/>
+<rect class="uha-box" x="16" y="138" width="728" height="44" rx="8"/>
+<circle class="uha-circ" cx="38" cy="160" r="12"/>
+<text class="uha-num" x="38" y="165" text-anchor="middle">1</text>
+<text x="62" y="157" xml:space="preserve"><tspan class="uha-mono uha-b">HIBCTL.CLK32EN = 1</tspan><tspan class="uha-s13 uha-mut">  (0x40)</tspan></text>
+<text class="uha-s13 uha-mut" x="62" y="176">32,768 kHz osilatörü aç; kristalde tHIBOSC_START bekle</text>
+<text class="uha-m12 uha-blu" x="732" y="164" text-anchor="end">HibernateEnableExpClk</text>
+<path class="uha-w" d="M206,182 L206,191" marker-end="url(#uha-arr)"/>
+<rect class="uha-optg" x="16" y="192" width="728" height="44" rx="8"/>
+<text x="32" y="211"><tspan class="uha-mono uha-b">HIBCTL.VDD3ON = 1</tspan><tspan> (+ </tspan><tspan class="uha-mono uha-b">RETCLR</tspan><tspan>)</tspan></text>
+<text class="uha-s13 uha-mut" x="32" y="230">LaunchPad: pil yok → VDD3ON; pinler tutulur</text>
+<text class="uha-m12 uha-blu" x="732" y="218" text-anchor="end">HibernateGPIORetentionEnable</text>
+<path class="uha-w" d="M206,236 L206,245" marker-end="url(#uha-arr)"/>
+<rect class="uha-box" x="16" y="246" width="728" height="44" rx="8"/>
+<circle class="uha-circ" cx="38" cy="268" r="12"/>
+<text class="uha-num" x="38" y="273" text-anchor="middle">2</text>
+<text x="62" y="265" xml:space="preserve"><tspan class="uha-mono uha-b">HIBRTCM0</tspan><tspan> = eşleşme  (+ </tspan><tspan class="uha-mono uha-b">RTCSSM</tspan><tspan>)</tspan></text>
+<text class="uha-s13 uha-mut" x="62" y="284">RTC bu değere gelince eşleşme olur</text>
+<text class="uha-m12 uha-blu" x="732" y="272" text-anchor="end">HibernateRTCMatchSet(0, 5)</text>
+<path class="uha-w" d="M206,290 L206,299" marker-end="url(#uha-arr)"/>
+<rect class="uha-box" x="16" y="300" width="728" height="44" rx="8"/>
+<circle class="uha-circ" cx="38" cy="322" r="12"/>
+<text class="uha-num" x="38" y="327" text-anchor="middle">3</text>
+<text x="62" y="319"><tspan class="uha-mono uha-b">HIBRTCLD</tspan><tspan> = başlangıç değeri</tspan></text>
+<text class="uha-s13 uha-mut" x="62" y="338">yazınca alt saniye sayacı sıfırlanır</text>
+<text class="uha-m12 uha-blu" x="732" y="318" text-anchor="end">HibernateRTCSet(0)</text>
+<text x="732" y="334" text-anchor="end"><tspan class="uha-s12 uha-mut">Lab 6: 2’den önce</tspan></text>
+<path class="uha-w" d="M206,344 L206,353" marker-end="url(#uha-arr)"/>
+<rect class="uha-box" x="16" y="354" width="728" height="44" rx="8"/>
+<circle class="uha-circ" cx="38" cy="376" r="12"/>
+<text class="uha-num" x="38" y="381" text-anchor="middle">4</text>
+<text x="62" y="373"><tspan class="uha-mono uha-b">HIBDATA</tspan><tspan>’ya saklanacak durum</tspan></text>
+<text class="uha-s13 uha-mut" x="62" y="392">16 sözcük; uyanınca geri okunur</text>
+<text class="uha-m12 uha-blu" x="732" y="372" text-anchor="end">HibernateDataSet</text>
+<text x="732" y="388" text-anchor="end"><tspan class="uha-s12 uha-mut">Lab 6’da yok</tspan></text>
+<path class="uha-w" d="M206,398 L206,407" marker-end="url(#uha-arr)"/>
+<rect class="uha-opt" x="16" y="408" width="728" height="44" rx="8"/>
+<text x="32" y="427"><tspan class="uha-mono uha-b">HIBIC</tspan><tspan> ← </tspan><tspan class="uha-mono uha-b">RTCALT0 | EXTW</tspan></text>
+<text class="uha-s13 uha-mut" x="32" y="446">bekleyen bayrakları temizle: eski eşleşme hemen uyandırmasın</text>
+<text class="uha-m12 uha-blu" x="732" y="426" text-anchor="end">HibernateIntClear</text>
+<text x="732" y="442" text-anchor="end"><tspan class="uha-s12 uha-mut">Lab 6’da yok</tspan></text>
+<path class="uha-w" d="M206,452 L206,461" marker-end="url(#uha-arr)"/>
+<rect class="uha-hl" x="16" y="462" width="728" height="76" rx="8"/>
+<circle class="uha-circ" cx="38" cy="500" r="12"/>
+<text class="uha-num" x="38" y="505" text-anchor="middle">5</text>
+<text x="62" y="489"><tspan class="uha-mono uha-b">HIBCTL</tspan><tspan>: </tspan><tspan class="uha-mono uha-b">CLK32EN</tspan><tspan>, </tspan><tspan class="uha-mono uha-b">RTCEN</tspan><tspan>, </tspan><tspan class="uha-mono uha-b">RTCWEN</tspan><tspan>, </tspan><tspan class="uha-mono uha-b">PINWEN</tspan><tspan>, </tspan><tspan class="uha-mono uha-b">HIBREQ</tspan><tspan> = 1</tspan></text>
+<text x="62" y="508"><tspan class="uha-m12">0x5B</tspan><tspan class="uha-s13 uha-mut">; VDD3ON ve RETCLR korunur → LaunchPad’de </tspan><tspan class="uha-m12">0x4000.015B</tspan></text>
+<text class="uha-s13 uha-mut" x="62" y="524">uyanma kaynağı kurulu değilse HIBREQ yok sayılır</text>
+<text class="uha-m12 uha-blu" x="732" y="488" text-anchor="end">HibernateRTCEnable</text>
+<text class="uha-m12 uha-blu" x="732" y="504" text-anchor="end">HibernateWakeSet</text>
+<text class="uha-m12 uha-blu" x="732" y="520" text-anchor="end">HibernateRequest</text>
+<path class="uha-w" d="M206,538 L206,557" marker-end="url(#uha-arr)"/>
+<rect class="uha-hl" x="16" y="558" width="206" height="86" rx="8"/>
+<text class="uha-b" x="28" y="582">Hibernate</text>
+<text class="uha-s12" x="28" y="602">çekirdek ve çevre gücü yok;</text>
+<text class="uha-s12" x="28" y="619">pinler tutulur, RTC sayar</text>
+<rect class="uha-box" x="242" y="558" width="232" height="86" rx="8"/>
+<text class="uha-b" x="254" y="580">uyanma olayı</text>
+<text x="254" y="598"><tspan class="uha-m12 uha-ovl">WAKE</tspan><tspan class="uha-s12"> pini (LaunchPad’de </tspan><tspan class="uha-s12 uha-grn uha-b">SW2</tspan><tspan class="uha-s12">)</tspan></text>
+<text class="uha-s12" x="254" y="614">ya da RTC eşleşmesi:</text>
+<text class="uha-m12" x="254" y="630">HIBRTCC = HIBRTCM0</text>
+<rect class="uha-box" x="504" y="558" width="240" height="86" rx="8"/>
+<text class="uha-b" x="516" y="582">güç geri gelir → POR</text>
+<text class="uha-s12" x="516" y="601">normal güç açma reset’i;</text>
+<text class="uha-s12" x="516" y="617">Hibernation modülü ve RTC</text>
+<text class="uha-s12" x="516" y="633">sıfırlanmaz</text>
+<path class="uha-wa" d="M222,601.0 L241,601.0" marker-end="url(#uha-arra)"/>
+<path class="uha-wa" d="M474,601.0 L503,601.0" marker-end="url(#uha-arra)"/>
+<path class="uha-w" d="M624.0,644 L624.0,663" marker-end="url(#uha-arr)"/>
+<rect class="uha-box" x="16" y="664" width="728" height="112" rx="8"/>
+<text class="uha-b" x="28" y="686">main baştan çalışır: uyanma nedenini oku</text>
+<text x="28" y="708"><tspan class="uha-m12">RESC</tspan><tspan class="uha-s12"> = POR → güç açma ya da Hibernate dönüşü</tspan></text>
+<text class="uha-m12 uha-blu" x="732" y="708" text-anchor="end">SysCtlResetCauseGet</text>
+<text x="28" y="727"><tspan class="uha-m12">HIBCTL.CLK32EN = 1</tspan><tspan class="uha-s12"> → modül açık (RESET düğmesinden sonra da 1)</tspan></text>
+<text class="uha-m12 uha-blu" x="732" y="727" text-anchor="end">HibernateIsActive</text>
+<text x="28" y="746"><tspan class="uha-m12">HIBRIS</tspan><tspan class="uha-s12">: </tspan><tspan class="uha-m12">EXTW</tspan><tspan class="uha-s12"> = </tspan><tspan class="uha-s12 uha-ovl">WAKE</tspan><tspan class="uha-s12">, </tspan><tspan class="uha-m12">RTCALT0</tspan><tspan class="uha-s12"> = eşleşme → </tspan><tspan class="uha-m12">HIBIC</tspan><tspan class="uha-s12"> ile temizle</tspan></text>
+<text class="uha-m12 uha-blu" x="732" y="746" text-anchor="end">HibernateIntStatus, HibernateIntClear</text>
+<text x="28" y="765"><tspan class="uha-m12">HIBDATA</tspan><tspan class="uha-s12">’dan saklanan durumu geri yükle</tspan></text>
+<text class="uha-m12 uha-blu" x="732" y="765" text-anchor="end">HibernateDataGet</text>
+</svg>
