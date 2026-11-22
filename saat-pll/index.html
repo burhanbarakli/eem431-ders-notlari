@@ -1,0 +1,711 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistem Saati ve PLL — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad'de sistem saati: saat kaynakları, saat ağacı, 400 MHz PLL ile 16 MHz kristalden 40/50/80 MHz elde etme, RCC ve RCC2 register'ları, veri sayfasının 5 adımlı başlatma sırası, API'siz ve TivaWare (SysCtlClockSet, SysCtlClockGet) örnekleri, saat değişince zamanlamanın değişmesi, TI Lab 3 uyarlaması.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 4. Sistem Saati ve PLL</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#sistem-saati">1. Sistem saati nedir</a><ol>
+  <li><a href="#kapi">Saat kapısı ve sistem saati</a></li></ol></li>
+<li><a href="#kaynaklar">2. Saat kaynakları</a><ol>
+  <li><a href="#reset">Reset sonrası saat</a></li></ol></li>
+<li><a href="#agac">3. Saat ağacı</a></li>
+<li><a href="#frekans">4. PLL ve frekans hesabı</a><ol>
+  <li><a href="#formuller">Üç kip, üç formül</a></li>
+  <li><a href="#frekans-tablosu">Örnek frekanslar</a></li>
+  <li><a href="#kaydirma">4 &lt;&lt; 22 mi, 4 &lt;&lt; 23 mü?</a></li></ol></li>
+<li><a href="#registerlar">5. RCC ve RCC2</a><ol>
+  <li><a href="#rcc">RCC alanları</a></li>
+  <li><a href="#rcc2">RCC2 alanları</a></li>
+  <li><a href="#ris">RIS, MISC ve PLLSTAT</a></li></ol></li>
+<li><a href="#baslatma">6. Başlatma adımları</a><ol>
+  <li><a href="#adimlar">5 adım</a></li>
+  <li><a href="#ders-adim">Ders kodundaki 0–8 numaraları</a></li></ol></li>
+<li><a href="#ornekler">7. Örnekler</a><ol>
+  <li><a href="#ornek-80">7.1 API'siz 80 MHz</a></li>
+  <li><a href="#ornek-40">7.2 API'siz 40 MHz</a></li>
+  <li><a href="#ornek-apili">7.3 SysCtlClockSet</a></li>
+  <li><a href="#dogrulama">7.4 Saati doğrulama</a></li>
+  <li><a href="#ders-kodlari">7.5 Dersteki kodlar ve hataları</a></li></ol></li>
+<li><a href="#etki">8. Saat değişince ne değişir</a></li>
+<li><a href="#lab">9. TI Lab uyarlaması</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynakca">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>Sistem Saati ve PLL</h1>
+<p class="lead">Mikrodenetleyicide yapılan her şey bir saat darbesiyle ilerler: komutların yürütülmesi, zamanlayıcının sayması, UART'ın bit süresi, <code>SysCtlDelay</code>'in beklemesi. TM4C123GH6PM açıldığında içindeki 16 MHz'lik osilatörle çalışır. LaunchPad'deki 16 MHz kristal ve yonganın içindeki 400 MHz PLL ile bu saat 80 MHz'e kadar çıkarılabilir. Bu notta saatin nereden geldiğini, PLL'in nasıl ayarlandığını ve saat değişince programdaki hangi sayıların değişmesi gerektiğini göreceğiz. Daha önceki notlardaki <code>SysCtlClockSet(SYSCTL_SYSDIV_5 | …)</code> satırının ne yaptığı da burada açılıyor.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Sistem saatinin (SysClk) hangi kaynaklardan gelebileceğini (PIOSC, PIOSC/4, MOSC, LFIOSC, Hibernate 32,768 kHz, PLL) sayabilir. Çevre birimi saat kapısını (RCGCxxx) sistem saatinin frekansından ayırabilir.</li>
+<li>Saat ağacını izleyerek 16 MHz kristalden PLL ile 40, 50, 66,67 ve 80 MHz'in nasıl elde edildiğini hesaplayabilir. 80 MHz için neden RCC2 ve DIV400 gerektiğini açıklayabilir.</li>
+<li>RCC ve RCC2 register'larının alanlarını (XTAL, OSCSRC, PWRDN, BYPASS, SYSDIV, USESYSDIV, MOSCDIS, USERCC2, DIV400, SYSDIV2, SYSDIV2LSB) tanıyabilir. Veri sayfasının 5 adımlı başlatma sırasını register düzeyinde uygulayabilir.</li>
+<li>Aynı ayarı TivaWare'deki <code>SysCtlClockSet</code> ile yapabilir, makroların hangi bitlere açıldığını gösterebilir, <code>SysCtlClockGet</code> ile saati okuyabilir.</li>
+<li>Saat değişince <code>SysCtlDelay</code>, SysTick, zamanlayıcı ve UART ayarlarının nasıl etkilendiğini hesaplayabilir. Sabit "40000000" yerine <code>SysCtlClockGet()</code> kullanmanın nedenini açıklayabilir.</li>
+</ol></div>
+
+<h2 id="sistem-saati">1. Sistem saati nedir</h2>
+<p><b>Amaç:</b> "saat" sözcüğünün iki ayrı anlamını ayırmak: saatin frekansı ve bir birime saatin gidip gitmediği.</p>
+<p><b>Sistem saati (SysClk)</b>, Cortex-M4F çekirdeğini, belleği ve çevre birimlerini süren ana saat işaretidir. Bir komutun kaç nanosaniye sürdüğü, zamanlayıcının bir sayımının ne kadar olduğu, UART'ın baud bölücüsünün hangi frekansı böldüğü hep bu saate bağlıdır. Veri sayfası çevre birimlerinin sistem saatiyle sürüldüğünü ve her birinin ayrı ayrı açılıp kapatılabildiğini söyler (§5.2.5.2, s. 221). TM4C123GH6PM'de sistem saati en çok 80 MHz olabilir (s. 230'daki LDO tablosu: 1,2 V'ta en yüksek sistem saati 80 MHz).</p>
+
+<h3 id="kapi">Saat kapısı ve sistem saati</h3>
+<p>GPIO notundan beri her programın başında <code>SYSCTL_RCGCGPIO_R |= 0x20</code> gibi bir satır var. Bu satır sistem saatini <b>değiştirmez</b>, yalnız o saatin Port F'ye gidip gitmeyeceğini belirler. Bu yüzden RCGC register'larına <b>saat kapısı</b> (clock gating) denir. Kapı kapalıyken birimin register'larına erişilirse hata kesmesi (fault) oluşur (Workbook s. 3-14). Kapı açıldıktan sonra register'lara erişmeden önce 3 sistem saati beklenmelidir (§5.2.6, s. 227). Notlarda bu yüzden <code>PRGPIO</code> beklenir.</p>
+<table>
+<thead><tr><th></th><th>Saat kapısı</th><th>Sistem saati</th></tr></thead>
+<tbody>
+<tr><td>Register</td><td><code>RCGCGPIO</code>, <code>RCGCTIMER</code>, <code>RCGCUART</code>, <code>RCGCADC</code>…</td><td><code>RCC</code>, <code>RCC2</code></td></tr>
+<tr><td>Ne belirler</td><td>Saatin <b>o birime</b> gidip gitmediğini (açık/kapalı)</td><td>Saatin <b>kaynağını ve frekansını</b> (bütün yonga için)</td></tr>
+<tr><td>TivaWare</td><td><code>SysCtlPeripheralEnable</code></td><td><code>SysCtlClockSet</code>, <code>SysCtlClockGet</code></td></tr>
+<tr><td>Ne zaman</td><td>Her birimden önce bir kez</td><td>Programın başında, birimler ayarlanmadan önce</td></tr>
+</tbody></table>
+<p>Birkaç birimin kendine ait bir saat seçeneği vardır. Bunlar <a href="#etki">Bölüm 8</a>'de ele alınıyor: ADC saati (PIOSC ya da PLL/25), UART ve SSI baud saati (sistem saati ya da PIOSC; offset 0xFC8'deki Clock Control register'ı, s. 222), PWM saati (RCC'deki PWMDIV ile bölünmüş sistem saati) ve USB'nin kendi 480 MHz PLL'i.</p>
+
+<h2 id="kaynaklar">2. Saat kaynakları</h2>
+<p><b>Amaç:</b> yongadaki saat kaynaklarını, doğruluklarını ve hangisinin PLL'i sürebildiğini tanımak.</p>
+<table>
+<thead><tr><th>Kaynak</th><th>Frekans ve doğruluk</th><th>LaunchPad'de</th><th>PLL'i sürer mi?</th><th>SysClk olur mu?</th><th>OSCSRC / OSCSRC2</th></tr></thead>
+<tbody>
+<tr><td><b>PIOSC</b> (precision internal oscillator)</td><td>16 MHz. Fabrika kalibrasyonuyla gerilim ve sıcaklık aralığında ±%3, kullanıcının yeniden kalibrasyonuyla o koşulda ±%1 (Tablo 24-15, s. 1375)</td><td>Yonganın içinde</td><td>Evet (RCC'de OSCSRC = 0x1, RCC2'de OSCSRC2 = 0x1; Tablo 5-3, §5.2.5.5)</td><td>Evet</td><td>0x1 (reset değeri)</td></tr>
+<tr><td><b>PIOSC/4</b></td><td>4 MHz</td><td>İçeride</td><td>Hayır</td><td>Evet</td><td>0x2</td></tr>
+<tr><td><b>MOSC</b> (main oscillator)</td><td>Kristal ya da dış saat. PLL ile 5–25 MHz, PLL'siz 4–25 MHz (s. 219–220). Doğruluk kristale bağlıdır</td><td><b>Y2: 16 MHz kristal</b> (SPMU296 §2.2.3, s. 12)</td><td>Evet</td><td>Evet</td><td>0x0</td></tr>
+<tr><td><b>LFIOSC</b> (low-frequency internal oscillator)</td><td>Yaklaşık 30 kHz. Veri sayfasına göre 10–90 kHz arası, tipik 33 kHz (Tablo 24-16, s. 1375). Workbook "30 kHz ± %50" verir</td><td>İçeride</td><td>Hayır</td><td>Evet</td><td>0x3</td></tr>
+<tr><td><b>Hibernate osilatörü</b></td><td>32,768 kHz</td><td><b>Y1: 32,768 kHz kristal</b> (SPMU296 §2.2.2, s. 11)</td><td>Hayır</td><td>Evet</td><td>0x7 (yalnız OSCSRC2)</td></tr>
+</tbody></table>
+<p>Tablo veri sayfasının Tablo 5-3'ünü (s. 220) ve Workbook'taki kaynak tablosunu (s. 3-4) birleştirir. Bunlara ek olarak sistem saati <b>PLL çıkışından</b> da gelebilir. PLL'in giriş frekansı 5–25 MHz olmalıdır (s. 220). Bu yüzden yalnız MOSC ve PIOSC PLL'i sürebilir. LFIOSC derin uyku (Deep-Sleep) için, Hibernate osilatörü gerçek zaman saati için düşünülmüştür. Bu ikisi 9. notun konusudur.</p>
+<p>Yüksek doğruluk gereken işler için kristal kullanılır. PIOSC'nin ±%3 sapması bir LED için önemsizdir. Ama UART'ta alıcıyla verici arasındaki toplam baud farkı birkaç yüzdeyi geçince çerçeveler bozulur. Zamanlayıcıyla saat tutan bir programda %3, saatte yaklaşık 2 dakikalık kayma demektir.</p>
+
+<h3 id="reset">Reset sonrası saat</h3>
+<p>Güç verildiğinde ya da reset sonrasında RCC = <code>0x078E.3AD1</code>, RCC2 = <code>0x07C0.6810</code> olur (s. 254 ve 260). Bu değerlerin anlamı:</p>
+<ul>
+<li>OSCSRC = 0x1 ve BYPASS = 1: sistem saati PIOSC'den gelir, PLL atlanmıştır.</li>
+<li>USESYSDIV = 0: bölücü kullanılmaz. SYSDIV = 0xF olsa da etkisizdir.</li>
+<li>PWRDN = 1: PLL kapalıdır. MOSCDIS = 1: ana osilatör kapalıdır.</li>
+<li>XTAL = 0x0B, yani 6 MHz. LaunchPad'in 16 MHz kristali için bu alanın 0x15 yapılması gerekir.</li>
+<li>USERCC2 = 0: RCC2 alanları kullanılmaz.</li>
+</ul>
+<p>Sonuç: hiç saat kodu yazılmamış bir program <b>16 MHz PIOSC</b> ile, ±%3 doğrulukla çalışır. GPIO ve ADC notlarındaki API'siz örnekler bu varsayılanla çalışır.</p>
+
+<h2 id="agac">3. Saat ağacı</h2>
+<p><b>Amaç:</b> bir kaynaktan SysClk'e giden yolu ve yol üzerindeki her seçici ile bölücünün hangi register alanıyla denetlendiğini görmek.</p>
+<figure><img class="fig" src="../img/saat-agaci.svg" alt="Saat ağacı: MOSC (Y2 16 MHz), PIOSC 16 MHz, PIOSC/4, LFIOSC ve Hibernate 32,768 kHz kaynakları OSCSRC seçicisine girer; MOSC ve PIOSC ayrıca PLL girişine gider; PLL 400 MHz üretir, DIV400 = 0 iken 2'ye bölünür; BYPASS seçicisi PLL yolu ile osilatör yolu arasında seçim yapar; ardından SYSDIV bölücüsü ve USESYSDIV gelir, çıkış SysClk"><figcaption><b>Şekil 1.</b> Sistem saatinin yolu (veri sayfası Şekil 5-5, s. 222'den sadeleştirilmiştir). OSCSRC/OSCSRC2 hem osilatör yolunun kaynağını hem PLL'in referansını seçer. XTAL, PLL'e giriş frekansını bildirir. PWRDN = 0 PLL'e güç verir. DIV400 = 0 iken 400 MHz'lik PLL çıkışı önce 2'ye bölünür. BYPASS seçicisinden sonra SYSDIV bölücüsü gelir. USESYSDIV bölücünün kullanılıp kullanılmayacağını seçer, ama PLL seçiliyken bölücü her zaman devrededir.</figcaption></figure>
+<p>Yolu soldan sağa izleyelim:</p>
+<ol>
+<li><b>Kaynak seçimi (OSCSRC):</b> MOSC, PIOSC, PIOSC/4, LFIOSC ya da (RCC2'de) 32,768 kHz. PLL'in referansı bunlardan yalnız MOSC ya da PIOSC olabilir.</li>
+<li><b>PLL (PWRDN, XTAL):</b> PWRDN = 0 iken PLL çalışır ve her zaman 400 MHz üretir. Giriş frekansını XTAL alanından öğrenir. XTAL'e göre çarpanları donanım kendisi seçer ve PLLFREQ0/1 register'larına koyar (§5.2.5.5, s. 225). 16 MHz kristalde 16 / (N + 1) × MINT = 16 / 2 × 50 = 400 MHz'tir (Tablo 24-14, s. 1374).</li>
+<li><b>Ön bölme (DIV400):</b> DIV400 = 0 iken PLL çıkışı sabit olarak 2'ye bölünür (200 MHz). DIV400 = 1 iken 400 MHz doğrudan bölücüye gider. DIV400 yalnız RCC2'de vardır.</li>
+<li><b>BYPASS:</b> 0 ise PLL yolu, 1 ise osilatörün ham çıkışı seçilir.</li>
+<li><b>SYSDIV ve USESYSDIV:</b> seçilen saat SYSDIV + 1'e bölünür. USESYSDIV = 0 iken (ve BYPASS = 1 iken) bölücü atlanır. PLL seçiliyken bölücü her zaman kullanılır (RCC, USESYSDIV açıklaması, s. 255).</li>
+</ol>
+<p>Şekil 5-5'in dipnotları her alanın hangi register'da olduğunu söyler:</p>
+<table>
+<thead><tr><th>Yalnız RCC'de</th><th>RCC'de, USERCC2 = 1 iken RCC2'deki karşılığı geçerli</th><th>Yalnız RCC2'de</th></tr></thead>
+<tbody><tr><td>XTAL, MOSCDIS, USESYSDIV, USEPWMDIV, PWMDIV</td><td>OSCSRC → OSCSRC2, PWRDN → PWRDN2, BYPASS → BYPASS2, SYSDIV → SYSDIV2</td><td>USERCC2, DIV400, SYSDIV2LSB, USBPWRDN</td></tr></tbody></table>
+<p>Bu tablo iki şeyi açıklar: RCC2 kullanılsa bile kristal değeri (XTAL) ve MOSCDIS RCC'ye yazılır. RCC2 kullanılırken RCC'deki BYPASS'ı temizlemek ise hiçbir şey yapmaz (<a href="#ders-h07">7.5</a>'teki hata).</p>
+
+<h2 id="frekans">4. PLL ve frekans hesabı</h2>
+<p><b>Amaç:</b> verilen bir alan değerinden frekansı, istenen frekanstan alan değerini bulmak.</p>
+<h3 id="formuller">Üç kip, üç formül</h3>
+<table>
+<thead><tr><th>Kip</th><th>Bölücü alanı</th><th>Sistem saati (BYPASS = 0)</th><th>Geçerli aralık</th></tr></thead>
+<tbody>
+<tr><td><b>RCC</b> (USERCC2 = 0)</td><td>SYSDIV, bit 26:23 (4 bit)</td><td>200 MHz / (SYSDIV + 1)</td><td>SYSDIV = 0 ve 1 ayrılmış. En yüksek 66,67 MHz (SYSDIV = 2), reset değeri 0xF → 12,5 MHz (Tablo 5-4, s. 223)</td></tr>
+<tr><td><b>RCC2, DIV400 = 0</b></td><td>SYSDIV2, bit 28:23 (6 bit)</td><td>200 MHz / (SYSDIV2 + 1)</td><td>SYSDIV2 = 0 ve 1 ayrılmış. En düşük /64 → 3,125 MHz (Tablo 5-5, s. 223–224)</td></tr>
+<tr><td><b>RCC2, DIV400 = 1</b></td><td>[SYSDIV2 : SYSDIV2LSB], bit 28:22 (7 bit)</td><td>400 MHz / (değer + 1)</td><td>Değer 0–3 ayrılmış. En yüksek <b>80 MHz</b> (değer 4), en düşük /128 → 3,125 MHz (Tablo 5-6, s. 224)</td></tr>
+</tbody></table>
+<p>BYPASS = 1 iken aynı bölücü osilatör frekansına uygulanır: f = f<sub>osc</sub> / (SYSDIV + 1), USESYSDIV = 0 ise f = f<sub>osc</sub>. DIV400 ve SYSDIV2LSB yalnız BYPASS2 = 0 iken geçerlidir (Tablo 5-6, dipnot a).</p>
+<p><b>Neden 80 MHz için RCC yetmez?</b> RCC kipinde 200 MHz tam sayılara bölünür: 200/2 = 100 MHz (ayrılmış, sınırın üstünde), 200/3 = 66,67 MHz. Arada 80 MHz yoktur. 80 MHz = 200 / 2,5'tir. 2,5'lik bölme ancak 400 MHz'i 5'e bölerek, yani DIV400 = 1 ile yapılır. TivaWare'in <code>SYSCTL_SYSDIV_2_5</code> adı da buradan gelir.</p>
+
+<h3 id="frekans-tablosu">Örnek frekanslar</h3>
+<table>
+<thead><tr><th>SysClk</th><th>Yol</th><th>Alanlar</th><th>Hesap</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>16 MHz</td><td>MOSC, PLL atlanmış</td><td>BYPASS = 1, OSCSRC = 0, USESYSDIV = 0</td><td>16 MHz / 1</td><td><code>SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC</code></td></tr>
+<tr><td>16 MHz</td><td>PLL</td><td>RCC2, DIV400 = 1, değer 24</td><td>400 / 25</td><td><code>SYSCTL_SYSDIV_12_5</code></td></tr>
+<tr><td>40 MHz</td><td>PLL</td><td>RCC, SYSDIV = 4</td><td>400 / 2 / 5</td><td><code>SYSCTL_SYSDIV_5</code></td></tr>
+<tr><td>50 MHz</td><td>PLL</td><td>RCC, SYSDIV = 3</td><td>400 / 2 / 4</td><td><code>SYSCTL_SYSDIV_4</code></td></tr>
+<tr><td>66,67 MHz</td><td>PLL</td><td>RCC, SYSDIV = 2</td><td>400 / 2 / 3</td><td><code>SYSCTL_SYSDIV_3</code></td></tr>
+<tr><td>80 MHz</td><td>PLL</td><td>RCC2, DIV400 = 1, değer 4 (SYSDIV2 = 2, SYSDIV2LSB = 0)</td><td>400 / 5</td><td><code>SYSCTL_SYSDIV_2_5</code></td></tr>
+</tbody></table>
+<p>Dersin notlarında ve TI Workbook'ta en sık 40 MHz (<code>SYSDIV_5</code>) ve 50 MHz (<code>SYSDIV_4</code>) kullanılır. Derste PWM örneklerinde <code>SYSDIV_12_5</code> gibi değerler de kullanılır. Bu değer saati PLL üzerinden 16 MHz'e indirir. Bu durumda kaynak kristal olduğu için frekans PIOSC'ninkinden çok daha doğrudur.</p>
+<figure><img class="fig" src="../img/saat-frekans-yollari.svg" alt="Dört sinyal yolu: 16 MHz kristal BYPASS ile doğrudan SysClk = 16 MHz; 16 MHz → PLL 400 MHz → /2 = 200 MHz → /5 (RCC, SYSDIV = 4) = 40 MHz; 200 MHz → /4 (SYSDIV = 3) = 50 MHz; PLL 400 MHz → DIV400 = 1 → /5 (RCC2, 7 bitlik değer 4) = 80 MHz"><figcaption><b>Şekil 2.</b> Aynı 16 MHz kristalden dört farklı sistem saati. 16 MHz'te PLL atlanır (BYPASS = 1). 40 ve 50 MHz'te RCC kullanılır: 200 MHz, SYSDIV + 1 = 5 ve 4'e bölünür. 80 MHz'te RCC2'de DIV400 = 1 yapılır ve 400 MHz, 7 bitlik değer + 1 = 5'e bölünür.</figcaption></figure>
+
+<h3 id="kaydirma">4 &lt;&lt; 22 mi, 4 &lt;&lt; 23 mü?</h3>
+<p>Bölücü değeri register'a kaydırılarak yazılır ve kaydırma miktarı kipe göre değişir. Dersteki kodlarda görülen hataların çoğu buradan çıkar:</p>
+<ul>
+<li><b>RCC</b>'de SYSDIV bit 23'ten başlar. SYSDIV = 4 için <code>4 &lt;&lt; 23</code> = <code>0x0200.0000</code> yazılır.</li>
+<li><b>RCC2, DIV400 = 0</b> iken SYSDIV2 de bit 23'ten başlar. Bit 22 (SYSDIV2LSB) yok sayılır.</li>
+<li><b>RCC2, DIV400 = 1</b> iken 7 bitlik değer bit 22'den başlar. Değer 4 için <code>4 &lt;&lt; 22</code> = <code>0x0100.0000</code> yazılır.</li>
+</ul>
+<div class="box warn"><span class="box-title">Aynı sayı, üç farklı frekans</span>
+<p><code>4 &lt;&lt; 22</code> = <code>0x0100.0000</code> yalnız bit 24'ü 1 yapar. Bit 22'den bakan DIV400 = 1 kipi bunu 4 olarak okur: 400/5 = <b>80 MHz</b>. Bit 23'ten bakan RCC ve DIV400 = 0 kipi aynı biti <b>2</b> olarak okur: 200/3 = <b>66,67 MHz</b>. Valvano'nun kitabındaki RCC2 kodunda görülen <code>(4&lt;&lt;22)</code> RCC'ye taşınınca 40 MHz değil 66,67 MHz verir. RCC'de <code>SYSCTL_RCC_SYSDIV_S</code> (= 23) kullanmak bu hatayı önler. TivaWare'de <code>SYSCTL_SYSDIV_3</code> = <code>0x0140.0000</code> değeri de tam olarak <code>USESYSDIV + (4 &lt;&lt; 22)</code>'dir.</p></div>
+
+<h2 id="registerlar">5. RCC ve RCC2</h2>
+<p><b>Amaç:</b> başlatmada kullanılan bitlerin yerini, maskesini ve reset değerini bir arada görmek.</p>
+<figure><img class="fig" src="../img/saat-rcc-rcc2.svg" alt="RCC (0x400FE060) ve RCC2 (0x400FE070) register'larının 32 bitlik haritaları; RCC'de MOSCDIS bit 0, OSCSRC bit 5:4, XTAL bit 10:6, BYPASS bit 11, PWRDN bit 13, USESYSDIV bit 22, SYSDIV bit 26:23; RCC2'de OSCSRC2 bit 6:4, BYPASS2 bit 11, PWRDN2 bit 13, USBPWRDN bit 14, SYSDIV2LSB bit 22, SYSDIV2 bit 28:23, DIV400 bit 30, USERCC2 bit 31 vurgulu"><figcaption><b>Şekil 3.</b> RCC ve RCC2 bit haritaları (s. 254 ve 260). RCC2'nin bir RCC alanını geçersiz kılan alanları aynı bit konumundadır (Tablo 5-8): OSCSRC2, BYPASS2, PWRDN2, SYSDIV2. Bazıları RCC'dekinden geniştir: OSCSRC2 3 bit, SYSDIV2 6 bit.</figcaption></figure>
+<p>Adresler ve maske adları <code>inc/tm4c123gh6pm.h</code>'dendir. Taban adres 0x400F.E000'dir: RIS +0x050, MISC +0x058, RCC +0x060, RCC2 +0x070, PLLSTAT +0x168.</p>
+
+<h3 id="rcc">RCC alanları (offset 0x060, reset 0x078E.3AD1)</h3>
+<table>
+<thead><tr><th>Bit</th><th>Alan</th><th>Maske</th><th>Reset</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>26:23</td><td>SYSDIV</td><td><code>SYSCTL_RCC_SYSDIV_M</code> 0x0780.0000, kaydırma <code>SYSCTL_RCC_SYSDIV_S</code> = 23</td><td>0xF</td><td>Bölen = SYSDIV + 1</td></tr>
+<tr><td>22</td><td>USESYSDIV</td><td><code>SYSCTL_RCC_USESYSDIV</code> 0x0040.0000</td><td>0</td><td>1: bölücü kullanılır. RCC2 etkinken SYSDIV2'nin kullanılması için de bu bit 1 olmalıdır (s. 261). PLL seçiliyken bölücü zorunludur</td></tr>
+<tr><td>20, 19:17</td><td>USEPWMDIV, PWMDIV</td><td><code>SYSCTL_RCC_USEPWMDIV</code>, <code>SYSCTL_RCC_PWMDIV_M</code></td><td>0, 0x7</td><td>PWM saati bölücüsü (12. not)</td></tr>
+<tr><td>13</td><td>PWRDN</td><td><code>SYSCTL_RCC_PWRDN</code> 0x0000.2000</td><td>1</td><td>1: PLL kapalı. 0: PLL çalışır</td></tr>
+<tr><td>11</td><td>BYPASS</td><td><code>SYSCTL_RCC_BYPASS</code> 0x0000.0800</td><td>1</td><td>1: osilatör yolu, 0: PLL yolu</td></tr>
+<tr><td>10:6</td><td>XTAL</td><td><code>SYSCTL_RCC_XTAL_M</code> 0x0000.07C0; <code>SYSCTL_RCC_XTAL_16MHZ</code> = 0x540</td><td>0x0B (6 MHz)</td><td>MOSC'ye bağlı kristal. 16 MHz = 0x15. PLL ile 0x09–0x1A arası (s. 256)</td></tr>
+<tr><td>5:4</td><td>OSCSRC</td><td><code>SYSCTL_RCC_OSCSRC_M</code> 0x30; <code>SYSCTL_RCC_OSCSRC_MAIN</code> = 0</td><td>0x1</td><td>0 MOSC, 1 PIOSC, 2 PIOSC/4, 3 LFIOSC</td></tr>
+<tr><td>0</td><td>MOSCDIS</td><td><code>SYSCTL_RCC_MOSCDIS</code> 0x1</td><td>1</td><td>1: ana osilatör kapalı (s. 257)</td></tr>
+</tbody></table>
+
+<h3 id="rcc2">RCC2 alanları (offset 0x070, reset 0x07C0.6810)</h3>
+<table>
+<thead><tr><th>Bit</th><th>Alan</th><th>Maske</th><th>Reset</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>31</td><td>USERCC2</td><td><code>SYSCTL_RCC2_USERCC2</code> 0x8000.0000</td><td>0</td><td>1: RCC2 alanları RCC'dekileri geçersiz kılar. 0: RCC2 alanları yok sayılır (s. 260)</td></tr>
+<tr><td>30</td><td>DIV400</td><td><code>SYSCTL_RCC2_DIV400</code> 0x4000.0000</td><td>0</td><td>0: 200 MHz'e uygula. 1: SYSDIV2LSB'yi ekleyip 400 MHz'e uygula</td></tr>
+<tr><td>28:23</td><td>SYSDIV2</td><td><code>SYSCTL_RCC2_SYSDIV2_M</code> 0x1F80.0000, <code>SYSCTL_RCC2_SYSDIV2_S</code> = 23</td><td>0x0F</td><td>Bölen = SYSDIV2 + 1</td></tr>
+<tr><td>22</td><td>SYSDIV2LSB</td><td><code>SYSCTL_RCC2_SYSDIV2LSB</code> 0x0040.0000</td><td>1</td><td>DIV400 = 1 iken 7 bitlik değerin en düşük biti. Yalnız DIV400 = 1 iken yazılabilir (s. 261)</td></tr>
+<tr><td>14</td><td>USBPWRDN</td><td><code>SYSCTL_RCC2_USBPWRDN</code> 0x4000</td><td>1</td><td>USB PLL'i kapalı</td></tr>
+<tr><td>13</td><td>PWRDN2</td><td><code>SYSCTL_RCC2_PWRDN2</code> 0x2000</td><td>1</td><td>PWRDN'in RCC2 karşılığı</td></tr>
+<tr><td>11</td><td>BYPASS2</td><td><code>SYSCTL_RCC2_BYPASS2</code> 0x0800</td><td>1</td><td>BYPASS'ın RCC2 karşılığı</td></tr>
+<tr><td>6:4</td><td>OSCSRC2</td><td><code>SYSCTL_RCC2_OSCSRC2_M</code> 0x70</td><td>0x1</td><td>OSCSRC'nin değerleri + 0x7: 32,768 kHz</td></tr>
+</tbody></table>
+<div class="box warn"><span class="box-title">Register yazarken uyulacak kurallar</span>
+<ul>
+<li><b>Oku-değiştir-yaz:</b> ayrılmış bitlerin değeri korunmalıdır (s. 254, 261). <code>SYSCTL_RCC2_R = …</code> gibi tam atamalar ayrılmış bitleri ve dokunulmak istenmeyen alanları da değiştirir. Alan değiştirmek için <code>(R &amp; ~MASKE) | DEĞER</code> kalıbı kullanılır.</li>
+<li><b>Önce RCC, sonra RCC2:</b> veri sayfası iki register'ın açıklamasında da RCC'nin RCC2'den önce yazılmasını ister (s. 254, 260). 7.1 ve 7.2'deki kodlar her adımda bu sırayı izler. TivaWare ise RCC2 kipinde 2. adımın yazmasında önce RCC2'yi yazar (<code>sysctl.c</code> satır 2653–2657).</li>
+<li><b>EEPROM:</b> bir EEPROM işlemi sürerken saat ayarı değiştirilmemelidir (EEDONE.WORKING = 0 beklenir, s. 221).</li>
+<li><b>MOSCDIS:</b> reset değeri 1'dir ve RCC açıklamasına göre ana osilatör bu durumda kapalıdır (s. 257). §5.2.5.1'e göre MOSC gerekiyorsa yazılım onu resetten sonra açmalı ve saat referansını değiştirmeden önce oturmasını beklemelidir (s. 219). TivaWare'in <code>SysCtlClockSet</code>'i <code>SYSCTL_MAIN_OSC_DIS</code> verilmedikçe MOSCDIS'i temizler ve RIS.MOSCPUPRIS ile osilatörün oturmasını bekler (<code>sysctl.c</code> satır 2574–2618). Kaynak PIOSC seçilmiş olsa bile MOSC böylece açılır. Bu notun kodları da MOSCDIS'i temizleyip bekler. Veri sayfasının s. 221'deki "Important" notu ise MOSC'ye geçerken MOSC yeniden seçilmeden önce MOSCDIS'in 1 yapılmasını (<i>set</i>) ister, aksi hâlde ara sıra tanımsız bir saat ayarı oluşabileceğini söyler. Bu not TivaWare'in yaptığıyla çelişir. Burada s. 219'daki cümle ve TivaWare'in sırası izlenmiştir.</li>
+</ul></div>
+
+<h3 id="ris">RIS, MISC ve PLLSTAT</h3>
+<ul>
+<li><b>RIS.PLLLRIS</b> (bit 6, <code>SYSCTL_RIS_PLLLRIS</code> = 0x40, s. 245): PLL'in kilitlenmesi için gereken süre (T<sub>READY</sub>) dolunca 1 olur. Kendiliğinden sıfırlanmaz, MISC'teki PLLLMIS bitine 1 yazılarak temizlenir (W1C, <code>SYSCTL_MISC_R = SYSCTL_MISC_PLLLMIS</code>).</li>
+<li><b>RIS.MOSCPUPRIS</b> (bit 8, 0x100, s. 245): MOSC açıldıktan sonra beklenen frekansa ulaşınca 1 olur. Temizlemek için <code>SYSCTL_MISC_MOSCPUPMIS</code> yazılır.</li>
+<li><b>PLLSTAT.LOCK</b> (bit 0, s. 273): PLL'in <b>şu anki</b> durumudur. 1 ise PLL güç almış ve kilitli, 0 ise kapalı ya da kilitlenmemiştir. RIS'teki bayraktan farkı, eski bir kilitlenmeden kalmamasıdır.</li>
+</ul>
+<p>T<sub>READY</sub>, PLL açılırken 512 × (N + 1), XTAL değişince 128 × (N + 1) referans periyodudur (Tablo 24-13, s. 1374). 16 MHz kristalde N = 1 olduğundan açılış 1024 × 62,5 ns = <b>64 µs</b> sürer.</p>
+
+<h2 id="baslatma">6. Başlatma adımları</h2>
+<p><b>Amaç:</b> PLL'li sistem saatine güvenli geçişin sırasını ve her adımın nedenini bilmek. Adım numaraları Şekil 4'te ve kod yorumlarında aynıdır. 7.1'de ön adım ile 1. adımın RCC2 kısmı (BYPASS2 = 1) tek yazmada yapılır.</p>
+<h3 id="adimlar">5 adım</h3>
+<p>Veri sayfası §5.3 (s. 231) PLL'i doğrudan register yazmalarıyla ayarlamak için beş adım verir. RCC2 kullanılacaksa önce USERCC2 = 1 yapılır ve adımlar RCC2'deki karşılık alanlarla uygulanır. Bu notta bu işe <b>ön adım</b> denir ve numara verilmez.</p>
+<ol>
+<li><b>PLL'i ve bölücüyü atla:</b> RCC'de BYPASS = 1, USESYSDIV = 0 (RCC2'de BYPASS2 = 1). Mikrodenetleyici "ham" osilatörle çalışmaya devam eder. Yeni PLL ayarı, sistem saati PLL'e bağlanmadan önce oturabilir.</li>
+<li><b>Kaynağı seç, PLL'e güç ver:</b> XTAL'i (kristal değeri) ve OSCSRC'yi (OSCSRC2) yaz, PWRDN'i (PWRDN2) temizle. XTAL yazıldığında donanım bu kristale uygun PLL ayarlarını kendisi yükler.</li>
+<li><b>Bölücüyü seç:</b> SYSDIV'i (SYSDIV2, DIV400 ve SYSDIV2LSB) yaz ve RCC'de USESYSDIV = 1 yap. Sistem saatinin frekansını bu değer belirler.</li>
+<li><b>Kilidi bekle:</b> RIS'teki PLLLRIS 1 olana kadar yokla.</li>
+<li><b>PLL'i kullan:</b> BYPASS'ı (BYPASS2) temizle. Sistem saati artık PLL'den gelir.</li>
+</ol>
+<figure><img class="fig" src="../img/saat-pll-baslatma.svg" alt="PLL başlatma akışı: numarasız ön kutu USERCC2 seçimi (RCC2 kullanılacaksa USERCC2 = 1), ardından 1 BYPASS = 1 ve USESYSDIV = 0; 2 XTAL, OSCSRC, PWRDN = 0; 3 SYSDIV ve USESYSDIV = 1; 4 PLLLRIS = 1 olana kadar bekle; 5 BYPASS = 0"><figcaption><b>Şekil 4.</b> Veri sayfası §5.3'teki başlatma sırası. Ön kutu yalnız RCC2 kullanılacaksa uygulanır. 4. adımdaki döngü PLL kilitlenene kadar döner. 5. adımdan sonra sistem saati PLL'den, SYSDIV ile seçilen frekansta gelir.</figcaption></figure>
+<p><b>Neden bu sıra?</b> PLL'in ayarı (XTAL, kaynak, güç) değişirken çıkışı kararsızdır (§5.2.5.8, s. 226). İşlemci o sırada PLL'den besleniyorsa saati bozulur. 1. adım işlemciyi kararlı bir osilatöre alır. 4. adım PLL'in yeniden oturmasını bekler. 5. adım ancak bundan sonra geçişi yapar. Veri sayfası ayrıca bir donanım koruması da tarif eder. Yazılım PLL'e tek adımda geçse bile donanım, T<sub>READY</sub> dolana kadar sistemi seçili osilatörle saatlemeye devam eder (s. 226). Bu koruma 4. adımı gereksiz kılmaz: yazılım, saatin gerçekten PLL'e geçtiğini ancak kilit bayrağına bakarak bilir.</p>
+<p>Veri sayfasının adımlarında olmayan iki ayrıntı vardır. Kodlarımızda ikisi de 2. adımın içindedir:</p>
+<ul>
+<li><b>MOSC'yi açmak:</b> MOSCDIS = 1 ise önce temizlenir ve RIS.MOSCPUPRIS beklenir (TivaWare de böyle yapar).</li>
+<li><b>Eski kilit bayrağı:</b> PLLLRIS bir önceki kilitlenmeden 1 kalmış olabilir. TivaWare bayrağı 2. adımda temizler ve 4. adımda PLLSTAT.LOCK'a bakar. Bizim kodlarımız veri sayfasındaki gibi PLLLRIS'e bakar ve bayrağı temizlemez. Böylece fonksiyon PLL zaten kilitliyken çağrılsa da 4. adımda takılmaz. XTAL aynı değerle yeniden yazıldığında PLL yeniden kilitlenmez (s. 226).</li>
+</ul>
+
+<h3 id="ders-adim">Ders kodundaki 0–8 numaraları</h3>
+<p>Dersteki <code>saatayar2()</code> ve <code>saatayar()</code> fonksiyonları (<a href="#ders-s01">7.5</a>) adımları 0'dan 8'e kadar numaralar. Bu numaraların veri sayfasının beş adımına karşılığı:</p>
+<table>
+<thead><tr><th>Ders kodu yorumu</th><th>Yaptığı</th><th>Veri sayfası adımı</th></tr></thead>
+<tbody>
+<tr><td>0)</td><td>USERCC2 = 1 (<code>saatayar</code>'da 0)</td><td>Ön adım</td></tr>
+<tr><td>1)</td><td>BYPASS2 = 1 (<code>saatayar</code>'da BYPASS)</td><td>1</td></tr>
+<tr><td>2) 3) 4)</td><td>XTAL = 16 MHz; OSCSRC2 = 0; PWRDN2 = 0</td><td>2</td></tr>
+<tr><td>5) 6)</td><td>DIV400; SYSDIV2 (ve <code>saatayar</code>'da USESYSDIV = 1)</td><td>3</td></tr>
+<tr><td>7)</td><td>PLLLRIS bekle</td><td>4</td></tr>
+<tr><td>8)</td><td>BYPASS2 = 0</td><td>5</td></tr>
+</tbody></table>
+<p>Ders kodunda 1. adımdaki "USESYSDIV = 0" ve <code>saatayar2</code>'de 3. adımdaki "USESYSDIV = 1" yoktur. USESYSDIV reset değerinde zaten 0'dır. PLL seçiliyken bölücü her durumda kullanıldığı için <code>saatayar2</code>'nin sonucu değişmez. TivaWare'in <code>SysCtlClockGet</code> kodundaki bir yorum da bu biti PLL kullanılırken her zaman 1 sayar (<code>sysctl.c</code> satır 2868–2872).</p>
+
+<h2 id="ornekler">7. Örnekler</h2>
+<p><b>Amaç:</b> aynı başlatma sırasını register düzeyinde ve TivaWare ile uygulamak, sonucu LED ile gözlemek.</p>
+<h3 id="ornek-80">7.1 API'siz 80 MHz (RCC2, DIV400) <span class="tag reg">API'siz</span></h3>
+<p>Fonksiyon Şekil 4'ün sırasını izler. Bütün yazmalar oku-değiştir-yaz biçimindedir. <code>main</code> mavi LED'i SysTick'in COUNT bayrağıyla yakıp söndürür. SysTick ayrıntıları 5. notta anlatılıyor, burada yalnız bayrak yoklanıyor.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: saat80_apisiz.c</span><span class="tag reg">API'siz · 80 MHz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+// 16 MHz kristal (MOSC) + PLL ile sistem saatini 80 MHz yapar.
+// RCC2 kullanılır: DIV400 = 1, 7 bitlik bölücü değeri 4 → 400 MHz / 5 = 80 MHz.
+void saat_80mhz(void)
+{
+    // Her adımda RCC, RCC2'den önce yazılır (veri sayfası s. 254, 260).
+
+    // 1) RCC kısmı: PLL'i ve sistem bölücüsünü atla (BYPASS = 1, USESYSDIV = 0).
+    SYSCTL_RCC_R = (SYSCTL_RCC_R | SYSCTL_RCC_BYPASS) &amp; ~SYSCTL_RCC_USESYSDIV;
+
+    // Ön adım + 1) RCC2 kısmı, tek yazma: USERCC2 = 1, BYPASS2 = 1.
+    // RCC2'ye geçildiği anda PLL atlanmış olur.
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_USERCC2 | SYSCTL_RCC2_BYPASS2;
+
+    // 2) Kaynağı ve kristali seç, PLL'e güç ver.
+    //    MOSC açılışta kapalıdır (MOSCDIS = 1): kapalıysa aç ve kararlı olmasını bekle.
+    if (SYSCTL_RCC_R &amp; SYSCTL_RCC_MOSCDIS) {
+        SYSCTL_MISC_R = SYSCTL_MISC_MOSCPUPMIS;        // eski bayrağı temizle (W1C)
+        SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_MOSCDIS;           // MOSC açık
+        while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_MOSCPUPRIS) == 0) { }
+    }
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_XTAL_M)
+                 | SYSCTL_RCC_XTAL_16MHZ;              // XTAL = 0x15 (16 MHz)
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_OSCSRC2_M;           // OSCSRC2 = 0: MOSC
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_PWRDN2;              // PWRDN2 = 0: PLL çalışır
+
+    // 3) Bölücüyü seç: RCC'de USESYSDIV = 1; RCC2'de önce DIV400 = 1, sonra bit 22'den
+    //    başlayan 7 bitlik [SYSDIV2:SYSDIV2LSB] alanına 4 (bölen 4 + 1 = 5).
+    SYSCTL_RCC_R |= SYSCTL_RCC_USESYSDIV;
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_DIV400;
+    SYSCTL_RCC2_R = (SYSCTL_RCC2_R &amp; ~(SYSCTL_RCC2_SYSDIV2_M | SYSCTL_RCC2_SYSDIV2LSB))
+                  | (4u &lt;&lt; 22);
+
+    // 4) PLL'in kilitlenmesini bekle: RIS.PLLLRIS (bit 6). Parantezler şart.
+    while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS) == 0) { }
+
+    // 5) PLL'i kullan: BYPASS2 = 0. Sistem saati artık 80 MHz.
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_BYPASS2;
+}
+
+int main(void)
+{
+    uint32_t sayac = 0;
+
+    saat_80mhz();
+
+    SYSCTL_RCGCGPIO_R |= 0x20;                  // Port F saati
+    while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) { }   // port hazır olsun
+    GPIO_PORTF_DIR_R |= 0x04;                   // PF2 (mavi LED) çıkış
+    GPIO_PORTF_DEN_R |= 0x04;
+
+    // SysTick: sistem saatiyle say, 8 000 000 çevrimde bir COUNT bayrağı.
+    NVIC_ST_CTRL_R = 0;
+    NVIC_ST_RELOAD_R = 8000000 - 1;             // 80 MHz'te 0,1 s
+    NVIC_ST_CURRENT_R = 0;
+    NVIC_ST_CTRL_R = NVIC_ST_CTRL_CLK_SRC | NVIC_ST_CTRL_ENABLE;
+
+    while (1) {
+        if (NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT) {  // okuma bayrağı temizler
+            if (++sayac == 5) {                     // 5 x 0,1 s = 0,5 s
+                sayac = 0;
+                GPIO_PORTF_DATA_R ^= 0x04;          // LED periyodu 1 s
+            }
+        }
+    }
+}</code></pre>
+<ul>
+<li><b>Yazma sırası:</b> her adımda önce RCC, sonra RCC2 yazılır (<a href="#rcc2">Bölüm 5</a>'teki kural). Bu yüzden 1. adımın RCC kısmı (BYPASS = 1, USESYSDIV = 0) ön adımdan önce gelir.</li>
+<li><b>Ön adım + 1. adım (tek yazma):</b> USERCC2 ile birlikte BYPASS2 de 1 yapılır. Önceki bir ayar RCC2'de BYPASS2 = 0 bırakmış olsa bile RCC2'ye geçilen anda PLL atlanmış olur.</li>
+<li><b>2. adım:</b> XTAL RCC'ye, OSCSRC2 ve PWRDN2 RCC2'ye yazılır (<a href="#agac">Bölüm 3</a>'teki tablo). MOSC kapalıysa önce açılır ve MOSCPUPRIS beklenir. <code>if</code> sayesinde fonksiyon MOSC zaten açıkken çağrıldığında, hiç gelmeyecek bir bayrağı beklemez.</li>
+<li><b>3. adım:</b> USESYSDIV (RCC) önce, DIV400 ve bölücü (RCC2) sonra yazılır. DIV400 bölücüden önce 1 yapılır, çünkü SYSDIV2LSB ancak DIV400 = 1 iken yazılabilir (s. 261). USESYSDIV = 1 olunca, BYPASS2 = 1 olduğu için sistem saati MOSC'nin bölünmüşü olur: önce reset değerindeki SYSDIV2 = 0xF ile 16/16 = 1 MHz, bölücü yazılınca 5. adıma kadar 16/3 ≈ 5,33 MHz. DIV400 ve SYSDIV2LSB, BYPASS2 = 1 iken geçersizdir, bölücü bu yüzden yalnız SYSDIV2 + 1 = 3 olarak çalışır. Bu ara değerler zararsızdır.</li>
+<li><b>SysTick:</b> RELOAD = 8 000 000 − 1 → 80 MHz'te 0,1 s. LED 5 bayrakta bir değişir: değişme aralığı 0,5 s, periyot 1 s. Saat 80 MHz olmasaydı periyot da 1 s olmazdı. Bu yüzden LED'in periyodu basit bir saat ölçüsüdür (<a href="#dogrulama">7.4</a>).</li>
+</ul>
+
+<h3 id="ornek-40">7.2 API'siz 40 MHz (yalnız RCC) <span class="tag reg">API'siz</span></h3>
+<p>RCC2 kullanılmadığı için ön adım yoktur. Bunun yerine 1. adımda RCC2 devreden çıkarılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: saat40_apisiz.c</span><span class="tag reg">API'siz · 40 MHz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+// 16 MHz kristal (MOSC) + PLL ile sistem saatini 40 MHz yapar. Yalnız RCC kullanılır:
+// PLL 400 MHz → sabit /2 → SYSDIV + 1 = 5 → 40 MHz.
+void saat_40mhz(void)
+{
+    // 1) PLL'i ve bölücüyü atla (BYPASS = 1, USESYSDIV = 0), sonra RCC2'yi
+    //    devreden çıkar (USERCC2 = 0). Sıra önemli: RCC2 bırakıldığında RCC'nin
+    //    BYPASS'ı zaten 1'dir.
+    SYSCTL_RCC_R = (SYSCTL_RCC_R | SYSCTL_RCC_BYPASS) &amp; ~SYSCTL_RCC_USESYSDIV;
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_USERCC2;
+
+    // 2) MOSC'yi aç (gerekirse), XTAL = 16 MHz, OSCSRC = MOSC, PWRDN = 0.
+    if (SYSCTL_RCC_R &amp; SYSCTL_RCC_MOSCDIS) {
+        SYSCTL_MISC_R = SYSCTL_MISC_MOSCPUPMIS;
+        SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_MOSCDIS;
+        while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_MOSCPUPRIS) == 0) { }
+    }
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~(SYSCTL_RCC_XTAL_M | SYSCTL_RCC_OSCSRC_M))
+                 | SYSCTL_RCC_XTAL_16MHZ | SYSCTL_RCC_OSCSRC_MAIN;
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_PWRDN;
+
+    // 3) SYSDIV = 4 ve USESYSDIV = 1. SYSDIV alanı bit 23'ten başlar:
+    //    4 &lt;&lt; 23 = 0x02000000 (4 &lt;&lt; 22 yazılırsa SYSDIV = 2 olur!).
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_SYSDIV_M)
+                 | (4u &lt;&lt; SYSCTL_RCC_SYSDIV_S) | SYSCTL_RCC_USESYSDIV;
+
+    // 4) PLL kilidini bekle.
+    while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS) == 0) { }
+
+    // 5) BYPASS = 0: sistem saati PLL'den, 40 MHz.
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_BYPASS;
+}</code></pre>
+<ul>
+<li><b>USERCC2'yi temizleme sırası:</b> önce RCC'de BYPASS = 1 yapılır, sonra USERCC2 = 0. Ters sırada, önceden RCC2 ile PLL'e geçilmişse RCC2 bırakıldığı anda RCC'nin eski alanları (belki BYPASS = 0) geçerli olurdu.</li>
+<li><b>3. adım:</b> <code>4u &lt;&lt; SYSCTL_RCC_SYSDIV_S</code> = <code>0x0200.0000</code>. <a href="#kaydirma">Bölüm 4</a>'teki tuzağa düşmemek için kaydırma miktarı başlık dosyasındaki adla yazılır.</li>
+<li>7.1'deki <code>main</code>'de <code>saat_80mhz()</code> yerine <code>saat_40mhz()</code> çağrılırsa RELOAD değişmediği için bayrak aralığı 0,2 s, LED periyodu 2 s olur.</li>
+</ul>
+
+<h3 id="ornek-apili">7.3 TivaWare ile: SysCtlClockSet ve SysCtlClockGet <span class="tag api">API'li</span></h3>
+<p><code>SysCtlClockSet</code> beş adımın hepsini tek çağrıda yapar. Parametre, her gruptan bir değerin OR'lanmasıyla kurulur: bölücü (<code>SYSCTL_SYSDIV_…</code>), PLL kullanımı (<code>SYSCTL_USE_PLL</code> / <code>SYSCTL_USE_OSC</code>), kaynak (<code>SYSCTL_OSC_MAIN</code> / <code>SYSCTL_OSC_INT</code>…) ve kristal (<code>SYSCTL_XTAL_16MHZ</code>).</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: saat_apili.c</span><span class="tag api">API'li · 80/50/40/16 MHz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+
+// Saat seçimi: 80, 50, 40 ya da 16 (MHz). Değiştirip yeniden derleyin.
+#define SAAT_MHZ 80
+
+int main(void)
+{
+    uint32_t saat;
+
+#if SAAT_MHZ == 80      // RCC2, DIV400 = 1: 400 / 5
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+#elif SAAT_MHZ == 50    // RCC: 200 / 4
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+#elif SAAT_MHZ == 40    // RCC: 200 / 5
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+#else                   // PLL kapalı, doğrudan 16 MHz kristal
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+#endif
+
+    saat = SysCtlClockGet();            // RCC/RCC2 ve PLLFREQ'ten hesaplanır
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);     // yeşil LED
+
+    while (1) {
+        // SysCtlDelay döngüsü 3 çevrimdir: saat / 3 ≈ 1 s, saat / 6 ≈ 0,5 s.
+        // Bekleme saatten hesaplandığı için LED her seçimde ~1 s periyotla yanar.
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_PIN_3);
+        SysCtlDelay(saat / 6);
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);
+        SysCtlDelay(saat / 6);
+    }
+}</code></pre>
+<p>Bekleme <code>SysCtlClockGet()</code>'ten hesaplandığı için LED dört seçimde de yaklaşık 1 s periyotla yanıp söner. Bu, <a href="#etki">Bölüm 8</a>'deki "sabit sayı yazma" kuralının küçük bir örneğidir. 16 MHz seçeneğinde <code>SYSCTL_OSC_MAIN</code> yerine <code>SYSCTL_OSC_INT</code> yazılırsa saat yine 16 MHz olur, ama kristalden değil ±%3'lük PIOSC'den gelir.</p>
+<h4 id="makrolar">Makrolar hangi bitlere açılır?</h4>
+<p>Değerler <code>driverlib/sysctl.h</code>'dendir. Makrolar doğrudan RCC/RCC2 bit konumlarına göre seçilmiştir:</p>
+<table>
+<thead><tr><th>Makro</th><th>Değer</th><th>Açılımı</th></tr></thead>
+<tbody>
+<tr><td><code>SYSCTL_SYSDIV_1</code></td><td>0x0780.0000</td><td>USESYSDIV = 0: bölücü yok</td></tr>
+<tr><td><code>SYSCTL_SYSDIV_4</code></td><td>0x01C0.0000</td><td>SYSDIV = 3 (bit 26:23), USESYSDIV = 1 → 200/4 = 50 MHz</td></tr>
+<tr><td><code>SYSCTL_SYSDIV_5</code></td><td>0x0240.0000</td><td>SYSDIV = 4, USESYSDIV = 1 → 200/5 = 40 MHz</td></tr>
+<tr><td><code>SYSCTL_SYSDIV_2_5</code></td><td>0xC100.0000</td><td>USERCC2 (bit 31) + DIV400 (bit 30) + 7 bitlik değer 4 (bit 28:22) → 400/5 = 80 MHz</td></tr>
+<tr><td><code>SYSCTL_SYSDIV_12_5</code></td><td>0xC600.0000</td><td>USERCC2 + DIV400 + değer 24 → 400/25 = 16 MHz</td></tr>
+<tr><td><code>SYSCTL_USE_PLL</code></td><td>0x0000.0000</td><td>BYPASS = 0, PWRDN = 0</td></tr>
+<tr><td><code>SYSCTL_USE_OSC</code></td><td>0x0000.3800</td><td>BYPASS = 1 (0x800), PWRDN = 1 (0x2000) ve bit 12 (ayrılmış, salt okunur, reset değeri 1; s. 256)</td></tr>
+<tr><td><code>SYSCTL_XTAL_16MHZ</code></td><td>0x0000.0540</td><td>XTAL = 0x15</td></tr>
+<tr><td><code>SYSCTL_OSC_MAIN</code> / <code>SYSCTL_OSC_INT</code></td><td>0x00 / 0x10</td><td>OSCSRC = 0 (MOSC) / 1 (PIOSC)</td></tr>
+</tbody></table>
+<p>Workbook'un Lab 3'teki "/2 ve /5, toplam 10" açıklaması bu tablodan okunur. <code>SYSDIV_5</code> RCC kipindedir, PLL'in 400 MHz'i önce sabit /2'den, sonra /5'ten geçer: 400 / 10 = 40 MHz.</p>
+<h4 id="clockset-ici">SysCtlClockSet içeride ne yapar?</h4>
+<p>TivaWare 2.1.4 <code>driverlib/sysctl.c</code>, satır 2548–2718. Adım numaraları Şekil 4'e göredir:</p>
+<ol>
+<li><b>Adım 1</b> (satır 2561–2569): RCC'de BYPASS = 1, USESYSDIV = 0, RCC2'de BYPASS2 = 1 yazılır.</li>
+<li><b>MOSC</b> (satır 2574–2618): MOSCDIS = 1 ise ve <code>SYSCTL_MAIN_OSC_DIS</code> verilmemişse (kaynak PIOSC olsa bile) MOSCDIS temizlenir, MOSCPUPRIS en çok 524 288 tur beklenir. Süre dolarsa fonksiyon döner. Ama 1. adım yazılmış olduğu için saat ayarı yarım kalır: PLL atlanmış, bölücü kapalıdır.</li>
+<li><b>Adım 2:</b> XTAL ve OSCSRC (RCC), USERCC2 ve OSCSRC2 (RCC2) yazılır. Sonra PWRDN/PWRDN2 ayarlanır ve MISC'e PLLLMIS yazılarak eski kilit bayrağı temizlenir (satır 2648).</li>
+<li><b>Adım 3</b> hazırlanır ama henüz yazılmaz: SYSDIV, USESYSDIV, MOSCDIS, SYSDIV2. DIV400'lü değerlerde USESYSDIV = 1, DIV400 ve SYSDIV2LSB eklenir.</li>
+<li><b>Adım 4</b> (satır 2693–2699): PLL kullanılacaksa <b>PLLSTAT.LOCK</b> en çok 32 768 tur yoklanır.</li>
+<li><b>Adım 5</b> ve son yazma: BYPASS ve BYPASS2 temizlenir. RCC ve RCC2 bölücüyle birlikte tek seferde yazılır. Bölücünün oturması için <code>SysCtlDelay(16)</code> çağrılır (satır 2717).</li>
+</ol>
+<p>Bizim kodumuzdan iki farkı vardır. TivaWare kilidi RIS yerine PLLSTAT'tan ve zaman aşımıyla bekler. Bölücüyü de BYPASS'ı temizleyen son yazmalarla birlikte değiştirir. Bu yazmalar yine iki tanedir (satır 2711 RCC, 2712 RCC2). RCC2 kipinde ilk yazmada USESYSDIV = 1 olur, BYPASS2 ise henüz 1'dir. İki yazma arasında saat bir an osilatör / (eski SYSDIV2 + 1) olur.</p>
+<p><b>SysCtlClockGet</b> (satır 2743–2959) bir değişkenden değil, register'lardan hesap yapar. OSCSRC'ye göre giriş frekansını bulur (MOSC için XTAL tablosundan). PLL kullanılıyorsa PLLFREQ0/1'deki çarpanlarla 200 MHz'i hesaplar, sonra RCC ya da RCC2'deki bölücüyü uygular. Sonuç en çok 80 MHz ile sınırlanır. Fonksiyonun açıklaması (satır 2729–2733), <code>SysCtlClockSet</code> çağrılmamışsa ya da kristal desteklenen frekanslardan biri değilse doğru sonuç vermeyebileceğini söyler. Ama kod yalnız RCC, RCC2, PLLFREQ0/1 ve DC1'i okur. Bu yüzden 7.1'deki gibi doğru yapılmış bir register ayarından sonra da doğru değeri hesaplar.</p>
+
+<h3 id="dogrulama">7.4 Saati doğrulama <span class="tag api">API'li</span></h3>
+<p>Saatin gerçekten ayarlandığı frekansta olup olmadığı, süresi saate bağlı bir olayın ölçülmesiyle anlaşılır. Aşağıdaki program iki LED'i iki ayrı yöntemle sabit sayılarla yakıp söndürür. Saat değişince ikisinin de hızı değişir.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: saat_dogrula.c</span><span class="tag api">API'li · 40 MHz</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/tm4c123gh6pm.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+
+// Sabit sayılarla zamanlama: saat değişince süreler değişir.
+// Mavi LED (PF2):    SysTick, RELOAD = 10 000 000 - 1, 8 bayrakta bir değişir.
+// Kırmızı LED (PF1): SysCtlDelay(2000000) ile, her beklemede bir değişir.
+int main(void)
+{
+    uint32_t bayrak = 0;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);
+
+    NVIC_ST_CTRL_R = 0;
+    NVIC_ST_RELOAD_R = 10000000 - 1;    // 24 bit sınırının (16 777 215) altında
+    NVIC_ST_CURRENT_R = 0;
+    NVIC_ST_CTRL_R = NVIC_ST_CTRL_CLK_SRC | NVIC_ST_CTRL_ENABLE;   // sistem saati
+
+    while (1) {
+        SysCtlDelay(2000000);           // 6 000 000 çevrim (yaklaşık)
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,
+                     GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1) ^ GPIO_PIN_1);
+
+        // SysTick bayrağını yokla. Bekleme (~6 M çevrim) bayrak aralığından
+        // (10 M çevrim) kısa olduğu için saat ne olursa olsun bayrak kaçmaz.
+        if (NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT) {
+            if (++bayrak == 8) {
+                bayrak = 0;
+                GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,
+                             GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2) ^ GPIO_PIN_2);
+            }
+        }
+    }
+}</code></pre>
+<ul>
+<li><b>SysTick ile (mavi LED, PF2):</b> bayrak aralığı (RELOAD + 1) / f = 10<sup>7</sup> / f. LED 8 bayrakta bir değişir, periyodu 16 bayrak aralığıdır: T<sub>LED</sub> = 16 × 10<sup>7</sup> / f, yani <b>f = 1,6 × 10<sup>8</sup> / T<sub>LED</sub></b>. 40 MHz'te T<sub>LED</sub> = 4 s. On periyodu kronometreyle ölçüp 10'a bölmek tepki süresinden gelen hatayı küçültür.</li>
+<li><b>SysCtlDelay ile (kırmızı LED, PF1):</b> <code>SysCtlDelay(N)</code> N tur döner ve her tur 3 çevrimdir (Workbook s. 3-15; <code>sysctl.c</code> satır 1806–1813). Bekleme 3N / f'dir: <code>SysCtlDelay(2000000)</code> 40 MHz'te 0,15 s eder. Bu yalnız yaklaşık bir değerdir. TivaWare'in kendi açıklamasına göre kesmeler, flash bekleme durumları ve ön getirme tamponu döngünün süresini değiştirir. Ölçüm için SysTick ya da zamanlayıcı kullanılmalıdır.</li>
+<li><b>Daha kesin yöntemler:</b> LED pinini osiloskopla ölçmek; hata ayıklayıcıda <code>SysCtlClockGet()</code>'in döndürdüğü değere, RCC ve RCC2'nin register görünümüne bakmak. RCC2'nin alanlara ayrılması <a href="#lab">Bölüm 9</a>'daki deneyin bir adımıdır.</li>
+</ul>
+<p>Bu programın 16, 40 ve 80 MHz'teki süreleri <a href="#etki">Bölüm 8</a>'deki tabloda ve Şekil 5'te.</p>
+
+<h3 id="ders-kodlari">7.5 Dersteki kodlar ve hataları</h3>
+<p>Derste kullanılan iki API'siz proje vardır: <code>hafta07clocksettingsnoapi</code> ve <code>saat01apisiz</code>. Kodlar olduğu gibi gösterilir. Hatalar düzeltilmez, uyarı kutularında açıklanır. Satır numaraları orijinal dosyalara göredir.</p>
+<h4 id="ders-h07">hafta07clocksettingsnoapi <span class="tag reg">API'siz</span></h4>
+<p><code>main</code> yalnız <code>clockinit()</code>'i çağırır, sonra PF4 ve PF0 butonlarıyla kırmızı ve mavi LED'i yakar. <code>clockinit</code> RCC ile, hiç çağrılmayan <code>clockinit2</code> ise RCC2 ile PLL'li bir saate geçmeye çalışır. <code>clockinit</code>'in başında (satır 42–56) veri sayfası §5.3'ün metni yorum olarak kopyalanmıştır. Aşağıda kodun kendisi var:</p>
+<div class="code-head"><span class="file">hafta07clocksettingsnoapi/main.c, satır 58–82 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">    // SYSCTL_RCC2_R &amp;= 7FFFFFFF;
+    // SYSCTL_RCC2_R &amp; = ~80000000;
+    SYSCTL_RCC2_R = ~SYSCTL_RCC2_USERCC2;
+
+    SYSCTL_RCC_R |=  SYSCTL_RCC_BYPASS;
+    // 800 -&gt; 1000 0000 0000
+
+    //2.SYSCTL_RCC_R &amp;= 0xFFFFF830
+    // SYSCTL_RCC_R + 0x00000540
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_XTAL_M) + SYSCTL_RCC_XTAL_16MHZ;
+
+    //SYSCTL_RCC_R &amp;= 0xCF; //oscscr 00
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_OSCSRC_M;
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_PWRDN; //pwrdwn o yaptık artık pll devrede olacak
+    // ilk önce div400 0 yap
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_DIV400;
+
+    //SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~0x07800000)+ (4&lt;&lt;22);
+    SYSCTL_RCC_R &amp; = ~SYSCTL_RCC_SYSDIV_M;
+    SYSCTL_RCC_R |= SYSCTL_RCC_USESYSDIV + (4&lt;&lt;22); // 16 mhz
+    //4.
+    while ( SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS==0  );
+
+    SYSCTL_RCC_R &amp;= ~ SYSCTL_RCC_BYPASS;
+}</code></pre>
+<div class="code-head"><span class="file">hafta07clocksettingsnoapi/main.c, satır 84–107 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void clockinit2(){
+    SYSCTL_RCC2_R = SYSCTL_RCC2_USERCC2; // artik rcc2 registere devrede
+
+    SYSCTL_RCC2_R |= SYSCTL_RCC2_BYPASS2;
+
+    //2.SYSCTL_RCC_R &amp;= 0xFFFFF830
+    // SYSCTL_RCC_R + 0x00000540
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_XTAL_M) + SYSCTL_RCC_XTAL_16MHZ;
+
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_OSCSRC2_M;
+
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_PWRDN2;
+    // ilk önce div400 0 yap 2 böl
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_DIV400;
+
+
+
+    SYSCTL_RCC2_R = (SYSCTL_RCC2_R &amp;  ~SYSCTL_RCC2_SYSDIV2_M)+(4&lt;&lt;22);
+
+
+    while ( SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS==0  );
+
+    SYSCTL_RCC_R &amp;= ~ SYSCTL_RCC_BYPASS;
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta07clocksettingsnoapi</span>
+<ul>
+<li><b>Satır 76:</b> <code>SYSCTL_RCC_R &amp; = ~SYSCTL_RCC_SYSDIV_M;</code> <code>&amp;</code> ile <code>=</code> arasında boşluk vardır, <code>&amp;=</code> tek bir işleçtir. clang "error: expected expression" verir. <b>Dosya derlenmez.</b> Doğrusu <code>SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_SYSDIV_M;</code></li>
+<li><b>Satır 79 ve 104:</b> <code>while ( SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS==0 );</code> <code>==</code>, <code>&amp;</code>'den önce işlenir: <code>SYSCTL_RIS_PLLLRIS==0</code> → <code>0x40 == 0</code> → 0, ifade de <code>RIS &amp; 0</code> = 0 olur. Döngü <b>hiç beklemez</b>, kilit beklenmeden 5. adıma geçilir. clang <code>-Wparentheses</code> uyarısı verir. Donanım PLL kilitlenene kadar sistemi osilatörde tuttuğu için (s. 226) program büyük olasılıkla çökmez (MOSC kapalı kaldığı için bu ölçülmedi), ama 4. adım fiilen yoktur. Doğrusu <code>while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS) == 0) { }</code></li>
+<li><b>Satır 77:</b> <code>SYSCTL_RCC_R |= SYSCTL_RCC_USESYSDIV + (4&lt;&lt;22); // 16 mhz</code>. <code>4&lt;&lt;22</code> = <code>0x0100.0000</code> RCC'de <b>SYSDIV = 2</b>'dir (<a href="#kaydirma">Bölüm 4</a>). Satır 76 düzeltilse bile saat 200/3 = <b>66,67 MHz</b> olur. Yorumdaki 16 MHz de, SYSDIV = 4'ün vereceği 40 MHz de değildir. Satır 75'teki yorum satırında da aynı kaydırma vardır. 40 MHz için <code>(4&lt;&lt;23)</code>, daha iyisi <code>(4u &lt;&lt; SYSCTL_RCC_SYSDIV_S)</code> yazılmalıdır.</li>
+<li><b>Satır 60:</b> <code>SYSCTL_RCC2_R = ~SYSCTL_RCC2_USERCC2;</code> Amaç USERCC2'yi temizlemektir, ama atama RCC2'ye <code>0x7FFF.FFFF</code> yazar. USERCC2 dışındaki yazılabilir alanların hepsi 1 olur: DIV400, SYSDIV2 = 0x3F, SYSDIV2LSB, USBPWRDN, PWRDN2, BYPASS2, OSCSRC2 = 7. Salt okunur ayrılmış bitler değişmez (s. 260–262). USERCC2 = 0 olduğu için bu alanlar o an yok sayılır (s. 260). Program ileride USERCC2'yi 1 yaparsa bu değerler geçerli olur. Doğrusu <code>SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_USERCC2;</code> Satır 58–59'daki yorum satırları doğru yolu denemiş. 58'de sabitin <code>0x</code> öneki, 59'da hem <code>0x</code> öneki eksiktir hem <code>&amp; =</code> ayrık yazılmıştır. Yorum oldukları için zararsızdırlar.</li>
+<li><b>Satır 85 (<code>clockinit2</code>):</b> <code>SYSCTL_RCC2_R = SYSCTL_RCC2_USERCC2;</code> OR değil atamadır. RCC2'nin bütün alanları 0 olur: BYPASS2 = 0 (PLL seçili), PWRDN2 = 0, OSCSRC2 = 0 (MOSC), SYSDIV2 = 0 (PLL ile ayrılmış değer), USBPWRDN = 0 (USB PLL'i de açılır). Yani 1. adımdan ve XTAL ayarından önce sistem saati PLL'e bağlanır. Satır 87 bir sonraki satırda BYPASS2'yi 1 yapar, ama arada tanımsız bir ara durum oluşur. Doğrusu <code>SYSCTL_RCC2_R |= SYSCTL_RCC2_USERCC2 | SYSCTL_RCC2_BYPASS2;</code></li>
+<li><b>Satır 101:</b> DIV400 = 0 iken <code>(4&lt;&lt;22)</code> SYSDIV2 = 2 demektir (bit 22 yok sayılır): 200/3 = 66,67 MHz.</li>
+<li><b>Satır 106:</b> <code>SYSCTL_RCC_R &amp;= ~ SYSCTL_RCC_BYPASS;</code> USERCC2 = 1 iken RCC'deki BYPASS'ın yerini BYPASS2 alır (Tablo 5-8). BYPASS2 1 kaldığı için <b>PLL hiç devreye girmez</b>. Sistem saati MOSC'den, ham ya da SYSDIV2 + 1 = 3'e bölünmüş olarak gelir. Doğrusu <code>SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_BYPASS2;</code></li>
+<li><b>MOSCDIS:</b> iki fonksiyon da MOSCDIS'e dokunmaz ve MOSC açılışta kapalıdır (s. 257). Bu kodların kartta nasıl davrandığı bu not için ölçülmedi. Veri sayfasına ve TivaWare'e uygun olan, MOSC seçilmeden önce MOSCDIS'i temizleyip MOSCPUPRIS'i beklemektir (<a href="#ornek-80">7.1</a>).</li>
+<li><b>Satır 12 → 14:</b> <code>RCGCGPIO</code> yazıldıktan hemen sonra Port F register'larına erişilir. Saat kapısı açıldıktan sonra 3 sistem saati beklenmelidir (<a href="#kapi">Bölüm 1</a>, s. 227). <code>PRGPIO</code> beklenmez. Aynı durum <code>saat01apisiz</code>'de satır 33 → 35'te de vardır.</li>
+<li><b><code>main</code>, satır 29–37:</b> butona basınca LED <code>|=</code> ile yakılır, ama söndüren bir satır yoktur. Bir kez basılan LED açık kalır. Konunun dışındadır, kısa bir not olarak verildi.</li>
+</ul></div>
+
+<h4 id="ders-s01">saat01apisiz <span class="tag reg">API'siz</span></h4>
+<p>Bu projede dört saat fonksiyonu vardır: <code>saatayar()</code> (RCC), <code>saatayar2()</code> (RCC2, DIV400), <code>saatayar3direkt()</code> (sihirli sayılarla RCC) ve Valvano'nun kitabındaki <code>PLL_Init</code> (satır 52–68, RCC2 ile 80 MHz, <code>main</code>'de yorum içinde). <code>main</code> önce <code>saatayar()</code>'ı, sonra <code>saatayar3direkt()</code>'i çağırır ve SysTick bayrağıyla mavi LED'i yakıp söndürür. Dosya clang ile uyarısız derlenir.</p>
+<div class="code-head"><span class="file">saat01apisiz/main.c, satır 11–30 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">int main(void)
+{
+    //PLL_Init();
+    saatayar();
+    saatayar3direkt();
+    portinit();
+    systickinit();
+    int a=0;
+    while(1){
+        if (NVIC_ST_CTRL_R &amp; 0x10000)
+        {
+            a++;
+            if (a==8)
+            {
+                GPIO_PORTF_DATA_R ^=0x04;
+                a=0;
+            }
+        }
+    }
+}</code></pre>
+<div class="code-head"><span class="file">saat01apisiz/main.c, satır 45–50 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void systickinit(){
+    NVIC_ST_CTRL_R=0;  // ilk biti=0 yaparsak disable
+    NVIC_ST_RELOAD_R=10000000-1; // başlangıç değeri
+    NVIC_ST_CURRENT_R=0; // sayıcının değeri
+    NVIC_ST_CTRL_R=(1&lt;&lt;2)|(1&lt;&lt;0); // saat sectik ve enable aktif
+}</code></pre>
+<div class="code-head"><span class="file">saat01apisiz/main.c, satır 113–156 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void saatayar(){
+    // 0)
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_USERCC2; //0x80000000
+
+    // 1) Set the BYPASS bit to bypass PLL while initializing.
+    // 1) The first step is to set BYPASS2 (bit 11).
+    // At this point the PLL is bypassed and there is no system clock divider.
+    SYSCTL_RCC_R |= SYSCTL_RCC_BYPASS; //0x00000800
+
+    // 2) Clear and set the XTAL bits to 16MHz
+    // 2) select the crystal value and oscillator source
+
+    //SYSCTL_RCC_R = (SYSCTL_RCC_R &amp;~0x000007C0)   // clear XTAL field, bits 10-6
+    //               + 0x00000540;   // 10101, configure for 16 MHz crystal
+    SYSCTL_RCC_R = ((SYSCTL_RCC_R &amp; ~SYSCTL_RCC_XTAL_M) | SYSCTL_RCC_XTAL_16MHZ);
+
+    // 3)   Clear the OSCSRC2 bits to configure for Main OSC
+    //SYSCTL_RCC_R &amp;= ~0x00000030;  // configure for main oscillator source
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_OSCSRC_M;
+
+    // 4) Activate PLL by clearing PWRDN.
+    // this step is to clear PWRDN (bit 13) to activate the PLL. 0x00002000
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_PWRDN;
+
+    // 5) Use 400 MHz PLL - div400 =0 oldu
+    SYSCTL_RCC2_R &amp;= ~SYSCTL_RCC2_DIV400 ;
+
+
+    // 6) Clear the SYSDIV2 bits and set to 0x4 = 40MHz
+//    SYSCTL_RCC2_R = (SYSCTL_RCC2_R&amp;~ 0x07800000)  // clear system clock divider
+//                    + (4&lt;&lt;22);      // configure for 40 MHz clock
+    //SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~((SYSCTL_RCC_SYSDIV_M) | SYSCTL_RCC_USESYSDIV)) + (4 &lt;&lt; 22);
+    SYSCTL_RCC_R &amp;=~SYSCTL_RCC_SYSDIV_M; //07800000 clear yaptım sysdiv bölgesinin
+    SYSCTL_RCC_R |=SYSCTL_RCC_USESYSDIV + (4 &lt;&lt; 22); // div var
+
+    // 7) Wait for the PLL to lock ,   wait for the PLL to lock by polling PLLLRIS
+    while ((SYSCTL_RIS_R &amp; SYSCTL_RIS_PLLLRIS) == 0)
+    {
+    }
+
+    // 8) Clear BYPASS to enable PLL.
+    SYSCTL_RCC_R &amp;= ~SYSCTL_RCC_BYPASS;
+
+}</code></pre>
+<div class="code-head"><span class="file">saat01apisiz/main.c, satır 158–165 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void saatayar3direkt(){
+    SYSCTL_RCC2_R &amp;= ~0xC0000000;   // usercc2=0 yani rcc registerı kullanılacak
+                                    // div400=0 yani 2 ye  bölünecek
+    SYSCTL_RCC_R &amp;= 0xF83FD00F;
+    SYSCTL_RCC_R |= 0X02400D40;
+
+    SYSCTL_RCC_R &amp;= ~0x00000800;
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: saat01apisiz</span>
+<ul>
+<li><b>Satır 146 (<code>saatayar</code>):</b> <code>SYSCTL_RCC_R |=SYSCTL_RCC_USESYSDIV + (4 &lt;&lt; 22);</code> Satır 141–143'teki yorumlar 40 MHz der, ama RCC'de <code>4 &lt;&lt; 22</code> SYSDIV = 2'dir. Yazılan değer <code>0x0140.0000</code> TivaWare'in <code>SYSCTL_SYSDIV_3</code>'üne eşittir. <code>saatayar()</code> saati <b>66,67 MHz</b> yapar. Satır 142'deki yorum satırı bu kaydırmayı RCC2 kodundan (Valvano'nun 80 MHz'lik satırından) almıştır. RCC için <code>4 &lt;&lt; 23</code> gerekir. Yorumlardaki "BYPASS2", "OSCSRC2", "SYSDIV2" adları da RCC2 sürümünden kalmıştır, kod RCC alanlarını kullanır.</li>
+<li><b>Satır 161–162 (<code>saatayar3direkt</code>):</b> sihirli sayıların açılımı: <code>0xF83FD00F</code> ile AND, bit 4–11'i (OSCSRC, XTAL, BYPASS), bit 13'ü (PWRDN) ve bit 22–26'yı (USESYSDIV, SYSDIV) temizler. <code>0x02400D40</code> = <code>0x0200.0000</code> (SYSDIV = 4) + <code>0x0040.0000</code> (USESYSDIV) + <code>0x800</code> (BYPASS) + <code>0x540</code> (XTAL = 0x15). Değerler doğrudur ve fonksiyon saati <b>40 MHz</b> yapar. <code>saatayar()</code>'dan sonra çağrıldığında RCC'nin son değeri <code>0x024E.1541</code> olur. MOSCDIS = 1 kalır.</li>
+<li><b>Ara durum:</b> iki ayrı yazmanın arasında BYPASS = 0 (PLL seçili), XTAL = 0 (ayrılmış değer), USESYSDIV = 0, SYSDIV = 0 olur. PLL çalışırken kristal değeri önce geçersiz bir değere, sonra yine 0x15'e değişir. Her XTAL değişikliği yeniden kilitlenme başlatır. Veri sayfasına göre donanım bu sürede sistemi osilatörle saatler (s. 226). PLL seçiliyken SYSDIV = 0 olduğunda veri sayfasına göre bölen olarak MINSYSDIV kullanılır (s. 254). Bu sayede program büyük olasılıkla çalışır, ama ayrılmış değerlerden geçen bir yol tanımlı değildir. Satır 162'den sonra BYPASS = 1 iken saat bir an 16/5 = 3,2 MHz olur.</li>
+<li><b>Satır 164:</b> BYPASS, kilit beklenmeden temizlenir. Burada PLLLRIS'i beklemek de yetmezdi: bayrak <code>saatayar()</code>'ın kilitlenmesinden 1 kalmıştır. Doğru sıra: önce yalnız BYPASS = 1, sonra alanlar tek yazmada, PLLSTAT.LOCK beklenir, en son BYPASS = 0. Temizlenmiş PLLLRIS'i beklemek ancak PLL gerçekten yeniden kilitlenecekse işe yarar. Burada XTAL değiştiği için kilitlenir. XTAL ve PWRDN değişmeyen bir yeniden ayarda ise PLL yeniden kilitlenmez (s. 226) ve temizlenmiş PLLLRIS'i bekleyen döngü sonsuza kadar döner.</li>
+<li><b>Zamanlama:</b> son saat 40 MHz olduğu için SysTick (RELOAD = 10 000 000 − 1, saat kaynağı sistem saati) 0,25 s'de bir bayrak kaldırır. <code>a==8</code> ile LED 2 s'de bir değişir, periyodu 4 s'dir. <code>saatayar3direkt()</code> çağrılmasaydı saat 66,67 MHz kalır, LED 1,2 s'de bir değişirdi.</li>
+<li><b><code>saatayar2()</code> (satır 70–112) doğrudur:</b> DIV400 = 1 iken <code>4 &lt;&lt; 22</code> 7 bitlik değer 4'tür, 400/5 = 80 MHz. RCC'deki USESYSDIV'i 1 yapmaz, ama PLL seçiliyken bölücü zaten kullanılır (<a href="#ders-adim">Bölüm 6</a>). Fonksiyon Valvano'nun kitabındaki <code>PLL_Init</code>'in başlık dosyası adlarıyla yazılmış hâlidir. <code>main</code>'den çağrılmaz.</li>
+<li><b>MOSCDIS:</b> bu dosyadaki dört fonksiyon da MOSCDIS'e dokunmaz (bkz. hafta07 kutusu).</li>
+</ul></div>
+
+<h2 id="etki">8. Saat değişince ne değişir</h2>
+<p><b>Amaç:</b> saati değiştiren bir satırın programın başka hangi sayılarını geçersiz kıldığını görmek.</p>
+<p>Sistem saatiyle çalışan her birimin süresi "çevrim sayısı / f"tir. Çevrim sayısı sabit yazılmışsa saat 2 katına çıkınca süre yarıya iner. Aşağıdaki tablo aynı sabitlerin dört saatte verdiği sonuçları gösterir:</p>
+<table>
+<thead><tr><th>Ne</th><th>Formül</th><th>16 MHz</th><th>40 MHz</th><th>50 MHz</th><th>80 MHz</th></tr></thead>
+<tbody>
+<tr><td><code>SysCtlDelay(2000000)</code> (yaklaşık)</td><td>3N / f</td><td>0,375 s</td><td>0,15 s</td><td>0,12 s</td><td>0,075 s</td></tr>
+<tr><td>SysTick, RELOAD = 10 000 000 − 1: bayrak aralığı</td><td>10<sup>7</sup> / f</td><td>0,625 s</td><td>0,25 s</td><td>0,2 s</td><td>0,125 s</td></tr>
+<tr><td>Aynı SysTick, 8 bayrakta bir LED: değişme aralığı</td><td>8 × 10<sup>7</sup> / f</td><td>5 s</td><td>2 s</td><td>1,6 s</td><td>1 s</td></tr>
+<tr><td>Aynı LED'in periyodu</td><td>16 × 10<sup>7</sup> / f</td><td>10 s</td><td>4 s</td><td>3,2 s</td><td>2 s</td></tr>
+<tr><td>SysTick'in en uzun aralığı (24 bit)</td><td>2<sup>24</sup> / f</td><td>1,049 s</td><td>0,419 s</td><td>0,336 s</td><td>0,210 s</td></tr>
+<tr><td>Zamanlayıcı, 1 s periyot için yükleme değeri</td><td>f − 1</td><td>15 999 999</td><td>39 999 999</td><td>49 999 999</td><td>79 999 999</td></tr>
+<tr><td>UART 115 200 baud: IBRD / FBRD</td><td>f / (16 × 115 200)</td><td>8 / 44</td><td>21 / 45</td><td>27 / 8</td><td>43 / 26</td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/saat-zamanlama-etkisi.svg" alt="Aynı SysTick RELOAD değeri (10 000 000 − 1) ile üç saat: 16 MHz'te bayrak aralığı 0,625 s ve LED periyodu 10 s, 40 MHz'te 0,25 s ve 4 s, 80 MHz'te 0,125 s ve 2 s"><figcaption><b>Şekil 5.</b> Aynı program, aynı RELOAD değeri, üç farklı saat. SysTick sistem saatinin çevrimlerini sayar. 10 000 000 çevrim 16 MHz'te 0,625 s, 40 MHz'te 0,25 s, 80 MHz'te 0,125 s eder. LED (PF2) 8 bayrakta bir, yani 5 s, 2 s ve 1 s'de bir değişir. Periyodu bunun iki katıdır: 10 s, 4 s ve 2 s. Saati 5 kat artırmak bütün süreleri 5 kat kısaltır.</figcaption></figure>
+<p>Birim birim etkisi:</p>
+<ul>
+<li><b>SysCtlDelay:</b> çevrim sayar, saat değişince süre değişir. Workbook Lab 10 (s. 10-18) bu yüzden <code>SysCtlDelay(SysCtlClockGet())</code> yazar: sabit sayı yerine saatten türetilmiş bir değer. 3 çevrimlik tur nedeniyle <code>SysCtlClockGet() / 3</code> yaklaşık 1 s eder.</li>
+<li><b>SysTick ve zamanlayıcılar:</b> yükleme değeri istenen süre × f'dir. Workbook Lab 4 (s. 4-15) 10 Hz için <code>ui32Period = (SysCtlClockGet() / 10) / 2;</code> hesaplar. SysTick'in 24 bitlik sayacı 80 MHz'te en çok 0,21 s'yi sayabilir. Daha uzun süreler için bayraklar sayılır ya da 32 bitlik bir zamanlayıcı kullanılır. STCTRL'de CLK_SRC = 0 seçilirse SysTick sistem saatini değil PIOSC/4'ü (4 MHz) sayar (s. 138). Bu durumda süresi sistem saatinden bağımsızdır, ama PIOSC'nin ±%3 doğruluğunu taşır.</li>
+<li><b>UART:</b> baud bölücüsü sistem saatinden hesaplanır. <code>UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, …)</code> çağrısı bölücüyü o anki saate göre kurar. 16 MHz'e göre kurulmuş bir UART'ın saati sonradan 40 MHz'e çıkarılırsa gerçek hız 115 200 × 40/16 = 288 000 baud olur ve terminalde anlamsız karakterler görülür. Baud saati PIOSC'den alınırsa (UARTCC = 0x5) bölücü sistem saatinden bağımsız olur (<a href="../uart/">UART notu</a>).</li>
+<li><b>ADC:</b> ADC saati sistem saatinden ayrıdır (s. 221). PLL çalışıyorsa PLL çıkışının 25'e bölünmüşü (400/25 = 16 MHz), PLL kapalıysa sistem saati, istenirse PIOSC kullanılır. ADC PIOSC'yi kullanmıyorsa sistem saati en az 16 MHz olmalıdır (s. 221). RCC'deki BYPASS açıklamasına göre ADC ya PLL'den ya da doğrudan 16 MHz'lik bir kaynaktan saatlenmelidir (s. 256). Ayrıntılar <a href="../adc/">ADC notunda</a>.</li>
+<li><b>USB:</b> USB çalışırken kaynak MOSC olmalıdır (PLL'li ya da PLL'siz), sistem saati de en az 20 MHz olmalıdır (s. 221). USB saati ayrı bir 480 MHz'lik USB PLL'den gelir. Bu PLL RCC2'deki USBPWRDN = 0 ile açılır ve yalnız belirli kristallerle çalışır. 16 MHz bunlardan biridir (§5.2.5.6, s. 225).</li>
+<li><b>PWM:</b> PWM saati sistem saatinin PWMDIV ile bölünmüşüdür (RCC, s. 255). Saat değişirse PWM periyodu da değişir.</li>
+</ul>
+<div class="box warn"><span class="box-title">Kural: sabit frekans yazmayın, sırayı koruyun</span>
+<ol>
+<li>Programın başında önce saati ayarlayın (<code>SysCtlClockSet</code> ya da API'siz fonksiyon), birimleri ondan sonra.</li>
+<li>Yükleme değerlerini, baud bölücülerini ve gecikmeleri <code>SysCtlClockGet()</code>'ten hesaplayın. <code>TimerLoadSet(TIMER0_BASE, TIMER_A, 40000000 - 1)</code> yerine <code>SysCtlClockGet() - 1</code> yazın.</li>
+<li>Saat program çalışırken değişirse saate bağlı bütün birimleri (UART, zamanlayıcı, SysTick) yeniden ayarlayın.</li>
+</ol></div>
+
+<h2 id="lab">9. TI Lab uyarlaması <span class="tag ti">TI Lab</span></h2>
+<p><b>Amaç:</b> Workbook'taki saat ayarı adımını ders kartında, ölçerek tekrarlamak.</p>
+<p><b>Workbook Lab 3 "Initialization and GPIO", adım 4 "Clock Setup" (s. 3-13):</b> sistem saati 16 MHz kristal ve MOSC ile 400 MHz PLL'den kurulur. Workbook'un açıklamasına göre PLL yalnız 400 MHz'te salınır ve 5–25 MHz arasındaki kristallerle sürülebilir. Yolda varsayılan bir /2 vardır. <code>SYSCTL_SYSDIV_5</code> buna bir /5 ekler, toplam bölme 10 olur ve saat 40 MHz'e iner. Kod tek satırdır: <code>SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);</code> Aynı sayfa LaunchPad şemasından ana osilatördeki 16 MHz ve RTC girişindeki 32 768 Hz kristali gösterir. Lab'ın döngüsü (s. 3-15) LED'leri <code>SysCtlDelay(2000000)</code> ile değiştirir: 40 MHz'te her bekleme yaklaşık 0,15 s'dir. Lab 10 (s. 10-17) aynı çağrıyı <code>SYSCTL_SYSDIV_4</code> ile 50 MHz'te yapar (400 ÷ 2 ÷ 4). s. 10-18'de de gecikmeyi <code>SysCtlClockGet()</code>'ten türetmenin nedenini anlatır.</p>
+<p>Dersin Experiment föylerinde saat ya da PLL konulu bir deney yoktur. Aşağıdaki deney Lab 3'ün saat adımından uyarlanmıştır:</p>
+<ol>
+<li><b>Hazırlık:</b> <a href="#dogrulama">7.4</a>'teki <code>saat_dogrula.c</code>'yi derleyin. LaunchPad'den başka malzeme gerekmez. Bir kronometre (telefon) yeterlidir.</li>
+<li><b>Ölçüm:</b> <code>SysCtlClockSet</code> satırını sırasıyla 16 MHz (<code>SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC</code>), 40 MHz (<code>SYSDIV_5</code>), 50 MHz (<code>SYSDIV_4</code>) ve 80 MHz (<code>SYSDIV_2_5</code>) yapın. Her seçimde mavi LED'in 10 periyodunu ölçün. Ölçümü Bölüm 8'deki tabloyla karşılaştırın ve f = 1,6 × 10<sup>8</sup> / T<sub>LED</sub> ile frekansı hesaplayın.</li>
+<li><b>PIOSC ile kristal:</b> 16 MHz seçeneğini <code>SYSCTL_OSC_INT</code> ile tekrarlayın. Bir dakikalık ölçümde fark görülebilir mi? ±%3 sınırı bir dakikada en çok kaç saniyeye karşılık gelir?</li>
+<li><b>Saatten bağımsız bekleme:</b> kırmızı LED'in <code>SysCtlDelay(2000000)</code>'ünü <code>SysCtlDelay(SysCtlClockGet() / 30)</code> yapın (yaklaşık 0,1 s). Dört saatte de süre aynı kalmalıdır. Bekleme f/10 çevrim sürer ve 10 000 000 çevrimlik bayrak aralığından kısa kalır. Mavi LED ölçümü bu yüzden bozulmaz. <code>SysCtlClockGet() / 6</code> gibi daha uzun bir bekleme 40 ve 80 MHz'te bayrak aralığını aşar. O zaman bayraklar kaçar ve mavi LED ölçümü geçersiz olur. 80 MHz'te ölçülen süre hesaptan uzunsa nedenini <a href="#dogrulama">7.4</a>'teki SysCtlDelay notuyla açıklayın.</li>
+<li><b>API'siz:</b> <code>SysCtlClockSet</code> satırını 7.1'deki <code>saat_80mhz()</code> ile değiştirin. Hata ayıklayıcıda RCC ve RCC2'yi okuyup alanlara ayırın, <code>SysCtlClockGet()</code>'in 80 000 000 döndürdüğünü doğrulayın.</li>
+</ol>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>İşleç önceliği:</b> <code>while (RIS &amp; PLLLRIS == 0)</code> hiç beklemez. Bit testlerinde parantez şarttır: <code>while ((RIS &amp; PLLLRIS) == 0)</code> (<a href="#ders-h07">7.5</a>).</li>
+<li><b>Yanlış kaydırma:</b> RCC'de SYSDIV bit 23'ten başlar. <code>4 &lt;&lt; 22</code> RCC'de 66,67 MHz verir, 40 MHz değil (<a href="#kaydirma">Bölüm 4</a>).</li>
+<li><b>BYPASS'ı yanlış register'da temizlemek:</b> USERCC2 = 1 iken RCC'deki BYPASS, PWRDN, OSCSRC ve SYSDIV yok sayılır. BYPASS2'yi temizlemeyen kod PLL'e hiç geçmez.</li>
+<li><b>Kilit beklememek:</b> 4. adımı atlamak. Donanım koruması (s. 226) çökmeyi önler, ama yazılım saatin ne zaman değiştiğini bilmez. Eski bir kilitlenmeden kalan PLLLRIS de yanıltıcıdır, PLLSTAT.LOCK'a bakmak daha güvenlidir.</li>
+<li><b>Atama yerine OR/AND:</b> <code>RCC2 = USERCC2</code> ya da <code>RCC2 = ~USERCC2</code> bütün alanları ve ayrılmış bitleri değiştirir. Alanlar oku-değiştir-yaz ile değiştirilir.</li>
+<li><b>XTAL'i ya da kaynağı PLL çalışırken değiştirmek:</b> önce BYPASS = 1 yapılmalıdır. Alanları iki ayrı yazmada temizleyip kurmak geçersiz ara değerler oluşturur (<code>saatayar3direkt</code>).</li>
+<li><b>XTAL'i unutmak:</b> reset değeri 0x0B (6 MHz) kalırsa PLL'in çarpanları 16 MHz'lik kristale göre değil 6 MHz'e göre seçilir.</li>
+<li><b>MOSC'yi açmamak:</b> MOSCDIS reset'te 1'dir. MOSC'yi açıp MOSCPUPRIS'i beklemek TivaWare'in de izlediği yoldur.</li>
+<li><b>80 MHz'i RCC ile denemek:</b> RCC'de 200 MHz'i 2,5'e bölmek mümkün değildir. SYSDIV = 0 ve 1 ayrılmıştır. 80 MHz için RCC2 + DIV400 (<code>SYSCTL_SYSDIV_2_5</code>) gerekir.</li>
+<li><b>Sabit frekans varsaymak:</b> <code>40000000</code>, <code>SysCtlDelay(2000000)</code>, sabit baud bölücüsü. Saat değişince hepsi bozulur. <code>SysCtlClockGet()</code> kullanılır ve birimler saatten sonra ayarlanır (<a href="#etki">Bölüm 8</a>).</li>
+<li><b>16 MHz'in her zaman aynı 16 MHz olduğunu sanmak:</b> PIOSC ±%3'tür, kristal çok daha doğrudur. UART ve saat tutma işlerinde fark önemlidir.</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>Frekanstan alana:</b> 16 MHz kristalle 20 MHz ve 25 MHz için RCC kipinde SYSDIV'i, RCC2 + DIV400 kipinde 7 bitlik değeri bulun. Her biri için RCC/RCC2'ye yazılacak değeri ve karşılık gelen <code>SYSCTL_SYSDIV_…</code> makrosunu yazın.</li>
+<li><b>Alandan frekansa:</b> RCC2 = <code>0xC2004000</code> ve RCC = <code>0x07CE3D50</code> okunuyor. Sistem saati kaçtır? DIV400 = 0 olsaydı ne olurdu?</li>
+<li><b>PIOSC ile PLL:</b> 7.1'deki fonksiyonu kristal yerine PIOSC'yi PLL referansı olarak kullanacak biçimde değiştirin (OSCSRC2 = 1). Hangi satırlar değişir, MOSC'yi açmak gerekir mi? Sonuç frekansı aynı, doğruluğu neden farklıdır?</li>
+<li><b>Saatten bağımsız SysTick:</b> sistem saati ne olursa olsun 1 ms'de bir bayrak kaldıran bir <code>systick_1ms()</code> fonksiyonu yazın. Saat 80 MHz'ten 16 MHz'e düşünce RELOAD ne olur? 24 bit sınırı hangi sürede aşılır?</li>
+<li><b>Çalışırken saat değiştirme:</b> SW1'e her basışta saati 16 MHz ile 80 MHz arasında değiştiren, LED periyodunu SysTick ile sabit 1 s tutan bir program yazın. Saat değişiminden sonra hangi register'ları hangi sırayla yeniden yazmanız gerekir? İpucu: PLL çalışırken saat değiştirilirse ilk ayardan kalan PLLLRIS 1'dir ve 4. adımı boşa çıkarır.</li>
+<li><b>Ölçüm hatası:</b> kronometrenin tepki hatası ±0,2 s ise 40 MHz'te tek bir LED periyodundan ve 10 periyottan hesaplanan frekansın hata aralığını bulun. ±%3'lük PIOSC sapmasını bu yöntemle ayırt edebilir misiniz?</li>
+<li><b>Ders kodu okuma:</b> <code>saatayar3direkt()</code>'teki iki sihirli sayıyı başlık dosyasındaki adlarla yeniden yazın. Ara durumu ortadan kaldıracak biçimde yazma sırasını düzenleyin.</li>
+</ol>
+
+<h2 id="kaynakca">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): §5.2.5 Clock Control, s. 219–227 (Tablo 5-3 saat kaynakları s. 220; Şekil 5-5 ana saat ağacı s. 222; Tablo 5-4, 5-5, 5-6 SYSDIV, SYSDIV2 ve DIV400 frekansları s. 223–224; §5.2.5.5 PLL s. 225; §5.2.5.8 PLL çalışması ve donanım koruması s. 226); LDO ve en yüksek sistem saati s. 230; §5.3 Initialization and Configuration s. 231; RIS s. 244–245; RCC s. 254–257; RCC2 s. 260–262; PLLFREQ0/1 s. 271–272; PLLSTAT s. 273; Tablo 24-13, 24-14 PLL özellikleri s. 1374; Tablo 24-15 PIOSC, 24-16 LFIOSC s. 1375.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı (rev. 1.22): Bölüm 3 saat kaynakları ve saat ağacı (s. 3-4, 3-5); Lab 3 "Clock Setup" (s. 3-13) ve <code>SysCtlDelay</code> (s. 3-15); Lab 4 süre hesabı (s. 4-15); Lab 10'da 50 MHz ve <code>SysCtlDelay(SysCtlClockGet())</code> (s. 10-17, 10-18).</li>
+<li>Texas Instruments, <em>Tiva C Series TM4C123G LaunchPad Evaluation Board User's Guide</em> (SPMU296): §2.2.2 Hibernate, Y1 32,768 kHz (s. 11); §2.2.3 Clocking, Y2 16 MHz (s. 12).</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/sysctl.c</code> (<code>SysCtlClockSet</code> satır 2548, <code>SysCtlClockGet</code> satır 2743, <code>SysCtlDelay</code> satır 1799–1869, derleyiciye göre dört sürüm), <code>driverlib/sysctl.h</code> (<code>SYSCTL_SYSDIV_…</code>, <code>SYSCTL_USE_…</code>, <code>SYSCTL_XTAL_…</code>), <code>inc/tm4c123gh6pm.h</code> (<code>SYSCTL_RCC_…</code>, <code>SYSCTL_RCC2_…</code>). TivaWare ve belgeler ti.com'dan indirilebilir.</li>
+<li>J. W. Valvano'nun TM4C123 ders kitabındaki <code>PLL_Init</code> örneği (ders kodunda satır 52–68).</li>
+<li>Ders örnek kodları (EEM 431, Sistem Saati/PLL klasörü): <code>hafta07clocksettingsnoapi</code>, <code>saat01apisiz</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../timer/">6. Zamanlayıcılar</a>, <a href="../adc/">7. ADC</a>, <a href="../uart/">8. UART</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 4. Sistem Saati ve PLL. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

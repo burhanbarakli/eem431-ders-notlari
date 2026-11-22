@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 670" class="sp-svg" role="img" aria-labelledby="sp-title sp-desc">
+<title id="sp-title">PLL başlatma akışı (RCC / RCC2)</title>
+<desc id="sp-desc">Veri sayfası 5.3’teki PLL başlatma sırası. Ön adım (numarasız): RCC2 kullanılacaksa USERCC2 = 1; RCC kipinde USERCC2 resetteki 0 değerinde kalır. 1: BYPASS = 1, USESYSDIV = 0; PLL ve bölücü devre dışı, sistem ham saatle çalışır (RCC2: BYPASS2 = 1, RCC.USESYSDIV = 0). 2: XTAL ve OSCSRC seç, PWRDN = 0; PLL’e güç verilir (RCC: XTAL = 0x15, OSCSRC = 0, PWRDN = 0; RCC2: RCC.XTAL = 0x15, OSCSRC2 = 0, PWRDN2 = 0). 3: SYSDIV yaz, USESYSDIV = 1; SysClk hâlâ osilatörden gelir ama artık SYSDIV ile bölünmüştür, PLL’den değil (RCC: SYSDIV = 4, 40 MHz örneği; RCC2: DIV400 = 1, SYSDIV2:LSB = 4, RCC.USESYSDIV = 1, 80 MHz örneği). 4: RIS.PLLLRIS = 1 olana kadar bekle; karar elmasından hayır dalı aynı denetime geri döner (RIS bit 6, iki kipte de aynı). 5: BYPASS = 0 (RCC2: BYPASS2 = 0); SysClk artık PLL’den gelir. Not: RCC2 kullanılıyorsa RCC, RCC2’den önce yazılır (veri sayfası s.254).</desc>
+<defs>
+<marker id="sp-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="sp-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.sp-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.sp-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.sp-svg .sp-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.sp-svg .sp-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.sp-svg .sp-b{font-weight:700}
+.sp-svg .sp-s12{font-size:12px}
+.sp-svg .sp-s13{font-size:13px}
+.sp-svg .sp-s16{font-size:16px}
+.sp-svg .sp-mut{fill:var(--fig-muted,#76746c)}
+.sp-svg .sp-blu{fill:var(--fig-blue,#1f5fa8)}
+.sp-svg .sp-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.sp-svg .sp-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.sp-svg .sp-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.sp-svg .sp-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.sp-svg .sp-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.sp-svg .sp-circ{fill:var(--fig-accent,#b4481f)}
+.sp-svg .sp-dot{fill:var(--fig-stroke,#2b2b29)}
+.sp-svg .sp-head{fill:var(--fig-stroke,#2b2b29)}
+.sp-svg .sp-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+</style>
+<text class="sp-s16 sp-b" x="16" y="29">PLL başlatma akışı</text>
+<text class="sp-b" x="522" y="50" text-anchor="middle">RCC kipi</text>
+<text class="sp-b sp-blu" x="674" y="50" text-anchor="middle">RCC2 kipi</text>
+<text class="sp-s13 sp-mut" x="522" y="66" text-anchor="middle">(ör. 40 MHz)</text>
+<text class="sp-s13 sp-mut" x="674" y="66" text-anchor="middle">(ör. 80 MHz)</text>
+<rect class="sp-opt" x="16" y="80" width="420" height="50" rx="8"/>
+<text x="32" y="102"><tspan>RCC2 kullanılacaksa: </tspan><tspan class="sp-mono sp-b">USERCC2=1</tspan></text>
+<text class="sp-s13 sp-mut" x="32" y="121">RCC2 alanları ancak bu bitle RCC’nin yerine geçer</text>
+<rect class="sp-code" x="452" y="80" width="140" height="50" rx="6"/>
+<text class="sp-m12" x="462" y="100.5">RCC2.USERCC2=0</text>
+<text class="sp-s12 sp-mut" x="462" y="117.5">(reset değeri)</text>
+<rect class="sp-code" x="604" y="80" width="140" height="50" rx="6"/>
+<text class="sp-m12 sp-blu" x="614" y="109">USERCC2=1</text>
+<path class="sp-w" d="M226,130 L226,151" marker-end="url(#sp-arr)"/>
+<rect class="sp-box" x="16" y="152" width="420" height="54" rx="8"/>
+<circle class="sp-circ" cx="38" cy="179" r="12"/>
+<text class="sp-num" x="38" y="184" text-anchor="middle">1</text>
+<text x="62" y="176"><tspan class="sp-mono sp-b">BYPASS=1</tspan><tspan>, </tspan><tspan class="sp-mono sp-b">USESYSDIV=0</tspan></text>
+<text class="sp-s13 sp-mut" x="62" y="195">PLL ve bölücü devre dışı: ham saat</text>
+<rect class="sp-code" x="452" y="152" width="140" height="54" rx="6"/>
+<text class="sp-m12" x="462" y="174.5">BYPASS=1</text>
+<text class="sp-m12" x="462" y="191.5">USESYSDIV=0</text>
+<rect class="sp-code" x="604" y="152" width="140" height="54" rx="6"/>
+<text class="sp-m12 sp-blu" x="614" y="174.5">BYPASS2=1</text>
+<text class="sp-m12" x="614" y="191.5">RCC.USESYSDIV=0</text>
+<path class="sp-w" d="M226,206 L226,227" marker-end="url(#sp-arr)"/>
+<rect class="sp-box" x="16" y="228" width="420" height="64" rx="8"/>
+<circle class="sp-circ" cx="38" cy="260" r="12"/>
+<text class="sp-num" x="38" y="265" text-anchor="middle">2</text>
+<text x="62" y="257"><tspan class="sp-mono sp-b">XTAL</tspan><tspan> ve </tspan><tspan class="sp-mono sp-b">OSCSRC</tspan><tspan> seç, </tspan><tspan class="sp-mono sp-b">PWRDN=0</tspan></text>
+<text class="sp-s13 sp-mut" x="62" y="276">PLL’e güç ver; XTAL doğru PLL ayarını seçer</text>
+<rect class="sp-code" x="452" y="228" width="140" height="64" rx="6"/>
+<text class="sp-m12" x="462" y="247">XTAL=0x15</text>
+<text class="sp-m12" x="462" y="264">OSCSRC=0</text>
+<text class="sp-m12" x="462" y="281">PWRDN=0</text>
+<rect class="sp-code" x="604" y="228" width="140" height="64" rx="6"/>
+<text class="sp-m12" x="614" y="247">RCC.XTAL=0x15</text>
+<text class="sp-m12 sp-blu" x="614" y="264">OSCSRC2=0</text>
+<text class="sp-m12 sp-blu" x="614" y="281">PWRDN2=0</text>
+<path class="sp-w" d="M226,292 L226,313" marker-end="url(#sp-arr)"/>
+<rect class="sp-box" x="16" y="314" width="420" height="64" rx="8"/>
+<circle class="sp-circ" cx="38" cy="346" r="12"/>
+<text class="sp-num" x="38" y="351" text-anchor="middle">3</text>
+<text x="62" y="335"><tspan class="sp-mono sp-b">SYSDIV</tspan><tspan> yaz, </tspan><tspan class="sp-mono sp-b">USESYSDIV=1</tspan></text>
+<text class="sp-s13 sp-mut" x="62" y="354">SysClk hâlâ osilatörden (artık SYSDIV ile</text>
+<text class="sp-s13 sp-mut" x="62" y="370">bölünmüş), PLL’den değil</text>
+<rect class="sp-code" x="452" y="314" width="140" height="64" rx="6"/>
+<text class="sp-m12" x="462" y="341.5">SYSDIV=4</text>
+<text class="sp-m12" x="462" y="358.5">USESYSDIV=1</text>
+<rect class="sp-code" x="604" y="314" width="140" height="64" rx="6"/>
+<text class="sp-m12 sp-blu" x="614" y="333">DIV400=1</text>
+<text class="sp-m12 sp-blu" x="614" y="350">SYSDIV2:LSB=4</text>
+<text class="sp-m12" x="614" y="367">RCC.USESYSDIV=1</text>
+<path class="sp-w" d="M226,378 L226,411" marker-end="url(#sp-arr)"/>
+<path class="sp-box" d="M226,412 L366,450 L226,488 L86,450 Z"/>
+<circle class="sp-circ" cx="38" cy="450" r="12"/>
+<text class="sp-num" x="38" y="455" text-anchor="middle">4</text>
+<text class="sp-mono sp-b" x="226" y="448" text-anchor="middle">RIS.PLLLRIS = 1 ?</text>
+<text class="sp-s13" x="226" y="467" text-anchor="middle">PLL kilitlendi mi?</text>
+<path class="sp-w" d="M366,450 L402,450 L402,394 L230,394"/>
+<circle class="sp-dot" cx="226" cy="394" r="3.4"/>
+<path class="sp-head" d="M329.0,394 L339.0,389 L339.0,399 Z"/>
+<text class="sp-s13 sp-b" x="384" y="442" text-anchor="middle">hayır</text>
+<text class="sp-s13 sp-b" x="236" y="508">evet</text>
+<rect class="sp-code" x="452" y="423" width="292" height="54" rx="6"/>
+<text x="464" y="446"><tspan class="sp-m12">RIS</tspan><tspan class="sp-s12"> (0x400F.E050) bit 6: </tspan><tspan class="sp-m12">PLLLRIS</tspan></text>
+<text class="sp-s12 sp-mut" x="464" y="464">iki kipte de aynı bit yoklanır</text>
+<path class="sp-w" d="M226,488 L226,519" marker-end="url(#sp-arr)"/>
+<rect class="sp-box" x="16" y="520" width="420" height="54" rx="8"/>
+<circle class="sp-circ" cx="38" cy="547" r="12"/>
+<text class="sp-num" x="38" y="552" text-anchor="middle">5</text>
+<text x="62" y="544"><tspan class="sp-mono sp-b">BYPASS=0</tspan></text>
+<text class="sp-s13 sp-mut" x="62" y="563">SysClk artık PLL’den (bölünmüş) gelir</text>
+<rect class="sp-code" x="452" y="520" width="140" height="54" rx="6"/>
+<text class="sp-m12" x="462" y="551">BYPASS=0</text>
+<rect class="sp-code" x="604" y="520" width="140" height="54" rx="6"/>
+<text class="sp-m12 sp-blu" x="614" y="551">BYPASS2=0</text>
+<path class="sp-w" d="M226,574 L226,595" marker-end="url(#sp-arr)"/>
+<rect class="sp-hl" x="76" y="596" width="300" height="32" rx="16"/>
+<text x="226" y="617" text-anchor="middle"><tspan class="sp-b">SysClk</tspan><tspan class="sp-s13"> = PLL yolu: 40 MHz (RCC) · 80 MHz (RCC2)</tspan></text>
+<text x="16" y="656"><tspan class="sp-s13 sp-mut">Not: RCC2 kullanılıyorsa RCC’yi RCC2’den önce yaz (veri sayfası s.254).</tspan></text>
+</svg>

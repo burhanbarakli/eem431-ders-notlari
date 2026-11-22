@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 600" class="sa-svg" role="img" aria-labelledby="sa-title sa-desc">
+<title id="sa-title">Saat ağacı: sistem saati (SysClk) yolu</title>
+<desc id="sa-desc">TM4C123GH6PM ana saat ağacının sistem saati kısmı (veri sayfası Şekil 5-5, sadeleştirilmiş). Kaynaklar: MOSC (LaunchPad’de Y2 16 MHz kristal, MOSCDIS ile açılır), PIOSC 16 MHz, PIOSC/4 = 4 MHz, LFIOSC yaklaşık 30 kHz, Hibernate osilatörü 32,768 kHz (Y1). İki seçici aynı OSCSRC/OSCSRC2 alanıyla sürülür: PLL giriş seçicisi yalnız MOSC (0) ya da PIOSC (1) alır; osilatör seçicisi 0 MOSC, 1 PIOSC, 2 PIOSC/4, 3 LFIOSC, 7 32,768 kHz (yalnız OSCSRC2) değerlerinden birini seçer. PLL 400 MHz üretir; XTAL alanı giriş frekansını bildirir, PWRDN/PWRDN2 = 0 PLL’e güç verir. DIV400 = 0 ise PLL çıkışı 2’ye bölünür (200 MHz), DIV400 = 1 ise 400 MHz doğrudan geçer. BYPASS/BYPASS2 seçicisi 0’da PLL yolunu, 1’de osilatör yolunu seçer. Ardından ÷ SYSDIV bölücüsü (SYSDIV, SYSDIV2 ya da DIV400 = 1 iken SYSDIV2:LSB) ve bölücülü/bölücüsüz seçici gelir; bu seçiciyi BYPASS ile USESYSDIV birlikte denetler: USESYSDIV = 1 ise bölücü kullanılır, BYPASS = 0 iken bölücü her zaman devrededir. Lejant: üst satır RCC alanı, mavi satır RCC2 alanı (USERCC2 = 1 iken geçerli). Çıkış SysClk, en çok 80 MHz.</desc>
+<defs>
+<marker id="sa-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="sa-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.sa-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.sa-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.sa-svg .sa-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.sa-svg .sa-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.sa-svg .sa-b{font-weight:700}
+.sa-svg .sa-s13{font-size:13px}
+.sa-svg .sa-s15{font-size:15px}
+.sa-svg .sa-s16{font-size:16px}
+.sa-svg .sa-mut{fill:var(--fig-muted,#76746c)}
+.sa-svg .sa-blu{fill:var(--fig-blue,#1f5fa8)}
+.sa-svg .sa-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.sa-svg .sa-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.sa-svg .sa-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.sa-svg .sa-gate{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.sa-svg .sa-dot{fill:var(--fig-stroke,#2b2b29)}
+.sa-svg .sa-head{fill:var(--fig-stroke,#2b2b29)}
+.sa-svg .sa-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.sa-svg .sa-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+</style>
+<text class="sa-s16 sa-b" x="16" y="29">Saat ağacı: sistem saati (SysClk) yolu</text>
+<rect class="sa-box" x="16" y="237" width="120" height="50" rx="8"/>
+<text class="sa-b" x="28" y="257">MOSC</text>
+<text class="sa-s13" x="28" y="277">Y2: 16 MHz kristal</text>
+<rect class="sa-pill" x="41.7" y="205" width="68.6" height="25" rx="4"/>
+<text class="sa-mono" x="76" y="222" text-anchor="middle">MOSCDIS</text>
+<path class="sa-wt" d="M76,230 L76,237"/>
+<rect class="sa-box" x="16" y="305" width="120" height="50" rx="8"/>
+<text class="sa-b" x="28" y="325">PIOSC</text>
+<text class="sa-s13" x="28" y="345">16 MHz, iç</text>
+<rect class="sa-box" x="50" y="372" width="52" height="26" rx="4"/>
+<text class="sa-mono sa-b" x="76" y="390" text-anchor="middle">÷ 4</text>
+<path class="sa-w" d="M76,355 L76,371" marker-end="url(#sa-arr)"/>
+<text class="sa-s13 sa-mut" x="141" y="378" text-anchor="middle">4 MHz</text>
+<rect class="sa-box" x="16" y="418" width="120" height="40" rx="8"/>
+<text class="sa-b" x="28" y="436">LFIOSC</text>
+<text class="sa-s13" x="28" y="452">≈ 30 kHz, iç</text>
+<rect class="sa-box" x="16" y="470" width="120" height="64" rx="8"/>
+<text class="sa-b" x="28" y="488">Hibernate</text>
+<text class="sa-b" x="28" y="505">osilatörü</text>
+<text class="sa-s13" x="28" y="524">Y1: 32,768 kHz</text>
+<path class="sa-gate" d="M180,90 L208,102 L208,168 L180,180 Z"/>
+<text class="sa-m12 sa-mut" x="189" y="116" text-anchor="middle">0</text>
+<text class="sa-m12 sa-mut" x="189" y="162" text-anchor="middle">1</text>
+<path class="sa-gate" d="M180,240 L208,252 L208,511 L180,523 Z"/>
+<text class="sa-m12 sa-mut" x="189" y="266" text-anchor="middle">0</text>
+<text class="sa-m12 sa-mut" x="189" y="334" text-anchor="middle">1</text>
+<text class="sa-m12 sa-mut" x="189" y="389" text-anchor="middle">2</text>
+<text class="sa-m12 sa-mut" x="189" y="442" text-anchor="middle">3</text>
+<text class="sa-m12 sa-mut" x="189" y="505" text-anchor="middle">7</text>
+<path class="sa-w" d="M136,262 L179,262" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M136,330 L179,330" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M102,385 L179,385" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M136,438 L179,438" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M136,501 L179,501" marker-end="url(#sa-arr)"/>
+<circle class="sa-dot" cx="148" cy="262" r="3.2"/>
+<path class="sa-w" d="M148,262 L148,112 L179,112" marker-end="url(#sa-arr)"/>
+<circle class="sa-dot" cx="162" cy="330" r="3.2"/>
+<path class="sa-w" d="M162,330 L162,268 A6,6 0 0 0 162,256 L162,158 L179,158" marker-end="url(#sa-arr)"/>
+<rect class="sa-pill" x="216.7" y="189" width="68.6" height="42" rx="4"/>
+<text class="sa-mono" x="251" y="206" text-anchor="middle">OSCSRC</text>
+<text class="sa-mono sa-blu" x="251" y="223" text-anchor="middle">OSCSRC2</text>
+<path class="sa-wt" d="M194,174 L194,246 M194,210 L216.7,210"/>
+<rect class="sa-box" x="232" y="112" width="68" height="46" rx="8"/>
+<text class="sa-b" x="266" y="131" text-anchor="middle">PLL</text>
+<text class="sa-s13" x="266" y="150" text-anchor="middle">400 MHz</text>
+<path class="sa-w" d="M208,135 L231,135" marker-end="url(#sa-arr)"/>
+<rect class="sa-pill" x="235.6" y="41" width="60.8" height="59" rx="4"/>
+<text class="sa-mono" x="266" y="58" text-anchor="middle">XTAL</text>
+<text class="sa-mono" x="266" y="75" text-anchor="middle">PWRDN</text>
+<text class="sa-mono sa-blu" x="266" y="92" text-anchor="middle">PWRDN2</text>
+<path class="sa-wt" d="M266,100 L266,112"/>
+<circle class="sa-dot" cx="312" cy="135" r="3.2"/>
+<path class="sa-w" d="M300,135 L312,135"/>
+<path class="sa-w" d="M312,135 L312,116 L321,116" marker-end="url(#sa-arr)"/>
+<rect class="sa-box" x="322" y="104" width="30" height="24" rx="4"/>
+<text class="sa-mono sa-b" x="337" y="121" text-anchor="middle">÷2</text>
+<path class="sa-w" d="M352,116 L367,116" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M312,135 L312,154 L367,154" marker-end="url(#sa-arr)"/>
+<path class="sa-gate" d="M368,96 L394,108 L394,162 L368,174 Z"/>
+<text class="sa-m12 sa-mut" x="377" y="120" text-anchor="middle">0</text>
+<text class="sa-m12 sa-mut" x="377" y="158" text-anchor="middle">1</text>
+<rect class="sa-pill" x="350.6" y="61" width="60.8" height="25" rx="4"/>
+<text class="sa-mono sa-blu" x="381" y="78" text-anchor="middle">DIV400</text>
+<path class="sa-wt" d="M381,86 L381,102"/>
+<text x="404" y="196" text-anchor="end"><tspan class="sa-m12">0</tspan><tspan class="sa-s13"> → 200 MHz</tspan></text>
+<text x="404" y="213" text-anchor="end"><tspan class="sa-m12">1</tspan><tspan class="sa-s13"> → 400 MHz</tspan></text>
+<path class="sa-gate" d="M432,115 L458,127 L458,203 L432,215 Z"/>
+<text class="sa-m12 sa-mut" x="441" y="139" text-anchor="middle">0</text>
+<text class="sa-m12 sa-mut" x="441" y="199" text-anchor="middle">1</text>
+<path class="sa-w" d="M394,135 L431,135" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M208,381.5 L413,381.5 L413,195 L431,195" marker-end="url(#sa-arr)"/>
+<rect class="sa-pill" x="421.7" y="225" width="68.6" height="42" rx="4"/>
+<text class="sa-mono" x="456" y="242" text-anchor="middle">BYPASS</text>
+<text class="sa-mono sa-blu" x="456" y="259" text-anchor="middle">BYPASS2</text>
+<path class="sa-wt" d="M437,212.7 L437,225"/>
+<text class="sa-s13 sa-mut" x="250" y="373.5">osilatör yolu</text>
+<circle class="sa-dot" cx="545" cy="165" r="3.2"/>
+<path class="sa-w" d="M458,165.0 L545,165.0"/>
+<path class="sa-w" d="M545,165 L649,165" marker-end="url(#sa-arr)"/>
+<path class="sa-w" d="M545,165 L545,199" marker-end="url(#sa-arr)"/>
+<rect class="sa-box" x="505" y="200" width="80" height="36" rx="6"/>
+<text class="sa-mono sa-b" x="545" y="223" text-anchor="middle">÷ SYSDIV</text>
+<path class="sa-gate" d="M650,145 L678,159 L678,224 L650,238 Z"/>
+<text class="sa-m12 sa-mut" x="659" y="169" text-anchor="middle">0</text>
+<text class="sa-m12 sa-mut" x="659" y="222" text-anchor="middle">1</text>
+<path class="sa-w" d="M585,218 L649,218" marker-end="url(#sa-arr)"/>
+<rect class="sa-pill" x="495.1" y="246" width="99.8" height="59" rx="4"/>
+<text class="sa-mono" x="545" y="263" text-anchor="middle">SYSDIV</text>
+<text class="sa-mono sa-blu" x="545" y="280" text-anchor="middle">SYSDIV2</text>
+<text class="sa-mono sa-blu" x="545" y="297" text-anchor="middle">SYSDIV2:LSB</text>
+<path class="sa-wt" d="M545,236 L545,246"/>
+<rect class="sa-pill" x="621.9" y="245" width="84.2" height="59" rx="4"/>
+<text class="sa-mono" x="664" y="262" text-anchor="middle">BYPASS</text>
+<text class="sa-mono sa-blu" x="664" y="279" text-anchor="middle">BYPASS2</text>
+<text class="sa-mono" x="664" y="296" text-anchor="middle">USESYSDIV</text>
+<path class="sa-wt" d="M655,235.5 L655,245"/>
+<text class="sa-s13 sa-mut" x="597" y="158" text-anchor="middle">bölücüsüz</text>
+<text class="sa-s13 sa-mut" x="616" y="211" text-anchor="middle">bölücülü</text>
+<path class="sa-w" d="M678,191.5 L726,191.5 L726,329" marker-end="url(#sa-arr)"/>
+<rect class="sa-hl" x="610" y="330" width="134" height="50" rx="8"/>
+<text class="sa-b sa-s15" x="677" y="351" text-anchor="middle">SysClk</text>
+<text class="sa-s13" x="677" y="370" text-anchor="middle">en çok 80 MHz</text>
+<text x="240" y="420"><tspan class="sa-s13">PLL’i yalnız MOSC </tspan><tspan class="sa-m12">(0)</tspan><tspan class="sa-s13"> ya da PIOSC </tspan><tspan class="sa-m12">(1)</tspan><tspan class="sa-s13"> sürebilir;</tspan></text>
+<text x="240" y="440"><tspan class="sa-mono">XTAL</tspan><tspan class="sa-s13"> PLL’e giriş frekansını bildirir.</tspan></text>
+<text x="240" y="460"><tspan class="sa-s13">PLL yolunda (</tspan><tspan class="sa-mono">BYPASS=0</tspan><tspan class="sa-s13">) bölücü hep devrededir;</tspan></text>
+<text x="240" y="480"><tspan class="sa-s13">osilatör yolunda yalnız </tspan><tspan class="sa-mono">USESYSDIV=1</tspan><tspan class="sa-s13"> ise.</tspan></text>
+<text x="240" y="500"><tspan class="sa-mono">7</tspan><tspan class="sa-s13"> (32,768 kHz) yalnız </tspan><tspan class="sa-mono">OSCSRC2</tspan><tspan class="sa-s13"> ile seçilir.</tspan></text>
+<rect class="sa-pill" x="18.7" y="544" width="68.6" height="42" rx="4"/>
+<text class="sa-mono" x="53" y="561" text-anchor="middle">BYPASS</text>
+<text class="sa-mono sa-blu" x="53" y="578" text-anchor="middle">BYPASS2</text>
+<text x="99.3" y="561"><tspan class="sa-s13 sa-mut">üst satır: </tspan><tspan class="sa-s13 sa-b">RCC</tspan><tspan class="sa-s13 sa-mut"> alanı; </tspan><tspan class="sa-s13 sa-b sa-blu">mavi</tspan><tspan class="sa-s13 sa-mut"> satır: </tspan><tspan class="sa-s13 sa-b">RCC2</tspan><tspan class="sa-s13 sa-mut"> alanı (</tspan><tspan class="sa-mono">USERCC2=1</tspan><tspan class="sa-s13 sa-mut"> iken geçerli)</tspan></text>
+<text x="99.3" y="580"><tspan class="sa-s13 sa-mut">seçici içindeki küçük sayılar: alanın o girişi seçen değeri</tspan></text>
+</svg>

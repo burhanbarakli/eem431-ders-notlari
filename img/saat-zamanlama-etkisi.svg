@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 530" class="sz-svg" role="img" aria-labelledby="sz-title sz-desc">
+<title id="sz-title">Aynı SysTick ayarının farklı sistem saatlerindeki etkisi</title>
+<desc id="sz-desc">SysTick: RELOAD = 10.000.000 − 1, saat kaynağı sistem saati; döngü COUNT bayrağını sayar, her 8 bayrakta bir LED’i (PF2) değiştirir (dersteki API’siz örnek kod). Bayrak aralığı = 10.000.000 / f. Ortak zaman ekseni 0–10 s. 16 MHz: bayrak her 0,625 s, LED her 5 s değişir. 40 MHz: bayrak her 0,25 s, LED her 2 s değişir. 80 MHz: bayrak her 0,125 s, LED her 1 s değişir. Kod aynı kalırken saat 5 kat artınca LED 5 kat hızlı yanıp söner.</desc>
+<style>
+.sz-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.sz-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.sz-svg .sz-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.sz-svg .sz-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.sz-svg .sz-b{font-weight:700}
+.sz-svg .sz-s13{font-size:13px}
+.sz-svg .sz-s15{font-size:15px}
+.sz-svg .sz-s16{font-size:16px}
+.sz-svg .sz-mut{fill:var(--fig-muted,#76746c)}
+.sz-svg .sz-acc{fill:var(--fig-accent,#b4481f)}
+.sz-svg .sz-blu{fill:var(--fig-blue,#1f5fa8)}
+.sz-svg .sz-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.sz-svg .sz-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.sz-svg .sz-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.sz-svg .sz-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.sz-svg .sz-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.sz-svg .sz-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="sz-s16 sz-b" x="16" y="29">Aynı SysTick ayarı, üç farklı sistem saati</text>
+<text x="16" y="51"><tspan class="sz-mono">RELOAD</tspan><tspan class="sz-s13"> = 10.000.000 − 1, SysTick saati = SysClk; her 8 </tspan><tspan class="sz-mono">COUNT</tspan><tspan class="sz-s13"> bayrağında LED (PF2) değişir</tspan></text>
+<text x="16" y="92" xml:space="preserve"><tspan class="sz-b sz-s15">16 MHz</tspan><tspan class="sz-s13">   bayrak her 10.000.000 / 16 MHz = </tspan><tspan class="sz-s13 sz-b">0,625 s</tspan><tspan class="sz-s13">   ·   LED her 8 × 0,625 = </tspan><tspan class="sz-s13 sz-b sz-acc">5 s</tspan><tspan class="sz-s13"> değişir</tspan></text>
+<path class="sz-grid" d="M120,104 L120,176"/>
+<path class="sz-grid" d="M180,104 L180,176"/>
+<path class="sz-grid" d="M240,104 L240,176"/>
+<path class="sz-grid" d="M300,104 L300,176"/>
+<path class="sz-grid" d="M360,104 L360,176"/>
+<path class="sz-grid" d="M420,104 L420,176"/>
+<path class="sz-grid" d="M480,104 L480,176"/>
+<path class="sz-grid" d="M540,104 L540,176"/>
+<path class="sz-grid" d="M600,104 L600,176"/>
+<path class="sz-grid" d="M660,104 L660,176"/>
+<path class="sz-grid" d="M720,104 L720,176"/>
+<text class="sz-m12 sz-mut" x="16" y="126">COUNT</text>
+<text class="sz-m12 sz-mut" x="16" y="166">LED PF2</text>
+<path class="sz-wm" d="M120,126 L720,126"/>
+<path class="sz-wt" d="M157.50,126 L157.50,115 M195.00,126 L195.00,115 M232.50,126 L232.50,115 M270.00,126 L270.00,115 M307.50,126 L307.50,115 M345.00,126 L345.00,115 M382.50,126 L382.50,115 M457.50,126 L457.50,115 M495.00,126 L495.00,115 M532.50,126 L532.50,115 M570.00,126 L570.00,115 M607.50,126 L607.50,115 M645.00,126 L645.00,115 M682.50,126 L682.50,115"/>
+<path class="sz-wa" d="M420.00,126 L420.00,110 M720.00,126 L720.00,110"/>
+<path class="sz-wb" d="M120,172 L420.00,172 L420.00,144 L720.00,144 L720.00,172 L720,172"/>
+<text class="sz-s13 sz-b" x="270" y="164" text-anchor="middle">5 s</text>
+<text x="16" y="224" xml:space="preserve"><tspan class="sz-b sz-s15">40 MHz</tspan><tspan class="sz-s13">   bayrak her 10.000.000 / 40 MHz = </tspan><tspan class="sz-s13 sz-b">0,25 s</tspan><tspan class="sz-s13">   ·   LED her 8 × 0,25 = </tspan><tspan class="sz-s13 sz-b sz-acc">2 s</tspan><tspan class="sz-s13"> değişir</tspan></text>
+<path class="sz-grid" d="M120,236 L120,308"/>
+<path class="sz-grid" d="M180,236 L180,280 M180,301 L180,308"/>
+<path class="sz-grid" d="M240,236 L240,308"/>
+<path class="sz-grid" d="M300,236 L300,308"/>
+<path class="sz-grid" d="M360,236 L360,308"/>
+<path class="sz-grid" d="M420,236 L420,308"/>
+<path class="sz-grid" d="M480,236 L480,308"/>
+<path class="sz-grid" d="M540,236 L540,308"/>
+<path class="sz-grid" d="M600,236 L600,308"/>
+<path class="sz-grid" d="M660,236 L660,308"/>
+<path class="sz-grid" d="M720,236 L720,308"/>
+<text class="sz-m12 sz-mut" x="16" y="258">COUNT</text>
+<text class="sz-m12 sz-mut" x="16" y="298">LED PF2</text>
+<path class="sz-wm" d="M120,258 L720,258"/>
+<path class="sz-wt" d="M135.00,258 L135.00,247 M150.00,258 L150.00,247 M165.00,258 L165.00,247 M180.00,258 L180.00,247 M195.00,258 L195.00,247 M210.00,258 L210.00,247 M225.00,258 L225.00,247 M255.00,258 L255.00,247 M270.00,258 L270.00,247 M285.00,258 L285.00,247 M300.00,258 L300.00,247 M315.00,258 L315.00,247 M330.00,258 L330.00,247 M345.00,258 L345.00,247 M375.00,258 L375.00,247 M390.00,258 L390.00,247 M405.00,258 L405.00,247 M420.00,258 L420.00,247 M435.00,258 L435.00,247 M450.00,258 L450.00,247 M465.00,258 L465.00,247 M495.00,258 L495.00,247 M510.00,258 L510.00,247 M525.00,258 L525.00,247 M540.00,258 L540.00,247 M555.00,258 L555.00,247 M570.00,258 L570.00,247 M585.00,258 L585.00,247 M615.00,258 L615.00,247 M630.00,258 L630.00,247 M645.00,258 L645.00,247 M660.00,258 L660.00,247 M675.00,258 L675.00,247 M690.00,258 L690.00,247 M705.00,258 L705.00,247"/>
+<path class="sz-wa" d="M240.00,258 L240.00,242 M360.00,258 L360.00,242 M480.00,258 L480.00,242 M600.00,258 L600.00,242 M720.00,258 L720.00,242"/>
+<path class="sz-wb" d="M120,304 L240.00,304 L240.00,276 L360.00,276 L360.00,304 L480.00,304 L480.00,276 L600.00,276 L600.00,304 L720.00,304 L720.00,276 L720,276"/>
+<text class="sz-s13 sz-b" x="180" y="296" text-anchor="middle">2 s</text>
+<text x="16" y="356" xml:space="preserve"><tspan class="sz-b sz-s15">80 MHz</tspan><tspan class="sz-s13">   bayrak her 10.000.000 / 80 MHz = </tspan><tspan class="sz-s13 sz-b">0,125 s</tspan><tspan class="sz-s13">   ·   LED her 8 × 0,125 = </tspan><tspan class="sz-s13 sz-b sz-acc">1 s</tspan><tspan class="sz-s13"> değişir</tspan></text>
+<path class="sz-grid" d="M120,368 L120,440"/>
+<path class="sz-grid" d="M180,368 L180,440"/>
+<path class="sz-grid" d="M240,368 L240,440"/>
+<path class="sz-grid" d="M300,368 L300,440"/>
+<path class="sz-grid" d="M360,368 L360,440"/>
+<path class="sz-grid" d="M420,368 L420,440"/>
+<path class="sz-grid" d="M480,368 L480,440"/>
+<path class="sz-grid" d="M540,368 L540,440"/>
+<path class="sz-grid" d="M600,368 L600,440"/>
+<path class="sz-grid" d="M660,368 L660,440"/>
+<path class="sz-grid" d="M720,368 L720,440"/>
+<text class="sz-m12 sz-mut" x="16" y="390">COUNT</text>
+<text class="sz-m12 sz-mut" x="16" y="430">LED PF2</text>
+<path class="sz-wm" d="M120,390 L720,390"/>
+<path class="sz-wt" d="M127.50,390 L127.50,379 M135.00,390 L135.00,379 M142.50,390 L142.50,379 M150.00,390 L150.00,379 M157.50,390 L157.50,379 M165.00,390 L165.00,379 M172.50,390 L172.50,379 M187.50,390 L187.50,379 M195.00,390 L195.00,379 M202.50,390 L202.50,379 M210.00,390 L210.00,379 M217.50,390 L217.50,379 M225.00,390 L225.00,379 M232.50,390 L232.50,379 M247.50,390 L247.50,379 M255.00,390 L255.00,379 M262.50,390 L262.50,379 M270.00,390 L270.00,379 M277.50,390 L277.50,379 M285.00,390 L285.00,379 M292.50,390 L292.50,379 M307.50,390 L307.50,379 M315.00,390 L315.00,379 M322.50,390 L322.50,379 M330.00,390 L330.00,379 M337.50,390 L337.50,379 M345.00,390 L345.00,379 M352.50,390 L352.50,379 M367.50,390 L367.50,379 M375.00,390 L375.00,379 M382.50,390 L382.50,379 M390.00,390 L390.00,379 M397.50,390 L397.50,379 M405.00,390 L405.00,379 M412.50,390 L412.50,379 M427.50,390 L427.50,379 M435.00,390 L435.00,379 M442.50,390 L442.50,379 M450.00,390 L450.00,379 M457.50,390 L457.50,379 M465.00,390 L465.00,379 M472.50,390 L472.50,379 M487.50,390 L487.50,379 M495.00,390 L495.00,379 M502.50,390 L502.50,379 M510.00,390 L510.00,379 M517.50,390 L517.50,379 M525.00,390 L525.00,379 M532.50,390 L532.50,379 M547.50,390 L547.50,379 M555.00,390 L555.00,379 M562.50,390 L562.50,379 M570.00,390 L570.00,379 M577.50,390 L577.50,379 M585.00,390 L585.00,379 M592.50,390 L592.50,379 M607.50,390 L607.50,379 M615.00,390 L615.00,379 M622.50,390 L622.50,379 M630.00,390 L630.00,379 M637.50,390 L637.50,379 M645.00,390 L645.00,379 M652.50,390 L652.50,379 M667.50,390 L667.50,379 M675.00,390 L675.00,379 M682.50,390 L682.50,379 M690.00,390 L690.00,379 M697.50,390 L697.50,379 M705.00,390 L705.00,379 M712.50,390 L712.50,379"/>
+<path class="sz-wa" d="M180.00,390 L180.00,374 M240.00,390 L240.00,374 M300.00,390 L300.00,374 M360.00,390 L360.00,374 M420.00,390 L420.00,374 M480.00,390 L480.00,374 M540.00,390 L540.00,374 M600.00,390 L600.00,374 M660.00,390 L660.00,374 M720.00,390 L720.00,374"/>
+<path class="sz-wb" d="M120,436 L180.00,436 L180.00,408 L240.00,408 L240.00,436 L300.00,436 L300.00,408 L360.00,408 L360.00,436 L420.00,436 L420.00,408 L480.00,408 L480.00,436 L540.00,436 L540.00,408 L600.00,408 L600.00,436 L660.00,436 L660.00,408 L720.00,408 L720.00,436 L720,436"/>
+<text class="sz-s13 sz-b" x="150" y="428" text-anchor="middle">1 s</text>
+<path class="sz-w" d="M120,466 L720,466"/>
+<path class="sz-w" d="M120,466 L120,471"/>
+<text class="sz-m12" x="120" y="487" text-anchor="middle">0</text>
+<path class="sz-w" d="M180,466 L180,471"/>
+<text class="sz-m12" x="180" y="487" text-anchor="middle">1</text>
+<path class="sz-w" d="M240,466 L240,471"/>
+<text class="sz-m12" x="240" y="487" text-anchor="middle">2</text>
+<path class="sz-w" d="M300,466 L300,471"/>
+<text class="sz-m12" x="300" y="487" text-anchor="middle">3</text>
+<path class="sz-w" d="M360,466 L360,471"/>
+<text class="sz-m12" x="360" y="487" text-anchor="middle">4</text>
+<path class="sz-w" d="M420,466 L420,471"/>
+<text class="sz-m12" x="420" y="487" text-anchor="middle">5</text>
+<path class="sz-w" d="M480,466 L480,471"/>
+<text class="sz-m12" x="480" y="487" text-anchor="middle">6</text>
+<path class="sz-w" d="M540,466 L540,471"/>
+<text class="sz-m12" x="540" y="487" text-anchor="middle">7</text>
+<path class="sz-w" d="M600,466 L600,471"/>
+<text class="sz-m12" x="600" y="487" text-anchor="middle">8</text>
+<path class="sz-w" d="M660,466 L660,471"/>
+<text class="sz-m12" x="660" y="487" text-anchor="middle">9</text>
+<path class="sz-w" d="M720,466 L720,471"/>
+<text class="sz-m12" x="720" y="487" text-anchor="middle">10</text>
+<text class="sz-s13" x="734" y="487" text-anchor="middle">s</text>
+<text class="sz-s13 sz-mut" x="16" y="487">zaman</text>
+<text x="16" y="514"><tspan class="sz-s13 sz-mut">kısa çizgi: bir </tspan><tspan class="sz-mono">COUNT</tspan><tspan class="sz-s13 sz-mut"> bayrağı; </tspan><tspan class="sz-s13 sz-b sz-acc">turuncu</tspan><tspan class="sz-s13 sz-mut">: her 8. bayrak (LED burada değişir); </tspan><tspan class="sz-s13 sz-b sz-blu">mavi</tspan><tspan class="sz-s13 sz-mut">: LED</tspan></text>
+</svg>

@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 636" class="sf-svg" role="img" aria-labelledby="sf-title sf-desc">
+<title id="sf-title">Dört örnek sistem saati yolu</title>
+<desc id="sf-desc">LaunchPad’de MOSC = 16 MHz kristal. 16 MHz: MOSC 16 MHz, BYPASS = 1 ile PLL yolu atlanır, USESYSDIV = 0 ile bölücü kullanılmaz, SysClk = 16 MHz (TivaWare: SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC). 40 MHz (RCC): PLL 400 MHz, RCC kipinde ÷2 sabit, 200 MHz, SYSDIV = 4 ile ÷5, SysClk = 40 MHz (SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL). 50 MHz (RCC): 400 MHz, ÷2 sabit, 200 MHz, SYSDIV = 3 ile ÷4, SysClk = 50 MHz (SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL). 80 MHz (RCC2): 400 MHz, DIV400 = 1 ile ÷2 yok, SYSDIV2:LSB = 4 ile ÷5, SysClk = 80 MHz (SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL). Formüller: RCC ya da RCC2 (DIV400 = 0) için SysClk = 200 MHz / (SYSDIV ya da SYSDIV2 + 1); RCC2 ve DIV400 = 1 iken SysClk = 400 MHz / (SYSDIV2:LSB + 1).</desc>
+<defs>
+<marker id="sf-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="sf-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="sf-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="sf-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.sf-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.sf-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.sf-svg .sf-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.sf-svg .sf-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.sf-svg .sf-b{font-weight:700}
+.sf-svg .sf-s13{font-size:13px}
+.sf-svg .sf-s16{font-size:16px}
+.sf-svg .sf-mut{fill:var(--fig-muted,#76746c)}
+.sf-svg .sf-blu{fill:var(--fig-blue,#1f5fa8)}
+.sf-svg .sf-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.sf-svg .sf-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.sf-svg .sf-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.sf-svg .sf-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.sf-svg .sf-head{fill:var(--fig-stroke,#2b2b29)}
+.sf-svg .sf-headm{fill:var(--fig-muted,#76746c)}
+.sf-svg .sf-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.sf-svg .sf-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.sf-svg .sf-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="sf-s16 sf-b" x="16" y="29">Dört örnek yol: bölme zinciri</text>
+<text x="16" y="66" xml:space="preserve"><tspan class="sf-b sf-s16">16 MHz</tspan><tspan>   </tspan><tspan class="sf-s13 sf-mut">PLL kullanılmıyor</tspan></text>
+<text class="sf-mono sf-blu" x="744" y="66" text-anchor="end">SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC</text>
+<rect class="sf-box" x="16" y="80" width="90" height="48" rx="8"/>
+<text class="sf-b" x="61" y="100" text-anchor="middle">MOSC</text>
+<text class="sf-s13" x="61" y="118" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-mut" x="61" y="145" text-anchor="middle">OSCSRC=0</text>
+<rect class="sf-opt" x="458" y="80" width="110" height="48" rx="8"/>
+<text class="sf-b" x="513" y="100" text-anchor="middle">bölücü yok</text>
+<text class="sf-s13" x="513" y="118" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-mut" x="513" y="145" text-anchor="middle">USESYSDIV=0</text>
+<path class="sf-wmd" d="M106,104.0 L457,104.0" marker-end="url(#sf-arrm)"/>
+<text class="sf-s13 sf-mut" x="282" y="96" text-anchor="middle">BYPASS=1: PLL yolu atlanır</text>
+<rect class="sf-hl" x="622" y="80" width="122" height="48" rx="8"/>
+<text class="sf-s13" x="683" y="99" text-anchor="middle">SysClk</text>
+<text class="sf-b sf-s16" x="683" y="119" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-mut" x="683" y="145" text-anchor="middle">BYPASS=1</text>
+<path class="sf-w" d="M568,104.0 L621,104.0" marker-end="url(#sf-arr)"/>
+<path class="sf-grid" d="M16,167 L744,167"/>
+<text x="16" y="196" xml:space="preserve"><tspan class="sf-b sf-s16">40 MHz</tspan><tspan>   </tspan><tspan class="sf-s13 sf-mut">RCC: 200 / (4 + 1)</tspan></text>
+<text class="sf-mono sf-blu" x="744" y="196" text-anchor="end">SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL</text>
+<rect class="sf-box" x="16" y="210" width="90" height="48" rx="8"/>
+<text class="sf-b" x="61" y="230" text-anchor="middle">MOSC</text>
+<text class="sf-s13" x="61" y="248" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-mut" x="61" y="275" text-anchor="middle">OSCSRC=0</text>
+<text class="sf-m12 sf-mut" x="61" y="291" text-anchor="middle">XTAL=0x15</text>
+<rect class="sf-box" x="160" y="210" width="90" height="48" rx="8"/>
+<text class="sf-b" x="205" y="230" text-anchor="middle">PLL</text>
+<text class="sf-s13" x="205" y="248" text-anchor="middle">400 MHz</text>
+<text class="sf-m12 sf-mut" x="205" y="275" text-anchor="middle">PWRDN=0</text>
+<path class="sf-w" d="M106,234.0 L159,234.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-box" x="304" y="210" width="100" height="48" rx="8"/>
+<text class="sf-mono sf-b" x="354" y="230" text-anchor="middle">÷ 2</text>
+<text class="sf-s13" x="354" y="248" text-anchor="middle">200 MHz</text>
+<text class="sf-s13 sf-mut" x="354" y="275" text-anchor="middle">÷2 sabit (RCC kipi)</text>
+<path class="sf-w" d="M250,234.0 L303,234.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-box" x="458" y="210" width="110" height="48" rx="8"/>
+<text class="sf-mono sf-b" x="513" y="230" text-anchor="middle">÷ 5</text>
+<text class="sf-s13" x="513" y="248" text-anchor="middle">40 MHz</text>
+<text class="sf-m12 sf-mut" x="513" y="275" text-anchor="middle">SYSDIV=4</text>
+<path class="sf-w" d="M404,234.0 L457,234.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-hl" x="622" y="210" width="122" height="48" rx="8"/>
+<text class="sf-s13" x="683" y="229" text-anchor="middle">SysClk</text>
+<text class="sf-b sf-s16" x="683" y="249" text-anchor="middle">40 MHz</text>
+<text class="sf-m12 sf-mut" x="683" y="275" text-anchor="middle">BYPASS=0</text>
+<path class="sf-w" d="M568,234.0 L621,234.0" marker-end="url(#sf-arr)"/>
+<path class="sf-grid" d="M16,297 L744,297"/>
+<text x="16" y="326" xml:space="preserve"><tspan class="sf-b sf-s16">50 MHz</tspan><tspan>   </tspan><tspan class="sf-s13 sf-mut">RCC: 200 / (3 + 1)</tspan></text>
+<text class="sf-mono sf-blu" x="744" y="326" text-anchor="end">SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL</text>
+<rect class="sf-box" x="16" y="340" width="90" height="48" rx="8"/>
+<text class="sf-b" x="61" y="360" text-anchor="middle">MOSC</text>
+<text class="sf-s13" x="61" y="378" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-mut" x="61" y="405" text-anchor="middle">OSCSRC=0</text>
+<text class="sf-m12 sf-mut" x="61" y="421" text-anchor="middle">XTAL=0x15</text>
+<rect class="sf-box" x="160" y="340" width="90" height="48" rx="8"/>
+<text class="sf-b" x="205" y="360" text-anchor="middle">PLL</text>
+<text class="sf-s13" x="205" y="378" text-anchor="middle">400 MHz</text>
+<text class="sf-m12 sf-mut" x="205" y="405" text-anchor="middle">PWRDN=0</text>
+<path class="sf-w" d="M106,364.0 L159,364.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-box" x="304" y="340" width="100" height="48" rx="8"/>
+<text class="sf-mono sf-b" x="354" y="360" text-anchor="middle">÷ 2</text>
+<text class="sf-s13" x="354" y="378" text-anchor="middle">200 MHz</text>
+<text class="sf-s13 sf-mut" x="354" y="405" text-anchor="middle">÷2 sabit (RCC kipi)</text>
+<path class="sf-w" d="M250,364.0 L303,364.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-box" x="458" y="340" width="110" height="48" rx="8"/>
+<text class="sf-mono sf-b" x="513" y="360" text-anchor="middle">÷ 4</text>
+<text class="sf-s13" x="513" y="378" text-anchor="middle">50 MHz</text>
+<text class="sf-m12 sf-mut" x="513" y="405" text-anchor="middle">SYSDIV=3</text>
+<path class="sf-w" d="M404,364.0 L457,364.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-hl" x="622" y="340" width="122" height="48" rx="8"/>
+<text class="sf-s13" x="683" y="359" text-anchor="middle">SysClk</text>
+<text class="sf-b sf-s16" x="683" y="379" text-anchor="middle">50 MHz</text>
+<text class="sf-m12 sf-mut" x="683" y="405" text-anchor="middle">BYPASS=0</text>
+<path class="sf-w" d="M568,364.0 L621,364.0" marker-end="url(#sf-arr)"/>
+<path class="sf-grid" d="M16,427 L744,427"/>
+<text x="16" y="456" xml:space="preserve"><tspan class="sf-b sf-s16">80 MHz</tspan><tspan>   </tspan><tspan class="sf-s13 sf-mut">RCC2, DIV400 = 1: 400 / (4 + 1)</tspan></text>
+<text class="sf-mono sf-blu" x="744" y="456" text-anchor="end">SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL</text>
+<rect class="sf-box" x="16" y="470" width="90" height="48" rx="8"/>
+<text class="sf-b" x="61" y="490" text-anchor="middle">MOSC</text>
+<text class="sf-s13" x="61" y="508" text-anchor="middle">16 MHz</text>
+<text class="sf-m12 sf-blu" x="61" y="535" text-anchor="middle">OSCSRC2=0</text>
+<text class="sf-m12 sf-mut" x="61" y="551" text-anchor="middle">XTAL=0x15</text>
+<rect class="sf-box" x="160" y="470" width="90" height="48" rx="8"/>
+<text class="sf-b" x="205" y="490" text-anchor="middle">PLL</text>
+<text class="sf-s13" x="205" y="508" text-anchor="middle">400 MHz</text>
+<text class="sf-m12 sf-blu" x="205" y="535" text-anchor="middle">PWRDN2=0</text>
+<path class="sf-w" d="M106,494.0 L159,494.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-opt" x="304" y="470" width="100" height="48" rx="8"/>
+<text x="354" y="490" text-anchor="middle"><tspan class="sf-mono sf-b">÷ 2</tspan><tspan class="sf-b"> yok</tspan></text>
+<text class="sf-s13" x="354" y="508" text-anchor="middle">400 MHz</text>
+<text class="sf-m12 sf-blu" x="354" y="535" text-anchor="middle">DIV400=1</text>
+<path class="sf-w" d="M250,494.0 L303,494.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-box" x="458" y="470" width="110" height="48" rx="8"/>
+<text class="sf-mono sf-b" x="513" y="490" text-anchor="middle">÷ 5</text>
+<text class="sf-s13" x="513" y="508" text-anchor="middle">80 MHz</text>
+<text class="sf-m12 sf-blu" x="513" y="535" text-anchor="middle">SYSDIV2:LSB=4</text>
+<path class="sf-w" d="M404,494.0 L457,494.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-hl" x="622" y="470" width="122" height="48" rx="8"/>
+<text class="sf-s13" x="683" y="489" text-anchor="middle">SysClk</text>
+<text class="sf-b sf-s16" x="683" y="509" text-anchor="middle">80 MHz</text>
+<text class="sf-m12 sf-blu" x="683" y="535" text-anchor="middle">BYPASS2=0</text>
+<path class="sf-w" d="M568,494.0 L621,494.0" marker-end="url(#sf-arr)"/>
+<rect class="sf-code" x="16" y="572" width="728" height="50" rx="6"/>
+<text x="30" y="593" xml:space="preserve"><tspan class="sf-s13">RCC ya da RCC2 (</tspan><tspan class="sf-mono">DIV400=0</tspan><tspan class="sf-s13">):  SysClk = 200 MHz / (</tspan><tspan class="sf-mono">SYSDIV</tspan><tspan class="sf-s13"> ya da </tspan><tspan class="sf-mono">SYSDIV2</tspan><tspan class="sf-s13"> + 1)</tspan></text>
+<text x="30" y="612" xml:space="preserve"><tspan class="sf-s13">RCC2, </tspan><tspan class="sf-mono">DIV400=1</tspan><tspan class="sf-s13">:  SysClk = 400 MHz / (</tspan><tspan class="sf-mono">SYSDIV2:LSB</tspan><tspan class="sf-s13"> + 1)</tspan><tspan class="sf-s13 sf-mut">     mavi alan adı: RCC2 alanı</tspan></text>
+</svg>
