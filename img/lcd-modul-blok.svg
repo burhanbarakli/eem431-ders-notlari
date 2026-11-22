@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 652" class="lcdm-svg" role="img" aria-labelledby="lcdm-title lcdm-desc">
+<title id="lcdm-title">HD44780 karakter LCD modülünün içi</title>
+<desc id="lcdm-desc">Solda mikrodenetleyici (TM4C123); RS, R/W, E denetim hatları ve DB7–DB0 veri yolu LCD modülündeki HD44780 denetleyicisinin arabirimine girer. RS = 0 iken bayt IR’ye (komut register’ı), RS = 1 iken DR’ye (veri register’ı) yazılır; E düşen kenarında alınır, R/W = 0 yazmadır. IR’deki konum komutu AC adres sayacını kurar; AC DDRAM ya da CGRAM adresini tutar; BF meşgul bayrağıdır. DR’deki karakter kodu, AC’nin gösterdiği adreste DDRAM’e (80 bayt, ekrandaki karakter kodları) yazılır. DDRAM’deki her kod CGROM’dan (hazır karakter desenleri) ya da CGRAM’den (kullanıcı tanımlı 8 karakter) 5×8 nokta deseni seçer (özel karakter tanımlarken DR’den CGRAM’e yazılır); desenler segment ve ortak sürücüler üzerinden 16×2 karakter paneline gider. V0 ucu 10 kΩ pot ile kontrastı ayarlar, A/K uçları 5 V / GND ile arka ışığı besler.</desc>
+<defs>
+<marker id="lcdm-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdm-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="lcdm-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdm-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.lcdm-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lcdm-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lcdm-svg .lcdm-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.lcdm-svg .lcdm-b{font-weight:700}
+.lcdm-svg .lcdm-s13{font-size:13px}
+.lcdm-svg .lcdm-s16{font-size:16px}
+.lcdm-svg .lcdm-mut{fill:var(--fig-muted,#76746c)}
+.lcdm-svg .lcdm-acc{fill:var(--fig-accent,#b4481f)}
+.lcdm-svg .lcdm-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.lcdm-svg .lcdm-dot{fill:var(--fig-stroke,#2b2b29)}
+.lcdm-svg .lcdm-head{fill:var(--fig-stroke,#2b2b29)}
+.lcdm-svg .lcdm-headm{fill:var(--fig-muted,#76746c)}
+.lcdm-svg .lcdm-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.lcdm-svg .lcdm-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.lcdm-svg .lcdm-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.lcdm-svg .lcdm-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+.lcdm-svg .lcdm-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.lcdm-svg .lcdm-wbus{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:3.5}
+</style>
+<text class="lcdm-s16 lcdm-b" x="16" y="29">HD44780 karakter LCD modülünün içi</text>
+<rect class="lcdm-box" x="16" y="104" width="128" height="220" rx="8"/>
+<text class="lcdm-b" x="80" y="128" text-anchor="middle">Mikrodenetleyici</text>
+<text class="lcdm-s13 lcdm-mut" x="80" y="146" text-anchor="middle">(TM4C123)</text>
+<rect class="lcdm-zone" x="168" y="44" width="576" height="594" rx="10"/>
+<text class="lcdm-s13 lcdm-b lcdm-mut" x="180" y="63">LCD modülü</text>
+<rect class="lcdm-zone" x="184" y="74" width="548" height="440" rx="10"/>
+<text class="lcdm-s13 lcdm-b lcdm-mut" x="196" y="93">HD44780 denetleyici</text>
+<rect class="lcdm-box" x="200" y="104" width="144" height="220" rx="8"/>
+<text class="lcdm-b" x="272" y="126" text-anchor="middle">Arabirim</text>
+<path class="lcdm-w" d="M144,151 L199,151" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-b" x="210" y="156">RS</text>
+<text class="lcdm-s13 lcdm-mut" x="252" y="156">komut / veri</text>
+<path class="lcdm-w" d="M144,179 L199,179" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-b" x="210" y="184">R/W</text>
+<text class="lcdm-s13 lcdm-mut" x="252" y="184">0 = yaz</text>
+<path class="lcdm-w" d="M144,207 L199,207" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-b" x="210" y="212">E</text>
+<text class="lcdm-s13 lcdm-mut" x="252" y="212">düşende alır</text>
+<path class="lcdm-wbus" d="M144,263 L188,263"/>
+<path class="lcdm-w" d="M186,263 L199,263" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-b" x="210" y="268">DB7–DB0</text>
+<text class="lcdm-s13 lcdm-mut" x="210" y="290">4 bitlik kipte: DB7–DB4</text>
+<rect class="lcdm-box" x="404" y="108" width="132" height="50" rx="8"/>
+<text class="lcdm-mono lcdm-b" x="470" y="128" text-anchor="middle">IR</text>
+<text class="lcdm-s13" x="470" y="146" text-anchor="middle">komut register’ı</text>
+<rect class="lcdm-box" x="404" y="186" width="132" height="66" rx="8"/>
+<text x="416" y="211"><tspan class="lcdm-mono lcdm-b">BF</tspan><tspan class="lcdm-s13"> meşgul bayrağı</tspan></text>
+<text x="416" y="235"><tspan class="lcdm-mono lcdm-b">AC</tspan><tspan class="lcdm-s13"> adres sayacı</tspan></text>
+<rect class="lcdm-box" x="404" y="274" width="132" height="50" rx="8"/>
+<text class="lcdm-mono lcdm-b" x="470" y="294" text-anchor="middle">DR</text>
+<text class="lcdm-s13" x="470" y="312" text-anchor="middle">veri register’ı</text>
+<path class="lcdm-w" d="M344,133 L403,133" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-acc" x="374" y="126" text-anchor="middle">RS = 0</text>
+<path class="lcdm-w" d="M344,299 L403,299" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-mono lcdm-acc" x="374" y="292" text-anchor="middle">RS = 1</text>
+<path class="lcdm-w" d="M470.0,158 L470.0,185" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-s13 lcdm-mut" x="478" y="176">AC’yi kurar</text>
+<rect class="lcdm-box" x="576" y="196" width="148" height="82" rx="8"/>
+<text class="lcdm-b" x="588" y="216">DDRAM</text>
+<text class="lcdm-s13" x="588" y="234">80 bayt</text>
+<text class="lcdm-s13" x="588" y="251">ekrandaki karakter</text>
+<text class="lcdm-s13" x="588" y="267">kodları</text>
+<path class="lcdm-w" d="M536,206 L556,206 L556,174 L650.0,174 L650.0,195" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-s13 lcdm-mut" x="564" y="167">adres (DDRAM/CGRAM)</text>
+<path class="lcdm-w" d="M536,296 L560,296 L560,262 L575,262" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-s13 lcdm-mut" x="548" y="290" text-anchor="middle">kod</text>
+<rect class="lcdm-box" x="404" y="362" width="148" height="66" rx="8"/>
+<text class="lcdm-b" x="416" y="383">CGROM</text>
+<text class="lcdm-s13" x="416" y="401">hazır karakter</text>
+<text class="lcdm-s13" x="416" y="418">desenleri</text>
+<rect class="lcdm-box" x="576" y="362" width="148" height="66" rx="8"/>
+<text class="lcdm-b" x="588" y="383">CGRAM</text>
+<text class="lcdm-s13" x="588" y="401">kullanıcı tanımlı</text>
+<text class="lcdm-s13" x="588" y="418">8 karakter</text>
+<path class="lcdm-w" d="M650.0,278 L650.0,340 L478,340 L478,361" marker-end="url(#lcdm-arr)"/>
+<path class="lcdm-w" d="M650.0,340 L650.0,361" marker-end="url(#lcdm-arr)"/>
+<circle class="lcdm-dot" cx="650" cy="340" r="3"/>
+<text class="lcdm-s13 lcdm-mut" x="486" y="356">karakter kodu</text>
+<path class="lcdm-wmd" d="M536,314 L604,314 L604,361" marker-end="url(#lcdm-arrm)"/>
+<text class="lcdm-s13 lcdm-mut" x="610" y="332">yazma</text>
+<rect class="lcdm-box" x="404" y="458" width="320" height="40" rx="8"/>
+<text class="lcdm-b" x="564" y="483" text-anchor="middle">Segment ve ortak sürücüler</text>
+<path class="lcdm-w" d="M478,428 L478,457" marker-end="url(#lcdm-arr)"/>
+<path class="lcdm-w" d="M650.0,428 L650.0,457" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-s13 lcdm-mut" x="564" y="448" text-anchor="middle">5×8 desen</text>
+<rect class="lcdm-box" x="404" y="532" width="320" height="70" rx="8"/>
+<rect class="lcdm-cellf" x="413" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="432" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="451" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="470" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="489" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="508" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="527" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="546" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="565" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="584" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="603" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="622" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="641" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="660" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="679" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="698" y="541" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="413" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="432" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="451" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="470" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="489" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="508" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="527" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="546" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="565" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="584" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="603" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="622" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="641" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="660" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="679" y="568" width="17" height="24" rx="1"/>
+<rect class="lcdm-cellf" x="698" y="568" width="17" height="24" rx="1"/>
+<path class="lcdm-w" d="M564,498 L564,531" marker-end="url(#lcdm-arr)"/>
+<text class="lcdm-s13 lcdm-b" x="564" y="624" text-anchor="middle">16×2 karakter paneli</text>
+<rect class="lcdm-box" x="30" y="446" width="14" height="60" rx="2"/>
+<path class="lcdm-wt" d="M37,446 L37,434"/>
+<text class="lcdm-s13 lcdm-mut" x="37" y="428" text-anchor="middle">5 V</text>
+<path class="lcdm-wt" d="M37,506 L37,518"/>
+<text class="lcdm-s13 lcdm-mut" x="37" y="532" text-anchor="middle">GND</text>
+<path class="lcdm-w" d="M70,476 L45,476" marker-end="url(#lcdm-arr)"/>
+<path class="lcdm-w" d="M70,476 L403,476" marker-end="url(#lcdm-arr)"/>
+<text x="96" y="469"><tspan class="lcdm-mono lcdm-b">V0</tspan><tspan class="lcdm-s13"> kontrast</tspan></text>
+<text class="lcdm-s13 lcdm-mut" x="56" y="498">10 kΩ pot</text>
+<path class="lcdm-w" d="M24,567 L403,567" marker-end="url(#lcdm-arr)"/>
+<text x="24" y="560"><tspan class="lcdm-mono lcdm-b">A</tspan><tspan class="lcdm-s13"> / </tspan><tspan class="lcdm-mono lcdm-b">K</tspan><tspan class="lcdm-s13"> arka ışık</tspan></text>
+<text class="lcdm-s13 lcdm-mut" x="24" y="586">5 V / GND</text>
+</svg>

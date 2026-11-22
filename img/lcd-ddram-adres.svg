@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 514" class="lcdd-svg" role="img" aria-labelledby="lcdd-title lcdd-desc">
+<title id="lcdd-title">16×2 LCD’de DDRAM adresleri</title>
+<desc id="lcdd-desc">16×2 ızgara: satır 1 hücrelerinin DDRAM adresleri 00…0F, satır 2 hücrelerininki 40…4F (onaltılık). İmleci satır başına taşımak için DDRAM adres komutu 0x80 adresle VEYA’lanır: 0x80 | 0x00 = 0x80 (satır 1), 0x80 | 0x40 = 0xC0 (satır 2). Örnek: gotoxy(2,4) satır 2, sütun 4 hücresidir; adresi 0x43, komutu 0x80 | 0x43 = 0xC3. Altta: her satır 40 karakterlik sanal satırdır (satır 1: 0x00–0x27, satır 2: 0x40–0x67); ekran yalnız 16 sütunluk pencereyi gösterir. 0x18 komutu yazıyı sola kaydırır (pencere bir sütun sağa gider), 0x1C yazıyı sağa kaydırır (pencere bir sütun sola gider).</desc>
+<defs>
+<marker id="lcdd-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdd-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.lcdd-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lcdd-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lcdd-svg .lcdd-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.lcdd-svg .lcdd-b{font-weight:700}
+.lcdd-svg .lcdd-s13{font-size:13px}
+.lcdd-svg .lcdd-s16{font-size:16px}
+.lcdd-svg .lcdd-mut{fill:var(--fig-muted,#76746c)}
+.lcdd-svg .lcdd-acc{fill:var(--fig-accent,#b4481f)}
+.lcdd-svg .lcdd-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.lcdd-svg .lcdd-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.lcdd-svg .lcdd-heada{fill:var(--fig-accent,#b4481f)}
+.lcdd-svg .lcdd-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.lcdd-svg .lcdd-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.lcdd-svg .lcdd-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.lcdd-svg .lcdd-fra{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2}
+.lcdd-svg .lcdd-frb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2;stroke-dasharray:6 3}
+</style>
+<text class="lcdd-s16 lcdd-b" x="16" y="29">16×2 LCD’de DDRAM adresleri</text>
+<text class="lcdd-s13 lcdd-b" x="16" y="74">imleci satır başına taşı:</text>
+<text class="lcdd-s13 lcdd-mut" x="238" y="74" text-anchor="end">sütun</text>
+<text class="lcdd-s13 lcdd-mut" x="263" y="74" text-anchor="middle">1</text>
+<text class="lcdd-s13 lcdd-mut" x="293" y="74" text-anchor="middle">2</text>
+<text class="lcdd-s13 lcdd-mut" x="323" y="74" text-anchor="middle">3</text>
+<text class="lcdd-s13 lcdd-mut" x="353" y="74" text-anchor="middle">4</text>
+<text class="lcdd-s13 lcdd-mut" x="383" y="74" text-anchor="middle">5</text>
+<text class="lcdd-s13 lcdd-mut" x="413" y="74" text-anchor="middle">6</text>
+<text class="lcdd-s13 lcdd-mut" x="443" y="74" text-anchor="middle">7</text>
+<text class="lcdd-s13 lcdd-mut" x="473" y="74" text-anchor="middle">8</text>
+<text class="lcdd-s13 lcdd-mut" x="503" y="74" text-anchor="middle">9</text>
+<text class="lcdd-s13 lcdd-mut" x="533" y="74" text-anchor="middle">10</text>
+<text class="lcdd-s13 lcdd-mut" x="563" y="74" text-anchor="middle">11</text>
+<text class="lcdd-s13 lcdd-mut" x="593" y="74" text-anchor="middle">12</text>
+<text class="lcdd-s13 lcdd-mut" x="623" y="74" text-anchor="middle">13</text>
+<text class="lcdd-s13 lcdd-mut" x="653" y="74" text-anchor="middle">14</text>
+<text class="lcdd-s13 lcdd-mut" x="683" y="74" text-anchor="middle">15</text>
+<text class="lcdd-s13 lcdd-mut" x="713" y="74" text-anchor="middle">16</text>
+<text class="lcdd-s13 lcdd-b" x="238" y="107" text-anchor="end">satır 1</text>
+<text x="16" y="107"><tspan class="lcdd-mono">0x80 | 0x00 = </tspan><tspan class="lcdd-mono lcdd-b lcdd-acc">0x80</tspan></text>
+<rect class="lcdd-cell" x="248" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="263" y="107" text-anchor="middle">00</text>
+<rect class="lcdd-cell" x="278" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="293" y="107" text-anchor="middle">01</text>
+<rect class="lcdd-cell" x="308" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="323" y="107" text-anchor="middle">02</text>
+<rect class="lcdd-cell" x="338" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="353" y="107" text-anchor="middle">03</text>
+<rect class="lcdd-cell" x="368" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="383" y="107" text-anchor="middle">04</text>
+<rect class="lcdd-cell" x="398" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="413" y="107" text-anchor="middle">05</text>
+<rect class="lcdd-cell" x="428" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="443" y="107" text-anchor="middle">06</text>
+<rect class="lcdd-cell" x="458" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="473" y="107" text-anchor="middle">07</text>
+<rect class="lcdd-cell" x="488" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="503" y="107" text-anchor="middle">08</text>
+<rect class="lcdd-cell" x="518" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="533" y="107" text-anchor="middle">09</text>
+<rect class="lcdd-cell" x="548" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="563" y="107" text-anchor="middle">0A</text>
+<rect class="lcdd-cell" x="578" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="593" y="107" text-anchor="middle">0B</text>
+<rect class="lcdd-cell" x="608" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="623" y="107" text-anchor="middle">0C</text>
+<rect class="lcdd-cell" x="638" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="653" y="107" text-anchor="middle">0D</text>
+<rect class="lcdd-cell" x="668" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="683" y="107" text-anchor="middle">0E</text>
+<rect class="lcdd-cell" x="698" y="84" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="713" y="107" text-anchor="middle">0F</text>
+<text class="lcdd-s13 lcdd-b" x="238" y="143" text-anchor="end">satır 2</text>
+<text x="16" y="143"><tspan class="lcdd-mono">0x80 | 0x40 = </tspan><tspan class="lcdd-mono lcdd-b lcdd-acc">0xC0</tspan></text>
+<rect class="lcdd-cell" x="248" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="263" y="143" text-anchor="middle">40</text>
+<rect class="lcdd-cell" x="278" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="293" y="143" text-anchor="middle">41</text>
+<rect class="lcdd-cell" x="308" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="323" y="143" text-anchor="middle">42</text>
+<rect class="lcdd-hl" x="338" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono lcdd-b" x="353" y="143" text-anchor="middle">43</text>
+<rect class="lcdd-cell" x="368" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="383" y="143" text-anchor="middle">44</text>
+<rect class="lcdd-cell" x="398" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="413" y="143" text-anchor="middle">45</text>
+<rect class="lcdd-cell" x="428" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="443" y="143" text-anchor="middle">46</text>
+<rect class="lcdd-cell" x="458" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="473" y="143" text-anchor="middle">47</text>
+<rect class="lcdd-cell" x="488" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="503" y="143" text-anchor="middle">48</text>
+<rect class="lcdd-cell" x="518" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="533" y="143" text-anchor="middle">49</text>
+<rect class="lcdd-cell" x="548" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="563" y="143" text-anchor="middle">4A</text>
+<rect class="lcdd-cell" x="578" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="593" y="143" text-anchor="middle">4B</text>
+<rect class="lcdd-cell" x="608" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="623" y="143" text-anchor="middle">4C</text>
+<rect class="lcdd-cell" x="638" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="653" y="143" text-anchor="middle">4D</text>
+<rect class="lcdd-cell" x="668" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="683" y="143" text-anchor="middle">4E</text>
+<rect class="lcdd-cell" x="698" y="120" width="30" height="36" rx="0"/>
+<text class="lcdd-mono" x="713" y="143" text-anchor="middle">4F</text>
+<text x="16" y="190"><tspan class="lcdd-mono">0x80</tspan><tspan class="lcdd-s13 lcdd-mut"> = “DDRAM adresi ayarla”</tspan></text>
+<text class="lcdd-s13 lcdd-mut" x="16" y="208">komutu (DB7 = 1)</text>
+<rect class="lcdd-code" x="272" y="180" width="456" height="54" rx="8"/>
+<path class="lcdd-wa" d="M353.0,180 L353.0,157" marker-end="url(#lcdd-arra)"/>
+<text x="286" y="201"><tspan class="lcdd-mono lcdd-b">gotoxy(2,4)</tspan><tspan> → satır 2, sütun 4</tspan></text>
+<text x="286" y="222"><tspan>adres </tspan><tspan class="lcdd-mono lcdd-b lcdd-acc">0x43</tspan><tspan> → komut </tspan><tspan class="lcdd-mono lcdd-b">0x80 | 0x43 = 0xC3</tspan></text>
+<text class="lcdd-s13 lcdd-b" x="16" y="272">Her satır 40 karakterlik sanal satırdır; ekran yalnız 16 sütunluk pencereyi gösterir</text>
+<text class="lcdd-s13 lcdd-b" x="16" y="335">satır 1</text>
+<rect class="lcdd-cellf" x="64" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="81" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="98" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="115" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="132" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="149" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="166" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="183" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="200" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="217" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="234" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="251" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="268" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="285" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="302" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="319" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="336" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="353" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="370" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="387" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="404" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="421" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="438" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="455" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="472" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="489" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="506" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="523" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="540" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="557" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="574" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="591" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="608" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="625" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="642" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="659" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="676" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="693" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="710" y="318" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="727" y="318" width="17" height="24" rx="0"/>
+<text class="lcdd-mono" x="64" y="304">0x00</text>
+<text class="lcdd-mono" x="336" y="304" text-anchor="end">0x0F</text>
+<text class="lcdd-mono" x="744" y="304" text-anchor="end">0x27</text>
+<text class="lcdd-s13 lcdd-b" x="16" y="389">satır 2</text>
+<rect class="lcdd-cellf" x="64" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="81" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="98" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="115" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="132" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="149" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="166" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="183" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="200" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="217" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="234" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="251" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="268" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="285" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="302" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cellf" x="319" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="336" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="353" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="370" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="387" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="404" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="421" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="438" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="455" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="472" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="489" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="506" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="523" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="540" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="557" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="574" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="591" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="608" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="625" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="642" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="659" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="676" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="693" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="710" y="372" width="17" height="24" rx="0"/>
+<rect class="lcdd-cell" x="727" y="372" width="17" height="24" rx="0"/>
+<text class="lcdd-mono" x="64" y="418">0x40</text>
+<text class="lcdd-mono" x="336" y="418" text-anchor="end">0x4F</text>
+<text class="lcdd-mono" x="744" y="418" text-anchor="end">0x67</text>
+<rect class="lcdd-fra" x="61" y="312" width="278" height="90" rx="3"/>
+<rect class="lcdd-frb" x="78" y="317" width="278" height="80" rx="3"/>
+<path class="lcdd-fra" d="M16,448 L40,448"/>
+<text class="lcdd-s13" x="48" y="453">ekranda görünen pencere</text>
+<path class="lcdd-frb" d="M232,448 L256,448"/>
+<text x="264" y="453"><tspan class="lcdd-s13">bir kez </tspan><tspan class="lcdd-mono">0x18</tspan><tspan class="lcdd-s13"> sonrası</tspan></text>
+<text x="16" y="480"><tspan class="lcdd-mono lcdd-b">0x18</tspan><tspan class="lcdd-s13"> → yazı sola kayar, pencere bir sütun sağa gider</tspan></text>
+<text x="16" y="500"><tspan class="lcdd-mono lcdd-b">0x1C</tspan><tspan class="lcdd-s13"> → yazı sağa kayar, pencere bir sütun sola gider</tspan></text>
+</svg>

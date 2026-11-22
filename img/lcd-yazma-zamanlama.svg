@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 448" class="lcdz-svg" role="img" aria-labelledby="lcdz-title lcdz-desc">
+<title id="lcdz-title">4 bitlik kipte bir veri baytının yazılışı</title>
+<desc id="lcdz-desc">‘A’ = 0x41 karakterinin 4 bitlik kipte LCD’ye yazılışı. GPIOPinWrite sırası: RS ve veri → E=1 → E=0; RS ile verinin sırası önemli değildir. RS yüksektir (veri). Önce RS = 1 yapılır ve D7–D4 hatlarına yüksek yarım bayt 0100 konur, E bir darbe verir; sonra düşük yarım bayt 0001 konur ve E ikinci darbeyi verir. LCD her iki yarım baytı E’nin düşen kenarında alır. RS, E yükselmeden önce kurulur; veri, E düşmeden önce hazır olmalıdır. İkinci düşen kenardan sonra LCD komutu yürütür; yürütme süresi yaklaşık 40 µs’dir ve bu sürede yeni yazma yapılmaz.</desc>
+<defs>
+<marker id="lcdz-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdz-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="lcdz-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdz-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.lcdz-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lcdz-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lcdz-svg .lcdz-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.lcdz-svg .lcdz-b{font-weight:700}
+.lcdz-svg .lcdz-s13{font-size:13px}
+.lcdz-svg .lcdz-s15{font-size:15px}
+.lcdz-svg .lcdz-s16{font-size:16px}
+.lcdz-svg .lcdz-mut{fill:var(--fig-muted,#76746c)}
+.lcdz-svg .lcdz-acc{fill:var(--fig-accent,#b4481f)}
+.lcdz-svg .lcdz-dota{fill:var(--fig-accent,#b4481f)}
+.lcdz-svg .lcdz-bar{fill:var(--fig-accent,#b4481f);fill-opacity:.28}
+.lcdz-svg .lcdz-head{fill:var(--fig-stroke,#2b2b29)}
+.lcdz-svg .lcdz-heada{fill:var(--fig-accent,#b4481f)}
+.lcdz-svg .lcdz-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.lcdz-svg .lcdz-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.lcdz-svg .lcdz-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.lcdz-svg .lcdz-busf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.lcdz-svg .lcdz-busm{fill:var(--fig-muted,#76746c);fill-opacity:.22;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+</style>
+<text x="16" y="29"><tspan class="lcdz-s16 lcdz-b">4 bitlik kipte veri yazma: ‘A’ = </tspan><tspan class="lcdz-mono lcdz-b">0x41</tspan><tspan class="lcdz-s16 lcdz-b"> = </tspan><tspan class="lcdz-mono lcdz-b">0100 0001</tspan></text>
+<text x="16" y="51"><tspan class="lcdz-mono">GPIOPinWrite</tspan><tspan class="lcdz-s15"> sırası: RS ve veri → E=1 → E=0</tspan></text>
+<path class="lcdz-grid" d="M216,92 L216,304"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="216" y="84" text-anchor="middle">RS, veri</text>
+<path class="lcdz-grid" d="M300,92 L300,304"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="300" y="84" text-anchor="middle">E=1</text>
+<path class="lcdz-grid" d="M390,92 L390,304"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="390" y="84" text-anchor="middle">E=0</text>
+<path class="lcdz-grid" d="M440,92 L440,170 M440,194 L440,304"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="440" y="84" text-anchor="middle">veri</text>
+<path class="lcdz-grid" d="M500,92 L500,170 M500,194 L500,304"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="500" y="84" text-anchor="middle">E=1</text>
+<path class="lcdz-grid" d="M590,92 L590,304 M590,328 L590,352"/>
+<text class="lcdz-s13 lcdz-b lcdz-mut" x="590" y="84" text-anchor="middle">E=0</text>
+<text class="lcdz-s13 lcdz-mut" x="16" y="84">yazma adımı</text>
+<text class="lcdz-mono lcdz-b" x="16" y="134">RS</text>
+<text class="lcdz-s13 lcdz-mut" x="46" y="134">1 = veri</text>
+<text class="lcdz-mono lcdz-mut" x="162" y="121" text-anchor="end">1</text>
+<text class="lcdz-mono lcdz-mut" x="162" y="151" text-anchor="end">0</text>
+<path class="lcdz-wa" d="M170,146 L216,146 L216,116 L740,116"/>
+<text class="lcdz-mono lcdz-b" x="16" y="214">E</text>
+<text class="lcdz-s13 lcdz-mut" x="32" y="214">etkinleştirme</text>
+<text class="lcdz-mono lcdz-mut" x="162" y="201" text-anchor="end">1</text>
+<text class="lcdz-mono lcdz-mut" x="162" y="231" text-anchor="end">0</text>
+<path class="lcdz-wa" d="M170,226 L300,226 L300,196 L390,196 L390,226 L500,226 L500,196 L590,196 L590,226 L740,226"/>
+<path class="lcdz-wt" d="M258.0,182 L217,182" marker-end="url(#lcdz-arr)"/>
+<path class="lcdz-wt" d="M258.0,182 L299,182" marker-end="url(#lcdz-arr)"/>
+<text class="lcdz-s13" x="258" y="175" text-anchor="middle">kurulma</text>
+<path class="lcdz-wt" d="M345.0,182 L301,182" marker-end="url(#lcdz-arr)"/>
+<path class="lcdz-wt" d="M345.0,182 L389,182" marker-end="url(#lcdz-arr)"/>
+<text class="lcdz-s13" x="345" y="175" text-anchor="middle">E darbesi</text>
+<circle class="lcdz-dota" cx="390" cy="226" r="4.5"/>
+<text class="lcdz-s13 lcdz-b lcdz-acc" x="408" y="188">LCD burada alır</text>
+<path class="lcdz-wa" d="M420,193 L395,221" marker-end="url(#lcdz-arra)"/>
+<circle class="lcdz-dota" cx="590" cy="226" r="4.5"/>
+<text class="lcdz-s13 lcdz-b lcdz-acc" x="608" y="188">LCD burada alır</text>
+<path class="lcdz-wa" d="M620,193 L595,221" marker-end="url(#lcdz-arra)"/>
+<text class="lcdz-mono lcdz-b" x="16" y="290">D7–D4</text>
+<text class="lcdz-s13 lcdz-mut" x="66" y="290">PB7–PB4</text>
+<path class="lcdz-busm" d="M170,270 L210,270 L216,285.0 L210,300 L170,300 Z"/>
+<path class="lcdz-busf" d="M216,285.0 L222,270 L434,270 L440,285.0 L434,300 L222,300 Z"/>
+<path class="lcdz-busf" d="M440,285.0 L446,270 L740,270 L740,300 L446,300 Z"/>
+<text class="lcdz-mono lcdz-b" x="328" y="290" text-anchor="middle">0100</text>
+<text class="lcdz-mono lcdz-b" x="545" y="290" text-anchor="middle">0001</text>
+<text x="328" y="320" text-anchor="middle"><tspan class="lcdz-s13">yüksek yarım bayt (</tspan><tspan class="lcdz-mono">0x4</tspan><tspan class="lcdz-s13">)</tspan></text>
+<text x="545" y="320" text-anchor="middle"><tspan class="lcdz-s13">düşük yarım bayt (</tspan><tspan class="lcdz-mono">0x1</tspan><tspan class="lcdz-s13">)</tspan></text>
+<text class="lcdz-b" x="16" y="372">LCD</text>
+<text class="lcdz-s13 lcdz-mut" x="48" y="372">meşgul (BF = 1)</text>
+<rect class="lcdz-bar" x="590" y="352" width="150" height="30" rx="0"/>
+<text class="lcdz-s13 lcdz-b" x="665" y="372" text-anchor="middle">yürütme süresi ≈ 40 µs</text>
+<text class="lcdz-s13" x="16" y="414">R/W topraklı olduğundan BF okunmaz; yazılım bu süre boyunca bekler.</text>
+<text class="lcdz-s13 lcdz-mut" x="16" y="433">Düşük yarım bayt da RS = 1 iken gönderilir; RS iki darbe boyunca değişmez.</text>
+</svg>

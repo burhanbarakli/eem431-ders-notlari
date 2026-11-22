@@ -1,0 +1,919 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LCD — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad ile HD44780 tabanlı 16x2 karakter LCD'nin 4 bitlik kipte GPIO ile sürülmesi: pinler, yazma döngüsü, komut seti, DDRAM adresleri, başlatma, API'siz ve TivaWare API'li sürücüler, sayı ve özel karakter yazdırma, TI Experiment 9.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 3. LCD</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#modul">1. LCD modülü ve HD44780</a><ol>
+  <li><a href="#registerlar">IR, DR, BF ve AC</a></li>
+  <li><a href="#bellekler">DDRAM, CGROM, CGRAM</a></li></ol></li>
+<li><a href="#pinler">2. Pinler</a><ol>
+  <li><a href="#pin-tablosu">16 pinin görevleri</a></li>
+  <li><a href="#rs-rw">RS ve R/W</a></li></ol></li>
+<li><a href="#baglanti">3. LaunchPad bağlantısı</a><ol>
+  <li><a href="#neden-4bit">Neden 4 bit, neden R/W toprakta</a></li>
+  <li><a href="#seviyeler">3,3 V ve 5 V</a></li>
+  <li><a href="#kopru">PB6/PB7 ve PD0/PD1 köprüsü</a></li></ol></li>
+<li><a href="#yazma">4. Yazma döngüsü</a><ol>
+  <li><a href="#yarim-bayt">4 bitlik kipte yarım baytlar</a></li>
+  <li><a href="#maskeli">Maskeli DATA ile yazma</a></li></ol></li>
+<li><a href="#komutlar">5. Komut seti</a><ol>
+  <li><a href="#komut-tablosu">Komut tablosu</a></li>
+  <li><a href="#hazir">Sık kullanılan değerler</a></li></ol></li>
+<li><a href="#ddram">6. DDRAM adresleri ve imleç</a></li>
+<li><a href="#baslatma">7. Başlatma</a><ol>
+  <li><a href="#adimlar">12 adım</a></li>
+  <li><a href="#neden-3x">Neden üç kez 0x3?</a></li>
+  <li><a href="#sureler">Süreler ve kaynakları</a></li>
+  <li><a href="#bekleme">Bekleme fonksiyonu</a></li>
+  <li><a href="#api-tablosu">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#ornekler">8. Örnekler</a><ol>
+  <li><a href="#ornek-apisiz">8.1 API'siz sürücü</a></li>
+  <li><a href="#ornek-apili">8.2 API'li sürücü</a></li>
+  <li><a href="#ders-kodlari">8.3 Dersteki kodlar ve hataları</a></li>
+  <li><a href="#ornek-sayi">8.4 Sayı yazdırma</a></li>
+  <li><a href="#ornek-cgram">8.5 Özel karakter (CGRAM)</a></li></ol></li>
+<li><a href="#bf">9. Meşgul bayrağı</a></li>
+<li><a href="#exp9">10. Experiment 9 uyarlaması</a></li>
+<li><a href="#hatalar">11. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">12. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">13. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>Karakter LCD (HD44780)</h1>
+<p class="lead">16×2 karakter LCD, bir mikrodenetleyicinin kullanıcıya metin göstermesinin en ucuz yoludur. Modülün içinde HD44780 uyumlu bir denetleyici bulunur. Bu denetleyiciye birkaç GPIO pini üzerinden komut ve karakter kodu gönderilir. Bu notta LCD'yi LaunchPad'in Port B'sine 6 pinle bağlayıp 4 bitlik kipte süreceğiz: yazma döngüsü, komut seti, DDRAM adresleri, başlatma sırası, register düzeyinde ve TivaWare ile sürücüler, sayı ve özel karakter yazdırma. GPIO register'ları ve adres maskeleme <a href="../gpio/">GPIO notunda</a> anlatıldığı için burada yalnızca kullanılıyor.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>LCD modülünün içindeki HD44780 denetleyicisinin yapısını (komut register'ı IR, veri register'ı DR, meşgul bayrağı BF, adres sayacı AC, DDRAM, CGROM, CGRAM) açıklayabilir; RS ve R/W'nin dört birleşimini sayabilir.</li>
+<li>16×2 LCD'yi LaunchPad'e 6 GPIO pini ile (PB0 = RS, PB1 = E, PB4–PB7 = D4–D7, R/W = GND) bağlayabilir; 3,3 V / 5 V seviyelerini, PB0/PB1'in 5 V'a dayanıklı olmadığını ve PB6/PB7–PD0/PD1 köprüsünü göz önüne alabilir.</li>
+<li>Bir baytı 4 bitlik kipte iki yarım bayt hâlinde yazabilir: veriyi koy → RS → E = 1 → E = 0 (düşen kenarda alınır) → yürütme süresi kadar bekle.</li>
+<li>Komut baytlarını bit alanlarından kurabilir (0x28, 0x06, 0x0C, 0x01, 0x80 | adres, 0x40 | adres…) ve satır/sütundan DDRAM adresini hesaplayabilir.</li>
+<li>LCD'yi 12 adımlı 4 bitlik başlatma sırasıyla başlatabilir; üç kez 0x3 gönderilmesinin ve 0x2 yarım baytının nedenini açıklayabilir; <code>SysCtlDelay</code> parametresini verilen saat ve süre için hesaplayabilir.</li>
+<li>Aynı sürücüyü register erişimiyle ve TivaWare fonksiyonlarıyla yazabilir; metin, tamsayı ve CGRAM'a yüklenmiş özel karakterleri ekranda gösterebilir.</li>
+</ol></div>
+
+<h2 id="modul">1. LCD modülü ve HD44780</h2>
+<p>Karakter LCD modülü yalnızca bir cam panel değildir. Kartın arkasında, paneli satır ve sütun sürücüleriyle tarayan, kendi belleği ve komut çözücüsü olan bir denetleyici bulunur. Dersin LCD föyündeki tanımıyla modül, kendine ait bir mikroişlemcisi, RAM ve ROM'ları olan bir cihazdır. Hitachi'nin HD44780U yongası bu işin standardı hâline gelmiştir. Farklı üreticilerin modülleri de aynı komut setini ve erişim protokolünü kullanır. Mikrodenetleyici yalnızca komut ve karakter kodlarını gönderir. Panelin taranmasını ve karakterin noktalara çevrilmesini denetleyici kendisi yapar.</p>
+<figure><img class="fig" src="../img/lcd-modul-blok.svg" alt="LCD modülünün içi: MCU'dan RS, R/W, E ve DB7–DB0 hatları HD44780'e gelir; içeride komut register'ı IR, veri register'ı DR, meşgul bayrağı ve adres sayacı, 80 baytlık DDRAM, CGROM ve 8 karakterlik CGRAM; segment ve ortak sürücüler 16x2 paneli sürer; V0 kontrast potu ve arka ışık"><figcaption><b>Şekil 1.</b> LCD modülünün iç yapısı. MCU'dan gelen RS, R/W, E ve DB7–DB0 hatları HD44780'e girer. RS, baytın komut register'ına (IR) mı veri register'ına (DR) mı gideceğini seçer. DR'ye yazılan bayt, adres sayacının (AC) gösterdiği DDRAM ya da CGRAM adresine gider. Karakter kodu CGROM'da (hazır karakterler) ya da CGRAM'da (kullanıcının 8 karakteri) nokta desenine çevrilir ve segment/ortak sürücüler 16×2 paneli tarar. V0 ucundaki pot kontrastı, A/K uçları arka ışığı besler.</figcaption></figure>
+
+<h3 id="registerlar">IR, DR, BF ve AC</h3>
+<ul>
+<li><b>IR (instruction register, komut register'ı):</b> RS = 0 iken yazılan bayt buraya gelir ve bir komut olarak çözülür: ekranı sil, imleci taşı, kipi ayarla gibi.</li>
+<li><b>DR (data register, veri register'ı):</b> RS = 1 iken yazılan bayt buraya gelir. Denetleyici bu baytı AC'nin gösterdiği DDRAM (ya da CGRAM) adresine yazar ve AC'yi giriş kipine göre bir artırır ya da azaltır.</li>
+<li><b>BF (busy flag, meşgul bayrağı):</b> Denetleyici bir komutu yürütürken BF = 1'dir ve yeni komut kabul edilmez. BF yalnızca okuma ile (RS = 0, R/W = 1) DB7'den öğrenilebilir. Dersteki bağlantıda R/W toprakta olduğu için BF okunmaz, her komuttan sonra en kötü durum süresi kadar beklenir (<a href="#bf">Bölüm 9</a>).</li>
+<li><b>AC (address counter, adres sayacı):</b> Bir sonraki karakterin yazılacağı DDRAM ya da CGRAM adresidir. DDRAM ve CGRAM adres komutları AC'yi doğrudan ayarlar. Ekrandaki imleç AC'nin gösterdiği yerde durur.</li>
+</ul>
+
+<h3 id="bellekler">DDRAM, CGROM, CGRAM</h3>
+<ul>
+<li><b>DDRAM (Display Data RAM):</b> Ekranda gösterilecek karakter kodlarını tutan 80 baytlık bellek. 16×2 ekran bunu her biri 40 karakterlik iki sanal satır olarak kullanır. Ekranda her satırın 16 karakterlik bir penceresi görünür (<a href="#ddram">Bölüm 6</a>).</li>
+<li><b>CGROM (Character Generator ROM):</b> Karakter kodunu 5×8 noktalık desene çeviren hazır tablo. Föye göre 192 karakter içerir (HD44780U'nun A00 tablosunda 208 adet 5×8 ve 32 adet 5×10 desen vardır): ASCII karakterleri kendi kodlarıyla seçilir ('A' = 0x41), geri kalanı Japon kana ve Yunan harfleri gibi özel karakterlerdir. Türkçe ç, ğ, ı, ö, ş, ü harfleri tabloda yoksa CGRAM ile tanımlanır.</li>
+<li><b>CGRAM (Character Generator RAM):</b> Kullanıcının tanımladığı 8 karakterlik desen belleği. Bu karakterler 0–7 kodlarıyla gösterilir (<a href="#ornek-cgram">Bölüm 8.5</a>). Desenler RAM'de durduğu için LCD'nin beslemesi kesilince silinir. Her açılışta yeniden yüklenmeleri gerekir.</li>
+</ul>
+
+<h2 id="pinler">2. Pinler</h2>
+<h3 id="pin-tablosu">16 pinin görevleri</h3>
+<p>Modüllerin çoğunda tek sıra 16 pin vardır. İlk 14 pin denetleyicinin arayüzüdür, 15 ve 16 arka ışığın LED'ini besler (dersin LCD föyü, Tablo 2). Sıra, arka ışıklı yaygın modüllerdeki sıradır. Arka ışık pinlerinin yeri ve gereken akım sınırlama direnci modülden modüle değişebilir, kendi modülünüzün veri sayfasına bakın.</p>
+<table>
+<thead><tr><th>No</th><th>Ad</th><th>Görev</th><th>LaunchPad bağlantısı</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>VSS</td><td>Toprak</td><td>GND</td></tr>
+<tr><td>2</td><td>VDD</td><td>+5 V besleme</td><td>VBUS (J3.01, 5,0 V)</td></tr>
+<tr><td>3</td><td>V0 (VEE)</td><td>Kontrast gerilimi; değeri en çok VDD olabilir</td><td>10 kΩ potun orta ucu (uçlar VDD ve GND)</td></tr>
+<tr><td>4</td><td>RS</td><td>Register seçimi: 0 = komut (IR), 1 = veri (DR)</td><td>PB0</td></tr>
+<tr><td>5</td><td>R/W</td><td>0 = yazma, 1 = okuma</td><td>GND (yalnız yazma)</td></tr>
+<tr><td>6</td><td>E</td><td>Enable: veri E'nin düşen kenarında alınır</td><td>PB1</td></tr>
+<tr><td>7–10</td><td>DB0–DB3</td><td>Veri yolunun düşük yarısı (yalnız 8 bitlik kipte)</td><td>Boş</td></tr>
+<tr><td>11–14</td><td>DB4–DB7</td><td>Veri yolunun yüksek yarısı; DB7 okumada BF'dir</td><td>PB4–PB7</td></tr>
+<tr><td>15</td><td>A (LED+)</td><td>Arka ışık anodu</td><td>+5 V (modülde direnç yoksa seri dirençle)</td></tr>
+<tr><td>16</td><td>K (LED−)</td><td>Arka ışık katodu</td><td>GND</td></tr>
+</tbody></table>
+<p>Dersin LCD föyündeki Tablo 2'de 15. ve 16. pinin ikisi de "LEDA" diye yazılmıştır. 16. pin katottur (LEDK, "Işık 0V").</p>
+
+<h3 id="rs-rw">RS ve R/W</h3>
+<p>RS ve R/W birlikte dört işlemden birini seçer (Experiment 9 föyü ve dersin LCD föyü):</p>
+<table>
+<thead><tr><th>RS</th><th>R/W</th><th>İşlem</th><th>DB7–DB0</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0</td><td>Komut yaz (IR)</td><td>MCU → LCD: komut baytı</td></tr>
+<tr><td>0</td><td>1</td><td>Meşgul bayrağını ve adres sayacını oku</td><td>LCD → MCU: DB7 = BF, DB6–DB0 = AC</td></tr>
+<tr><td>1</td><td>0</td><td>Veri yaz (DR → DDRAM/CGRAM)</td><td>MCU → LCD: karakter kodu ya da desen satırı</td></tr>
+<tr><td>1</td><td>1</td><td>Veri oku (DDRAM/CGRAM → DR)</td><td>LCD → MCU: AC'deki bayt</td></tr>
+</tbody></table>
+<p>R/W = 1 iken veri hattını <b>LCD sürer</b>. Bu yüzden okuma yapılacaksa MCU'nun veri pinleri önce giriş yapılmalıdır. Aksi hâlde iki çıkış aynı hatta birbirine karşı sürer.</p>
+
+<h2 id="baglanti">3. LaunchPad bağlantısı</h2>
+<p>Dersteki kodların hepsi aynı bağlantıyı kullanır (<code>lcd.h</code> dosyalarındaki tanımlar): PB0 = RS, PB1 = E, PB4–PB7 = D4–D7, R/W toprakta. Yalnız <code>drive_lcd2</code> RS/R/W/E'yi Port E'ye (PE1/PE2/PE3) taşır (<a href="#ders-lcd2">8.3</a>).</p>
+<figure><img class="fig" src="../img/lcd-baglanti.svg" alt="LaunchPad ile LCD kablolaması: PB0'dan RS'ye, PB1'den E'ye, PB4–PB7'den D4–D7'ye; R/W ve VSS toprağa, VDD VBUS 5 V'a, V0 10 kΩ potun orta ucuna; D0–D3 boş; A ve K arka ışık; kart üstünde PB6–PD0 R9 ve PB7–PD1 R10 ile bağlı"><figcaption><b>Şekil 2.</b> LaunchPad ile LCD arasındaki bağlantı: PB0 → RS, PB1 → E, PB4–PB7 → D4–D7; R/W ve VSS toprakta, VDD VBUS'ta (+5 V), V0 10 kΩ potun orta ucunda, D0–D3 boş. Bazı modüllerde arka ışığın A ucuna dış akım sınırlama direnci gerekir; kart üstünde PB6–PD0 (R9) ve PB7–PD1 (R10) bağlıdır.</figcaption></figure>
+
+<h3 id="neden-4bit">Neden 4 bit, neden R/W toprakta</h3>
+<ul>
+<li><b>4 bit:</b> HD44780, DL = 0 seçilirse bir baytı DB7–DB4 üzerinden iki yarım bayt (nibble) hâlinde alır. Böylece 8 bitlik bağlantının 10 pini (R/W toprakta) yerine 6 pin yeter. Bedeli, her baytın iki E darbesi sürmesidir (föy: "iletişim süresini iki kat uzatır"). Bu süre zaten komut yürütme süresinin (≈ 40 µs) yanında çok kısadır.</li>
+<li><b>D4–D7 → PB4–PB7:</b> Yüksek yarım bayt baytın 7–4. bitlerinde durur ve pinlerin bit numaralarıyla örtüşür. Bu sayede <code>c &amp; 0xF0</code> doğrudan pinlere yazılır, düşük yarım bayt için de yalnızca <code>(c &amp; 0x0F) &lt;&lt; 4</code> kaydırması gerekir.</li>
+<li><b>R/W toprakta:</b> LCD her zaman yazma kipindedir ve veri hattını hiçbir zaman sürmez. Bir pin kazanılır, hat çakışması ve 5 V'un MCU'ya geri gelmesi riski de ortadan kalkar. Bedeli: BF okunamaz, her komuttan sonra sabit süre beklenir. R/W boşta bırakılmamalıdır: HD44780U'da R/W'de (ve RS ile DB0–DB7'de) iç pull-up vardır, E'de yoktur (veri sayfası s. 51, 54). Boşta kalan R/W 1 okunur, LCD okuma kipinde kalır ve veri hattını sürer. Uyumlu klonlarda pull-up olmayabilir, o zaman seviye belirsizdir.</li>
+</ul>
+
+<h3 id="seviyeler">3,3 V ve 5 V</h3>
+<ul>
+<li><b>Besleme:</b> Yaygın modüller 5 V ile beslenir. Experiment 9'daki gibi VDD, LaunchPad'in USB'den gelen 5 V'luk VBUS ucuna bağlanır.</li>
+<li><b>MCU → LCD:</b> TM4C123'ün GPIO çıkışı 3,3 V'luk bir sinyaldir. Garanti edilen yüksek seviye çıkış gerilimi V<sub>OH</sub> en az 2,4 V'tur (datasheet Tablo 24-6, s. 1360). HD44780U'nun giriş yüksek eşiği V<sub>IH1</sub> = 2,2 V'tur (V<sub>CC</sub> 4,5–5,5 V, veri sayfası s. 51). TM4C'nin V<sub>OH</sub> ≥ 2,4 V'u ile 0,2 V pay kalır. Uyumlu denetleyicilerde bu değer daha yüksek olabilir, kullandığınız modülün veri sayfasına bakın.</li>
+<li><b>LCD → MCU:</b> R/W = 1 yapılırsa LCD veri hattını 5 V seviyesine kadar sürer. TM4C123'ün GPIO'ları giriş olarak ayarlıyken ve VDD varken 5 V'a dayanıklıdır, ancak <b>PD4, PD5, PB0 ve PB1 hariç</b>: bu dört pin 3,6 V ile sınırlıdır (datasheet §10.1, s. 649 ve §24.13.1, s. 1385). Dersteki bağlantıda PB0/PB1 RS ve E'dir. Bu iki hattı LCD hiçbir zaman sürmediği için sorun yoktur. Ama veri hattı PB0/PB1'den geçen bir bağlantıda (ör. Experiment 9'un 8 bitlik bağlantısı, D0 = PB0, D1 = PB1) R/W = 1 ile okuma yapmak bu pinlere 5 V uygular (<a href="#exp9">Bölüm 10</a>).</li>
+</ul>
+
+<h3 id="kopru">PB6/PB7 ve PD0/PD1 köprüsü</h3>
+<p>EK-TM4C123GXL kartında PB6 ile PD0, R9 üzerinden; PB7 ile PD1, R10 üzerinden birbirine bağlıdır (0 Ω'luk dirençler, MSP430 LaunchPad uyumluluğu için; kullanıcı kılavuzu SPMU296, Tablo 2-4 ve 2-5, s. 10). D6 ve D7'yi süren PB6/PB7'nin seviyesi PD0/PD1'de de görünür. Açılışta PD0/PD1 giriştir, bu yüzden sorun çıkmaz. Ama aynı programda PD0 ya da PD1 çıkış yapılırsa (ör. Experiment 9'daki gibi RS'yi PD1'e bağlamak, ya da PD0/PD1'i SSI/I2C/PWM işlevine almak) iki çıkış birbirine karşı sürer. Bu durumda ya PD0/PD1 kullanılmaz ya da R9/R10 sökülür.</p>
+
+<h2 id="yazma">4. Yazma döngüsü</h2>
+<p>LCD'ye bir bayt yazmak, E hattına bir darbe vermektir. Föyde "0-1-0 darbesi" diye geçer. Sıra şöyledir:</p>
+<ol>
+<li>Veriyi D7–D4 (8 bitlikte D7–D0) hatlarına koy.</li>
+<li>RS'yi ayarla: komut için 0, karakter için 1. R/W zaten 0'dır. Ders kodlarının bir kısmı önce RS'yi (<code>hafta05_lcdsablonogr2</code>), bir kısmı önce veriyi (<code>drive_lcd1</code>) yazar. İkisi de E yükselmeden önce bittiği için fark etmez.</li>
+<li>E = 1 yap. RS ve veri E yükselmeden önce kararlı olmalıdır (kurulma süresi).</li>
+<li>E = 0 yap. LCD hatlardaki değeri <b>E'nin düşen kenarında</b> alır. E'nin 1'de kalma süresi veri sayfasındaki en küçük E darbe genişliğinden kısa olmamalıdır.</li>
+<li>Komutun yürütme süresi kadar bekle: çoğu komut ve karakter yazma için ≈ 40 µs, silme ve başa dönme için ≈ 1,6 ms. Bu süre içinde gönderilen bayt kaybolabilir.</li>
+</ol>
+<figure><img class="fig" src="../img/lcd-yazma-zamanlama.svg" alt="4 bitlik kipte 'A' (0x41) karakterinin yazılışı: RS 1'de, E iki darbe; ilk darbede D7–D4 = 0100, ikincide 0001; LCD her yarım baytı E'nin düşen kenarında alır; ardından yürütme beklemesi"><figcaption><b>Şekil 3.</b> 4 bitlik kipte 'A' (0x41) yazılışı: RS ve veri → E = 1 → E = 0. Yüksek yarım bayt 0100, sonra düşük yarım bayt 0001 gider, LCD her birini E'nin düşen kenarında alır ve ardından ≈ 40 µs meşgul kalır.</figcaption></figure>
+
+<h3 id="yarim-bayt">4 bitlik kipte yarım baytlar</h3>
+<p>4 bitlik kipte her bayt <b>önce yüksek, sonra düşük</b> yarım bayt olarak gider. LCD iki yarım baytı birleştirip tek bir bayt olarak işler. 'A' = 0x41 = 0100 0001 için:</p>
+<table>
+<thead><tr><th>Darbe</th><th>İfade</th><th>PB7–PB4 (D7–D4)</th></tr></thead>
+<tbody>
+<tr><td>1. E darbesi</td><td><code>0x41 &amp; 0xF0</code> = <code>0x40</code></td><td>0100</td></tr>
+<tr><td>2. E darbesi</td><td><code>(0x41 &amp; 0x0F) &lt;&lt; 4</code> = <code>0x10</code></td><td>0001</td></tr>
+</tbody></table>
+<p>LCD her E darbesinde sayacını bir ilerletir ve iki darbede bir bayt tamamlar. Bu sayaç yalnızca darbeleri sayar. Bir yarım bayt eksik ya da fazla giderse sonraki bütün baytlar yarım bayt kayar: her baytın düşük yarısı bir sonrakinin yüksek yarısıyla birleşir ve ekrana anlamsız şeyler gelir. Sıra ters gönderilirse 'A' (0x41) yerine 0x14 kodlu karakter yazılır. Başlatmadaki 0x2 yarım baytı bu yüzden önemlidir (<a href="#ders-lcd1">8.3</a>).</p>
+
+<h3 id="maskeli">Maskeli DATA ile yazma</h3>
+<p>Yalnız PB4–PB7'yi değiştirip PB0 (RS) ve PB1'e (E) dokunmamak için GPIODATA'nın <a href="../gpio/#maskeleme">adres maskelemesi</a> kullanılır: adres = taban + (maske &lt;&lt; 2). Port B'nin APB tabanı <code>0x40005000</code>'dir (<code>inc/hw_memmap.h</code>: <code>GPIO_PORTB_BASE</code>).</p>
+<table>
+<thead><tr><th>Hedef pinler</th><th>Maske</th><th>Adres</th><th>C ifadesi</th></tr></thead>
+<tbody>
+<tr><td>PB0 (RS)</td><td>0x01</td><td><code>0x40005004</code></td><td><code>GPIO_PORTB_DATA_BITS_R[0x01]</code></td></tr>
+<tr><td>PB1 (E)</td><td>0x02</td><td><code>0x40005008</code></td><td><code>GPIO_PORTB_DATA_BITS_R[0x02]</code></td></tr>
+<tr><td>PB4–PB7 (D4–D7)</td><td>0xF0</td><td><code>0x400053C0</code></td><td><code>GPIO_PORTB_DATA_BITS_R[0xF0]</code></td></tr>
+<tr><td>Bütün port</td><td>0xFF</td><td><code>0x400053FC</code></td><td><code>GPIO_PORTB_DATA_R</code></td></tr>
+</tbody></table>
+<p><code>inc/tm4c123gh6pm.h</code>, <code>GPIO_PORTB_DATA_BITS_R</code>'yi <code>((volatile uint32_t *)0x40005000)</code> olarak tanımlar. Dizinin her elemanı 4 bayt olduğundan <code>[0xF0]</code> elemanı <code>0x40005000 + 0xF0·4 = 0x400053C0</code> adresidir. Aynı adres elle de yazılabilir: <code>(*((volatile uint32_t *)(0x40005000 + (0xF0 &lt;&lt; 2))))</code>. Bu adrese <code>0x41</code> yazılırsa yalnız bit7–4 değişir, PB0 ve PB1 olduğu gibi kalır. TivaWare'deki <code>GPIOPinWrite(GPIO_PORTB_BASE, 0xF0, d)</code> çağrısı da tam olarak budur.</p>
+
+<h2 id="komutlar">5. Komut seti</h2>
+<h3 id="komut-tablosu">Komut tablosu</h3>
+<p>Komut baytının en soldaki 1 biti komutun türünü belirler, sağındaki bitler seçeneklerdir. Tablo dersin LCD föyündeki Tablo 4 ve 5'in, Experiment 9 föyündeki komut listesinin ve HD44780U veri sayfasının birleşimidir. "*" önemsiz bittir. Süreler föydendir (HD44780U değerleri için <a href="#sureler">7.3</a>).</p>
+<table>
+<thead><tr><th>Komut</th><th>DB7–DB0</th><th>Değer</th><th>Bitler</th><th>Süre</th></tr></thead>
+<tbody>
+<tr><td>Ekranı sil (clear)</td><td><code>0000 0001</code></td><td><code>0x01</code></td><td>DDRAM'ı boşlukla doldurur, AC = 0, I/D = 1</td><td>1,64 ms</td></tr>
+<tr><td>Başa dön (return home)</td><td><code>0000 001*</code></td><td><code>0x02</code></td><td>AC = 0, kaydırılmış ekranı geri alır; DDRAM değişmez</td><td>1,64 ms</td></tr>
+<tr><td>Giriş kipi (entry mode)</td><td><code>0000 01 I/D S</code></td><td><code>0x04</code>–<code>0x07</code></td><td>I/D: 1 = AC artar (imleç sağa), 0 = azalır. S: 1 = her yazmada ekran kayar</td><td>40 µs</td></tr>
+<tr><td>Ekran aç/kapa (display control)</td><td><code>0000 1 D C B</code></td><td><code>0x08</code>–<code>0x0F</code></td><td>D: ekran, C: imleç (alt çizgi), B: imleç yanıp sönmesi</td><td>40 µs</td></tr>
+<tr><td>İmleç/ekran kaydır (shift)</td><td><code>0001 S/C R/L **</code></td><td><code>0x10</code>–<code>0x1F</code></td><td>S/C: 1 = ekranı (yazıyı), 0 = imleci kaydır. R/L: 1 = sağa, 0 = sola</td><td>40 µs</td></tr>
+<tr><td>Fonksiyon ayarı (function set)</td><td><code>001 DL N F **</code></td><td><code>0x20</code>–<code>0x3F</code></td><td>DL: 1 = 8 bit, 0 = 4 bit. N: 1 = 2 satır, 0 = 1 satır. F: 1 = 5×10, 0 = 5×8 nokta</td><td>40 µs</td></tr>
+<tr><td>CGRAM adresi</td><td><code>01 A5–A0</code></td><td><code>0x40 | adres</code></td><td>AC'yi CGRAM'a yöneltir; adres = karakter no × 8 + satır</td><td>40 µs</td></tr>
+<tr><td>DDRAM adresi</td><td><code>1 A6–A0</code></td><td><code>0x80 | adres</code></td><td>AC'yi DDRAM'a yöneltir: imleci konumlar</td><td>40 µs</td></tr>
+<tr><td>BF ve AC oku (RS = 0, R/W = 1)</td><td><code>BF AC6–AC0</code></td><td>—</td><td>DB7 = meşgul bayrağı</td><td>0</td></tr>
+<tr><td>Veri yaz (RS = 1)</td><td>karakter kodu</td><td>—</td><td>AC'deki DDRAM/CGRAM adresine yazar</td><td>40 µs</td></tr>
+</tbody></table>
+<p>Föy F bitini "5x7 / 5x10 pixel" diye verir. 5×8'lik karakter kutusunun alt satırı imlece ayrıldığı için 5×7 ile 5×8 aynı yazı tipidir. Föyün başa dön satırındaki 1,64 ms HD44780U veri sayfasında 1,52 ms'dir. Experiment 9 föyü her komutun ardından 39 µs bekler.</p>
+
+<h3 id="hazir">Sık kullanılan değerler</h3>
+<table>
+<thead><tr><th>Değer</th><th>Anlamı</th><th>Bit açılımı</th></tr></thead>
+<tbody>
+<tr><td><code>0x28</code></td><td>4 bit, 2 satır, 5×8</td><td>001 DL=0 N=1 F=0 00</td></tr>
+<tr><td><code>0x38</code></td><td>8 bit, 2 satır, 5×8</td><td>001 DL=1 N=1 F=0 00</td></tr>
+<tr><td><code>0x06</code></td><td>İmleç sağa, ekran kaymaz</td><td>0000 01 I/D=1 S=0</td></tr>
+<tr><td><code>0x08</code></td><td>Ekran kapalı (DDRAM korunur)</td><td>0000 1 D=0 C=0 B=0</td></tr>
+<tr><td><code>0x0C</code></td><td>Ekran açık, imleç yok</td><td>0000 1 D=1 C=0 B=0</td></tr>
+<tr><td><code>0x0E</code></td><td>Ekran açık, imleç alt çizgi</td><td>0000 1 D=1 C=1 B=0</td></tr>
+<tr><td><code>0x0F</code></td><td>Ekran açık, imleç yanıp söner</td><td>0000 1 D=1 C=1 B=1</td></tr>
+<tr><td><code>0x01</code></td><td>Ekranı sil, imleç başa</td><td>—</td></tr>
+<tr><td><code>0x80</code> / <code>0xC0</code></td><td>1. / 2. satırın başı</td><td>1 + adres 0x00 / 0x40</td></tr>
+<tr><td><code>0x18</code> / <code>0x1C</code></td><td>Yazı sola / sağa kayar (pencere bir sütun sağa / sola gider)</td><td>0001 S/C=1 R/L=0 / 1</td></tr>
+<tr><td><code>0x10</code> / <code>0x14</code></td><td>İmleci sola / sağa taşı</td><td>0001 S/C=0 R/L=0 / 1</td></tr>
+</tbody></table>
+<p><b>Giriş kipinde S'ye dikkat:</b> 0x07'de (I/D = 1, S = 1) her karakter yazıldığında bütün ekran bir sütun kayar. İmleç yerinde duruyor, yazı her harfte bir sütun sola kayıyormuş gibi görünür. Metin yazmak için 0x06 kullanılır.</p>
+
+<h2 id="ddram">6. DDRAM adresleri ve imleç</h2>
+<p>16×2 ekranda 1. satırın sütunları DDRAM'ın <code>0x00</code>–<code>0x0F</code>, 2. satırınkiler <code>0x40</code>–<code>0x4F</code> adresleridir. İkinci satır 0x10'dan değil 0x40'tan başlar. İmleci bir yere götürmek için "DDRAM adresi" komutu gönderilir: komut = <code>0x80 | adres</code>. Bu yüzden satır başları <code>0x80</code> ve <code>0xC0</code>'dır.</p>
+<figure><img class="fig" src="../img/lcd-ddram-adres.svg" alt="16x2 ızgara: birinci satır adresleri 0x00–0x0F, ikinci satır 0x40–0x4F; DDRAM adres komutu 0x80 ile adresin VEYA'sı, satır başları 0x80 ve 0xC0; her satır 40 karakterlik sanal satırdır (0x00–0x27 ve 0x40–0x67), ekran 16 karakterlik pencereyi gösterir"><figcaption><b>Şekil 4.</b> 16×2 LCD'nin DDRAM adresleri. Görünen pencere 1. satırda 0x00–0x0F, 2. satırda 0x40–0x4F'dir. Her satır aslında 40 karakterlik bir sanal satırdır (0x00–0x27 ve 0x40–0x67). Ekran bunun 16 karakterlik penceresini gösterir. 0x18 ile yazı sola kayar (pencere bir sütun sağa gider), 0x1C ile yazı sağa kayar. İmleç, DDRAM adres komutuyla (0x80 | adres) konumlanır: gotoxy(2,4) → adres 0x43 → komut 0xC3.</figcaption></figure>
+<p>Satır 1–2 ve sütun 1–16 (1'den sayarak) için:</p>
+<pre><code class="language-c">adres = (satir == 1 ? 0x00 : 0x40) + (sutun - 1);
+komut = 0x80 | adres;          // (1,1) -&gt; 0x80, (1,4) -&gt; 0x83, (2,4) -&gt; 0x43 -&gt; 0xC3</code></pre>
+<p>Dersin föyündeki ADuC841 örneği birinci satırın 4. sütununa <code>0x83</code>, ikinci satırın 2. sütununa <code>0xC1</code> ile gider. Dersteki <code>lcdgotoxy</code> ve <code>Lcd_Goto</code> fonksiyonları aynı hesabı <code>0x80+((y-1)%16)</code> ve <code>0xC0+((y-1)%16)</code> ile yapar. <code>%16</code>, 16'dan büyük sütunu satırın başına sardırır. <code>drive_lcd2</code>'deki <code>satir_sutun</code> ise 1. satır için <code>0x7F + sutun</code> kullanır. Bu, 0x80 + (sutun − 1)'in kısaltılmış yazılışıdır.</p>
+<ul>
+<li>Yazılan her karakter AC'yi bir artırır (I/D = 1). 16. sütundan sonra yazılanlar ikinci satıra geçmez, 1. satırın görünmeyen 0x10–0x27 bölgesine gider. Föyün örneğinde 40 karakterlik bir dizinin yalnızca ilk 16'sı görünür.</li>
+<li>İkinci satıra geçmek için <code>0xC0</code> komutu açıkça gönderilir.</li>
+<li>Kaydırma komutlarında kayan şey yazıdır: <code>0x18</code> ile bütün satırların yazısı bir sütun sola kayar, yani pencere sanal satır üzerinde bir sütun sağa gider. <code>0x1C</code> tersini yapar. Föydeki "ekran bir karakter sağa kayacak ve 9 karakteri gizlenecektir" ifadesi pencerenin sağa kaymasını, yani yazının sola kaymasını anlatır. DDRAM içeriği ve AC değişmez.</li>
+<li><code>hafta05_lcdsablonogr1</code>'in başlığındaki yorumlar (<code>1,5 → 85</code>, <code>2,7 → c7</code>) sütunu 0'dan sayar. <code>hafta05_lcdsablonogr2</code>'deki <code>lcdgotoxy</code> ise 1'den sayar: (1,5) → 0x84. Sürücüyü yazarken hangisinin kullanıldığına karar verip tutarlı olun.</li>
+</ul>
+
+<h2 id="baslatma">7. Başlatma</h2>
+<p>HD44780U beslemesi geldiğinde iç sıfırlama devresiyle kendini sıfırlar ve 8 bitlik kipte, tek satırlı ve ekranı kapalı olarak açılır. Bu iç sıfırlama ancak besleme veri sayfasındaki koşullarla yükselirse çalışır. Ayrıca LaunchPad'in RESET düğmesine basıldığında yalnız MCU yeniden başlar, LCD'nin beslemesi kesilmez ve LCD önceki programın bıraktığı kipte (çoğu zaman 4 bitte) kalır. Bu yüzden sürücü LCD'nin durumunu bilmediğini varsayar ve onu yazılımla bilinen bir kipe getirir. HD44780U veri sayfası bunun için "talimatla başlatma" (initialization by instruction) akışını verir. Aşağıdaki 12 adım bu akışın 4 bitlik sürümüdür. Veri sayfasının akışı 11. adımda biter, 12. adım ekranı açar. Bu not için hazırlanan 4 bitlik sürücüler ve Şekil 5 aynı numaraları kullanır. Adımlar üç grupta toplanır: GPIO hazırlığı (1–2), tek yarım bayt (LCD kipi henüz belirsiz, 3–7) ve tam bayt = iki yarım bayt, önce yüksek (8–12).</p>
+
+<h3 id="adimlar">12 adım</h3>
+<ol>
+<li><b>Port B saati:</b> RCGCGPIO bit1 = 1, PRGPIO bit1 = 1 olana kadar bekle (<code>SysCtlPeripheralEnable</code> + <code>SysCtlPeripheralReady</code>).</li>
+<li><b>Pinler:</b> PB0, PB1, PB4–PB7 çıkış ve dijital (GPIODIR, GPIODEN = 0xF3). Bütün port (0xFF) değil, yalnızca kullanılan pinler ayarlanır.</li>
+<li><b>RS = 0, E = 0</b>; beslemeden sonra <b>≥ 40 ms</b> bekle.</li>
+<li>D7–D4 = <b>0011 (0x3)</b>, E darbesi; <b>≥ 4,1 ms</b> bekle.</li>
+<li><b>0x3</b> ikinci kez, E darbesi; <b>≥ 100 µs</b> bekle.</li>
+<li><b>0x3</b> üçüncü kez, E darbesi; <b>≥ 40 µs</b> bekle (yürütme süresi kadar; veri sayfasının akışında açık bir değer yok).</li>
+<li><b>0x2 tek yarım bayt:</b> 4 bitlik kipe geçiş. Bu yarım bayt 8 bitlik kipte "function set, DL = 0" olarak yorumlanır. DB3–DB0 boştadır, HD44780U'da pull-up ile 1 okunur: LCD <code>0x2F</code> görür (N = 1, F = 1).</li>
+<li><b>Function set 0x28</b> (DL = 0, N = 1, F = 0). N ve F'yi düzeltir. Veri sayfasına göre satır sayısı ve yazı tipi bu adımdan sonra değiştirilemez. Bundan sonra her bayt iki yarım bayt olarak gider.</li>
+<li><b>Ekran kapalı 0x08.</b></li>
+<li><b>Ekranı sil 0x01</b>; <b>≥ 1,64 ms</b> bekle.</li>
+<li><b>Giriş kipi 0x06</b> (I/D = 1, S = 0).</li>
+<li><b>Ekran açık 0x0C</b> (imleç istenirse 0x0E, yanıp sönen imleç için 0x0F).</li>
+</ol>
+<figure><img class="fig" src="../img/lcd-baslatma-akisi.svg" alt="4 bitlik LCD başlatma akışı, 12 adım: Port B saati ve PRGPIO, pinler çıkış ve dijital, RS=0 E=0 ve 40 ms bekleme, üç kez 0x3 yarım baytı ve 4,1 ms, 100 µs, 40 µs beklemeler, 0x2 ile 4 bit kipe geçiş, 0x28, 0x08, 0x01 ve 1,64 ms, 0x06, 0x0C"><figcaption><b>Şekil 5.</b> 4 bitlik başlatma akışı, üç grup: GPIO hazırlığı (1–2), tek yarım bayt (3–7), tam bayt = iki yarım bayt (8–12). Kesik çerçevedeki 12. adım veri sayfası akışının dışındadır (akış 11. adımda biter); beklemeler en küçük değerlerdir, kodda daha büyükleri kullanılır.</figcaption></figure>
+
+<h3 id="neden-3x">Neden üç kez 0x3?</h3>
+<p>İç sıfırlama çalıştıysa LCD 8 bitlik kiptedir. Çalışmadıysa ya da yalnız MCU yeniden başladıysa LCD 4 bitlik kipte olabilir ve yarım bayt sayacının nerede durduğu da bilinmez. Böylece üç durum çıkar: (a) 8 bitlik kip, (b) 4 bitlik kip, sayaç başta, (c) 4 bitlik kip, sayaç ortada (bir yarım bayt bekliyor). 0x3 yarım baytı 8 bitlik kipte <code>0x3?</code> = "function set, DL = 1" demektir:</p>
+<table>
+<thead><tr><th>Başlangıç</th><th>1. 0x3</th><th>2. 0x3</th><th>3. 0x3</th></tr></thead>
+<tbody>
+<tr><td>(a) 8 bit</td><td>8 bit kalır</td><td>8 bit kalır</td><td>8 bit kalır</td></tr>
+<tr><td>(b) 4 bit, sayaç başta</td><td>yüksek yarım bayt</td><td><code>0x33</code> → 8 bit</td><td>8 bit kalır</td></tr>
+<tr><td>(c) 4 bit, sayaç ortada</td><td>bekleyen yarımla birleşir: <code>0x?3</code> (herhangi bir komut)</td><td>yüksek yarım bayt</td><td><code>0x33</code> → 8 bit</td></tr>
+</tbody></table>
+<p>Her durumda üçüncü 0x3'ten sonra LCD kesin olarak 8 bitlik kiptedir. (c)'deki ilk birleşik bayt bekleyen yarım bayt 0 ise <code>0x03</code>, yani başa dönme (1,52 ms) olur. Bu da ilk beklemenin uzun (≥ 4,1 ms) tutulmasını haklı çıkarır. Ardından gelen tek <b>0x2</b> yarım baytı, 8 bitlik kipte "function set, DL = 0" olarak çözülür ve LCD 4 bitlik kipe geçer. Bu yarım bayt atlanırsa ne olduğunu <a href="#ders-lcd1">8.3</a>'te <code>drive_lcd1</code> üzerinde göreceğiz. 0x2'den sonraki 0x28, 0x2F ile 1'e kurulan N ve F'yi istenen değere getirir.</p>
+<p>Dersin föyü de ilk enerjiden sonra arka arkaya üç kez 30h gönderilmesini ister ve bekleme sürelerini 15 ms, 4,1 ms, 100 µs, 40 µs olarak verir.</p>
+
+<h3 id="sureler">Süreler ve kaynakları</h3>
+<table>
+<thead><tr><th>Bekleme</th><th>Dersin föyü</th><th>TI Experiment 9</th><th>HD44780U veri sayfası</th><th>Bu nottaki kod</th></tr></thead>
+<tbody>
+<tr><td>Beslemeden sonra (adım 3)</td><td>≥ 15 ms</td><td>30 ms</td><td>≥ 15 ms (V<sub>CC</sub> 4,5 V'a çıktıktan sonra) / ≥ 40 ms (2,7 V'tan sonra)</td><td>50 ms</td></tr>
+<tr><td>1. 0x3'ten sonra (4)</td><td>≥ 4,1 ms</td><td>—</td><td>≥ 4,1 ms</td><td>5 ms</td></tr>
+<tr><td>2. 0x3'ten sonra (5)</td><td>≥ 100 µs</td><td>—</td><td>≥ 100 µs</td><td>200 µs</td></tr>
+<tr><td>Çoğu komut, karakter yazma</td><td>40 µs</td><td>39 µs</td><td>37 µs</td><td>50 µs</td></tr>
+<tr><td>Silme, başa dönme</td><td>1,64 ms</td><td>1,64 ms (silme)</td><td>1,52 ms (başa dönme)</td><td>2 ms</td></tr>
+</tbody></table>
+<p>Föylerin değerleriyle veri sayfasının değerleri arasında çelişki yoktur. Föy, 5 V besleme için 15 ms'yi almıştır. Bu nottaki adım 3, beslemenin ne zaman ve nasıl yükseldiğini bilmediğimiz için büyük olanı (40 ms) esas alır. Hitachi'nin süreleri denetleyicinin 270 kHz'lik iç osilatörü içindir. Osilatör frekansı değiştikçe süreler de değişir, farklı üreticilerin uyumlu denetleyicileri (klonlar) ise başka süreler verebilir. Bu yüzden kodda bütün beklemeler en küçük değerlerin üstünde, güvenli (büyük) değerlerle yazılmıştır. Uzun beklemek yalnızca yazıyı biraz yavaşlatır, kısa beklemek ise baytları kaybettirir.</p>
+
+<h3 id="bekleme">Bekleme fonksiyonu</h3>
+<p>TivaWare'in <code>SysCtlDelay(n)</code> fonksiyonu <code>subs r0, #1</code> / <code>bne</code> / <code>bx lr</code> üçlüsünden oluşan bir döngüdür. Her turu 3 komut çevrimidir, bu yüzden süre ≈ 3·n / f<sub>sys</sub> olur (<code>driverlib/sysctl.c</code>). TivaWare'in kendi açıklaması bunun kesin bir zamanlama olmadığını belirtir: flaş bekleme durumları, ön getirme (prefetch) tamponu ve araya giren kesmeler süreyi uzatır. LCD için yalnızca <b>en az</b> süre önemli olduğundan bu sakınca yaratmaz. Verilen bir t süresi için n = t · f<sub>sys</sub> / 3, yukarı yuvarlanır:</p>
+<table>
+<thead><tr><th>Süre</th><th>16 MHz (PIOSC, saat ayarı yok)</th><th>50 MHz (PLL, SYSDIV_4)</th></tr></thead>
+<tbody>
+<tr><td>1 µs</td><td>6</td><td>17</td></tr>
+<tr><td>40 µs</td><td>214</td><td>667</td></tr>
+<tr><td>100 µs</td><td>534</td><td>1 667</td></tr>
+<tr><td>1,64 ms</td><td>8 747</td><td>27 334</td></tr>
+<tr><td>4,1 ms</td><td>21 867</td><td>68 334</td></tr>
+<tr><td>40 ms</td><td>213 334</td><td>666 667</td></tr>
+</tbody></table>
+<p>Ters yönde, ders kodlarındaki değerler 50 MHz'te: <code>SysCtlDelay(10)</code> ≈ 0,6 µs, <code>(200)</code> ≈ 12 µs, <code>(2000)</code> ≈ 120 µs, <code>(10000)</code> ≈ 0,6 ms, <code>(20000)</code> ≈ 1,2 ms, <code>(50000)</code> ≈ 3 ms eder. Aynı sayılar 16 MHz'te 3,125 kat uzundur. Aynı kod saat değişince farklı süre verir. 8.2'deki sürücü bu yüzden µs başına sayıyı <code>SysCtlClockGet()</code>'ten hesaplar.</p>
+<p>API'siz örnekte <code>SysCtlDelay</code> yoktur. Onun yerine <code>volatile</code> sayaçlı kaba bir döngü kullanılır. Süresi derleyiciye ve optimizasyon düzeyine bağlıdır, ama iç döngü 16 MHz'te 1 µs'den kısa süremeyecek kadar uzundur. Kesin bekleme için zamanlayıcı kullanılır (<a href="../timer/">Zamanlayıcılar notu</a>).</p>
+
+<h3 id="api-tablosu">TivaWare karşılıkları</h3>
+<table>
+<thead><tr><th>İş</th><th>API'siz</th><th>API'li</th></tr></thead>
+<tbody>
+<tr><td>1. Port B saati</td><td><code>SYSCTL_RCGCGPIO_R |= 0x02;</code><br><code>while(!(SYSCTL_PRGPIO_R &amp; 0x02));</code></td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);</code><br><code>while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));</code></td></tr>
+<tr><td>2. Çıkış + dijital</td><td><code>GPIO_PORTB_DIR_R |= 0xF3;</code><br><code>GPIO_PORTB_DEN_R |= 0xF3;</code></td><td><code>GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, 0xF3);</code> (ayrıca 2 mA, push-pull pad ayarı yapar)</td></tr>
+<tr><td>D7–D4'e yaz</td><td><code>GPIO_PORTB_DATA_BITS_R[0xF0] = d;</code></td><td><code>GPIOPinWrite(GPIO_PORTB_BASE, 0xF0, d);</code></td></tr>
+<tr><td>E = 1 / E = 0</td><td><code>GPIO_PORTB_DATA_BITS_R[0x02] = 0x02;</code> / <code>= 0;</code></td><td><code>GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_1, GPIO_PIN_1);</code> / <code>…, 0);</code></td></tr>
+<tr><td>Bekleme</td><td><code>volatile</code> sayaçlı döngü</td><td><code>SysCtlDelay(n)</code>, n = t·f/3</td></tr>
+</tbody></table>
+<p><code>GPIOPinWrite</code>'ın üçüncü parametresi pin maskesiyle VE'lenir: E'yi 1 yapmak için <code>1</code> değil <code>GPIO_PIN_1</code> (= 2) yazılır. Ders kodlarındaki <code>GPIOPinWrite(LCDPORT, E, 0x02)</code> bu yüzden doğrudur.</p>
+
+<h2 id="ornekler">8. Örnekler</h2>
+<p>8.1, 8.2, 8.4 ve 8.5 bu not için hazırlandı ve TivaWare 2.1.4 başlıklarıyla clang ile uyarısız derlenir. 8.3 dersteki kodlardır. Hataları düzeltilmeden, uyarı kutularında gösterilir. Uyarılardaki satır numaraları ders klasöründeki özgün dosyalara göredir.</p>
+
+<h3 id="ornek-apisiz">8.1 API'siz sürücü <span class="tag reg">API'siz</span></h3>
+<p>Ders klasöründeki <code>lcdapisiz</code> boş bir şablondur: <code>lcd.h</code>'de pin tanımları ve fonksiyon adları (<code>lcdkomut</code>, <code>lcdyaz</code>, <code>lcdgotoxy</code>, <code>lcdilkayarlar</code>…) vardır, <code>lcd.c</code> ve <code>main.c</code> boştur. Aşağıdaki kod bu şablonun doldurulmuş hâli gibidir, ama tek dosyadır ve yalnız register'lar kullanılır: saat RCGCGPIO/PRGPIO ile açılır, pinler GPIODIR/GPIODEN ile ayarlanır, RS, E ve D7–D4 <a href="#maskeli">maskeli DATA adresleriyle</a> birbirinden bağımsız yazılır. <code>SysCtlClockSet</code> çağrılmadığı için CPU açılıştaki 16 MHz'lik iç osilatörle (PIOSC) çalışır. Gecikme döngüleri bu varsayımla yazılmıştır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: lcd_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// 16x2 HD44780 LCD, 4 bitlik kip, yalnız register erişimi (TivaWare yok).
+// Bağlantı: PB0 = RS, PB1 = E, PB4..PB7 = D4..D7, R/W = GND.
+// Saat ayarlanmıyor: CPU açılıştaki 16 MHz PIOSC ile çalışır.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define LCD_RS    0x01u                 // PB0
+#define LCD_E     0x02u                 // PB1
+#define LCD_VERI  0xF0u                 // PB4..PB7 = D4..D7
+
+// Maskeli DATA adresleri: yalnız maskedeki bitler yazılır (GPIO notu)
+#define RS_R    (GPIO_PORTB_DATA_BITS_R[LCD_RS])    // 0x40005004
+#define E_R     (GPIO_PORTB_DATA_BITS_R[LCD_E])     // 0x40005008
+#define VERI_R  (GPIO_PORTB_DATA_BITS_R[LCD_VERI])  // 0x400053C0
+
+// Kaba gecikme: 16 MHz'te iç döngü 1 µs'den uzun sürer (süre derleyiciye
+// bağlıdır). LCD için yalnız EN AZ süreler önemlidir; fazlası zararsızdır.
+static void bekle_us(uint32_t us)
+{
+    volatile uint32_t i;
+    while (us--)
+        for (i = 0; i &lt; 4; i++) { }
+}
+
+static void bekle_ms(uint32_t ms)
+{
+    while (ms--)
+        bekle_us(1000);
+}
+
+// d'nin üst 4 bitini D7..D4'e koy ve E darbesi ver
+static void yarim_bayt(uint8_t d)
+{
+    VERI_R = d;                 // maske 0xF0: yalnız PB4..PB7 değişir
+    E_R = LCD_E;                // E = 1
+    bekle_us(1);                // E darbe genişliği
+    E_R = 0;                    // E = 0: LCD veriyi düşen kenarda alır
+}
+
+// rs = 0: komut register'ı (IR), rs = 1: veri register'ı (DR)
+static void lcd_gonder(uint8_t bayt, uint8_t rs)
+{
+    RS_R = rs ? LCD_RS : 0;             // RS, E'den önce kurulur
+    yarim_bayt(bayt &amp; 0xF0);            // önce yüksek yarım bayt
+    yarim_bayt((uint8_t)(bayt &lt;&lt; 4));   // sonra düşük yarım bayt
+    bekle_us(50);                       // yürütme süresi (&gt;= 40 µs)
+}
+
+void lcd_komut(uint8_t k)
+{
+    lcd_gonder(k, 0);
+    if (k &lt; 0x04)                       // 0x01 sil, 0x02/0x03 başa dön
+        bekle_ms(2);                    // &gt;= 1,64 ms
+}
+
+void lcd_veri(char c)          { lcd_gonder((uint8_t)c, 1); }
+void lcd_yazi(const char *s)   { while (*s) lcd_veri(*s++); }
+
+void lcd_git(uint8_t satir, uint8_t sutun)      // satır 1-2, sütun 1-16
+{
+    uint8_t adres = (uint8_t)((satir == 1 ? 0x00 : 0x40) + (sutun - 1));
+    lcd_komut(0x80 | adres);                    // DDRAM adresi
+}
+
+void lcd_init(void)
+{
+    // 1. Port B saati (RCGCGPIO bit1), PRGPIO hazır olana kadar bekle
+    SYSCTL_RCGCGPIO_R |= 0x02;
+    while ((SYSCTL_PRGPIO_R &amp; 0x02) == 0) { }
+    // 2. Yalnız kullanılan pinler: çıkış ve dijital
+    GPIO_PORTB_DIR_R |= LCD_RS | LCD_E | LCD_VERI;
+    GPIO_PORTB_DEN_R |= LCD_RS | LCD_E | LCD_VERI;
+    // 3. RS = 0, E = 0; beslemeden sonra &gt;= 40 ms
+    RS_R = 0;
+    E_R = 0;
+    bekle_ms(50);
+    // 4.-6. 0x3 üç kez
+    yarim_bayt(0x30);  bekle_ms(5);     // &gt;= 4,1 ms
+    yarim_bayt(0x30);  bekle_us(200);   // &gt;= 100 µs
+    yarim_bayt(0x30);  bekle_us(100);   // &gt;= 40 µs
+    // 7. 0x2: 4 bitlik kipe geçiş (tek yarım bayt)
+    yarim_bayt(0x20);  bekle_us(100);
+    // 8.-12. Artık her bayt iki yarım bayt olarak gider
+    lcd_komut(0x28);    // 8. function set: DL=0, N=1, F=0
+    lcd_komut(0x08);    // 9. ekran kapalı
+    lcd_komut(0x01);    // 10. ekranı sil
+    lcd_komut(0x06);    // 11. giriş kipi: I/D=1, S=0
+    lcd_komut(0x0C);    // 12. ekran açık, imleç kapalı
+}
+
+int main(void)
+{
+    lcd_init();
+    lcd_git(1, 1);
+    lcd_yazi("EEM 431 LCD");
+    lcd_git(2, 4);
+    lcd_yazi("TM4C123");
+    while (1) { }
+}</code></pre>
+<p><code>lcd_gonder</code> baytı <code>bayt &amp; 0xF0</code> ve <code>bayt &lt;&lt; 4</code> olarak iki yarım bayta böler. Kaydırmadan sonra üst 4 bitin dışında kalan bitler maske yüzünden zaten yazılmaz. <code>lcd_komut</code>, yalnız uzun süren 0x01–0x03 komutlarından sonra ek olarak 2 ms bekler.</p>
+
+<h3 id="ornek-apili">8.2 API'li sürücü <span class="tag api">API'li</span></h3>
+<p>Dersteki API'li kodların (<a href="#ders-kodlari">8.3</a>) düzenlenmiş hâlidir. Dersteki kodlarda komut ve karakter fonksiyonları neredeyse aynıdır, yalnızca RS farklıdır. Her yarım bayt için de aynı dört satır tekrar eder. Burada tek bir <code>lcd_yarim_bayt()</code> ve tek bir <code>lcd_gonder(bayt, rs)</code> vardır, komut ve veri fonksiyonları bunları çağırır. Pinler sürücünün içinde tanımlıdır, başlık yalnızca dışarıya açık fonksiyonları bildirir:</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: lcd.h</span><span class="tag api">API'li</span></div><pre><code class="language-c">// lcd.h - 16x2 HD44780 LCD, 4 bitlik kip, TivaWare ile
+// Bağlantı: PB0 = RS, PB1 = E, PB4..PB7 = D4..D7, R/W = GND
+#ifndef LCD_H_
+#define LCD_H_
+
+#include &lt;stdint.h&gt;
+
+void lcd_init(void);                          // 12 adımlı başlatma
+void lcd_komut(uint8_t komut);                // RS = 0
+void lcd_veri(char c);                        // RS = 1
+void lcd_sil(void);                           // 0x01
+void lcd_git(uint8_t satir, uint8_t sutun);   // satır 1-2, sütun 1-16
+void lcd_yazi(const char *s);                 // '\0'a kadar
+
+#endif</code></pre>
+<div class="code-head"><span class="file">bu not için hazırlandı: lcd.c</span><span class="tag api">API'li</span></div><pre><code class="language-c">// lcd.c - 16x2 HD44780 LCD sürücüsü, 4 bitlik kip, TivaWare ile
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "lcd.h"
+
+#define LCD_PORT  GPIO_PORTB_BASE
+#define LCD_RS    GPIO_PIN_0                                        // PB0
+#define LCD_E     GPIO_PIN_1                                        // PB1
+#define LCD_VERI  (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7) // D4..D7
+
+static uint32_t us_sayisi = 6;      // 1 µs için SysCtlDelay sayısı (lcd_init hesaplar)
+
+static void bekle_us(uint32_t us)
+{
+    SysCtlDelay(us * us_sayisi);    // SysCtlDelay(n): yaklaşık 3n çevrim
+}
+
+// d'nin üst 4 bitini D7..D4'e koy, E darbesi ver (düşen kenarda kilitlenir)
+static void lcd_yarim_bayt(uint8_t d)
+{
+    GPIOPinWrite(LCD_PORT, LCD_VERI, d);    // yalnız PB4..PB7 değişir
+    GPIOPinWrite(LCD_PORT, LCD_E, LCD_E);   // E = 1
+    bekle_us(1);                            // E darbe genişliği
+    GPIOPinWrite(LCD_PORT, LCD_E, 0);       // E = 0
+}
+
+// rs = false: komut (IR), rs = true: veri (DR)
+static void lcd_gonder(uint8_t bayt, bool rs)
+{
+    GPIOPinWrite(LCD_PORT, LCD_RS, rs ? LCD_RS : 0);   // RS önce kurulur
+    lcd_yarim_bayt(bayt &amp; 0xF0);                        // yüksek yarım bayt
+    lcd_yarim_bayt((uint8_t)(bayt &lt;&lt; 4));               // düşük yarım bayt
+    bekle_us(50);                                       // yürütme (&gt;= 40 µs)
+}
+
+void lcd_komut(uint8_t komut)
+{
+    lcd_gonder(komut, false);
+    if (komut &lt; 0x04)               // 0x01 sil, 0x02/0x03 başa dön
+        bekle_us(2000);             // &gt;= 1,64 ms
+}
+
+void lcd_veri(char c)          { lcd_gonder((uint8_t)c, true); }
+void lcd_sil(void)             { lcd_komut(0x01); }
+void lcd_yazi(const char *s)   { while (*s) lcd_veri(*s++); }
+
+void lcd_git(uint8_t satir, uint8_t sutun)
+{
+    uint8_t adres = (uint8_t)((satir == 1 ? 0x00 : 0x40) + (sutun - 1));
+    lcd_komut(0x80 | adres);        // DDRAM adresini ayarla
+}
+
+void lcd_init(void)
+{
+    // 1. Port B saati, hazır olana kadar bekle
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB)) { }
+    us_sayisi = (SysCtlClockGet() + 2999999) / 3000000;   // yukarı yuvarla: 50 MHz -&gt; 17
+    // 2. Yalnız kullanılan pinler çıkış ve dijital
+    GPIOPinTypeGPIOOutput(LCD_PORT, LCD_RS | LCD_E | LCD_VERI);
+    // 3. RS = 0, E = 0; beslemeden sonra &gt;= 40 ms
+    GPIOPinWrite(LCD_PORT, LCD_RS | LCD_E, 0);
+    bekle_us(50000);
+    // 4.-6. 0x3 üç kez: LCD hangi kipte olursa olsun 8 bit kipe gelir
+    lcd_yarim_bayt(0x30);  bekle_us(5000);   // &gt;= 4,1 ms
+    lcd_yarim_bayt(0x30);  bekle_us(200);    // &gt;= 100 µs
+    lcd_yarim_bayt(0x30);  bekle_us(100);    // &gt;= 40 µs
+    // 7. 0x2: 4 bitlik kipe geçiş
+    lcd_yarim_bayt(0x20);  bekle_us(100);
+    // 8.-12.
+    lcd_komut(0x28);   // 8. function set: DL=0 (4 bit), N=1 (2 satır), F=0 (5x8)
+    lcd_komut(0x08);   // 9. ekran kapalı
+    lcd_komut(0x01);   // 10. ekranı sil
+    lcd_komut(0x06);   // 11. giriş kipi: imleç sağa, ekran kaymaz
+    lcd_komut(0x0C);   // 12. ekran açık, imleç kapalı (imleç için 0x0E/0x0F)
+}</code></pre>
+<div class="code-head"><span class="file">bu not için hazırlandı: main.c</span><span class="tag api">API'li · 50 MHz</span></div><pre><code class="language-c">// main.c - lcd.c sürücüsünü kullanır
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "driverlib/sysctl.h"
+#include "lcd.h"
+
+int main(void)
+{
+    // 400 MHz PLL / 2 / 4 = 50 MHz
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
+    lcd_init();                 // saat ayarından SONRA: gecikmeler saate göre hesaplanır
+    lcd_git(1, 1);
+    lcd_yazi("EEM 431 LCD");
+    lcd_git(2, 4);
+    lcd_yazi("TM4C123GH6PM");
+    while (1) { }
+}</code></pre>
+<ul>
+<li><b>Saatten bağımsız bekleme:</b> <code>us_sayisi</code>, <code>SysCtlClockGet()</code>'ten yukarı yuvarlanarak hesaplanır (50 MHz → 17, 16 MHz → 6). Bu yüzden <code>lcd_init</code>, <code>SysCtlClockSet</code>'ten <b>sonra</b> çağrılmalıdır.</li>
+<li><b>SysCtlPeripheralReady</b> ile PRGPIO beklenir. Yalnız kullanılan pinler (<code>LCD_RS | LCD_E | LCD_VERI</code> = 0xF3) ayarlanır.</li>
+<li><code>lcd_yazi</code> <code>const char *</code> alır. Böylece dizgi sabitleri uyarısız verilebilir.</li>
+</ul>
+
+<h3 id="ders-kodlari">8.3 Dersteki kodlar ve hataları</h3>
+<h4 id="ders-ogr2">hafta05_lcdsablonogr2 <span class="tag api">API'li</span></h4>
+<p>Derste kullanılan şablonun çalışan sürümüdür. Pin tanımları <code>lcd.h</code>'dedir (<code>rs</code> = PB0, <code>E</code> = PB1, <code>d4</code>–<code>d7</code> = PB4–PB7). Başlatma 3 × 0x30, ardından tek 0x20 yarım baytı ve dört komut gönderir:</p>
+<div class="code-head"><span class="file">hafta05_lcdsablonogr2/lcd.c (başlatma)</span><span class="tag api">API'li</span></div><pre><code class="language-c">void otuzhexgonder()
+{
+    SysCtlDelay(50000);
+    GPIOPinWrite(LCDPORT, d4|d5|d6|d7, 0x30);
+    GPIOPinWrite(LCDPORT, E, 0x02); // rs=0
+    SysCtlDelay(200);
+    GPIOPinWrite(LCDPORT, E, 0x00); // rs=0
+}
+
+void lcdilkayarlar(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); // portb aktif
+    GPIOPinTypeGPIOOutput(LCDPORT, 0xFF); // butun pinler output
+
+    GPIOPinWrite(LCDPORT, rs, 0x00); // rs=0
+    otuzhexgonder();
+    otuzhexgonder();
+    otuzhexgonder();
+
+    SysCtlDelay(50000);
+
+    GPIOPinWrite(LCDPORT, d4 | d5 | d6 | d7,  0x20 );
+    GPIOPinWrite(LCDPORT, E, 0x02);
+    SysCtlDelay(200);
+    GPIOPinWrite(LCDPORT, E, 0x00);
+
+    SysCtlDelay(50000);
+
+    LcdKomut(0x28); // dl=0 4 bit --- N=1 2 satır --- F=0 5x7 lcd
+    LcdKomut(0x06); // i/d=1 , s=0
+    LcdKomut(0x0F); // D=1, C=1, B=1
+    LcdKomut(0x01); // ekran sil
+}</code></pre>
+<p>Komut fonksiyonu yüksek ve düşük yarım baytı sırayla yazar. Her E darbesi <code>SysCtlDelay(2000)</code> (50 MHz'te ≈ 120 µs), her yarım bayttan sonraki bekleme <code>SysCtlDelay(20000)</code> (≈ 1,2 ms) sürer. Karakter yazan <code>lcdyaz</code>, RS'si 1 olan aynı fonksiyondur. <code>lcdgotoxy</code> <a href="#ddram">Bölüm 6</a>'daki hesabı yapar, <code>LcdMetinYaz</code> dizgiyi karakter karakter gönderir.</p>
+<div class="code-head"><span class="file">hafta05_lcdsablonogr2/lcd.c (LcdKomut)</span><span class="tag api">API'li</span></div><pre><code class="language-c">void LcdKomut (unsigned char c)
+{
+    GPIOPinWrite(LCDPORT, rs, 0x00); // rs=0
+    GPIOPinWrite(LCDPORT, d4|d5|d6|d7, (c &amp; 0xF0));
+    GPIOPinWrite(LCDPORT, E, 2); // rs=0
+    SysCtlDelay(2000);
+    GPIOPinWrite(LCDPORT, E, 0); // rs=0
+
+    SysCtlDelay(20000);
+
+    GPIOPinWrite(LCDPORT, rs, 0x00); // rs=0
+    GPIOPinWrite(LCDPORT, d4|d5|d6|d7, (c &amp; 0x0F)&lt;&lt;4);
+    GPIOPinWrite(LCDPORT, E, 2); // rs=0
+    SysCtlDelay(2000);
+    GPIOPinWrite(LCDPORT, E, 0); // rs=0
+
+    SysCtlDelay(20000);
+
+}</code></pre>
+<div class="code-head"><span class="file">hafta05_lcdsablonogr2/main.c</span><span class="tag api">API'li</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.c"
+
+#include "inc/tm4c123gh6pm.h"
+
+#include "lcd.h"
+
+int main(void)
+{
+   SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ| SYSCTL_OSC_MAIN);
+   lcdilkayarlar();
+   lcdgotoxy(1,1);
+   lcdyaz('+');
+
+    return 0;
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta05_lcdsablonogr2</span>
+<ul>
+<li><b>main.c, satır 8:</b> <code>#include "driverlib/sysctl.c"</code>. Bir <code>.c</code> dosyası include edilmez: fonksiyonları <code>main.c</code>'ye kopyalanır ve driverlib kitaplığındaki aynı adlarla çakışabilir. <code>sysctl.c</code>'nin getirdiği <code>inc/hw_ints.h</code> ile satır 10'daki <code>inc/tm4c123gh6pm.h</code> aynı <code>INT_…</code> makrolarını farklı tanımladığı için clang 79 "macro redefined" uyarısı verir. Satır 8 silinince uyarılar kaybolur.</li>
+<li><b>main.c, satır 21:</b> <code>return 0;</code> Gömülü programda <code>main</code>'den dönülmez, sonuna <code>while(1){}</code> konur.</li>
+<li><b>lcd.c, satır 82 ve 90:</b> <code>GPIOPinWrite(LCDPORT, rs, 0x01); // rs=0</code>. Satır RS'yi 1 yapar, yorum yanlıştır. Satır 84 ve 86 gibi E satırlarındaki <code>// rs=0</code> yorumları da E'ye aittir.</li>
+<li><b>lcd.c, satır 108:</b> <code>LcdMetinYaz</code> <code>lcd.h</code>'de bildirilmemiştir, başka bir dosyadan çağrılamaz. <b>Satır 71–77:</b> <code>lcdfonksiyonayarla</code> boştur (<a href="#alistirmalar">Alıştırma 1</a>). <b>Satır 23:</b> <code>0xFF</code> kullanılmayan PB2/PB3'ü de çıkış yapar.</li>
+<li><b>Sıra:</b> init 0x28 → 0x06 → 0x0F → 0x01 gönderir. 9. adım (0x08) yoktur ve giriş kipi ile ekran açma silmeden önce gelir. Bu sıra da çalışır.</li>
+<li><b>Bekleme süreleri (50 MHz):</b> ilk bekleme ve 0x3'ler arası <code>SysCtlDelay(50000)</code> ≈ 3 ms'dir (satır 13). Bu, adım 3'ün ≥ 15/40 ms'sinden ve adım 4'ün ≥ 4,1 ms'sinden kısadır. <code>LcdKomut(0x01)</code>'den sonra ≈ 1,2 ms beklenir ve bir sonraki komutun ilk yarım baytı ≈ 1,3 ms sonra gider. Bu da silmenin 1,64 ms'sinden kısadır.</li>
+<li><b>Doğru olan:</b> 0x20 yarım baytı (satır 32–35) vardır. <code>drive_lcd1</code> ile asıl farkı budur.</li>
+</ul></div>
+<p><b>hafta05_lcdsablonogr1</b> bu şablonun yarım hâlidir: 3 × 0x30 gönderir, sonra yalnız <code>lcdkomut(0x07)</code> ile giriş kipini ayarlar.</p>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta05_lcdsablonogr1</span>
+<ul>
+<li><b>lcd.c, satır 14 ve 16:</b> <code>driverlib/gpio.c</code> ve <code>sysctl.c</code> include edilir. <b>Satır 57:</b> <code>0xFF</code>. <b>Satır 65:</b> <code>lcdkomut(0x07)</code>: S = 1, her karakterde ekran kayar (<a href="#hazir">Bölüm 5</a>).</li>
+<li><b>0x2 yarım baytı ve 0x28 yok:</b> LCD 8 bitlik kipte kalır. <code>lcdkomut</code>'un her yarım baytı ayrı bir 8 bitlik komut olarak çözülür. Alt dört bit boştaki DB3–DB0'dan gelir, HD44780U'da pull-up ile 1111'dir.</li>
+<li><b>Tanımsız fonksiyonlar:</b> <code>main.c</code> satır 8'deki <code>LCDgit</code> (ve başlıktaki <code>LCDTemizle</code>) hiçbir yerde tanımlı değildir. Dosyalar derlenir, bağlama aşamasında hata verir. <code>lcdkarakteryaz</code> ve <code>lcdfonksiyonayarla</code> tanımlıdır, gövdeleri öğrenciye bırakılmıştır.</li>
+</ul></div>
+
+<h4 id="ders-lcd1">drive_lcd1 ve lcdeski <span class="tag api">API'li</span></h4>
+<p><code>drive_lcd1</code> (<code>Lcd_init</code>, <code>Lcd_Komut</code>, <code>Lcd_Putch</code>, <code>Lcd_Goto</code>, <code>Lcd_Puts</code>) ile <code>lcdeski</code> aynı sürücüdür. Bağlantı aynıdır, 4 bitlik ödevin yardım kodu da bu <code>Lcd_Komut</code>'tur. İki dosyanın farkı:</p>
+<div class="code-head"><span class="file">drive_lcd1/lcd.c → lcdeski/lcd.c (fark)</span><span class="tag api">API'li</span></div><pre><code class="language-plaintext">@@ ... @@
++#include "stdbool.h"
++#include "stdint.h"
+ #include "inc/hw_ints.h"
+ #include "inc/hw_types.h"
+ #include "inc/hw_memmap.h"
+@@ ... @@
+ 
+         SysCtlDelay(50000);
+ 
+-        GPIOPinWrite(LCDPORT, D4 | D5 | D6 | D7,  0x30 );
++        GPIOPinWrite(LCDPORT, D4 | D5 | D6 | D7,  0x20 );
+         GPIOPinWrite(LCDPORT, E, 0x02);
+         SysCtlDelay(10);
+         GPIOPinWrite(LCDPORT, E, 0x00);
+ 
+         SysCtlDelay(50000);
+ 
+         Lcd_Komut(0x28);
+-        Lcd_Komut(0xC0);
++        //Lcd_Komut(0xC0);
+         Lcd_Komut(0x06);
+-        Lcd_Komut(0x80);
++        //Lcd_Komut(0x80);
+         Lcd_Komut(0x0f);
+         Lcd_Temizle();</code></pre>
+<p>Üç değişiklik vardır: <code>stdint.h</code>/<code>stdbool.h</code> eklenmiş, dördüncü <code>0x30</code> yarım baytı <code>0x20</code> yapılmış, init'teki gereksiz <code>0xC0</code> ve <code>0x80</code> yoruma alınmıştır. Asıl önemli olan ikincisidir.</p>
+<div class="box warn"><span class="box-title">drive_lcd1'de 0x2 yarım baytı yok: bütün komutlar yarım bayt kayar</span>
+<p><code>drive_lcd1</code> 0x3'ü dört kez gönderir (satır 17–41) ve LCD'yi 8 bitlik kipte bırakır. Sonraki her <code>Lcd_Komut</code> iki yarım bayt gönderir. DB3–DB0 boştadır ve HD44780U'da pull-up ile 1 okunur. LCD'nin gördüğü:</p>
+<table>
+<thead><tr><th>Gönderilen</th><th>LCD'nin yorumu</th></tr></thead>
+<tbody>
+<tr><td>0x3 (dört kez)</td><td><code>0x3F</code>: function set, DL = 1. 8 bitte kalır</td></tr>
+<tr><td><code>Lcd_Komut(0x28)</code>'in yüksek yarısı 0x2</td><td><code>0x2F</code>: DL = 0, <b>4 bitlik kipe geçer</b> (N = 1, F = 1)</td></tr>
+<tr><td>0x8 + (0xC0'ın) 0xC</td><td><code>0x8C</code>: DDRAM adresi 0x0C</td></tr>
+<tr><td>0x0 + (0x06'nın) 0x0</td><td><code>0x00</code>: tanımlı bir komut değil</td></tr>
+<tr><td>0x6 + (0x80'in) 0x8</td><td><code>0x68</code>: CGRAM adresi 0x28</td></tr>
+<tr><td>0x0 + (0x0F'in) 0x0</td><td><code>0x00</code></td></tr>
+<tr><td>0xF + (0x01'in) 0x0</td><td><code>0xF0</code>: DDRAM adresi 0x70</td></tr>
+<tr><td>0x1 + (<code>main</code>'deki 0x80'in) 0x8</td><td><code>0x18</code>: yazıyı sola kaydır</td></tr>
+</tbody></table>
+<p><b>0x28, 0x06, 0x0F ve 0x01 hiçbir zaman yürütülmez.</b> LCD beslemeden yeni açıldıysa iç sıfırlamadan sonraki durum sürer: ekran kapalıdır. Yalnız RESET'e basıldıysa ekran önceki programdan açık kalabilir ve anlamsız karakterler görünür. Karakter baytları kayarak yanlış kodlara dönüşür, komut–veri sınırındaki baytlarda RS de karışır. Tek eksik yarım bayt bütün sürücüyü bozar. <code>lcdeski</code>'deki <code>0x20</code> tam bu yarım bayttır.</p></div>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: drive_lcd1 (satır numaraları drive_lcd1'e göre)</span>
+<ul>
+<li><b>lcd.c ve main.c, satır 6:</b> <code>#include "Lcd.h"</code>, ama dosyanın adı <code>lcd.h</code>'dir. Büyük/küçük harf duyarlı bir dosya sisteminde (Linux) derlenmez, clang <code>-Wnonportable-include-path</code> uyarısı verir. lcdeski'de de aynıdır.</li>
+<li><b>stdint.h/stdbool.h yok:</b> TivaWare 2.1.4 başlıkları <code>uint32_t</code> ve <code>bool</code> kullandığı için clang "unknown type name" hatası verir. lcdeski bunları ekler.</li>
+<li><b>Satır 58 ve 66:</b> yüksek yarım baytın E darbesi <code>SysCtlDelay(50000)</code> (≈ 3 ms), düşük yarımınki <code>SysCtlDelay(10)</code> (≈ 0,6 µs). Tutarsızdır, ilki gereksiz uzundur.</li>
+<li><b>Satır 101:</b> <code>Lcd_Temizle</code> silmeden sonra yalnız <code>SysCtlDelay(10)</code> bekler. Kod, <code>Lcd_Komut</code>'un sonundaki ≈ 3 ms sayesinde çalışır. <b>Satır 11:</b> <code>0xFF</code>. <b>Satır 13:</b> ilk bekleme ≈ 3 ms. <b>Satır 46, 48:</b> gereksiz 0xC0/0x80.</li>
+</ul></div>
+
+<h4 id="ders-lcd2">drive_lcd2 <span class="tag api">API'li</span></h4>
+<p>Stellaris LaunchPad (LM4F120) döneminden kalan bu sürücü RS = PE1, R/W = PE2, E = PE3 ve D4–D7 = PB4–PB7 kullanır. R/W toprağa bağlanmak yerine MCU tarafından hep 0'da tutulur. Bütün fonksiyon gövdeleri <code>lcd.h</code>'dedir ve başlatma 3 × 0x3 olmadan doğrudan 0x2, 0x2, 0x8 yarım baytlarıyla başlar.</p>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: drive_lcd2</span>
+<ul>
+<li><b>Gövdeler ve değişken başlıkta</b> (<code>long sure=50000;</code> satır 36, fonksiyonlar satır 46–132). <code>lcd.h</code> iki <code>.c</code> dosyasında include edilirse hepsi iki kez tanımlanır ve bağlama hatası çıkar.</li>
+<li><b>Derleyici:</b> <code>stdint.h</code>/<code>stdbool.h</code> olmadığı için clang "unknown type name" hatası verir. Bu başlıklar eklenince iki uyarı görünür. Satır 44 ve 112'deki <code>void printf(char* s)</code> standart <code>printf</code>'i başka imzayla yeniden tanımlar. Satır 119–125'teki <code>char veri(char deger)</code> değer döndürmez.</li>
+<li><b>Satır 54–60:</b> 3 × 0x3 yoktur. Bu, LCD'nin beslemeden yeni açılmış olduğunu varsayar. Yalnız MCU yeniden başlarsa LCD 4 bitliktedir, 0x2, 0x2 bu durumda 0x22 olarak birleşir ve sonraki yarım baytlar kayar. <code>sure</code> 50 MHz'te ≈ 3 ms'dir, yorumdaki "min 20ms" sağlanmaz.</li>
+<li><b>Satır 72–75:</b> başlatma 0x02 (başa dön, 1,52 ms) ile biter ve ardından bekleme yoktur. <code>main</code>'deki ilk komutun ilk yarım baytı başa dönme bitmeden gidebilir.</li>
+<li><b>Satır 80 ve 129:</b> <code>komut_yaz</code>/<code>veri_yaz</code> RS, R/W ve E'yi tek yazmada değiştirir. RS, E yükselmeden önce kurulmalıdır. Kod yalnızca RS önceki satırlarda zaten doğru değere getirildiği için çalışır.</li>
+<li><b>Satır 89–91:</b> <code>satir = 0x7F</code> / <code>0x0BF</code>: parametre adres tabanı olarak yeniden kullanılır. 1 ve 2 dışındaki satır anlamsız adres verir. <b>main.c, satır 23:</b> <code>main</code> döngüsüz biter.</li>
+</ul></div>
+<p><code>drive_2019_lcd_odevi</code>, <code>drive_lcd2</code>'nin aynı adlı fonksiyonlarının boş bırakıldığı ödev şablonudur.</p>
+
+<h3 id="ornek-sayi">8.4 Sayı yazdırma <span class="tag api">API'li</span></h3>
+<p>LCD karakter kodu gösterir. <code>lcd_veri(7)</code> ekranda "7" değil, CGRAM'daki 7 numaralı karakteri gösterir. Tamsayı hanelerine ayrılır ve her haneye <code>'0'</code> (0x30) eklenir. Aşağıdaki fonksiyon <a href="../uart/#ornek-sayi">UART notundaki</a> <code>sayiGonder</code>'in LCD sürümüdür. <code>main</code> bir sayacı yaklaşık 250 ms'de bir artırıp gösterir. 8.2'deki sürücü kullanılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: sayac.c</span><span class="tag api">API'li</span></div><pre><code class="language-c">// sayac.c - printf olmadan sayıyı LCD'ye yazma
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "driverlib/sysctl.h"
+#include "lcd.h"
+
+void lcd_sayi(uint32_t sayi)            // ör. 2345 -&gt; '2' '3' '4' '5'
+{
+    char tampon[10];                    // uint32_t en çok 10 hane
+    int n = 0;
+    do {
+        tampon[n++] = (char)('0' + sayi % 10);   // en sağdaki hane, ASCII
+        sayi /= 10;
+    } while (sayi &gt; 0);
+    while (n &gt; 0)
+        lcd_veri(tampon[--n]);          // en anlamlı hane önce
+}
+
+int main(void)
+{
+    uint32_t sayac = 0;
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
+    lcd_init();
+    lcd_git(1, 1);
+    lcd_yazi("Sayac:");
+    while (1) {
+        lcd_git(1, 8);
+        lcd_yazi("         ");          // eski haneleri boşlukla ez (0x01 yavaş, titretir)
+        lcd_git(1, 8);
+        lcd_sayi(sayac++);
+        SysCtlDelay(SysCtlClockGet() / 3 / 4);   // yaklaşık 250 ms
+    }
+}</code></pre>
+<p>Sayı kısalınca eski hanelerin ekranda kalmaması için alan önce boşlukla ezilir. <code>lcd_sil()</code> 1,64 ms sürer ve ekranı titretir. Standart <code>sprintf</code> flaşta ve yığında çok yer tutar. TivaWare'in <code>utils/ustdlib.c</code> dosyasındaki <code>usprintf</code>/<code>usnprintf</code> daha hafiftir: <code>%c %d %i %s %u %x %X %p</code>, genişlik ve <code>%08u</code> gibi 0 ile doldurma desteklenir. <code>%X</code> de küçük harf basar. Kayan nokta (<code>%f</code>), sola yaslama (<code>-</code>), hassasiyet (<code>.</code>) ve <code>l</code> belirteci yoktur. Sabit genişlik, boşlukla ezme işini kendiliğinden yapar:</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: usnprintf ile</span><span class="tag api">API'li · utils/ustdlib</span></div><pre><code class="language-c">// TivaWare utils/ustdlib ile biçimli satır (projeye utils/ustdlib.c eklenir)
+#include &lt;stdint.h&gt;
+#include "utils/ustdlib.h"
+#include "lcd.h"
+
+void sayac_satiri(uint32_t sayac)
+{
+    char satir[17];                                         // 16 karakter + '\0'
+    usnprintf(satir, sizeof(satir), "Sayac:%10u", sayac);   // sağa yaslı, sabit genişlik
+    lcd_git(1, 1);
+    lcd_yazi(satir);                                        // eski haneler kendiliğinden ezilir
+}</code></pre>
+
+<h3 id="ornek-cgram">8.5 Özel karakter (CGRAM) <span class="tag api">API'li</span></h3>
+<p>CGRAM'da 8 karakterlik yer vardır. Her karakter 8 satırdır, her satır bir bayttır ve baytın alt 5 biti o satırdaki 5 noktadır (1 = koyu). n numaralı karakterin r. satırının CGRAM adresi <code>n·8 + r</code>'dir, bu yüzden <code>0x40 | (n &lt;&lt; 3)</code> komutu AC'yi karakterin ilk satırına götürür. Ardından 8 veri yazması (RS = 1) satırları doldurur, AC her yazmada bir artar. Desen yüklendikten sonra <b>bir DDRAM adres komutu gönderilmelidir</b>. Aksi hâlde AC hâlâ CGRAM'ı gösterir ve sonraki karakterler desenlerin üzerine yazılır. Karakter n, DDRAM'a n kodu yazılarak gösterilir. Örnek CGRAM'a derece işaretini ve ı, ş, ğ harflerini yükleyip "Sıcaklık: 25°C" ve "Yağış" yazar. ş'nin deseni satır satır <code>0x00 0x00 0x0E 0x10 0x0E 0x01 0x1E 0x04</code>'tür: üç yatay çizgi, aralarda sol ve sağ uç, en altta çengel.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: ozel_karakter.c</span><span class="tag api">API'li</span></div><pre><code class="language-c">// ozel_karakter.c - CGRAM'a 4 özel karakter yükleme ve gösterme
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "driverlib/sysctl.h"
+#include "lcd.h"
+
+static const uint8_t desenler[4][8] = {        // her satırın alt 5 biti = 5 nokta
+    {0x0C, 0x12, 0x12, 0x0C, 0x00, 0x00, 0x00, 0x00},   // 0: derece işareti
+    {0x00, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E, 0x00},   // 1: ı
+    {0x00, 0x00, 0x0E, 0x10, 0x0E, 0x01, 0x1E, 0x04},   // 2: ş
+    {0x11, 0x0E, 0x0F, 0x11, 0x11, 0x0F, 0x01, 0x0E},   // 3: ğ
+};
+
+void lcd_ozel_yukle(uint8_t n, const uint8_t desen[8])  // n = 0..7
+{
+    uint8_t i;
+    lcd_komut((uint8_t)(0x40 | (n &lt;&lt; 3)));   // CGRAM adresi: karakter n, satır 0
+    for (i = 0; i &lt; 8; i++)
+        lcd_veri((char)desen[i]);            // AC her yazmada bir artar
+}
+
+int main(void)
+{
+    uint8_t n;
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
+    lcd_init();
+    for (n = 0; n &lt; 4; n++)
+        lcd_ozel_yukle(n, desenler[n]);
+    lcd_git(1, 1);              // DDRAM'a dön: yoksa sonraki yazılar CGRAM'a gider
+    lcd_yazi("S");  lcd_veri(1);  lcd_yazi("cakl");  lcd_veri(1);  lcd_yazi("k: 25");
+    lcd_veri(0);    lcd_yazi("C");               // "Sıcaklık: 25°C"
+    lcd_git(2, 1);
+    lcd_yazi("Ya"); lcd_veri(3);  lcd_veri(1);  lcd_veri(2);       // "Yağış"
+    while (1) { }
+}</code></pre>
+<ul>
+<li>Karakter kodunun 3. biti önemsiz olduğundan 0x08–0x0F kodları da CGRAM 0–7'yi gösterir. 0 kodlu karakter C dizgisine <code>'\0'</code> olarak konamaz, ama <code>"\x08"</code> diye yazılabilir.</li>
+<li>Dizgide <code>"\x01"</code> kullanırken dikkat: <code>"S\x01cak"</code>'ta <code>c</code> ve <code>a</code> da onaltılık rakam olduğundan derleyici kaçışı <code>\x01ca</code> diye okur. Örnek bu yüzden <code>lcd_veri(n)</code> kullanır.</li>
+<li>CGRAM'daki desen değiştirilirse o kodu gösteren bütün hücreler hemen değişir. Basit animasyonlar bu yolla yapılır.</li>
+</ul>
+
+<h2 id="bf">9. Meşgul bayrağı</h2>
+<p>Sabit gecikme en kötü duruma göre beklediği için yavaştır, ama dersteki bağlantıda başka seçenek yoktur: R/W toprakta olduğundan LCD'den okuma yapılamaz. R/W bir GPIO'ya bağlanırsa her komuttan sonra BF okunabilir:</p>
+<ol>
+<li>D7–D4 pinlerini <b>giriş</b> yap (önce bu, yoksa hat çakışması olur).</li>
+<li>RS = 0, R/W = 1.</li>
+<li>E = 1, kısa bekle, D7'yi oku (BF), E = 0. 4 bitlik kipte okuma da iki yarım bayttır: ikinci E darbesiyle düşük yarım bayt da okunmalıdır, yoksa yarım bayt sayacı kayar.</li>
+<li>BF = 1 ise 2–3'ü tekrarla. BF = 0 olunca R/W = 0 yap ve pinleri yeniden çıkış yap.</li>
+</ol>
+<p>Aşağıdaki taslak R/W'nin PB2'ye bağlandığını varsayar ve dersteki bağlantıda kullanılamaz. Okuma sırasında LCD hattı 5 V'a kadar sürdüğü için <a href="#seviyeler">Bölüm 3</a>'teki PB0/PB1 uyarısı geçerlidir. BF yalnız 0x2 adımından sonra okunabilir, adım 3–6'daki beklemeler her durumda sabittir.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: meşgul bayrağı taslağı</span><span class="tag api">API'li · taslak</span></div><pre><code class="language-c">// TASLAK: meşgul bayrağını okuyarak bekleme. R/W'nin PB2'ye bağlı olduğu
+// varsayılır; dersteki bağlantıda R/W toprakta olduğundan KULLANILAMAZ.
+// lcd_init'te PB2 de çıkış yapılmalıdır (0xF3 yerine 0xF7).
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+
+#define LCD_PORT  GPIO_PORTB_BASE
+#define LCD_RS    GPIO_PIN_0
+#define LCD_E     GPIO_PIN_1
+#define LCD_RW    GPIO_PIN_2                                        // varsayım
+#define LCD_VERI  (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)
+
+static uint8_t e_ile_oku(void)              // E = 1 iken D7..D4'ü oku
+{
+    uint8_t d;
+    GPIOPinWrite(LCD_PORT, LCD_E, LCD_E);
+    SysCtlDelay(20);                        // verinin çıkmasını bekle (bol)
+    d = (uint8_t)GPIOPinRead(LCD_PORT, LCD_VERI);
+    GPIOPinWrite(LCD_PORT, LCD_E, 0);
+    SysCtlDelay(20);
+    return d;
+}
+
+bool lcd_mesgul(void)
+{
+    uint8_t ust;
+    GPIOPinTypeGPIOInput(LCD_PORT, LCD_VERI);          // ÖNCE giriş: hattı LCD sürecek
+    GPIOPinWrite(LCD_PORT, LCD_RS | LCD_RW, LCD_RW);   // RS = 0, R/W = 1: BF ve AC
+    ust = e_ile_oku();                                 // yüksek yarım bayt: D7 = BF
+    (void)e_ile_oku();                                 // düşük yarım bayt da okunmalı
+    GPIOPinWrite(LCD_PORT, LCD_RW, 0);                 // R/W = 0
+    GPIOPinTypeGPIOOutput(LCD_PORT, LCD_VERI);         // yeniden çıkış
+    return (ust &amp; GPIO_PIN_7) != 0;
+}
+// Kullanım: lcd_gonder() içindeki sabit bekleme yerine  while (lcd_mesgul()) { }</code></pre>
+
+<h2 id="exp9">10. Experiment 9 uyarlaması <span class="tag ti">Lab föyü</span></h2>
+<p><b>Amaç:</b> TI'ın "Experiment 9: Parallel Interfacing: Interfacing LCD Display" föyündeki 8 bitlik LCD uygulamasını TM4C123GH6PM'ye taşımak ve föy kodundaki hataları görmek. Föy LM4F120H5QR (Stellaris LaunchPad) için yazılmıştır. Port B ve Port D register adları TM4C123GH6PM ile aynıdır, yalnızca başlık dosyası değişir (<code>inc/lm4f120h5qr.h</code> → <code>inc/tm4c123gh6pm.h</code>).</p>
+<p><b>Föydeki bağlantı:</b> DB0–DB7 = PB0–PB7, RS = PD1, EN = PD3, R/W = GND, VCC = VBUS 5 V. <b>Başlatma akışı (Şekil 9.5):</b> 30 ms → function set → 39 µs → display on/off → 39 µs → entry mode → 39 µs → clear → 1,64 ms. Akış 3 × 0x30 dizisini içermez, iç sıfırlamanın çalıştığını varsayar. Föyün <code>lcd_init</code>'i 0x38, 0x06, 0x0C ve <code>clear()</code> gönderir. <code>lcd_cmd</code>, <code>lcd_data</code>, <code>clear</code> gövdeleri ve Port D ayarı öğrenciye bırakılmıştır. Kontrol hattı makroları:</p>
+<div class="code-head"><span class="file">föy kodu (TI Experiment 9), satır 15–16</span><span class="tag ti">föy</span></div><pre><code class="language-c">#define RS(X) GPIO_PORTD_DATA_R = ((GPIO_PORTD_DATA_R &amp; ~(1&lt;&lt;1)) | (X&lt;&lt;1))
+#define EN(X) GPIO_PORTD_DATA_R = ((GPIO_PORTD_DATA_R &amp; ~(1&lt;&lt;3)) | (X&lt;&lt;2))</code></pre>
+<div class="box warn"><span class="box-title">Föydeki hatalar ve TM4C123'e taşırken dikkat edilecekler</span>
+<ul>
+<li><b>EN(X) makrosu (satır 16):</b> maske bit3'ü (PD3) temizler, ama değer <code>X&lt;&lt;2</code> ile bit2'ye (PD2) yazılır. EN hattı hiç yükselmez ve LCD hiçbir baytı almaz. Alıştırmadaki bağlantıda <code>EN(1)</code> PD2'yi, yani R/W'yi 1 yapıp LCD'yi okuma kipine geçirir. Doğrusu <code>(X&lt;&lt;3)</code>.</li>
+<li><b>Komut tablosu (Şekil 9.3):</b> "Shift entire display right 0x1C" satırında onluk karşılık 30 yazılmıştır, 0x1C = 28'dir.</li>
+<li><b>RS = PD1, R10 üzerinden PB7'ye (D7) bağlıdır</b> (<a href="#kopru">Bölüm 3</a>). R9/R10 sökülmeli ya da RS başka bir pine (ör. PD2) alınmalıdır.</li>
+<li><b>main döngüsü (satır 112–121):</b> <code>setup()</code> ve <code>lcd_init()</code> <code>while(1)</code>'in içindedir. LCD sürekli yeniden başlatılıp silinir, ekran titrer. İkisi döngüden önce bir kez çağrılmalıdır.</li>
+<li><b>Bekleme:</b> <code>lcd_init</code>'ten önce 30 ms'lik açılış beklemesi yoktur. 39 µs ve 1,64 ms beklemeler öğrencinin yazacağı <code>lcd_cmd</code>/<code>clear</code> içine konmalıdır. <code>LCD_STROBE</code> (<code>EN(1); EN(0);</code>) E'yi yalnız birkaç çevrim yüksek tutar, araya bekleme konmalıdır.</li>
+<li><b>Küçükler:</b> saat için RCGCGPIO bir kez okunur, TM4C123'te PRGPIO beklenir. V0 metinde pot, kod yorumunda 10 kΩ'la toprak olarak geçer, pot kullanın.</li>
+<li><b>Föyün alıştırması:</b> BF okunurken LCD D0–D7'nin hepsini sürer. D0/D1, 5 V'a dayanıklı olmayan PB0/PB1'dedir (<a href="#seviyeler">Bölüm 3</a>). RS PD2'ye taşınırsa R/W'ye başka bir pin (ör. PD6) seçilmelidir.</li>
+</ul></div>
+<p>Aşağıdaki uyarlama föyün iskeletini korur. RS'yi PD2'ye taşır, EN'i PD3'te bırakır ve kontrol hatlarını maskeli DATA adresleriyle yazar. Beklemeleri ve 3 × 0x30 dizisini de ekler. 8 bitlik kipte 0x2 adımı yoktur, function set doğrudan 0x38'dir. CPU 16 MHz'te çalışır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: exp9_uyarlama.c</span><span class="tag reg">API'siz · 8 bit</span></div><pre><code class="language-c">// Experiment 9'un TM4C123GH6PM uyarlaması: 8 bit veri PB0..PB7 = D0..D7, R/W = GND.
+// Föydeki RS = PD1, kartta R10 ile PB7'ye (D7) bağlıdır; RS burada PD2'ye alındı.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"                    // föyde: inc/lm4f120h5qr.h
+
+#define RS(X)  (GPIO_PORTD_DATA_BITS_R[0x04] = (X) ? 0x04 : 0)   // PD2
+#define EN(X)  (GPIO_PORTD_DATA_BITS_R[0x08] = (X) ? 0x08 : 0)   // PD3
+#define VERI   GPIO_PORTB_DATA_R                                 // D7..D0
+
+static void bekle_us(uint32_t us)                // kaba gecikme (16 MHz)
+{
+    volatile uint32_t i;
+    while (us--)
+        for (i = 0; i &lt; 4; i++) { }
+}
+
+void setup(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x0A;                       // Port B (bit1) ve Port D (bit3)
+    while ((SYSCTL_PRGPIO_R &amp; 0x0A) != 0x0A) { }     // ikisi de hazır olana kadar
+    GPIO_PORTB_DIR_R = 0xFF;                         // 8 bit veri: Port B'nin tamamı
+    GPIO_PORTB_DEN_R = 0xFF;
+    GPIO_PORTD_DIR_R |= 0x0C;                        // PD2 = RS, PD3 = EN
+    GPIO_PORTD_DEN_R |= 0x0C;                        // PD0/PD1 giriş kalır (R9/R10)
+}
+
+void lcd_cmd(unsigned char c)
+{
+    RS(0);  VERI = c;
+    EN(1);  bekle_us(1);  EN(0);                     // düşen kenarda kilitlenir
+    bekle_us(c &lt; 0x04 ? 2000 : 50);                  // silme/başa dönme uzun sürer
+}
+
+void lcd_data(unsigned char c)
+{
+    RS(1);  VERI = c;
+    EN(1);  bekle_us(1);  EN(0);
+    bekle_us(50);
+}
+
+void lcd_init(void)
+{
+    bekle_us(50000);                                 // beslemeden sonra
+    lcd_cmd(0x30);  bekle_us(5000);                  // 8 bitte de 3 x 0x30
+    lcd_cmd(0x30);  bekle_us(200);
+    lcd_cmd(0x30);
+    lcd_cmd(0x38);                                   // 8 bit, 2 satır
+    lcd_cmd(0x08);  lcd_cmd(0x01);  lcd_cmd(0x06);  lcd_cmd(0x0C);
+}</code></pre>
+<p><code>main</code> föydekiyle aynı kurulur, ama döngüden önce: <code>setup(); lcd_init(); lcd_cmd(0x80);</code> ve ilk satır, <code>lcd_cmd(0xC0);</code> ve ikinci satır, ardından <code>while(1){}</code>. PD0/PD1 giriş kalmalıdır (<a href="#kopru">köprü</a>).</p>
+<p><b>Föyün alıştırması (çözümü verilmiyor):</b> R/W'yi Port D'nin 2. pinine bağlayın, meşgul bayrağını (DB7) okuyan bir fonksiyon yazın ve kodu sabit gecikme yerine bu fonksiyonu kullanacak biçimde değiştirin. TM4C123'te yukarıdaki RS çakışmasını ve PB0/PB1 uyarısını göz önüne alın.</p>
+
+<h2 id="hatalar">11. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Üst satırda yalnız dolu kutular, alt satır boş:</b> LCD beslenmiş ama başlatılmamıştır (iç sıfırlamadan sonra tek satır kipindedir) ya da kontrast çok yüksektir. Önce potla V0'ı ayarlayın. Kutular kalıyorsa başlatma baytları LCD'ye ulaşmıyordur: E pini, yarım bayt sırası, 0x2 adımı ve PB6/PB7 köprüsünü kontrol edin.</li>
+<li><b>Ekran tamamen boş:</b> kontrast çok düşük (V0 VDD'ye yakın), VDD 5 V yerine 3,3 V'a bağlı, ya da 0x0C hiç yürütülmemiş (<a href="#ders-lcd1">drive_lcd1</a>).</li>
+<li><b>Anlamsız karakterler:</b> yarım bayt sırası ters, 0x2 eksik ya da fazladan bir E darbesi var (<a href="#yarim-bayt">Bölüm 4</a>).</li>
+<li><b>Bekleme kısa:</b> özellikle silmeden sonra ≥ 1,64 ms. Saat 16 MHz'ten 50 MHz'e çıkınca aynı <code>SysCtlDelay</code> sayısı 3,125 kat kısalır.</li>
+<li><b>İkinci satır:</b> <code>0xC0</code>'dır (adres 0x40), <code>0x90</code> değil. Function set'te N = 0 (0x20) ise ikinci satır hiç gösterilmez.</li>
+<li><b>E darbesi:</b> <code>SysCtlDelay(10)</code> 50 MHz'te ≈ 0,6 µs, 16 MHz'te ≈ 1,9 µs eder ve yeterlidir. Asıl sık hata, E'yi beklemeden 1 yapıp hemen 0 yapmak ve E düştükten sonra yürütme süresi kadar beklememektir.</li>
+<li><b>Bütün portu 0xFF çıkış yapmak:</b> PB2/PB3 de çıkış olur. 0xF3 yeterlidir.</li>
+<li><b>Tek satırlık hatırlatmalar:</b> PD0/PD1'i çıkış yapmak (<a href="#kopru">Bölüm 3</a>); giriş kipi 0x07 (<a href="#hazir">Bölüm 5</a>); CGRAM'dan sonra DDRAM adresine dönmemek (<a href="#ornek-cgram">8.5</a>); R/W'yi boşta bırakmak (<a href="#neden-4bit">Bölüm 3</a>); <code>GPIOPinWrite</code>'a 1 yazmak (<a href="#api-tablosu">7.5</a>); <code>.c</code> include etmek, <code>main</code>'den dönmek, başlıkta gövde (<a href="#ders-kodlari">8.3</a>).</li>
+</ol></div>
+
+<h2 id="alistirmalar">12. Alıştırmalar</h2>
+<ol>
+<li><b>(Ödev) <code>lcdfonksiyonayarla(dl, N, F)</code>:</b> <code>hafta05_lcdsablonogr2</code>'deki boş fonksiyonu doldurun. Fonksiyon üç parametreden function set baytını (<code>001 DL N F **</code>) kurup komut olarak göndermelidir. Şablondaki yorumlar parametreleri iki biçimde tarif eder: başlıkta 0/1, <code>lcd.c</code>'de "4 ya da 8", "1 ya da 2", "7 ya da 10". Birini seçin ve geçersiz değerlere ne olacağına karar verin. Veri sayfasına göre N ve F, 8. adımdaki function set'ten sonra değiştirilemez. Fonksiyon yalnız başlatmada, 0x28'in yerine kullanıldığında anlamlıdır.</li>
+<li><b>Bit numarasıyla örtüşmeyen pinler:</b> D4–D7'yi PD0–PD3'e (ya da PE0–PE3'e) bağladığınızı düşünün. <code>c &amp; 0xF0</code> artık doğrudan pinlere oturmaz. Yarım baytın her bitini ilgili pine dağıtan bir <code>lcd_yarim_bayt()</code> yazın ve sürücünün geri kalanını değiştirmeden kullanın. Kaydırmayla mı, bit bit test ederek mi yazmak daha genel olur?</li>
+<li><b>Adres hesabı:</b> (1, 16), (2, 1) ve (2, 9) konumlarının DDRAM komutlarını bulun. (Cevap: 0x8F, 0xC0, 0xC8.)</li>
+<li><b>Gecikme hesabı:</b> 80 MHz'te 1,64 ms ve 40 µs için <code>SysCtlDelay</code> parametresini bulun. (Cevap: 43 734 ve 1 067.)</li>
+<li><b>Kayan yazı:</b> 1. satıra 40 karakterlik bir metin yazın ve <code>0x18</code> ile yazıyı 300 ms'de bir sola kaydırarak tamamını gösterin. 40 kaydırmadan sonra ne olur? Sonra beklemeyi zamanlayıcı kesmesiyle yapın (<a href="../timer/">Zamanlayıcılar notu</a>).</li>
+<li><b>İki satırlı saat:</b> 1. satırda "SAAT", 2. satırda her saniye artan <code>SS:DD:SS</code> gösterin. Haneleri 8.4'teki gibi elle çevirin, yalnız değişen haneleri yeniden yazın.</li>
+<li><b>Türkçe karakterler:</b> Ç, Ö, Ü ve İ için 5×8 desen tasarlayıp "ÇÖZÜM İYİ" yazın. Aynı anda en çok kaç farklı özel karakter gösterilebilir?</li>
+<li><b>(Lab)</b> Experiment 9'un meşgul bayrağı alıştırması: <a href="#exp9">Bölüm 10</a>.</li>
+</ol>
+
+<h2 id="kaynaklar">13. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): §10.1, s. 649 (5 V tolerans ve PD4, PD5, PB0, PB1 istisnası); §10.2.1.2, s. 654 (GPIODATA adres maskeleme); Tablo 24-6, s. 1360 (V<sub>OH</sub> ≥ 2,4 V); §24.13.1, s. 1385 (5 V tolerans, VDD koşulu).</li>
+<li>Texas Instruments, <em>Tiva C Series TM4C123G LaunchPad Evaluation Board User's Guide</em> (SPMU296, Nisan 2013), Tablo 2-4 ve 2-5, s. 10: PB6–PD0 (R9), PB7–PD1 (R10), J3.01 = 5,0 V.</li>
+<li>Hitachi, <em>HD44780U (LCD-II) Dot Matrix Liquid Crystal Display Controller/Driver</em> veri sayfası: komut seti, talimatla başlatma akışı, yürütme süreleri (270 kHz), V<sub>IH1</sub> ve pull-up'lı pinler (s. 51, 54).</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/sysctl.c</code>, <code>driverlib/gpio.c</code>, <code>inc/tm4c123gh6pm.h</code>, <code>inc/hw_memmap.h</code>, <code>utils/ustdlib.c</code>.</li>
+<li>"Experiment 9: Parallel Interfacing: Interfacing LCD Display", LM4F120H5QR laboratuvar föyü.</li>
+<li>Dersin LCD föyü "LCD Ekranın Sürülmesi" ve LCD ödevi (8 bitten 4 bite).</li>
+<li>Ders örnek kodları (EEM 431, LCD klasörü): <code>lcdapisiz</code>, <code>hafta05_lcdsablonogr1</code>, <code>hafta05_lcdsablonogr2</code>, <code>drive_lcd1</code>, <code>lcdeski</code>, <code>drive_lcd2</code>, <code>drive_2019_lcd_odevi</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../timer/">6. Zamanlayıcılar</a>, <a href="../uart/#ornek-sayi">8. UART</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 3. LCD. TI ve Hitachi belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

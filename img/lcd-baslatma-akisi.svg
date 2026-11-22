@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 502" class="lcda-svg" role="img" aria-labelledby="lcda-title lcda-desc">
+<title id="lcda-title">4 bitlik kipte LCD başlatma akışı</title>
+<desc id="lcda-desc">On iki adım. GPIO hazırlığı: 1 Port B saati aç, PRGPIO hazır bekle; 2 PB0, PB1, PB4–PB7 çıkış + dijital. Tek yarım bayt (LCD kipi henüz belirsiz): 3 RS=0, E=0; en az 40 ms bekle; 4 0x3 yarım bayt + E darbesi, en az 4,1 ms; 5 0x3 yarım bayt + E darbesi, en az 100 µs; 6 0x3 yarım bayt + E darbesi, en az 40 µs; 7 0x2 yarım bayt + E darbesi → 4 bitlik kip. Tam bayt = iki yarım bayt (önce yüksek); komutta RS=0, veride RS=1: 8 0x28 Function set (4 bit, 2 satır, 5×8); 9 0x08 ekran kapalı; 10 0x01 ekranı sil, en az 1,64 ms; 11 0x06 giriş kipi (imleç sağa, kayma yok); 12 0x0C ekran açık (imleç istenirse 0x0E/0x0F), kesik çerçeveli: HD44780U akışı 11. adımda biter; 12. adım ekranı açar. Adım 4–6 notu: iç reset çalışmadıysa ya da yalnız MCU yeniden başladıysa LCD 4 bitlik kipte olabilir; üç kez 0x3 onu her durumda 8 bitlik kipe getirir.</desc>
+<defs>
+<marker id="lcda-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcda-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="lcda-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcda-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.lcda-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lcda-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lcda-svg .lcda-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.lcda-svg .lcda-b{font-weight:700}
+.lcda-svg .lcda-s13{font-size:13px}
+.lcda-svg .lcda-s16{font-size:16px}
+.lcda-svg .lcda-mut{fill:var(--fig-muted,#76746c)}
+.lcda-svg .lcda-acc{fill:var(--fig-accent,#b4481f)}
+.lcda-svg .lcda-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.lcda-svg .lcda-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.lcda-svg .lcda-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.lcda-svg .lcda-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.lcda-svg .lcda-circ{fill:var(--fig-accent,#b4481f)}
+.lcda-svg .lcda-head{fill:var(--fig-stroke,#2b2b29)}
+.lcda-svg .lcda-headm{fill:var(--fig-muted,#76746c)}
+.lcda-svg .lcda-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.lcda-svg .lcda-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.lcda-svg .lcda-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="lcda-s16 lcda-b" x="16" y="29">4 bitlik kipte LCD başlatma akışı</text>
+<rect class="lcda-zone" x="16" y="44" width="356" height="136" rx="10"/>
+<text class="lcda-s13 lcda-b lcda-mut" x="80" y="64">GPIO hazırlığı</text>
+<rect class="lcda-box" x="28" y="74" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="94" r="12"/>
+<text class="lcda-num" x="48" y="99" text-anchor="middle">1</text>
+<text x="68" y="99"><tspan>Port B saati aç, </tspan><tspan class="lcda-mono">PRGPIO</tspan><tspan> hazır bekle</tspan></text>
+<rect class="lcda-box" x="28" y="128" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="148" r="12"/>
+<text class="lcda-num" x="48" y="153" text-anchor="middle">2</text>
+<text x="68" y="153"><tspan>PB0, PB1, PB4–PB7 çıkış + dijital</tspan></text>
+<rect class="lcda-zone" x="16" y="194" width="356" height="298" rx="10"/>
+<text class="lcda-s13 lcda-b lcda-mut" x="80" y="214">tek yarım bayt (LCD kipi henüz belirsiz)</text>
+<rect class="lcda-box" x="28" y="224" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="244" r="12"/>
+<text class="lcda-num" x="48" y="249" text-anchor="middle">3</text>
+<text x="68" y="249"><tspan>RS=0, E=0; </tspan><tspan class="lcda-b">≥ 40 ms</tspan><tspan> bekle</tspan></text>
+<rect class="lcda-box" x="28" y="278" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="298" r="12"/>
+<text class="lcda-num" x="48" y="303" text-anchor="middle">4</text>
+<text x="68" y="303"><tspan class="lcda-mono lcda-b">0x3</tspan><tspan> yarım bayt + E darbesi; </tspan><tspan class="lcda-b">≥ 4,1 ms</tspan></text>
+<rect class="lcda-box" x="28" y="332" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="352" r="12"/>
+<text class="lcda-num" x="48" y="357" text-anchor="middle">5</text>
+<text x="68" y="357"><tspan class="lcda-mono lcda-b">0x3</tspan><tspan> yarım bayt + E darbesi; </tspan><tspan class="lcda-b">≥ 100 µs</tspan></text>
+<rect class="lcda-box" x="28" y="386" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="406" r="12"/>
+<text class="lcda-num" x="48" y="411" text-anchor="middle">6</text>
+<text x="68" y="411"><tspan class="lcda-mono lcda-b">0x3</tspan><tspan> yarım bayt + E darbesi; </tspan><tspan class="lcda-b">≥ 40 µs</tspan></text>
+<rect class="lcda-box" x="28" y="440" width="332" height="40" rx="8"/>
+<circle class="lcda-circ" cx="48" cy="460" r="12"/>
+<text class="lcda-num" x="48" y="465" text-anchor="middle">7</text>
+<text x="68" y="465"><tspan class="lcda-mono lcda-b">0x2</tspan><tspan> yarım bayt + E darbesi → </tspan><tspan class="lcda-b">4 bitlik kip</tspan></text>
+<path class="lcda-w" d="M48,114 L48,127" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M48,168 L48,223" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M48,264 L48,277" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M48,318 L48,331" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M48,372 L48,385" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M48,426 L48,439" marker-end="url(#lcda-arr)"/>
+<rect class="lcda-zone" x="396" y="44" width="348" height="338" rx="10"/>
+<text class="lcda-s13 lcda-b lcda-mut" x="460" y="64">tam bayt = iki yarım bayt (önce yüksek)</text>
+<text x="460" y="82"><tspan class="lcda-s13 lcda-mut">komutta </tspan><tspan class="lcda-mono">RS=0</tspan><tspan class="lcda-s13 lcda-mut">, veride </tspan><tspan class="lcda-mono">RS=1</tspan></text>
+<rect class="lcda-box" x="408" y="92" width="324" height="40" rx="8"/>
+<circle class="lcda-circ" cx="428" cy="112" r="12"/>
+<text class="lcda-num" x="428" y="117" text-anchor="middle">8</text>
+<text x="448" y="117"><tspan class="lcda-mono lcda-b">0x28</tspan><tspan> Function set (4 bit, 2 satır, 5×8)</tspan></text>
+<rect class="lcda-box" x="408" y="146" width="324" height="40" rx="8"/>
+<circle class="lcda-circ" cx="428" cy="166" r="12"/>
+<text class="lcda-num" x="428" y="171" text-anchor="middle">9</text>
+<text x="448" y="171"><tspan class="lcda-mono lcda-b">0x08</tspan><tspan> ekran kapalı</tspan></text>
+<rect class="lcda-box" x="408" y="200" width="324" height="40" rx="8"/>
+<circle class="lcda-circ" cx="428" cy="220" r="12"/>
+<text class="lcda-num" x="428" y="225" text-anchor="middle">10</text>
+<text x="448" y="225"><tspan class="lcda-mono lcda-b">0x01</tspan><tspan> ekranı sil; </tspan><tspan class="lcda-b">≥ 1,64 ms</tspan></text>
+<rect class="lcda-box" x="408" y="254" width="324" height="40" rx="8"/>
+<circle class="lcda-circ" cx="428" cy="274" r="12"/>
+<text class="lcda-num" x="428" y="279" text-anchor="middle">11</text>
+<text x="448" y="279"><tspan class="lcda-mono lcda-b">0x06</tspan><tspan> giriş kipi (imleç sağa, kayma yok)</tspan></text>
+<rect class="lcda-opt" x="408" y="308" width="324" height="40" rx="8"/>
+<circle class="lcda-circ" cx="428" cy="328" r="12"/>
+<text class="lcda-num" x="428" y="333" text-anchor="middle">12</text>
+<text x="448" y="333"><tspan class="lcda-mono lcda-b">0x0C</tspan><tspan> ekran açık (imleç istenirse </tspan><tspan class="lcda-mono">0x0E</tspan><tspan>/</tspan><tspan class="lcda-mono">0x0F</tspan><tspan>)</tspan></text>
+<path class="lcda-w" d="M428,132 L428,145" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M428,186 L428,199" marker-end="url(#lcda-arr)"/>
+<path class="lcda-w" d="M428,240 L428,253" marker-end="url(#lcda-arr)"/>
+<path class="lcda-wmd" d="M428,294 L428,307" marker-end="url(#lcda-arrm)"/>
+<text class="lcda-s13 lcda-mut" x="448" y="368">HD44780U akışı 11. adımda biter; 12. adım ekranı açar</text>
+<path class="lcda-w" d="M360,460.0 L384,460.0 L384,112.0 L407,112.0" marker-end="url(#lcda-arr)"/>
+<rect class="lcda-hl" x="396" y="396" width="348" height="73" rx="8"/>
+<text x="410" y="420"><tspan class="lcda-s13 lcda-b lcda-acc">Adım 4–6:</tspan><tspan class="lcda-s13"> İç reset çalışmadıysa ya da yalnız MCU</tspan></text>
+<text class="lcda-s13" x="410" y="439">yeniden başladıysa LCD 4 bitlik kipte olabilir;</text>
+<text x="410" y="458"><tspan class="lcda-s13">üç kez </tspan><tspan class="lcda-mono lcda-b">0x3</tspan><tspan class="lcda-s13"> onu her durumda 8 bitlik kipe getirir.</tspan></text>
+</svg>

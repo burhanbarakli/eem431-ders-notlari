@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 780" class="lcdb-svg" role="img" aria-labelledby="lcdb-title lcdb-desc">
+<title id="lcdb-title">LaunchPad ile LCD bağlantısı (4 bitlik kip)</title>
+<desc id="lcdb-desc">EK-TM4C123GXL LaunchPad ile 16 pinli karakter LCD modülünün kablolaması. LCD pinleri sırayla: 1 VSS, 2 VDD, 3 V0, 4 RS, 5 R/W, 6 E, 7–10 D0–D3, 11–14 D4–D7, 15 A, 16 K. Denetim hatları: PB0 → RS, PB1 → E; veri hatları: PB4 → D4, PB5 → D5, PB6 → D6, PB7 → D7. R/W toprağa bağlıdır (yalnız yazma); D0–D3 bağlı değildir. VSS → GND, VDD → VBUS (+5 V). V0, uçları +5 V ve GND’ye bağlı 10 kΩ potun orta ucuna bağlanır (kontrast). A → +5 V (bazı modüllerde dış akım sınırlama direnci gerekir; modül veri sayfasına bakın), K → GND. Kart üstünde PB6 ile PD0 (R9) ve PB7 ile PD1 (R10) köprülüdür; PD0/PD1 çıkış yapılmamalıdır.</desc>
+<defs>
+<marker id="lcdb-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="lcdb-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.lcdb-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.lcdb-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.lcdb-svg .lcdb-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.lcdb-svg .lcdb-b{font-weight:700}
+.lcdb-svg .lcdb-s13{font-size:13px}
+.lcdb-svg .lcdb-s16{font-size:16px}
+.lcdb-svg .lcdb-mut{fill:var(--fig-muted,#76746c)}
+.lcdb-svg .lcdb-acc{fill:var(--fig-accent,#b4481f)}
+.lcdb-svg .lcdb-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.lcdb-svg .lcdb-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.lcdb-svg .lcdb-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.lcdb-svg .lcdb-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.lcdb-svg .lcdb-headm{fill:var(--fig-muted,#76746c)}
+.lcdb-svg .lcdb-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.lcdb-svg .lcdb-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.lcdb-svg .lcdb-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.lcdb-svg .lcdb-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.lcdb-svg .lcdb-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.lcdb-svg .lcdb-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.lcdb-svg .lcdb-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+.lcdb-svg .lcdb-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text class="lcdb-s16 lcdb-b" x="16" y="29">LaunchPad – LCD bağlantısı (4 bitlik kip)</text>
+<path class="lcdb-wa" d="M338,24 L356,24"/>
+<text class="lcdb-s13" x="361" y="29">denetim</text>
+<path class="lcdb-wb" d="M423,24 L441,24"/>
+<text class="lcdb-s13" x="446" y="29">veri</text>
+<path class="lcdb-w" d="M486,24 L504,24"/>
+<text class="lcdb-s13" x="509" y="29">+5 V</text>
+<path class="lcdb-wm" d="M553,24 L571,24"/>
+<text class="lcdb-s13" x="576" y="29">GND</text>
+<path class="lcdb-wmd" d="M618,24 L636,24"/>
+<text class="lcdb-s13" x="641" y="29">kontrast (V0)</text>
+<rect class="lcdb-zone" x="150" y="52" width="556" height="248" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="162" y="72">EK-TM4C123GXL LaunchPad</text>
+<rect class="lcdb-code" x="184" y="96" width="250" height="76" rx="8"/>
+<text class="lcdb-b" x="196" y="118">TM4C123GH6PM</text>
+<text x="196" y="138"><tspan class="lcdb-s13 lcdb-mut">lcd.h:</tspan><tspan class="lcdb-s13"> rs = PB0, E = PB1</tspan></text>
+<text class="lcdb-s13" x="196" y="156">d4…d7 = PB4…PB7</text>
+<rect class="lcdb-box" x="164" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="184" y="284" text-anchor="middle">PB0</text>
+<path class="lcdb-wa" d="M184,290 L184,559"/>
+<rect class="lcdb-box" x="252" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="272" y="284" text-anchor="middle">PB1</text>
+<path class="lcdb-wa" d="M272,290 L272,559"/>
+<rect class="lcdb-box" x="472" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="492" y="284" text-anchor="middle">PB4</text>
+<path class="lcdb-wb" d="M492,290 L492,559"/>
+<rect class="lcdb-box" x="516" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="536" y="284" text-anchor="middle">PB5</text>
+<path class="lcdb-wb" d="M536,290 L536,559"/>
+<rect class="lcdb-box" x="560" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="580" y="284" text-anchor="middle">PB6</text>
+<path class="lcdb-wb" d="M580,290 L580,559"/>
+<rect class="lcdb-box" x="604" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="624" y="284" text-anchor="middle">PB7</text>
+<path class="lcdb-wb" d="M624,290 L624,559"/>
+<rect class="lcdb-box" x="336" y="268" width="48" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="360" y="284" text-anchor="middle">VBUS</text>
+<path class="lcdb-w" d="M360,290 L360,336"/>
+<rect class="lcdb-pill" x="339" y="336" width="42" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b" x="360" y="351" text-anchor="middle">+5 V</text>
+<rect class="lcdb-box" x="400" y="268" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="420" y="284" text-anchor="middle">GND</text>
+<path class="lcdb-wm" d="M420,290 L420,336"/>
+<rect class="lcdb-pill" x="402" y="336" width="36" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="420" y="351" text-anchor="middle">GND</text>
+<rect class="lcdb-box" x="560" y="178" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="580" y="194" text-anchor="middle">PD0</text>
+<path class="lcdb-wt" d="M580,200 L580,216"/>
+<rect class="lcdb-box" x="575" y="216" width="10" height="28" rx="1"/>
+<path class="lcdb-wt" d="M580,244 L580,268"/>
+<text class="lcdb-s13 lcdb-b" x="570" y="236" text-anchor="end">R9</text>
+<rect class="lcdb-box" x="604" y="178" width="40" height="22" rx="4"/>
+<text class="lcdb-mono lcdb-b" x="624" y="194" text-anchor="middle">PD1</text>
+<path class="lcdb-wt" d="M624,200 L624,216"/>
+<rect class="lcdb-box" x="619" y="216" width="10" height="28" rx="1"/>
+<path class="lcdb-wt" d="M624,244 L624,268"/>
+<text class="lcdb-s13 lcdb-b" x="634" y="236">R10</text>
+<text class="lcdb-s13 lcdb-b lcdb-acc" x="602" y="146" text-anchor="middle">kart üstü köprüler:</text>
+<text class="lcdb-s13 lcdb-acc" x="602" y="164" text-anchor="middle">PD0/PD1 çıkış yapılmamalı</text>
+<rect class="lcdb-box" x="16" y="560" width="728" height="160" rx="8"/>
+<rect class="lcdb-pill" x="47" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="52" y="584" text-anchor="middle">1</text>
+<text class="lcdb-mono" x="52" y="602" text-anchor="middle">VSS</text>
+<rect class="lcdb-pill" x="91" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="96" y="584" text-anchor="middle">2</text>
+<text class="lcdb-mono" x="96" y="602" text-anchor="middle">VDD</text>
+<rect class="lcdb-pill" x="135" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="140" y="584" text-anchor="middle">3</text>
+<text class="lcdb-mono" x="140" y="602" text-anchor="middle">V0</text>
+<rect class="lcdb-pill" x="179" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="184" y="584" text-anchor="middle">4</text>
+<text class="lcdb-mono" x="184" y="602" text-anchor="middle">RS</text>
+<rect class="lcdb-pill" x="223" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="228" y="584" text-anchor="middle">5</text>
+<text class="lcdb-mono" x="228" y="602" text-anchor="middle">R/W</text>
+<rect class="lcdb-pill" x="267" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="272" y="584" text-anchor="middle">6</text>
+<text class="lcdb-mono" x="272" y="602" text-anchor="middle">E</text>
+<rect class="lcdb-pill" x="311" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="316" y="584" text-anchor="middle">7</text>
+<text class="lcdb-mono" x="316" y="602" text-anchor="middle">D0</text>
+<rect class="lcdb-pill" x="355" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="360" y="584" text-anchor="middle">8</text>
+<text class="lcdb-mono" x="360" y="602" text-anchor="middle">D1</text>
+<rect class="lcdb-pill" x="399" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="404" y="584" text-anchor="middle">9</text>
+<text class="lcdb-mono" x="404" y="602" text-anchor="middle">D2</text>
+<rect class="lcdb-pill" x="443" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="448" y="584" text-anchor="middle">10</text>
+<text class="lcdb-mono" x="448" y="602" text-anchor="middle">D3</text>
+<rect class="lcdb-pill" x="487" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="492" y="584" text-anchor="middle">11</text>
+<text class="lcdb-mono" x="492" y="602" text-anchor="middle">D4</text>
+<rect class="lcdb-pill" x="531" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="536" y="584" text-anchor="middle">12</text>
+<text class="lcdb-mono" x="536" y="602" text-anchor="middle">D5</text>
+<rect class="lcdb-pill" x="575" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="580" y="584" text-anchor="middle">13</text>
+<text class="lcdb-mono" x="580" y="602" text-anchor="middle">D6</text>
+<rect class="lcdb-pill" x="619" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="624" y="584" text-anchor="middle">14</text>
+<text class="lcdb-mono" x="624" y="602" text-anchor="middle">D7</text>
+<rect class="lcdb-pill" x="663" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="668" y="584" text-anchor="middle">15</text>
+<text class="lcdb-mono" x="668" y="602" text-anchor="middle">A</text>
+<rect class="lcdb-pill" x="707" y="555" width="10" height="10" rx="2"/>
+<text class="lcdb-mono lcdb-b" x="712" y="584" text-anchor="middle">16</text>
+<text class="lcdb-mono" x="712" y="602" text-anchor="middle">K</text>
+<path class="lcdb-wm" d="M38,612 L38,618 L154,618 L154,612"/>
+<text class="lcdb-s13 lcdb-mut" x="96" y="636" text-anchor="middle">besleme</text>
+<path class="lcdb-wm" d="M170,612 L170,618 L286,618 L286,612"/>
+<text class="lcdb-s13 lcdb-mut" x="228" y="636" text-anchor="middle">denetim</text>
+<path class="lcdb-wm" d="M302,612 L302,618 L462,618 L462,612"/>
+<text class="lcdb-s13 lcdb-mut" x="382" y="636" text-anchor="middle">veri (bağlı değil)</text>
+<path class="lcdb-wm" d="M478,612 L478,618 L638,618 L638,612"/>
+<text class="lcdb-s13 lcdb-mut" x="558" y="636" text-anchor="middle">veri (4 bitlik kip)</text>
+<path class="lcdb-wm" d="M654,612 L654,618 L726,618 L726,612"/>
+<text class="lcdb-s13 lcdb-mut" x="690" y="636" text-anchor="middle">arka ışık</text>
+<rect class="lcdb-cellf" x="206" y="652" width="348" height="48" rx="4"/>
+<text class="lcdb-s13 lcdb-b" x="380" y="681" text-anchor="middle">LCD modülü · 16×2 (HD44780)</text>
+<path class="lcdb-wm" d="M52,559 L52,530"/>
+<rect class="lcdb-pill" x="34" y="510" width="36" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="52" y="525" text-anchor="middle">GND</text>
+<path class="lcdb-w" d="M96,559 L96,500"/>
+<rect class="lcdb-pill" x="75" y="480" width="42" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b" x="96" y="495" text-anchor="middle">+5 V</text>
+<path class="lcdb-wm" d="M228,559 L228,530"/>
+<rect class="lcdb-pill" x="210" y="510" width="36" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="228" y="525" text-anchor="middle">GND</text>
+<path class="lcdb-wm" d="M712,559 L712,530"/>
+<rect class="lcdb-pill" x="694" y="510" width="36" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="712" y="525" text-anchor="middle">GND</text>
+<path class="lcdb-w" d="M668,559 L668,532"/>
+<rect class="lcdb-opt" x="662" y="504" width="12" height="28" rx="2"/>
+<path class="lcdb-w" d="M668,504 L668,500"/>
+<rect class="lcdb-pill" x="647" y="480" width="42" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b" x="668" y="495" text-anchor="middle">+5 V</text>
+<text class="lcdb-s13 lcdb-b" x="656" y="523" text-anchor="end">R*</text>
+<rect class="lcdb-box" x="72" y="330" width="16" height="70" rx="2"/>
+<path class="lcdb-w" d="M80,330 L80,316"/>
+<rect class="lcdb-pill" x="59" y="296" width="42" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b" x="80" y="311" text-anchor="middle">+5 V</text>
+<path class="lcdb-wm" d="M80,400 L80,430"/>
+<rect class="lcdb-pill" x="62" y="430" width="36" height="20" rx="10"/>
+<text class="lcdb-s13 lcdb-b lcdb-mut" x="80" y="445" text-anchor="middle">GND</text>
+<path class="lcdb-wmd" d="M140,559 L140,365 L89,365" marker-end="url(#lcdb-arrm)"/>
+<text class="lcdb-s13 lcdb-b" x="66" y="362" text-anchor="end">10 kΩ</text>
+<text class="lcdb-s13 lcdb-mut" x="66" y="380" text-anchor="end">pot</text>
+<text class="lcdb-s13 lcdb-mut" x="113" y="356" text-anchor="middle">kontrast</text>
+<text x="16" y="744"><tspan class="lcdb-s13 lcdb-b">R*</tspan><tspan class="lcdb-s13"> A (arka ışık +) ucu: bazı modüllerde dış akım sınırlama direnci gerekir; modül veri sayfasına bakın.</tspan></text>
+<text class="lcdb-s13 lcdb-mut" x="16" y="763">R/W toprakta: LCD yalnız yazılır, BF okunmaz.</text>
+</svg>

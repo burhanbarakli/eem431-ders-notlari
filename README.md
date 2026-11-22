@@ -9,6 +9,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `index.html` | Konu listesi |
 | `gpio/` | 1. GPIO ders notu |
 | `gpio-kesme/` | 2. GPIO kesmeleri |
+| `lcd/` | 3. LCD (HD44780) |
 | `timer/` | 6. Zamanlayıcılar (GPTM) ve kesmelere giriş |
 | `adc/` | 7. ADC |
 | `uart/` | 8. UART ve seri port (PC tarafı C# dahil) |
