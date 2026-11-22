@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 486" class="stz-svg" role="img" aria-labelledby="stz-title stz-desc">
+<title id="stz-title">SysTick sayma zamanlaması, RELOAD = 4 örneği</title>
+<desc id="stz-desc">Küçük örnek: RELOAD = 4. Sayıcı başlangıçta 0’dır (STCURRENT’e yazılmış); ENABLE = 1 yapıldıktan sonraki ilk saatte 4 yüklenir. Her saat kenarında 1 azalır: 4, 3, 2, 1, 0; 0’dan sonraki saatte yeniden 4 yüklenir (sarma). Sayıcı 1’den 0’a indiği anda COUNT 1 olur ve INTEN = 1 ise istisna 15 isteği oluşur; bu 5., 10. ve 18. saat kenarlarındadır. İki sıfır arası RELOAD + 1 = 5 saattir. 7. ile 8. kenar arasında STCTRL okunur ve COUNT 0 olur. 13. ile 14. kenar arasında STCURRENT’e yazılır: değer hemen 0 olur, COUNT 0 olur, istisna oluşmaz; sonraki saatte 4 yüklenir ve sayma sürer. Genel formül: periyot = (RELOAD + 1) / f. Örnek: 16 MHz, RELOAD = 3 999 999 için 4 000 000 / 16 MHz = 0,25 s.</desc>
+<defs>
+<marker id="stz-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="stz-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.stz-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.stz-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.stz-svg .stz-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.stz-svg .stz-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.stz-svg .stz-b{font-weight:700}
+.stz-svg .stz-s12{font-size:12px}
+.stz-svg .stz-s13{font-size:13px}
+.stz-svg .stz-s15{font-size:15px}
+.stz-svg .stz-s16{font-size:16px}
+.stz-svg .stz-mut{fill:var(--fig-muted,#76746c)}
+.stz-svg .stz-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.stz-svg .stz-head{fill:var(--fig-stroke,#2b2b29)}
+.stz-svg .stz-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.stz-svg .stz-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.stz-svg .stz-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.stz-svg .stz-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.stz-svg .stz-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.stz-svg .stz-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="stz-s16 stz-b" x="16" y="29">SysTick sayma zamanlaması (RELOAD = 4)</text>
+<text class="stz-s13 stz-mut" x="16" y="51">Her saat kenarında 1 azalır; 0’dan sonraki kenarda RELOAD yeniden yüklenir (sarma).</text>
+<path class="stz-grid" d="M288,74 L288,322"/>
+<path class="stz-grid" d="M448,74 L448,322"/>
+<path class="stz-grid" d="M704,74 L704,322"/>
+<text class="stz-s13" x="16" y="96">saat</text>
+<path class="stz-wm" d="M128,100 L160,100 L160,82 L176,82 L176,100 L192,100 L192,82 L208,82 L208,100 L224,100 L224,82 L240,82 L240,100 L256,100 L256,82 L272,82 L272,100 L288,100 L288,82 L304,82 L304,100 L320,100 L320,82 L336,82 L336,100 L352,100 L352,82 L368,82 L368,100 L384,100 L384,82 L400,82 L400,100 L416,100 L416,82 L432,82 L432,100 L448,100 L448,82 L464,82 L464,100 L480,100 L480,82 L496,82 L496,100 L512,100 L512,82 L528,82 L528,100 L544,100 L544,82 L560,82 L560,100 L576,100 L576,82 L592,82 L592,100 L608,100 L608,82 L624,82 L624,100 L640,100 L640,82 L656,82 L656,100 L672,100 L672,82 L688,82 L688,100 L704,100 L704,82 L720,82 L720,100 L726.4,100"/>
+<text class="stz-mono" x="16" y="160">STCURRENT</text>
+<text class="stz-m12 stz-mut" x="120" y="124" text-anchor="end">4</text>
+<text class="stz-m12 stz-mut" x="120" y="196" text-anchor="end">0</text>
+<path class="stz-grid" d="M128,120 L726.4,120"/>
+<text class="stz-m12" x="144" y="187" text-anchor="middle">0</text>
+<text class="stz-m12" x="176" y="115" text-anchor="middle">4</text>
+<text class="stz-m12" x="208" y="133" text-anchor="middle">3</text>
+<text class="stz-m12" x="240" y="151" text-anchor="middle">2</text>
+<text class="stz-m12" x="272" y="169" text-anchor="middle">1</text>
+<text class="stz-m12" x="304" y="187" text-anchor="middle">0</text>
+<text class="stz-m12" x="336" y="115" text-anchor="middle">4</text>
+<text class="stz-m12" x="368" y="133" text-anchor="middle">3</text>
+<text class="stz-m12" x="400" y="151" text-anchor="middle">2</text>
+<text class="stz-m12" x="432" y="169" text-anchor="middle">1</text>
+<text class="stz-m12" x="464" y="187" text-anchor="middle">0</text>
+<text class="stz-m12" x="496" y="115" text-anchor="middle">4</text>
+<text class="stz-m12" x="528" y="133" text-anchor="middle">3</text>
+<text class="stz-m12" x="553.6" y="151" text-anchor="middle">2</text>
+<text class="stz-m12" x="569.6" y="187" text-anchor="middle">0</text>
+<text class="stz-m12" x="592" y="115" text-anchor="middle">4</text>
+<text class="stz-m12" x="624" y="133" text-anchor="middle">3</text>
+<text class="stz-m12" x="656" y="151" text-anchor="middle">2</text>
+<text class="stz-m12" x="688" y="169" text-anchor="middle">1</text>
+<text class="stz-m12" x="715.2" y="187" text-anchor="middle">0</text>
+<path class="stz-wb" d="M128,192 L160,192 L160,120 L192,120 L192,138 L224,138 L224,156 L256,156 L256,174 L288,174 L288,192 L320,192 L320,120 L352,120 L352,138 L384,138 L384,156 L416,156 L416,174 L448,174 L448,192 L480,192 L480,120 L512,120 L512,138 L544,138 L544,156 L563.2,156 L563.2,192 L576,192 L576,120 L608,120 L608,138 L640,138 L640,156 L672,156 L672,174 L704,174 L704,192 L726.4,192"/>
+<path class="stz-wt" d="M368,212 L289,212" marker-end="url(#stz-arr)"/>
+<path class="stz-wt" d="M368,212 L447,212" marker-end="url(#stz-arr)"/>
+<text class="stz-s12 stz-b" x="368" y="228" text-anchor="middle">5 saat = RELOAD + 1</text>
+<text class="stz-mono" x="16" y="264">COUNT</text>
+<path class="stz-wa" d="M128,268 L288,268 L288,250 L377.6,250 L377.6,268 L448,268 L448,250 L563.2,250 L563.2,268 L704,268 L704,250 L726.4,250"/>
+<text class="stz-s13" x="16" y="303">istisna 15</text>
+<text class="stz-s12 stz-mut" x="16" y="319">(INTEN = 1)</text>
+<path class="stz-wa" d="M128,314 L288,314 L288,296 L300.8,296 L300.8,314 L448,314 L448,296 L460.8,296 L460.8,314 L704,314 L704,296 L716.8,296 L716.8,314 L726.4,314"/>
+<path class="stz-wmd" d="M136,74 L136,334"/>
+<path class="stz-wmd" d="M377.6,240 L377.6,334"/>
+<path class="stz-wmd" d="M563.2,110 L563.2,334"/>
+<text class="stz-s12 stz-b" x="136" y="350" text-anchor="middle">ENABLE = 1</text>
+<text class="stz-s12" x="136" y="365" text-anchor="middle">değer 0’dan başlar</text>
+<text class="stz-s12 stz-b" x="377.6" y="350" text-anchor="middle">STCTRL okundu</text>
+<text class="stz-s12" x="377.6" y="365" text-anchor="middle">→ COUNT = 0</text>
+<text class="stz-s12 stz-b" x="563.2" y="350" text-anchor="middle">STCURRENT’e yazıldı</text>
+<text class="stz-s12" x="563.2" y="365" text-anchor="middle">→ değer 0, COUNT = 0,</text>
+<text class="stz-s12" x="563.2" y="380" text-anchor="middle">istisna yok; sonraki</text>
+<text class="stz-s12" x="563.2" y="395" text-anchor="middle">saatte RELOAD yüklenir</text>
+<rect class="stz-code" x="16" y="410" width="728" height="62" rx="6"/>
+<text x="28" y="433" xml:space="preserve"><tspan class="stz-s15 stz-b">periyot = (RELOAD + 1) / f</tspan><tspan class="stz-s13 stz-mut">     f: CLK_SRC = 1 → SysClk, CLK_SRC = 0 → 4 MHz</tspan></text>
+<text x="28" y="455" xml:space="preserve"><tspan class="stz-s13">Ör. 16 MHz, RELOAD = 3 999 999 → 4 000 000 / 16 MHz = </tspan><tspan class="stz-s13 stz-b">0,25 s</tspan><tspan class="stz-s13 stz-mut">   ·   RELOAD = 0 yazılırsa sayıcı sonraki sarmada durur</tspan></text>
+</svg>

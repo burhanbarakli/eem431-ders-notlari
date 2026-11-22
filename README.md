@@ -11,6 +11,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `gpio-kesme/` | 2. GPIO kesmeleri |
 | `lcd/` | 3. LCD (HD44780) |
 | `saat-pll/` | 4. Sistem Saati ve PLL |
+| `systick/` | 5. SysTick |
 | `timer/` | 6. Zamanlayıcılar (GPTM) ve kesmelere giriş |
 | `adc/` | 7. ADC |
 | `uart/` | 8. UART ve seri port (PC tarafı C# dahil) |

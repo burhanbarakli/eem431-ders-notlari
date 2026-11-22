@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 590" class="stba-svg" role="img" aria-labelledby="stba-title stba-desc">
+<title id="stba-title">SysTick başlatma akışı</title>
+<desc id="stba-desc">Veri sayfası 3.1.1’deki başlatma sırası ve TivaWare karşılıkları. Ön adım (numarasız): STCTRL = 0 ile sayıcı durdurulur; TivaWare’de SysTickDisable yalnız ENABLE bitini 0 yapar. 1: STRELOAD = N − 1 yazılır; N istenen periyodun saat sayısıdır, en çok 16 777 216. SysTickPeriodSet(N) içeride N − 1 yazar. 2: STCURRENT’e herhangi bir değer yazılır; sayıcı 0 olur, COUNT temizlenir, istisna oluşmaz. Bu adımın TivaWare karşılığı yoktur; SysTickPeriodSet STCURRENT’e dokunmaz. 3: STCTRL’de CLK_SRC, INTEN ve ENABLE ayarlanır; register ile 0x07 kesmeli, 0x05 kesmesiz. TivaWare’de SysTickIntEnable INTEN’i, SysTickEnable CLK_SRC ile ENABLE’ı birlikte 1 yapar. Sonra iki dal: kesmesiz (INTEN = 0) kullanımda ana döngü STCTRL’yi okuyarak COUNT’u yoklar; kesmeli (INTEN = 1) kullanımda her sarmada istisna 15 oluşur ve işleyici çalışır; işleyici 3. adımdan önce bağlanır: startup tablosunun vektör 15 girişiyle ya da SysTickIntRegister ile; SysTickIntRegister INTEN’i de 1 yaptığından o durumda SysTickIntEnable gereksizdir. PRIMASK = 0 olmalıdır (IntMasterEnable).</desc>
+<defs>
+<marker id="stba-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="stba-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.stba-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.stba-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.stba-svg .stba-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.stba-svg .stba-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.stba-svg .stba-b{font-weight:700}
+.stba-svg .stba-s12{font-size:12px}
+.stba-svg .stba-s13{font-size:13px}
+.stba-svg .stba-s16{font-size:16px}
+.stba-svg .stba-mut{fill:var(--fig-muted,#76746c)}
+.stba-svg .stba-blu{fill:var(--fig-blue,#1f5fa8)}
+.stba-svg .stba-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.stba-svg .stba-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.stba-svg .stba-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.stba-svg .stba-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.stba-svg .stba-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.stba-svg .stba-circ{fill:var(--fig-accent,#b4481f)}
+.stba-svg .stba-dot{fill:var(--fig-stroke,#2b2b29)}
+.stba-svg .stba-head{fill:var(--fig-stroke,#2b2b29)}
+.stba-svg .stba-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+</style>
+<text class="stba-s16 stba-b" x="16" y="29">SysTick başlatma akışı</text>
+<text x="744" y="29" text-anchor="end" xml:space="preserve"><tspan class="stba-s13 stba-b">düz</tspan><tspan class="stba-s13"> = register   </tspan><tspan class="stba-s13 stba-b stba-blu">mavi</tspan><tspan class="stba-s13"> = TivaWare</tspan></text>
+<rect class="stba-opt" x="16" y="54" width="392" height="56" rx="8"/>
+<text x="32" y="79"><tspan class="stba-mono stba-b">STCTRL = 0</tspan></text>
+<text class="stba-s13 stba-mut" x="32" y="98">sayıcıyı durdur: ayar sırasında sayma olmasın</text>
+<rect class="stba-code" x="428" y="54" width="316" height="56" rx="6"/>
+<text x="440" y="77.5"><tspan class="stba-m12">NVIC_ST_CTRL_R = 0;</tspan></text>
+<text x="440" y="94.5" xml:space="preserve"><tspan class="stba-m12 stba-blu">SysTickDisable();</tspan><tspan class="stba-m12 stba-mut">  // yalnız ENABLE = 0</tspan></text>
+<path class="stba-w" d="M212,110 L212,131" marker-end="url(#stba-arr)"/>
+<rect class="stba-box" x="16" y="132" width="392" height="60" rx="8"/>
+<circle class="stba-circ" cx="38" cy="162" r="12"/>
+<text class="stba-num" x="38" y="167" text-anchor="middle">1</text>
+<text x="62" y="159"><tspan class="stba-mono stba-b">STRELOAD = N − 1</tspan></text>
+<text class="stba-s13 stba-mut" x="62" y="178">N: periyot, saat sayısı (en çok 16 777 216)</text>
+<rect class="stba-code" x="428" y="132" width="316" height="60" rx="6"/>
+<text x="440" y="157.5"><tspan class="stba-m12">NVIC_ST_RELOAD_R = N - 1;</tspan></text>
+<text x="440" y="174.5" xml:space="preserve"><tspan class="stba-m12 stba-blu">SysTickPeriodSet(N);</tspan><tspan class="stba-m12 stba-mut">  // N - 1 yazar</tspan></text>
+<path class="stba-w" d="M212,192 L212,213" marker-end="url(#stba-arr)"/>
+<rect class="stba-box" x="16" y="214" width="392" height="60" rx="8"/>
+<circle class="stba-circ" cx="38" cy="244" r="12"/>
+<text class="stba-num" x="38" y="249" text-anchor="middle">2</text>
+<text x="62" y="241"><tspan class="stba-mono stba-b">STCURRENT</tspan><tspan>’e herhangi bir değer yaz</tspan></text>
+<text class="stba-s13 stba-mut" x="62" y="260">sayıcı 0, COUNT = 0 olur; istisna oluşmaz</text>
+<rect class="stba-code" x="428" y="214" width="316" height="60" rx="6"/>
+<text x="440" y="231"><tspan class="stba-m12">NVIC_ST_CURRENT_R = 0;</tspan></text>
+<text x="440" y="248"><tspan class="stba-s12 stba-mut">TivaWare karşılığı yok: </tspan><tspan class="stba-m12 stba-mut">SysTickPeriodSet</tspan></text>
+<text x="440" y="265"><tspan class="stba-s12 stba-mut">STCURRENT’e dokunmaz</tspan></text>
+<path class="stba-w" d="M212,274 L212,295" marker-end="url(#stba-arr)"/>
+<rect class="stba-box" x="16" y="296" width="392" height="76" rx="8"/>
+<circle class="stba-circ" cx="38" cy="334" r="12"/>
+<text class="stba-num" x="38" y="339" text-anchor="middle">3</text>
+<text x="62" y="323"><tspan class="stba-mono stba-b">STCTRL</tspan><tspan>: </tspan><tspan class="stba-mono stba-b">CLK_SRC</tspan><tspan>, </tspan><tspan class="stba-mono stba-b">INTEN</tspan><tspan>, </tspan><tspan class="stba-mono stba-b">ENABLE</tspan></text>
+<text class="stba-s13 stba-mut" x="62" y="342">CLK_SRC = 1: SysClk · ENABLE = 1: başlat</text>
+<text class="stba-s13 stba-mut" x="62" y="358">INTEN: kesmeli 1, kesmesiz 0</text>
+<rect class="stba-code" x="428" y="296" width="316" height="76" rx="6"/>
+<text x="440" y="321" xml:space="preserve"><tspan class="stba-m12">NVIC_ST_CTRL_R = 0x07;</tspan><tspan class="stba-s12 stba-mut">   0x05: kesmesiz</tspan></text>
+<text x="440" y="338" xml:space="preserve"><tspan class="stba-m12 stba-blu">SysTickIntEnable();</tspan><tspan class="stba-m12 stba-mut">  // INTEN = 1</tspan></text>
+<text x="440" y="355" xml:space="preserve"><tspan class="stba-m12 stba-blu">SysTickEnable();</tspan><tspan class="stba-m12 stba-mut">  // CLK_SRC + ENABLE</tspan></text>
+<path class="stba-w" d="M212,372 L212,392"/>
+<circle class="stba-dot" cx="212" cy="392" r="3.4"/>
+<path class="stba-w" d="M194,392 L566,392"/>
+<path class="stba-w" d="M194,392 L194,419" marker-end="url(#stba-arr)"/>
+<path class="stba-w" d="M566,392 L566,419" marker-end="url(#stba-arr)"/>
+<text class="stba-s12 stba-b" x="202" y="410">INTEN = 0</text>
+<text class="stba-s12 stba-b" x="574" y="410">INTEN = 1</text>
+<rect class="stba-box" x="16" y="420" width="356" height="156" rx="8"/>
+<text x="28" y="442"><tspan class="stba-b">Kesmesiz: </tspan><tspan class="stba-mono stba-b">COUNT</tspan><tspan class="stba-b">’u yokla</tspan></text>
+<text class="stba-s13" x="28" y="462">Ana döngü STCTRL’yi sürekli okur; okuma</text>
+<text class="stba-s13" x="28" y="479">COUNT’u 0 yapar, her sarma bir kez görülür.</text>
+<rect class="stba-code" x="28" y="490" width="332" height="40" rx="4"/>
+<text class="stba-m12" x="38" y="506">while (1)</text>
+<text class="stba-m12" x="38" y="522" xml:space="preserve">  if (NVIC_ST_CTRL_R &amp; 0x10000) { … }</text>
+<rect class="stba-hl" x="388" y="420" width="356" height="156" rx="8"/>
+<text class="stba-b" x="400" y="442">Kesmeli: işleyici her sarmada çalışır</text>
+<text class="stba-s13" x="400" y="462">Her sarmada istisna 15; PRIMASK = 0 olmalı.</text>
+<text x="400" y="479"><tspan class="stba-s13">İşleyiciyi </tspan><tspan class="stba-s13 stba-b">3. adımdan önce</tspan><tspan class="stba-s13"> bağla: startup</tspan></text>
+<text class="stba-s13" x="400" y="496">tablosunda vektör 15 girişi ya da</text>
+<rect class="stba-code" x="400" y="506" width="332" height="40" rx="4"/>
+<text x="410" y="522"><tspan class="stba-m12 stba-blu">SysTickIntRegister(isleyici);</tspan><tspan class="stba-m12 stba-mut"> // + INTEN</tspan></text>
+<text x="410" y="538" xml:space="preserve"><tspan class="stba-m12 stba-blu">IntMasterEnable();</tspan><tspan class="stba-m12 stba-mut">  // CPSIE I</tspan></text>
+<text x="400" y="564"><tspan class="stba-s12 stba-mut">Bu durumda </tspan><tspan class="stba-m12 stba-mut">SysTickIntEnable</tspan><tspan class="stba-s12 stba-mut"> gereksiz (INTEN zaten 1)</tspan></text>
+</svg>

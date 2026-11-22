@@ -1,0 +1,919 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SysTick — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL Tiva C LaunchPad'de Cortex-M4 SysTick zamanlayıcısı: 24 bitlik aşağı sayıcı, STCTRL, STRELOAD ve STCURRENT register'ları, süre hesabı, veri sayfasının 3 adımlı başlatma sırası, yoklama ve kesme ile kullanım, istisna 15, SYSPRI3 önceliği, işleyiciyi bağlamanın iki yolu, API'siz ve TivaWare örnekleri, ms/µs gecikme fonksiyonu, TI Lab 4'ün SysTick ile uyarlaması.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 5. SysTick</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#nedir">1. SysTick nedir</a><ol>
+  <li><a href="#gptm-fark">SysTick ile GPTM</a></li></ol></li>
+<li><a href="#yapi">2. Yapı ve register'lar</a><ol>
+  <li><a href="#stctrl">STCTRL</a></li>
+  <li><a href="#streload">STRELOAD</a></li>
+  <li><a href="#stcurrent">STCURRENT</a></li></ol></li>
+<li><a href="#sure">3. Sayma ve süre hesabı</a><ol>
+  <li><a href="#en-uzun">En uzun süre</a></li>
+  <li><a href="#ders-sureleri">Ders kodlarındaki süreler</a></li></ol></li>
+<li><a href="#baslatma">4. Başlatma adımları</a><ol>
+  <li><a href="#api-esleme">Adımların TivaWare karşılığı</a></li></ol></li>
+<li><a href="#yoklama">5. Kesmesiz kullanım (yoklama)</a></li>
+<li><a href="#kesme">6. Kesmeli kullanım</a><ol>
+  <li><a href="#istisna">İstisna 15</a></li>
+  <li><a href="#oncelik">Öncelik ve PRIMASK</a></li>
+  <li><a href="#baglama">İşleyiciyi bağlamak</a></li>
+  <li><a href="#isleyici">İşleyicide bayrak</a></li>
+  <li><a href="#yazilim">Yazılımla tetikleme</a></li>
+  <li><a href="#karsilastirma">Yoklama mı, kesme mi?</a></li></ol></li>
+<li><a href="#ornekler">7. Örnekler</a><ol>
+  <li><a href="#ornek-yoklama-apisiz">7.1 API'siz, kesmesiz</a></li>
+  <li><a href="#ornek-kesme-apisiz">7.2 API'siz, kesmeli</a></li>
+  <li><a href="#ornek-yoklama-apili">7.3 API'li, kesmesiz</a></li>
+  <li><a href="#ornek-kesme-apili">7.4 API'li, kesmeli</a></li>
+  <li><a href="#gecikme">7.5 ms/µs gecikme</a></li>
+  <li><a href="#ders-kodlari">7.6 Dersteki kodlar ve hataları</a></li></ol></li>
+<li><a href="#hata-ayiklama">8. Hata ayıklama ve düşük güç</a></li>
+<li><a href="#lab">9. TI Lab uyarlaması</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynakca">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>SysTick</h1>
+<p class="lead">SysTick, Cortex-M4 çekirdeğinin içinde bulunan 24 bitlik basit bir zamanlayıcıdır. Saat kapısı açmak, kip seçmek ya da NVIC'te kesme izni vermek gerekmez. Üç register'a üç yazma yeter. Bu yüzden "her 1 ms'de bir" ya da "her 0,25 s'de bir" gibi düzenli bir tik üretmenin en kısa yoludur. Gerçek zamanlı işletim sistemleri (RTOS) de zaman dilimlerini bu zamanlayıcıyla sayar. Bu notta SysTick'in register'larını, süre hesabını, yoklama ve kesmeyle kullanımını ve dersteki yedi projeyi inceleyeceğiz.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p>Bu notun sonunda öğrenci:</p>
+<ol>
+<li>SysTick'in çekirdeğin bir parçası olduğunu, genel amaçlı zamanlayıcılardan (GPTM) farkını ve hangi işler için seçildiğini açıklayabilir.</li>
+<li>STCTRL (ENABLE, INTEN, CLK_SRC, COUNT), STRELOAD ve STCURRENT register'larının alanlarını ve STCURRENT'e yazmanın, STCTRL'yi okumanın yan etkilerini bilir.</li>
+<li>Periyot = (RELOAD + 1) / f bağıntısıyla istenen süre için RELOAD değerini hesaplayabilir. 24 bit sınırının farklı saatlerde hangi en uzun süreyi verdiğini bulabilir.</li>
+<li>Veri sayfasının 3 adımlı başlatma sırasını register düzeyinde ve TivaWare ile uygulayabilir. SysTick'i COUNT bayrağını yoklayarak ve kesmeyle kullanabilir.</li>
+<li>SysTick'in bir sistem istisnası (istisna 15) olduğunu, önceliğinin SYSPRI3'te tutulduğunu ve işleyicinin (handler; zamanlayıcı ve GPIO kesme notlarında ISR) startup tablosuna ya da <code>SysTickIntRegister</code> ile RAM tablosuna bağlanabildiğini gösterebilir.</li>
+<li>Sarmayı doğru hesaplayan bir ms/µs gecikme fonksiyonu yazabilir. Dersteki kodlardaki hataları ve gereksiz satırları bulabilir.</li>
+</ol></div>
+
+<h2 id="nedir">1. SysTick nedir</h2>
+<p><b>Amaç:</b> SysTick'in yongadaki yerini ve neden ayrı bir zamanlayıcı olarak bulunduğunu görmek.</p>
+<p>Veri sayfası SysTick'i şöyle tanımlar: Cortex-M4'e tümleşik bir sistem zamanlayıcısı. 24 bitliktir, yazınca temizlenir, aşağı sayar ve sıfırda sarar (§3.1.1, s. 123). Aynı bölümde önerilen kullanımlar şunlardır:</p>
+<ul>
+<li><b>RTOS tiki:</b> programlanabilir bir hızda (örneğin 100 Hz) kesme üreterek işletim sisteminin zaman dilimlerini sayar.</li>
+<li><b>Yüksek hızlı alarm:</b> sistem saatiyle çalıştığı için çözünürlüğü bir saat çevrimidir (80 MHz'te 12,5 ns).</li>
+<li><b>Süre ölçümü:</b> bir işin kaç çevrim sürdüğünü ölçen basit bir sayıcı.</li>
+<li><b>Süre denetimi:</b> COUNT biti, bir işin belirlenen süre içinde bitip bitmediğini anlamak için kullanılabilir.</li>
+</ul>
+<p>SysTick'in register'ları çekirdeğin özel çevre birimi alanındadır (System Control Space, taban <code>0xE000.E000</code>). Bu alan NVIC, MPU ve FPU register'larıyla aynı yerdir (veri sayfası Bölüm 3 "Cortex-M4 Peripherals", Tablo 3-8):</p>
+<table>
+<thead><tr><th>Register</th><th>Adres</th><th>Tür, reset</th><th>Başlık dosyası adı</th><th>ARM adı</th></tr></thead>
+<tbody>
+<tr><td>STCTRL: denetim ve durum</td><td><code>0xE000.E010</code></td><td>RW, <code>0x0000.0004</code></td><td><code>NVIC_ST_CTRL_R</code></td><td>SYST_CSR</td></tr>
+<tr><td>STRELOAD: yeniden yükleme değeri</td><td><code>0xE000.E014</code></td><td>RW, tanımsız</td><td><code>NVIC_ST_RELOAD_R</code></td><td>SYST_RVR</td></tr>
+<tr><td>STCURRENT: anlık değer</td><td><code>0xE000.E018</code></td><td>RWC, tanımsız</td><td><code>NVIC_ST_CURRENT_R</code></td><td>SYST_CVR</td></tr>
+</tbody></table>
+<p>Başlık dosyasındaki adların <code>NVIC_</code> ile başlaması SysTick'in NVIC'in bir parçası olduğu anlamına gelmez. Register'lar yalnız aynı adres bloğundadır. TivaWare'de aynı adresler <code>inc/hw_nvic.h</code>'de <code>NVIC_ST_CTRL</code>, <code>NVIC_ST_RELOAD</code>, <code>NVIC_ST_CURRENT</code> adlarıyla bulunur. Üç register da yalnız ayrıcalıklı (privileged) kipte erişilebilir ve hizalı 32 bitlik erişimle okunup yazılmalıdır (s. 123, 138). Reset sonrasında işlemci ayrıcalıklı kipte başlar ve ders programları bu kipte kalır, dolayısıyla bu kısıt bizi etkilemez.</p>
+
+<h3 id="gptm-fark">SysTick ile GPTM</h3>
+<p><a href="../timer/">Zamanlayıcılar notundaki</a> GPTM birimleri SysTick'ten çok daha yeteneklidir. SysTick'i seçmenin nedeni sadeliği ve her Cortex-M4'te aynı olmasıdır:</p>
+<table>
+<thead><tr><th></th><th>SysTick</th><th>GPTM (Timer0–5, WTimer0–5)</th></tr></thead>
+<tbody>
+<tr><td>Sayısı</td><td>1</td><td>6 adet 16/32 bit, 6 adet 32/64 bit</td></tr>
+<tr><td>Yeri</td><td>Çekirdeğin içi, <code>0xE000.E010</code></td><td>Çevre birimi alanı (Timer0: <code>0x4003.0000</code>)</td></tr>
+<tr><td>Saat kapısı</td><td>Yok, her zaman erişilebilir</td><td><code>RCGCTIMER</code> / <code>SysCtlPeripheralEnable</code> gerekir</td></tr>
+<tr><td>Genişlik, yön</td><td>24 bit, yalnız aşağı</td><td>16/32/64 bit, aşağı ya da yukarı, ön bölücülü</td></tr>
+<tr><td>Kipler</td><td>Yalnız periyodik (sürekli yeniden yükleme)</td><td>Tek atım, periyodik, RTC, kenar sayma, kenar zamanlama, PWM</td></tr>
+<tr><td>Saat kaynağı</td><td>Sistem saati ya da PIOSC/4</td><td>Sistem saati (ayrıntı Zamanlayıcılar notunda)</td></tr>
+<tr><td>Kesme</td><td>Sistem istisnası 15. NVIC'te EN biti yok, yalnız INTEN</td><td>NVIC kesmesi (Timer0A: kesme 19, EN0 bit 19)</td></tr>
+<tr><td>Bayrak temizleme</td><td>COUNT okununca temizlenir. Kesmede temizlenecek bayrak yok</td><td>ISR'de GPTMICR'ye 1 yazılır</td></tr>
+<tr><td>Taşınabilirlik</td><td>ARM'ın çekirdek tanımının parçası, başka üreticilerin Cortex-M4'lerinde de aynı</td><td>TI'ya özgü</td></tr>
+</tbody></table>
+<p>Kısacası düzenli bir tik ya da kısa bir gecikme gerekiyorsa SysTick, giriş yakalama, PWM, tek atım ya da 0,2 s'den uzun bir aralık gerekiyorsa GPTM kullanılır. 80 MHz'te SysTick'in en uzun aralığı 0,21 s'dir (<a href="#en-uzun">Bölüm 3</a>). SysTick'i bir RTOS kullanıyorsa uygulama ona dokunmamalıdır. Uygulamanın kendi zamanlama işleri o durumda GPTM'ye kalır.</p>
+
+<h2 id="yapi">2. Yapı ve register'lar</h2>
+<p><b>Amaç:</b> SysTick'in iç yapısını ve üç register'ın her bitini tanımak.</p>
+<figure><img class="fig" src="../img/systick-blok.svg" alt="SysTick blok şeması: CLK_SRC seçicisi sistem saati (1) ile PIOSC÷4 (0, 4 MHz) arasında seçim yapar; seçilen saat 24 bitlik aşağı sayıcıyı sürer; sayıcı sıfırdan sonra STRELOAD'daki değerle yeniden yüklenir; STCURRENT sayıcının anlık değerini gösterir; sıfır algılama STCTRL'deki COUNT bitini (bit 16) kurar; INTEN (bit 1) 1 ise istisna 15 istenir ve işleyici çalışır; ENABLE (bit 0) sayıcıyı açar"><figcaption><b>Şekil 1.</b> SysTick'in yapısı (veri sayfası §3.1.1 ve s. 138–141'e göre çizilmiştir). CLK_SRC = 1 sistem saatini, CLK_SRC = 0 PIOSC/4'ü (4 MHz) seçer. 24 bitlik sayıcı her saatte bir azalır. 1'den 0'a inişte COUNT kurulur. Bir sonraki saatte sayıcı STRELOAD'daki değeri yükler. INTEN = 1 ise 0'a iniş istisna 15'i ister.</figcaption></figure>
+
+<h3 id="stctrl">STCTRL (ofset 0x010, reset 0x0000.0004)</h3>
+<table>
+<thead><tr><th>Bit</th><th>Ad</th><th>Tür</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>16</td><td>COUNT</td><td>RO</td><td>1: son okumadan beri sayıcı 0'a ulaştı. <b>STCTRL okunduğunda</b> ya da STCURRENT'e herhangi bir değer yazıldığında temizlenir.</td></tr>
+<tr><td>2</td><td>CLK_SRC</td><td>RW</td><td>1: sistem saati, 0: PIOSC/4. Reset değeri 1'dir.</td></tr>
+<tr><td>1</td><td>INTEN</td><td>RW</td><td>1: sayıcı 0'a ulaşınca SysTick istisnası istenir. 0: kesme yok, durum COUNT'tan izlenir.</td></tr>
+<tr><td>0</td><td>ENABLE</td><td>RW</td><td>1: sayıcı çalışır. RELOAD'dan 0'a sayar, COUNT'u kurar, INTEN açıksa kesme ister, yeniden yükleyip devam eder ("multi-shot").</td></tr>
+</tbody></table>
+<p>Bit 15:3 ve 31:17 ayrılmıştır (s. 138–139). Tablodaki maskelerin sayısal değerleri: COUNT = <code>0x0001.0000</code> (65 536), CLK_SRC = <code>0x4</code>, INTEN = <code>0x2</code>, ENABLE = <code>0x1</code>. Kesmesiz çalışma için STCTRL'ye <code>0x05</code>, kesmeli çalışma için <code>0x07</code> yazılır. Başlık dosyasında bunların adları <code>NVIC_ST_CTRL_COUNT</code>, <code>_CLK_SRC</code>, <code>_INTEN</code>, <code>_ENABLE</code>'dır.</p>
+<p>COUNT'un "okununca temizlenir" olması önemlidir: STCTRL'yi okuyan her satır bayrağı siler. Örneğin <code>NVIC_ST_CTRL_R |= NVIC_ST_CTRL_INTEN;</code> bir oku-değiştir-yaz işlemidir ve o anda kalkmış bir COUNT'u kaybettirir. Veri sayfası hata ayıklayıcının okumasının da COUNT'u temizleyebileceğini belirtir (s. 138, <a href="#hata-ayiklama">Bölüm 8</a>).</p>
+
+<h3 id="streload">STRELOAD (ofset 0x014, reset tanımsız)</h3>
+<p>RELOAD alanı bit 23:0'dır, bit 31:24 ayrılmıştır. Sayıcı 0'a ulaştığında STCURRENT'e yüklenecek değeri tutar. Geçerli aralık <code>0x1</code> ile <code>0x00FF.FFFF</code> (16 777 215) arasıdır. Periyot RELOAD + 1 saattir. Veri sayfasının örneğine göre her 100 saatte bir kesme için RELOAD alanına 99 yazılır (s. 140).</p>
+<ul>
+<li><b>RELOAD = 0:</b> yazılabilir ama "etkisi yoktur", çünkü COUNT ve kesme 1'den 0'a inişte üretilir (s. 140). §3.1.1 bunu şöyle söyler: STRELOAD'u temizlemek sayıcıyı bir sonraki sarmada durdurur (s. 123). Sayıcıyı durdurmanın doğru yolu yine de ENABLE = 0'dır.</li>
+<li><b>8 MHz notu:</b> veri sayfası bu register'a doğru erişim için sistem saatinin 8 MHz'ten hızlı olması gerektiğini yazar (s. 140). Sistem saati PIOSC/4 (4 MHz) ya da LFIOSC seçilmişse bu koşul sağlanmaz. CLK_SRC = 0 ile SysTick'in PIOSC/4'ü sayması ise bu koşulu bozmaz, çünkü burada sözü edilen sistem saatidir.</li>
+</ul>
+
+<h3 id="stcurrent">STCURRENT (ofset 0x018, reset tanımsız)</h3>
+<p>CURRENT alanı bit 23:0'dır ve sayıcının okunduğu andaki değerini verir. Tür "RWC"dir: <b>herhangi bir değer yazmak register'ı 0 yapar ve STCTRL'deki COUNT'u da temizler</b> (s. 141). Yazma SysTick istisnasını tetiklemez (s. 123). Sayıcı 0 olduktan sonraki ilk saatte RELOAD'u yükler. Böylece STCURRENT'e yazmak bir sonraki periyodu tam bir periyot olarak başlatır. TivaWare'in <code>SysTickEnable</code> ve <code>SysTickPeriodSet</code> açıklamaları da aynı şeyi söyler: bu fonksiyonlar sayıcıyı yeniden yüklemez. Hemen yeniden yükleme gerekiyorsa <code>NVIC_ST_CURRENT</code>'e yazılmalıdır (<code>driverlib/systick.c</code>, satır 63–69 ve 210–215).</p>
+<p>STRELOAD ve STCURRENT reset sonrasında tanımsızdır (s. 123). Başlatmada STCURRENT'e yazılmazsa ilk periyot RELOAD'a değil, sayıcıda rastgele kalmış değere bağlıdır. Bu değer 2<sup>24</sup> − 1'e kadar çıkabilir.</p>
+
+<h2 id="sure">3. Sayma ve süre hesabı</h2>
+<p><b>Amaç:</b> istenen süreden RELOAD değerini, RELOAD değerinden süreyi bulmak.</p>
+<figure><img class="fig" src="../img/systick-sayma-zamanlama.svg" alt="SysTick sayma zaman diyagramı, RELOAD = 4: sayıcı 4, 3, 2, 1, 0 değerlerinden geçer ve 0'dan sonraki saatte yeniden 4'ü yükler; bir periyot 5 saattir; 1'den 0'a inişte COUNT 1 olur ve STCTRL okununca 0'a döner; STCURRENT'e yazıldığında sayıcı 0 olur, COUNT temizlenir, istisna oluşmaz ve bir sonraki saatte 4 yüklenir"><figcaption><b>Şekil 2.</b> RELOAD = 4 ile sayma. Sayıcı 4 → 3 → 2 → 1 → 0 değerlerinden geçer, sonraki saatte yeniden 4'ü yükler. Periyot RELOAD + 1 = 5 saattir. COUNT 1'den 0'a inişte kurulur ve STCTRL okunana kadar 1 kalır. STCURRENT'e yazmak sayıcıyı 0 yapar ve COUNT'u temizler, ama istisna üretmez.</figcaption></figure>
+<p>Sayıcı RELOAD'dan başlayıp 0'a kadar her değerde bir saat kalır. Bu RELOAD + 1 farklı değer, yani RELOAD + 1 saat eder:</p>
+<p style="text-align:center"><b>T = (RELOAD + 1) / f</b> &nbsp;&nbsp;·&nbsp;&nbsp; <b>RELOAD = T × f − 1</b></p>
+<p>Burada f, CLK_SRC = 1 iken sistem saati, CLK_SRC = 0 iken 4 MHz'tir. Örnekler: 80 MHz'te 1 ms için RELOAD = 80 000 − 1 = 79 999, 10 ms için 799 999. 16 MHz'te 0,25 s için 3 999 999. TivaWare'in <code>SysTickPeriodSet(N)</code> fonksiyonu periyodu <b>saat sayısı</b> olarak alır ve register'a <code>N − 1</code> yazar. N 1 ile 16 777 216 arasında olmalıdır (<code>systick.c</code> satır 226–231). <code>SysTickPeriodGet()</code> de RELOAD + 1 döndürür. Bu yüzden API'li kodda "−1" yazılmaz: <code>SysTickPeriodSet(SysCtlClockGet() / 1000)</code> doğrudan 1 ms verir.</p>
+
+<h3 id="en-uzun">En uzun süre ve çözünürlük</h3>
+<p>RELOAD en çok <code>0xFF.FFFF</code> olabilir. Bu durumda periyot 2<sup>24</sup> = 16 777 216 saattir:</p>
+<table>
+<thead><tr><th>SysTick saati</th><th>Nasıl</th><th>Çözünürlük (1 saat)</th><th>En uzun periyot</th><th>1 ms için RELOAD</th></tr></thead>
+<tbody>
+<tr><td>4 MHz</td><td>CLK_SRC = 0 (PIOSC/4, ±%3)</td><td>250 ns</td><td>4,194 s</td><td>3 999</td></tr>
+<tr><td>16 MHz</td><td>Saat kodu yok (PIOSC) ya da kristal, PLL'siz</td><td>62,5 ns</td><td>1,049 s</td><td>15 999</td></tr>
+<tr><td>40 MHz</td><td><code>SYSCTL_SYSDIV_5</code></td><td>25 ns</td><td>0,419 s</td><td>39 999</td></tr>
+<tr><td>50 MHz</td><td><code>SYSCTL_SYSDIV_4</code></td><td>20 ns</td><td>0,336 s</td><td>49 999</td></tr>
+<tr><td>80 MHz</td><td><code>SYSCTL_SYSDIV_2_5</code></td><td>12,5 ns</td><td>0,210 s</td><td>79 999</td></tr>
+</tbody></table>
+<p>Daha uzun süreler için iki yol vardır: tikleri bir yazılım sayacıyla saymak (ders kodlarındaki <code>a==4</code> gibi) ya da CLK_SRC = 0 ile 4 MHz'e geçmek. İkincisi sistem saatinden bağımsız bir zaman tabanı verir, ama PIOSC'nin ±%3 doğruluğunu taşır. TivaWare'in <code>SysTickEnable()</code> fonksiyonu CLK_SRC'yi her zaman 1 yapar (<code>systick.c</code> satır 80). PIOSC/4 için STCTRL'ye doğrudan yazmak gerekir. Saatlerin ayrıntısı <a href="../saat-pll/">Sistem Saati ve PLL notunda</a>.</p>
+<div class="box warn"><span class="box-title">24 bit sınırı sessizce aşılır</span>
+<p>80 MHz'te <code>SysTickPeriodSet(SysCtlClockGet() / 4)</code> (0,25 s) 20 000 000 saat ister. Bu değer 2<sup>24</sup>'ü aşar. TivaWare'deki <code>ASSERT</code> yalnız <code>DEBUG</code> tanımlıyken çalışır. Normal derlemede register'a 19 999 999 = <code>0x131.2CFF</code> yazılır, üst bitler düşer ve RELOAD <code>0x31.2CFF</code> = 3 222 783 olur. Periyot 0,25 s yerine yaklaşık <b>40 ms</b> çıkar. Derleyici ya da donanım hiçbir uyarı vermez. Süreyi saatten hesaplayan kod, sonucun 16 777 216'yı aşmadığını da denetlemelidir.</p></div>
+
+<h3 id="ders-sureleri">Ders kodlarındaki süreler</h3>
+<table>
+<thead><tr><th>Proje</th><th>Saat</th><th>RELOAD</th><th>Sarma aralığı</th><th>LED değişimi</th><th>LED periyodu</th></tr></thead>
+<tbody>
+<tr><td><code>hafta07systicnoapinoint</code>, <code>hafta07systicnoapiwithint</code>, <code>systick01kesmesizApisiz</code>, <code>systick01kesmeliApisiz</code></td><td>16 MHz PIOSC (saat kodu yok)</td><td>15 999 999</td><td>1 s (±%3)</td><td>Her sarmada, 1 s (PF2, mavi)</td><td>2 s</td></tr>
+<tr><td><code>hafta07systickapiwithint</code></td><td>40 MHz</td><td><code>SysTickPeriodSet(10000000)</code> → 9 999 999</td><td>0,25 s</td><td><code>a==4</code>, 1 s (PF2, mavi)</td><td>2 s</td></tr>
+<tr><td><code>systickapikesmesiz</code>, <code>systickapikesmeli</code></td><td>40 MHz</td><td><code>SysTickPeriodSet(5000000)</code> → 4 999 999</td><td>0,125 s</td><td><code>a==4</code>, 0,5 s (PF3, yeşil)</td><td>1 s</td></tr>
+</tbody></table>
+<p>API'siz projelerin RELOAD'u 16 MHz'e göre seçilmiştir. Aynı kod bir saat ayarından sonra çalışırsa süreler kısalır: 40 MHz'te 0,4 s. 80 MHz'te ise 15 999 999 hâlâ 24 bite sığar ama 0,2 s eder.</p>
+
+<h2 id="baslatma">4. Başlatma adımları</h2>
+<p><b>Amaç:</b> SysTick'i veri sayfasının önerdiği sırayla kurmak. Adım numaraları Şekil 3'te, bu bölümde ve örnek kodların yorumlarında aynıdır.</p>
+<p>Veri sayfası §3.1.1 (s. 123) STRELOAD ile STCURRENT'in reset sonrasında tanımsız olduğunu hatırlatır ve şu sırayı verir:</p>
+<ol>
+<li><b>STRELOAD'u yaz:</b> RELOAD = T × f − 1.</li>
+<li><b>STCURRENT'e herhangi bir değer yaz:</b> sayıcı 0 olur, COUNT temizlenir. İlk periyot tam bir periyot olarak başlar.</li>
+<li><b>STCTRL'yi ayarla:</b> saat kaynağı (CLK_SRC), kesme (INTEN) ve sayıcıyı açma (ENABLE). Kesmesiz <code>0x05</code>, kesmeli <code>0x07</code>.</li>
+</ol>
+<p>Ders kodları ve bu notun örnekleri bu üç adımın önüne <code>STCTRL = 0</code> yazmasını koyar. Veri sayfasında numarası olmadığı için burada <b>ön adım</b> denir. Sayıcı zaten çalışıyorsa (örneğin fonksiyon ikinci kez çağrılırsa) ayar bitene kadar durdurur ve yarım ayarla kesme gelmesini önler. Reset sonrasında ENABLE zaten 0'dır, yani ilk çağrıda ön adım zorunlu değildir.</p>
+<figure><img class="fig" src="../img/systick-baslatma-akisi.svg" alt="SysTick başlatma akışı: numarasız ön kutu STCTRL = 0 (sayıcıyı durdur); 1 STRELOAD = RELOAD; 2 STCURRENT = herhangi bir değer (0); 3 STCTRL = 0x05 (kesmesiz) ya da 0x07 (kesmeli); ardından iki dal: kesmesiz dalda döngüde COUNT yoklanır, kesmeli dalda işleyici startup tablosuna ya da SysTickIntRegister ile bağlanır ve isteğe bağlı olarak SYSPRI3'te öncelik verilir"><figcaption><b>Şekil 3.</b> SysTick başlatma sırası. Ön kutu numarasızdır. 1, 2 ve 3 veri sayfası §3.1.1'deki adımlardır. Kesmesiz dalda program COUNT'u yoklar. Kesmeli dalda işleyicinin bağlanması 3. adımdan önce yapılır (öncelik için <a href="#oncelik">Bölüm 6</a>). <code>SysTickIntRegister</code> kullanılırsa INTEN'i o kurduğu için <code>SysTickIntEnable</code> gereksizdir.</figcaption></figure>
+<p>Kesmeli kullanımda işleyici bağlantısı ve öncelik ayarı 3. adımdan <b>önce</b> yapılmalıdır. INTEN ile ENABLE aynı anda 1 olduğu andan itibaren istisna gelebilir. O anda vektör tablosunda hâlâ <code>IntDefaultHandler</code> varsa program onun sonsuz döngüsünde kalır.</p>
+
+<h3 id="api-esleme">Adımların TivaWare karşılığı</h3>
+<table>
+<thead><tr><th>Adım</th><th>API'siz</th><th>TivaWare (<code>driverlib/systick.c</code>)</th><th>Not</th></tr></thead>
+<tbody>
+<tr><td>Ön adım</td><td><code>NVIC_ST_CTRL_R = 0;</code></td><td><code>SysTickDisable()</code></td><td>Yalnız ENABLE'ı temizler (satır 99)</td></tr>
+<tr><td>1</td><td><code>NVIC_ST_RELOAD_R = N - 1;</code></td><td><code>SysTickPeriodSet(N)</code></td><td>−1'i fonksiyon yapar. 1 ≤ N ≤ 16 777 216</td></tr>
+<tr><td>2</td><td><code>NVIC_ST_CURRENT_R = 0;</code></td><td>Karşılığı yok: <code>HWREG(NVIC_ST_CURRENT) = 0;</code></td><td>API'li ders kodları bu adımı atlar</td></tr>
+<tr><td>Kesme bağlama</td><td>Startup tablosu</td><td><code>SysTickIntRegister(f)</code></td><td><code>IntRegister(FAULT_SYSTICK, f)</code> + INTEN = 1 (satır 124–129)</td></tr>
+<tr><td>3</td><td><code>NVIC_ST_CTRL_R = 0x07;</code> (ya da 0x05)</td><td><code>SysTickIntEnable()</code> + <code>SysTickEnable()</code></td><td><code>SysTickEnable</code> CLK_SRC ve ENABLE'ı |= ile kurar (satır 80)</td></tr>
+<tr><td>Okuma</td><td><code>NVIC_ST_CURRENT_R</code></td><td><code>SysTickValueGet()</code></td><td>COUNT'u okuyan bir API fonksiyonu yoktur</td></tr>
+</tbody></table>
+
+<h2 id="yoklama">5. Kesmesiz kullanım (yoklama)</h2>
+<p><b>Amaç:</b> COUNT bayrağıyla, kesme kullanmadan düzenli aralıklarla iş yapmak.</p>
+<p>INTEN = 0 iken sayıcı yine çalışır ve her 0'a inişte COUNT'u kurar. Program döngüde STCTRL'yi okur. COUNT 1 ise bir periyot dolmuştur. Okuma bayrağı kendiliğinden temizlediği için ayrıca bir "temizle" satırı gerekmez:</p>
+<pre><code class="language-c">while (1) {
+    if (NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT) {   // okuma COUNT'u temizler
+        GPIO_PORTF_DATA_R ^= 0x04;               // bir periyot doldu
+    }
+}</code></pre>
+<p>Ders kodları aynı testi <code>(NVIC_ST_CTRL_R &amp; 0x10000) == 65536</code> ya da <code>NVIC_ST_CTRL_R &amp; 0x10000</code> biçiminde yazar. İkisi de doğrudur: 0x10000 = 65 536. Başlık dosyasındaki adı kullanmak hem okunurluğu artırır hem de sayıyı yanlış yazma olasılığını ortadan kaldırır.</p>
+<p>Yoklamanın sakıncaları <a href="../gpio-kesme/#yoklama-sorunu">GPIO kesmeleri notunda</a> anlatılanlarla aynıdır. SysTick'e özgü olanlar şunlardır:</p>
+<ul>
+<li><b>Bayrak birikmez:</b> COUNT tek bittir. İki STCTRL okuması arası bir periyodu aşarsa iki sarma tek sarma gibi görünür ve süre sessizce kayar.</li>
+<li><b>İşlemci hep meşguldür:</b> döngü STCTRL'yi sürekli okur. İşlemci uykuya geçirilemez.</li>
+<li><b>Bayrağı başka bir okuma silebilir:</b> STCTRL'yi okuyan her satır, örneğin <code>NVIC_ST_CTRL_R |= …</code> ya da başka bir fonksiyondaki bir kontrol, COUNT'u siler. Ana döngü o sarmayı hiç görmez.</li>
+</ul>
+<p>Bu sınırlar içinde yoklama basit ve öngörülebilir bir yoldur. Ana döngüde süresi kısa ve belli birkaç iş varsa yeterlidir.</p>
+
+<h2 id="kesme">6. Kesmeli kullanım</h2>
+<p><b>Amaç:</b> SysTick kesmesinin GPIO ve zamanlayıcı kesmelerinden farkını görmek. Kesmenin genel mekanizması (yığına kaydetme, vektör tablosu, ISR kuralları) <a href="../timer/#kesme">Zamanlayıcılar notunun 2. bölümünde</a> anlatılıyor ve burada tekrarlanmıyor. Bu notta <b>işleyici</b> (handler) denen fonksiyon, o notlardaki ISR'dir.</p>
+
+<h3 id="istisna">İstisna 15</h3>
+<p>SysTick bir <b>sistem istisnasıdır</b>, çevre birimi kesmesi (IRQ) değildir. Veri sayfasının istisna tablosunda vektör numarası 15, vektör adresi <code>0x0000.003C</code>, önceliği programlanabilir olarak yer alır (Tablo 2-8, s. 103–104). Tanımı da şudur: sistem zamanlayıcısı, kesme üretmesine izin verilmişken sıfıra ulaşınca bu istisnayı üretir. Yazılım da INTCTRL register'ıyla aynı istisnayı üretebilir. İşletim sistemleri onu sistem tiki olarak kullanır (s. 103). Bunun pratik sonuçları:</p>
+<ul>
+<li><b>NVIC'te izin biti yoktur.</b> EN0–EN4 register'ları yalnız kesme 0–138'i (vektör 16 ve üstü) kapsar. SysTick için <code>IntEnable</code> ya da EN0 yazması gerekmez. Kaynaktaki INTEN = 1 yeterlidir. TivaWare'de karşılığı <code>SysTickIntEnable()</code>'dır.</li>
+<li><b>Kesme numarası yoktur.</b> Vektör numarası 15'tir. TivaWare sabiti <code>INT_…</code> değil <code>FAULT_SYSTICK</code>'tir (<code>inc/hw_ints.h</code>, değeri 15).</li>
+<li><b>Öncelik NVIC'in PRIn register'larında değil, SCB'nin SYSPRI3 register'ındadır.</b></li>
+</ul>
+<figure><img class="fig" src="../img/systick-kesme-yolu.svg" alt="SysTick istisnasının yolu: sayıcı 0'a iner, INTEN = 1 ise istisna 15 bekliyor olur (NVIC EN0–EN4'te biti yoktur); öncelik SYSPRI3 TICK alanından (bit 31:29) gelir; PRIMASK = 0 olmalıdır; işlemci vektör 15'i ofset 0x3C'den okur: ya flash'taki startup tablosu (g_pfnVectors) ya da VTABLE ile gösterilen RAM tablosu (g_pfnRAMVectors, SysTickIntRegister); işleyici çalışır. Karşılaştırma için GPIO Port F: GPIOIM, NVIC EN0 bit 30, PRI7 bit 23:21, PRIMASK, vektör 46, ofset 0x0B8"><figcaption><b>Şekil 4.</b> SysTick istisnasının yolu ve GPIO Port F kesmesiyle (kesme 30) karşılaştırması. SysTick'te çevre birimi maskesinin yerini INTEN alır. NVIC'teki izin geçidi yoktur. Öncelik SYSPRI3'ün TICK alanındadır. PRIMASK ve vektör tablosu iki kesme için de aynıdır. SysTick'in girişi vektör 15'tir (ofset 0x3C), Port F'ninki vektör 46'dır (ofset 0x0B8). <code>SysTickIntRegister</code>, <code>IntRegister</code> ile bu girişi yazar ve INTEN'i 1 yapar. <code>IntRegister</code> ilk çağrıda tabloyu SRAM'e kopyalar.</figcaption></figure>
+<p>Şekil 4'teki geçitleri <a href="../timer/#nvic">Zamanlayıcılar notunun üç geçidiyle</a> karşılaştırınca fark açıkça görülür. Timer0A'da GPTMIMR, NVIC EN0 ve PRIMASK açık olmalıdır. SysTick'te yalnız INTEN ve PRIMASK açık olmalıdır.</p>
+
+<h3 id="oncelik">Öncelik ve PRIMASK</h3>
+<p><b>SYSPRI3</b> (<code>0xE000.ED20</code>) SysTick, PendSV ve Debug önceliklerini tutar. SysTick'in alanı <b>TICK, bit 31:29</b>'dur. Değer 0–7 arasıdır, küçük değer yüksek önceliktir, reset değeri 0'dır (s. 172). Register bayt erişimlidir.</p>
+<div class="compare"><div>
+<div class="code-head"><span class="file">öncelik = 3</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R &amp; ~NVIC_SYS_PRI3_TICK_M)
+                | (3u &lt;&lt; NVIC_SYS_PRI3_TICK_S);  // bit 31:29</code></pre>
+</div><div>
+<div class="code-head"><span class="file">öncelik = 3</span><span class="tag api">API'li</span></div><pre><code class="language-c">IntPrioritySet(FAULT_SYSTICK, 3 &lt;&lt; 5);   // 0x60, üst 3 bit</code></pre>
+</div></div>
+<p><code>IntPrioritySet</code>, 15 numarası için SYSPRI3'ün en üst baytını yazar (<code>interrupt.c</code>'deki <code>g_pui32Regs</code> tablosu, satır 75–83 ve 539–542). Bu baytın bit 28:24'ü ayrılmış olduğu için yalnız üst 3 bit anlamlıdır. Reset sonrasında SysTick ve bütün kesmelerin önceliği 0'dır. Eşit öncelikte biri ötekini kesemez. İkisi aynı anda bekliyorsa numarası küçük olan, yani SysTick (15) önce çalışır (<a href="../timer/#oncelik">Zamanlayıcılar notu, Öncelik</a>). RTOS'lar SysTick'e çoğunlukla en düşük önceliği verir. Böylece tik işleyicisi donanım kesmelerini geciktirmez.</p>
+<p><b>PRIMASK</b> bütün programlanabilir öncelikli istisnaları, dolayısıyla SysTick'i de maskeler. Reset değeri 0'dır (s. 85), yani kesmeler açılışta genel olarak açıktır. <code>IntMasterEnable()</code> (<code>CPSIE I</code>) ancak program bir yerde <code>IntMasterDisable()</code> ya da <code>CPSID I</code> kullandıysa gereklidir. Yine de, kesmeye dayanan kodun sonunda bu çağrının bulunması zararsızdır ve niyeti açıkça gösterir.</p>
+
+<h3 id="baglama">İşleyiciyi bağlamak</h3>
+<p>İşleyicinin adresi vektör tablosunun 15. girişine yazılmalıdır. CCS projelerindeki <code>tm4c123gh6pm_startup_ccs.c</code> bu girişi <code>IntDefaultHandler</code> ile doldurur. Bu bir sonsuz döngüdür. İki yol vardır. İkisi GPIO ve zamanlayıcı kesmeleriyle aynıdır (<a href="../gpio-kesme/#isr-baglama">GPIO kesmeleri notu, ISR'yi bağlamak</a>):</p>
+<table>
+<thead><tr><th></th><th>Yol 1: startup tablosu (statik)</th><th>Yol 2: <code>SysTickIntRegister</code> (dinamik)</th></tr></thead>
+<tbody>
+<tr><td>Ne yapılır</td><td>Dosyanın başına <code>extern void Ad(void);</code> eklenir. <code>// The SysTick handler</code> yorumlu satırda <code>IntDefaultHandler</code> yerine <code>Ad</code> yazılır.</td><td><code>SysTickIntRegister(Ad);</code> çağrılır. Startup dosyasına dokunulmaz.</td></tr>
+<tr><td>Ne olur</td><td>Tablo flash'ta, <code>g_pfnVectors</code> dizisinde kalır.</td><td><code>IntRegister</code> ilk çağrıda flash tablosunu SRAM'deki <code>g_pfnRAMVectors</code> dizisine kopyalar ve VTABLE'ı (<code>0xE000.ED08</code>) bu diziye yönlendirir. Sonra 15. girişe <code>Ad</code>'ı yazar (<code>interrupt.c</code> satır 309–348). Ardından <code>SysTickIntRegister</code> INTEN'i de 1 yapar.</td></tr>
+<tr><td>Gerekenler</td><td>Yalnız startup dosyası.</td><td><code>interrupt.c</code>'nin derlenip bağlanması (proje <code>driverlib.lib</code>'i bağlar) ve bağlayıcı komut dosyasında 1 KB hizalı <code>.vtable</code> bölümü. Ders projelerinin <code>tm4c123gh6pm.cmd</code> dosyasında <code>.vtable : &gt; 0x20000000</code> satırı vardır. VTABLE'ın 1024 bayt hizası gerekir (s. 107).</td></tr>
+<tr><td>Bedeli</td><td>Yok.</td><td>Tablonun kopyası için SRAM (155 giriş × 4 bayt = 620 bayt, 1 KB hizalı). Çalışma anında bir kez kopyalama.</td></tr>
+<tr><td>Dersteki projeler</td><td><code>hafta07systicnoapiwithint</code>, <code>systick01kesmeliApisiz</code>, <code>hafta07systickapiwithint</code></td><td><code>systickapikesmeli</code></td></tr>
+</tbody></table>
+<p>Yol 2 kullanılınca startup tablosundaki 15. giriş artık okunmaz, çünkü VTABLE RAM tablosunu gösterir. İşleyicinin adı ise bir şey ifade etmez: CCS'in TivaWare startup dosyasında zayıf (weak) tanımlar yoktur. <code>SysTick_Handler</code> adında bir fonksiyon yazmak, onu tabloya yazmadıkça hiçbir şeye bağlamaz. Bazı başka araç zincirlerinde bu ad tek başına yeter, burada yetmez.</p>
+
+<h3 id="isleyici">İşleyicide bayrak</h3>
+<p>Zamanlayıcı ve GPIO ISR'lerinin ilk işi kaynağın bayrağını (GPTMICR, GPIOICR) temizlemektir. Temizlenmezse kesme hemen yeniden gelir. SysTick'te <b>temizlenecek bir kesme bayrağı yoktur</b>:</p>
+<ul>
+<li>SysTick istisnası "bekliyor" (pending) durumuna geçer. İşlemci işleyiciye girerken durum "etkin" (active) olur (istisna durumları, §2.5.1, s. 102). Bekleme durumu donanımca kalkar.</li>
+<li>COUNT ise ayrı bir durum bitidir ve kesmeyle ilgisi yoktur. Kesmeli çalışmada okunmasına gerek yoktur. Okunmazsa 1 kalır ve zararı yoktur.</li>
+</ul>
+<p>Bekleme durumunu yazılımla kaldırmak gerekirse (örneğin SysTick yeniden kurulurken eski bir istek kalmışsa) INTCTRL'de PENDSTCLR (bit 25) kullanılır (s. 161). İşleyici bir periyottan uzun sürerse istisna "etkin ve bekliyor" durumuna geçer ve işleyici biter bitmez yeniden çalışır. İki periyottan uzun sürerse aradaki tikler kaybolur. İşleyici kısa tutulur, paylaşılan değişkenler <code>volatile</code> yapılır (<a href="../timer/#isr-kurallari">ISR kuralları</a>).</p>
+
+<h3 id="yazilim">Yazılımla tetikleme</h3>
+<p>INTCTRL (<code>0xE000.ED04</code>) register'ının <b>PENDSTSET</b> biti (bit 26) yazılınca SysTick istisnası bekliyor durumuna geçer. Okununca istisnanın bekleyip beklemediği görülür. PENDSTCLR (bit 25) bekleme durumunu kaldırır. İkisine aynı anda 1 yazmanın sonucu öngörülemez (s. 160–161).</p>
+<pre><code class="language-c">NVIC_INT_CTRL_R = NVIC_INT_CTRL_PENDSTSET;   // SysTick işleyicisini hemen çalıştır
+// TivaWare: IntPendSet(FAULT_SYSTICK);</code></pre>
+<p>Bu yazma sayıcıyı etkilemez. Yalnız işleyiciyi bir kez daha çalıştırır. Ders dışı bir kullanım olarak, işleyiciyi bir sonraki tiki beklemeden denemek ya da tik sayacını elle ilerletmek için yararlıdır. 0 yazılan öteki bitlerin (PENDSV, UNPENDSV, NMISET) etkisi yoktur, bu yüzden düz atama güvenlidir.</p>
+
+<h3 id="karsilastirma">Yoklama mı, kesme mi?</h3>
+<figure><img class="fig" src="../img/systick-yoklama-kesme.svg" alt="Zaman ekseninde iki satır: üstte yoklama, işlemci sürekli STCTRL okur, her 0,25 s'lik sarmada COUNT görülür ve a artar, a = 4 olunca LED değişir; altta kesme, işlemci serbest ya da uykuda, her sarmada kısa bir işleyici çalışır, a = 4 olunca LED değişir; iki durumda da LED 1 s'de bir değişir"><figcaption><b>Şekil 5.</b> Aynı iş, iki yol (7.1 ve 7.2'deki sayılarla: 16 MHz, RELOAD = 3 999 999, sarma 0,25 s, dört sarmada bir PF2 LED'i, yani 1 s). Yoklamada işlemcinin bütün zamanı STCTRL'yi okumaya gider. Kesmede işlemci her sarmada yalnız birkaç mikrosaniyelik işleyiciyi çalıştırır, kalan zamanda başka iş yapar ya da uyur.</figcaption></figure>
+<table>
+<thead><tr><th></th><th>Yoklama (INTEN = 0)</th><th>Kesme (INTEN = 1)</th></tr></thead>
+<tbody>
+<tr><td>Kurulum</td><td>STCTRL = 0x05, başka bir şey yok</td><td>STCTRL = 0x07 + işleyici bağlama (+ öncelik)</td></tr>
+<tr><td>İşlemci</td><td>Sürekli meşgul</td><td>Serbest, WFI ile uyuyabilir</td></tr>
+<tr><td>Kaçırma</td><td>Döngü bir periyottan uzun kalırsa sarma kaybolur</td><td>İşleyici kısa olduğu sürece kaybolmaz</td></tr>
+<tr><td>Tepki</td><td>Döngünün turu kadar gecikmeli</td><td>Kesme giriş süresi kadar (yaklaşık 12 çevrim, <a href="../timer/#kesme-kavram">Zamanlayıcılar notu</a>)</td></tr>
+<tr><td>Uygun olduğu yer</td><td>Basit gecikme, süre ölçümü, tek işli döngü</td><td>Düzenli tik, zaman sayacı, RTOS</td></tr>
+</tbody></table>
+
+<h2 id="ornekler">7. Örnekler</h2>
+<p><b>Amaç:</b> SysTick'i dört biçimde (API'siz/API'li, yoklama/kesme) kurmak ve bir gecikme kütüphanesi yazmak. Not örneklerinin hepsi clang ile <code>-Wall</code> altında uyarısız derlenir. API'li örnekler TivaWare'in <code>hw_*</code> başlıklarını kullanır, <code>inc/tm4c123gh6pm.h</code>'yi eklemez.</p>
+
+<h3 id="ornek-yoklama-apisiz">7.1 API'siz, kesmesiz <span class="tag reg">API'siz</span></h3>
+<p>Saat kodu yoktur. Sistem saati 16 MHz PIOSC'dir. RELOAD bir sabitten hesaplanır. Saat değişirse yalnız <code>SISTEM_SAATI_HZ</code> değişir. 0,25 s'lik sarmalar sayılır, LED 1 s'de bir değişir. Port F'nin saat kapısından sonra PRGPIO beklenir (<a href="../gpio/">GPIO notu</a>).</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_yoklama_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// SysTick ile yoklama (kesmesiz), API'siz.
+// Saat kodu yok: sistem saati reset sonrasındaki 16 MHz PIOSC'dir.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define SISTEM_SAATI_HZ  16000000u           // saat değişirse burası değişir
+#define TIK_HZ           4u                   // 4 bayrak/s, yani 0,25 s'de bir
+
+static void portf_baslat(void)
+{
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;          // Port F saat kapısı
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }  // birim hazır olsun
+    GPIO_PORTF_DIR_R |= 0x04;                         // PF2 (mavi LED) çıkış
+    GPIO_PORTF_DEN_R |= 0x04;                         // PF2 sayısal
+}
+
+static void systick_baslat(uint32_t reload)
+{
+    NVIC_ST_CTRL_R = 0;                               // ön adım: sayıcıyı durdur
+    NVIC_ST_RELOAD_R = reload;                        // 1. STRELOAD'u yaz
+    NVIC_ST_CURRENT_R = 0;                            // 2. STCURRENT'e herhangi bir değer yaz
+    NVIC_ST_CTRL_R = NVIC_ST_CTRL_CLK_SRC             // 3. STCTRL: sistem saati,
+                   | NVIC_ST_CTRL_ENABLE;             //    INTEN = 0, sayıcı açık
+}
+
+int main(void)
+{
+    uint32_t a = 0;
+
+    portf_baslat();
+    systick_baslat(SISTEM_SAATI_HZ / TIK_HZ - 1);    // 4 000 000 - 1 -&gt; 0,25 s
+
+    while (1)
+    {
+        if (NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT)      // okumak COUNT'u temizler
+        {
+            if (++a == 4)                             // 4 x 0,25 s = 1 s
+            {
+                a = 0;
+                GPIO_PORTF_DATA_R ^= 0x04;            // LED 1 s'de bir değişir
+            }
+        }
+        // burada başka iş yapılabilir, ama 0,25 s'den uzun sürmemeli
+    }
+}</code></pre>
+
+<h3 id="ornek-kesme-apisiz">7.2 API'siz, kesmeli <span class="tag reg">API'siz</span></h3>
+<p>Aynı zamanlama, ama sayma işi işleyicide yapılır ve ana döngü boş kalır. Öncelik SYSPRI3'e yazılır, ama tek kesmeli bir programda bu satır isteğe bağlıdır. İşleyici startup dosyasındaki tabloya bağlanır (Yol 1). <code>a</code> işleyicinin içinde <code>static</code> tanımlıdır. <code>g_tik</code> ana döngüyle paylaşılabileceği için <code>volatile</code>'dır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_kesme_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// SysTick kesmesi, API'siz. İşleyici startup dosyasındaki tablodan bağlanır.
+// tm4c123gh6pm_startup_ccs.c'de:  extern void SysTick_Handler(void);
+// ve "The SysTick handler" satırında IntDefaultHandler yerine SysTick_Handler.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define SISTEM_SAATI_HZ  16000000u           // reset sonrası PIOSC
+#define TIK_HZ           4u                   // 0,25 s
+
+volatile uint32_t g_tik = 0;                  // işleyici artırır, main okuyabilir
+
+void SysTick_Handler(void)                    // istisna 15, vektör ofseti 0x3C
+{
+    static uint32_t a = 0;
+    g_tik++;
+    if (++a == 4)                             // 4 x 0,25 s = 1 s
+    {
+        a = 0;
+        GPIO_PORTF_DATA_R ^= 0x04;            // PF2
+    }
+    // bayrak temizlemek gerekmez: istisna girişte "bekliyor"dan çıkar
+}
+
+static void portf_baslat(void)
+{
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }
+    GPIO_PORTF_DIR_R |= 0x04;
+    GPIO_PORTF_DEN_R |= 0x04;
+}
+
+static void systick_kesme_baslat(uint32_t reload, uint32_t oncelik)
+{
+    NVIC_ST_CTRL_R = 0;                               // ön adım: durdur
+    NVIC_ST_RELOAD_R = reload;                        // 1. STRELOAD
+    NVIC_ST_CURRENT_R = 0;                            // 2. STCURRENT
+    NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R &amp; ~NVIC_SYS_PRI3_TICK_M)
+                    | (oncelik &lt;&lt; NVIC_SYS_PRI3_TICK_S);  // TICK alanı, bit 31:29
+    NVIC_ST_CTRL_R = NVIC_ST_CTRL_CLK_SRC             // 3. STCTRL: sistem saati,
+                   | NVIC_ST_CTRL_INTEN               //    kesme açık,
+                   | NVIC_ST_CTRL_ENABLE;             //    sayıcı açık (0x07)
+}
+
+int main(void)
+{
+    portf_baslat();
+    systick_kesme_baslat(SISTEM_SAATI_HZ / TIK_HZ - 1, 3);  // öncelik 3
+    // PRIMASK reset sonrasında 0'dır; NVIC'te SysTick için EN biti yoktur.
+
+    while (1)
+    {
+        // ana döngü serbest
+    }
+}</code></pre>
+<p>STCTRL'ye düz atamayla <code>0x07</code> yazılır (oku-değiştir-yaz değil). Böylece 3. adım tek yazmadır. Saat kaynağı, kesme ve sayıcı aynı anda açılır.</p>
+
+<h3 id="ornek-yoklama-apili">7.3 API'li, kesmesiz <span class="tag api">API'li</span></h3>
+<p>40 MHz'te <code>SysTickPeriodSet(SysCtlClockGet() / 4)</code> 10 000 000 saat, yani 0,25 s verir. TivaWare'de STCURRENT'i temizleyen ve COUNT'u okuyan fonksiyon olmadığı için bu iki iş <code>HWREG</code> ile yapılır. <code>hw_nvic.h</code>'deki adres ve bit adları kullanılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_yoklama_apili.c</span><span class="tag api">API'li · 40 MHz</span></div><pre><code class="language-c">// SysTick ile yoklama, TivaWare. Sistem saati 40 MHz.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_nvic.h"                      // NVIC_ST_CTRL, NVIC_ST_CTRL_COUNT
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/systick.h"
+
+int main(void)
+{
+    uint32_t a = 0;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL |
+                   SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);     // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);      // PF3 (yeşil LED)
+
+    SysTickDisable();                         // ön adım: durdur
+    SysTickPeriodSet(SysCtlClockGet() / 4);   // 1. RELOAD = 10 000 000 - 1 (0,25 s)
+    HWREG(NVIC_ST_CURRENT) = 0;               // 2. STCURRENT'i temizle (API'de yok)
+    SysTickEnable();                          // 3. CLK_SRC = 1, ENABLE = 1
+
+    while (1)
+    {
+        if (HWREG(NVIC_ST_CTRL) &amp; NVIC_ST_CTRL_COUNT)    // TivaWare'de COUNT okuyan
+        {                                                // bir fonksiyon yok
+            if (++a == 4)                                // 1 s
+            {
+                a = 0;
+                GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3,
+                             GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_3) ^ GPIO_PIN_3);
+            }
+        }
+    }
+}</code></pre>
+
+<h3 id="ornek-kesme-apili">7.4 API'li, kesmeli <span class="tag api">API'li</span></h3>
+<p>80 MHz'te 0,25 s 24 bite sığmaz (<a href="#en-uzun">Bölüm 3</a>). Bu yüzden RTOS'lardaki gibi kısa bir tik (10 ms, RELOAD = 799 999) seçilir ve tikler sayılır. LED 50 tikte, yani 0,5 s'de bir değişir. İşleyici <code>SysTickIntRegister</code> ile RAM tablosuna yazılır (Yol 2). Önce öncelik ve bağlantı yapılır, en son sayıcı açılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_kesme_apili.c</span><span class="tag api">API'li · 80 MHz</span></div><pre><code class="language-c">// SysTick kesmesi, TivaWare. Sistem saati 80 MHz, tik 10 ms (100 Hz).
+// İşleyici SysTickIntRegister ile RAM vektör tablosuna yazılır;
+// startup dosyasına dokunmak gerekmez. driverlib.lib bağlanmalıdır.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_nvic.h"
+#include "inc/hw_ints.h"                      // FAULT_SYSTICK
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/systick.h"
+
+#define TIK_HZ  100u                           // 10 ms
+
+volatile uint32_t g_ms10 = 0;                  // 10 ms'lik tik sayacı
+
+void SysTickIsleyici(void)
+{
+    static uint32_t a = 0;
+    g_ms10++;
+    if (++a == 50)                             // 50 x 10 ms = 0,5 s
+    {
+        a = 0;
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1,
+                     GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1) ^ GPIO_PIN_1);
+    }
+}
+
+int main(void)
+{
+    uint32_t f;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL |
+                   SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);     // 80 MHz
+    f = SysCtlClockGet();
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);      // PF1 (kırmızı LED)
+
+    SysTickDisable();                          // ön adım
+    SysTickPeriodSet(f / TIK_HZ);              // 1. RELOAD = 800 000 - 1
+    HWREG(NVIC_ST_CURRENT) = 0;                // 2. STCURRENT
+    IntPrioritySet(FAULT_SYSTICK, 3 &lt;&lt; 5);     // SYSPRI3.TICK = 3 (üst 3 bit)
+    SysTickIntRegister(SysTickIsleyici);       // RAM tablosu + INTEN = 1
+    SysTickEnable();                           // 3. CLK_SRC = 1, ENABLE = 1
+    IntMasterEnable();                         // PRIMASK = 0 (resetten sonra zaten 0)
+
+    while (1)
+    {
+        // g_ms10 burada zaman ölçmek için okunabilir
+    }
+}</code></pre>
+<p><code>SysTickIntRegister</code> INTEN'i zaten 1 yaptığı için ayrıca <code>SysTickIntEnable()</code> çağrılmaz. Startup tablosu kullanılsaydı (Yol 1) <code>SysTickIntRegister</code> satırı yerine <code>SysTickIntEnable()</code> yazılırdı. TivaWare'in <code>qs-rgb</code> örneği de böyle yapar (<a href="#lab">Bölüm 9</a>).</p>
+
+<h3 id="gecikme">7.5 SysTick ile ms/µs gecikme <span class="tag api">API'li</span></h3>
+<p><code>SysCtlDelay</code> döngü sayar. TivaWare'in açıklamasına göre süresi kesmelere, flash bekleme durumlarına ve ön getirme tamponuna göre değişir (<a href="../saat-pll/#etki">Saat notu, Bölüm 8</a>). SysTick ile yazılan bir gecikme gerçek saat çevrimlerini sayar. Burada sayıcı en büyük RELOAD ile serbest çalışır. Gecikme fonksiyonu iki okuma arasındaki farkı toplar. Sayıcı aşağı saydığı için geçen süre <code>önceki − şimdi</code>'dir. Arada sarma olduysa fark negatif çıkar. 24 bitlik maske bu durumda da doğru sonucu verir, çünkü sayıcı 2<sup>24</sup>'te bir sarar. Örnek: önceki = 5, şimdi = 16 777 210 ise (5 − 16 777 210) &amp; 0xFFFFFF = 11 saat.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_gecikme.c</span><span class="tag api">API'li · 80 MHz</span></div><pre><code class="language-c">// SysTick ile ms/us gecikme: serbest sayan sayıcı, sarma maskeyle çözülür.
+// Kesme kullanılmaz; SysTick başka bir iş için kullanılmıyorsa uygundur.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_nvic.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/systick.h"
+
+#define ST_MASKE  0x00FFFFFFu                 // 24 bit
+
+static uint32_t g_cevrim_us;                  // 1 us'deki saat çevrimi
+
+void gecikme_baslat(void)
+{
+    SysTickDisable();                         // ön adım
+    SysTickPeriodSet(ST_MASKE + 1);           // 1. RELOAD = 0xFFFFFF (en büyük)
+    HWREG(NVIC_ST_CURRENT) = 0;               // 2. STCURRENT
+    SysTickEnable();                          // 3. sistem saati, kesmesiz
+    g_cevrim_us = SysCtlClockGet() / 1000000u;   // 80 MHz'te 80
+}
+
+// n saat çevrimi bekler; n 24 biti aşabilir.
+void gecikme_cevrim(uint32_t n)
+{
+    uint32_t onceki = SysTickValueGet();
+    while (n &gt; 0)
+    {
+        uint32_t simdi = SysTickValueGet();
+        uint32_t gecen = (onceki - simdi) &amp; ST_MASKE;   // aşağı sayar; sarma
+        onceki = simdi;                                 // maske ile doğru çıkar
+        if (gecen &gt;= n)
+            break;
+        n -= gecen;
+    }
+}
+
+void gecikme_us(uint32_t us)                  // 80 MHz'te en çok ~53 s
+{
+    gecikme_cevrim(us * g_cevrim_us);
+}
+
+void gecikme_ms(uint32_t ms)
+{
+    while (ms--)
+        gecikme_cevrim(1000u * g_cevrim_us);
+}
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL |
+                   SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);     // 80 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
+    gecikme_baslat();
+
+    while (1)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
+        gecikme_ms(500);                      // 0,5 s yanık
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
+        gecikme_us(500000);                   // 0,5 s sönük
+    }
+}</code></pre>
+<ul>
+<li><b>Sınır:</b> iki okuma arasında 2<sup>24</sup> saatten (80 MHz'te 0,21 s) uzun zaman geçerse, örneğin uzun bir kesme işleyicisi araya girerse, bir sarma görünmez ve gecikme uzar. Normal bir döngüde iki okuma arası birkaç düzine çevrimdir.</li>
+<li><b>Doğruluk:</b> çağrı ve döngü yükü birkaç düzine çevrim ekler. 80 MHz'te bu 1 µs'nin altındadır. Çok kısa (1–2 µs) gecikmelerde bu yük oransal olarak büyür.</li>
+<li><b>SysTick'in tek olması:</b> bu yöntem SysTick'i serbest sayıcı olarak tutar. SysTick aynı zamanda periyodik bir kesme için kullanılıyorsa maske yerine (RELOAD + 1) modülüyle hesap yapılır. Ya da gecikme kesmenin tik sayacından (7.4'teki <code>g_ms10</code>) türetilir.</li>
+</ul>
+<p>TivaWare'in <code>bitband</code> ve <code>interrupts</code> örneklerindeki <code>Delay()</code> fonksiyonu daha kaba bir yol kullanır. SysTick periyodunu 1 s yapar ve <code>SysTickValueGet()</code>'in 1000'in altına inip yeniden üstüne çıkmasını bekler. Bu yolla saniye çözünürlüğünde gecikme elde edilir ve örneğin kendi açıklamasına göre N saniyelik bir bekleme N−1 ile N saniye arasında sürer.</p>
+
+<h3 id="ders-kodlari">7.6 Dersteki kodlar ve hataları</h3>
+<p>Derste kullanılan yedi SysTick projesi vardır: dört API'siz (ikisi kesmesiz, ikisi kesmeli) ve üç API'li. Kodlar olduğu gibi gösterilir. Hatalar düzeltilmez, uyarı kutularında açıklanır. Satır numaraları orijinal dosyalara göredir. İki <code>systick01</code> projesinin sonunda veri sayfası §3.1.1'den alıntı İngilizce yorumlar vardır, burada gösterilmiyor. Süreler <a href="#ders-sureleri">Bölüm 3'teki tabloda</a> verilmiştir.</p>
+<p>Derleme sonucu (clang, <code>-Wall</code>, TivaWare 2.1.4): API'siz dört dosya uyarısız derlenir. API'li üç dosya 79–80 uyarı verir. Nedeni aşağıdaki kutularda açıklanıyor. Ders projeleri TivaWare 2.2.0.295 ile hazırlanmıştır. O sürümde sayı biraz farklı olabilir.</p>
+
+<h4 id="ders-h07-nn">hafta07systicnoapinoint <span class="tag reg">API'siz</span></h4>
+<p>Veri sayfasının üç adımı yorum olarak yazılmış (satır 39–42), kod bu adımları ön adımla birlikte uygular. Döngü COUNT'u yoklar ve her sarmada mavi LED'i değiştirir.</p>
+<div class="code-head"><span class="file">hafta07systicnoapinoint/main.c, satır 1–48 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">#include "stdint.h"
+#include"inc/tm4c123gh6pm.h"
+
+//apisiz
+
+void init();
+void systicinit();
+
+int main(void)
+{
+    init();
+    systicinit();
+
+    while(1)
+    {
+        if ((NVIC_ST_CTRL_R &amp; 0x10000)==65536)
+        {
+            GPIO_PORTF_DATA_R ^=0x04;
+        }
+
+    }
+}
+
+void init(){
+
+    SYSCTL_RCGCGPIO_R|=0x20; // portf saat aktif
+
+    GPIO_PORTF_LOCK_R = 0x4C4F434B; // commit aç
+    GPIO_PORTF_CR_R = 0x01;   // pf0 da artık konfigurasyn yapılabilir. 0000 0001
+                              // 0000 0001 -&gt; pf0 artık konfigure edilebilir
+
+    GPIO_PORTF_DIR_R|=0x0E; // 0b 0000 1110 yönlendirme
+    GPIO_PORTF_DEN_R|=0x1F; // 0b 0001 1111 pin aktifliği
+
+    GPIO_PORTF_PUR_R = 0x11; // pf0 ve pf4 pull-up aktif 0001 0001
+}
+
+void systicinit(){
+//    1. Program the value in the STRELOAD register.
+//    2. Clear the STCURRENT register by writing to it with any value.
+//    3. Configure the STCTRL register for the required operation.
+//    Note: When the processor is halted for debugging, the counter does not decrement
+    NVIC_ST_CTRL_R = 0x00; // tümünü o yaptı disable
+    NVIC_ST_RELOAD_R=16000000-1; // ilk değer yüklendi
+    NVIC_ST_CURRENT_R=0; // sayıcının son değeri
+    NVIC_ST_CTRL_R = (1&lt;&lt;2)|(1&lt;&lt;0) ; // 0x05 start oldu // enable ve system saati
+
+}</code></pre>
+
+<h4 id="ders-h07-nw">hafta07systicnoapiwithint <span class="tag reg">API'siz</span></h4>
+<p><code>init()</code> bir önceki projeyle aynıdır (satır 24–36). İşleyici <code>systic_Handler</code> startup dosyasına bağlanmıştır (Yol 1):</p>
+<div class="code-head"><span class="file">hafta07systicnoapiwithint/main.c, satır 8–10 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void systic_Handler(){
+    GPIO_PORTF_DATA_R ^=0x04;
+}</code></pre>
+<div class="code-head"><span class="file">hafta07systicnoapiwithint/main.c, satır 38–47 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void systicinit(){
+//    1. Program the value in the STRELOAD register.
+//    2. Clear the STCURRENT register by writing to it with any value.
+//    3. Configure the STCTRL register for the required operation.
+//    Note: When the processor is halted for debugging, the counter does not decrement
+    NVIC_ST_CTRL_R = 0x00;
+    NVIC_ST_RELOAD_R=16000000-1;
+    NVIC_ST_CURRENT_R=0;
+    NVIC_ST_CTRL_R = (1&lt;&lt;2)|(1&lt;&lt;1)|(1&lt;&lt;0) ; // 0x05 start oldu NVIC_ST_CTRL_INTEN
+}</code></pre>
+<div class="code-head"><span class="file">hafta07systicnoapiwithint/tm4c123gh6pm_startup_ccs.c, satır 44 ve 84–85 (derste kullanılan kod)</span><span class="tag reg">startup</span></div><pre><code class="language-c">extern void systic_Handler();
+    /* ... */
+    IntDefaultHandler,                      // The PendSV handler
+    systic_Handler,                         // The SysTick handler</code></pre>
+
+<h4 id="ders-s01">systick01kesmesizApisiz ve systick01kesmeliApisiz <span class="tag reg">API'siz</span></h4>
+<p>İki proje hafta07'deki API'siz projelerin aynısıdır. Port kurulumu aynıdır, RELOAD 15 999 999 olarak yazılmıştır. Kesmeli olanın işleyicisi <code>SysTick_Handler</code> adıyla startup dosyasına bağlanmıştır (startup satır 44 ve 85).</p>
+<div class="code-head"><span class="file">systick01kesmesizApisiz/main.c, satır 7–21 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">int main(void)
+{
+    portinit();
+    systickinit();
+
+    while(1){
+        if (NVIC_ST_CTRL_R &amp; 0x10000)
+        {
+            GPIO_PORTF_DATA_R ^=0x04;
+        }
+    }
+
+
+	return 0;
+}</code></pre>
+<div class="code-head"><span class="file">systick01kesmesizApisiz/main.c, satır 36–41 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void systickinit(){
+    NVIC_ST_CTRL_R=0;  // ilk biti=0 yaparsak disable
+    NVIC_ST_RELOAD_R=15999999; // başlangıç değeri
+    NVIC_ST_CURRENT_R=0; // sayıcının değeri
+    NVIC_ST_CTRL_R=(1&lt;&lt;2)|(1&lt;&lt;0); // saat sectik ve enable aktif
+}</code></pre>
+<div class="code-head"><span class="file">systick01kesmeliApisiz/main.c, satır 34–49 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void systickinit(){
+    NVIC_ST_CTRL_R=0;  // ilk biti=0 yaparsak disable
+    NVIC_ST_RELOAD_R=15999999; // başlangıç değeri
+    NVIC_ST_CURRENT_R=0; // sayıcının değeri
+    NVIC_ST_CTRL_R=(1&lt;&lt;2)|(1&lt;&lt;1)|(1&lt;&lt;0); // saat sectik ve enable aktif
+}
+
+void SysTick_Handler(void){
+    GPIO_PORTF_DATA_R ^=0x04;
+}
+
+/* global enable interrupts */
+//void inline enable_irq(void)
+//{
+//    __asm  ("    CPSIE  I\n");
+//}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: API'siz dört proje</span>
+<ul>
+<li><b>hafta07systicnoapiwithint, satır 46:</b> <code>NVIC_ST_CTRL_R = (1&lt;&lt;2)|(1&lt;&lt;1)|(1&lt;&lt;0) ; // 0x05 start oldu NVIC_ST_CTRL_INTEN</code>. Yazılan değer <code>0x07</code>'dir: CLK_SRC + INTEN + ENABLE. Yorumdaki "0x05" kesmesiz projeden (hafta07systicnoapinoint satır 46) kopyalanmış ve güncellenmemiştir. Kod doğrudur, yorum yanlıştır. Doğrusu <code>// 0x07: CLK_SRC | INTEN | ENABLE</code>. Daha iyisi <code>NVIC_ST_CTRL_CLK_SRC | NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE</code> yazmaktır. Bu durumda yoruma gerek kalmaz.</li>
+<li><b>systick01kesmeliApisiz, satır 38:</b> yorum "saat sectik ve enable aktif" der, ama yazılan <code>(1&lt;&lt;1)</code> INTEN'dir ve kesmeyi açan budur. Yorum eksiktir, kod doğrudur.</li>
+<li><b>systick01kesmeliApisiz, satır 7, 13 ve 45–49:</b> yorum içindeki <code>enable_irq()</code> (<code>CPSIE I</code>) PRIMASK'ı temizler. PRIMASK reset sonrasında zaten 0 olduğu için (s. 85) bu satırların yorumda kalması programı etkilemez. Kesme bu satırlar olmadan da gelir.</li>
+<li><b>systick01kesmesizApisiz, satır 20:</b> <code>return 0;</code> sonsuz döngüden sonra gelir, hiç çalışmaz. Zararsızdır.</li>
+<li><b>Bütün API'siz projeler, RCGCGPIO → LOCK:</b> <code>SYSCTL_RCGCGPIO_R|=0x20;</code> satırından hemen sonra Port F register'larına yazılır (hafta07 projelerinde satır 26 → 28, systick01 kesmesiz 24 → 26, kesmeli 22 → 24). PRGPIO beklenmez (<a href="../saat-pll/#kapi">Saat notu, saat kapısı</a>, s. 227). 7.1'deki gibi <code>while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) { }</code> eklenmelidir.</li>
+<li><b>Süre:</b> saat kodu olmadığı için SysTick 16 MHz PIOSC'yi sayar. RELOAD = 16 000 000 − 1 tam 1 s eder, ama PIOSC'nin ±%3'lük doğruluğuyla (yaklaşık ±30 ms). LED her sarmada değiştiği için periyodu 2 s'dir.</li>
+</ul>
+<p>Doğru olan ama sorulabilecek iki nokta: <code>GPIO_PORTF_CR_R = 0x01</code> PF1–PF4'ün DEN yazmasını engellemez. GPIOCR'ın yalnız korumalı pinlere (PF0 gibi NMI ve JTAG pinleri) ait bitleri yazılabilir. Öteki bitler donanımca 1'dir (GPIOCR açıklaması, s. 685). <code>(NVIC_ST_CTRL_R &amp; 0x10000)==65536</code> da doğrudur, çünkü 0x10000 = 65 536'dır.</p></div>
+
+<h4 id="ders-h07-aw">hafta07systickapiwithint <span class="tag api">API'li</span></h4>
+<p>40 MHz'te 0,25 s'lik tik, işleyicide <code>a==4</code> ile 1 s'de bir mavi LED. İşleyici <code>systickkesmefonk</code> startup dosyasının 85. satırına yazılmıştır (satır 44'te <code>extern</code> bildirimi). <code>SysTickIntRegister</code> satırı yorumdadır.</p>
+<div class="code-head"><span class="file">hafta07systickapiwithint/main.c, satır 1–64 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.c"
+#include "driverlib/systick.h"
+#include "driverlib/systick.c"
+
+#include "inc/tm4c123gh6pm.h"
+
+ int a=0;
+
+void PortInitSettings();
+void SysTickInit();
+
+void systickkesmefonk()
+{
+    a++;
+    if(a==4)
+    {
+        GPIO_PORTF_DATA_R ^=0x04;
+        a=0;
+    }
+}
+
+
+int main(void)
+{
+    PortInitSettings();
+    SysTickInit();
+
+    while(1)
+    {
+
+    }
+}
+
+void PortInitSettings()
+{
+    //IntMasterEnable();
+    SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN); // 40 mhz
+    long b=SysCtlClockGet();
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF); // SYSCTL_RCGCGPIO_R|=0x20;
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3); // pin 123 output
+
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;
+
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE,GPIO_PIN_0|GPIO_PIN_4); // pf4 input
+    GPIOPadConfigSet(GPIO_PORTF_BASE,GPIO_PIN_0|GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);// pull up için
+
+    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3,0);
+}
+
+void SysTickInit(){
+    SysTickDisable();
+    SysTickPeriodSet( 10000000); // 0.25 sn
+    //SysTickIntRegister(systickkesmefonk);
+    SysTickIntEnable();
+    SysTickEnable();
+}</code></pre>
+
+<h4 id="ders-api">systickapikesmeli ve systickapikesmesiz <span class="tag api">API'li</span></h4>
+<p><code>SetInitSettings()</code> iki projede aynıdır ve hafta07'deki <code>PortInitSettings()</code>'e benzer. Fark: satır 44'te (kesmesizde satır 42'de) <code>IntMasterEnable()</code> yorumda değildir. 40 MHz'te 0,125 s'lik tik, <code>a==4</code> ile 0,5 s'de bir yeşil LED (PF3).</p>
+<div class="code-head"><span class="file">systickapikesmeli/main.c, satır 13–26 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">int a=0;
+
+void SetInitSettings();
+void SysTickInit();
+void SysTick_IntHandler(){
+     a++;
+     if (a==4)
+     {
+         GPIO_PORTF_DATA_R ^=0x08;
+         a=0;
+     }
+}
+
+bool systicintcontrol();</code></pre>
+<div class="code-head"><span class="file">systickapikesmeli/main.c, satır 65–75 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">void SysTickInit(){
+    SysTickDisable();
+    SysTickPeriodSet(5000000);
+    SysTickIntRegister(SysTick_IntHandler);
+    SysTickIntEnable();
+    SysTickEnable();
+}
+
+bool systicintcontrol(){
+    return (NVIC_ST_CTRL_R &amp; 0x10000);
+}</code></pre>
+<div class="code-head"><span class="file">systickapikesmesiz/main.c, satır 19–38 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">int main(void)
+{
+    SetInitSettings();
+    SysTickInit();
+    int a=0;
+    while(1)
+    {
+        if (systicintcontrol())
+        {
+            a++;
+            if (a==4)
+            {
+                GPIO_PORTF_DATA_R ^=0x08;
+                a=0;
+            }
+        }
+    }
+
+
+}</code></pre>
+<div class="code-head"><span class="file">systickapikesmesiz/main.c, satır 63–71 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">void SysTickInit(){
+    SysTickDisable();
+    SysTickPeriodSet(5000000);
+    SysTickEnable();
+}
+
+bool systicintcontrol(){
+    return (NVIC_ST_CTRL_R &amp; 0x10000);
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: API'li üç proje</span>
+<ul>
+<li><b>Satır 8 ve 10 (üç projede):</b> <code>#include "driverlib/sysctl.c"</code> ve <code>#include "driverlib/systick.c"</code>. Kütüphanenin kaynak dosyaları <code>main.c</code>'nin içine katılır. Bu dosyalar <code>inc/hw_ints.h</code>'yi ekler. Satır 11–12'deki <code>inc/tm4c123gh6pm.h</code> aynı <code>INT_…</code> adlarını yeniden tanımlar. clang 78 <code>INT_…</code> ve bir <code>FLASH_FMA_OFFSET_M</code> için "macro redefined" uyarısı verir. Proje ayarlarında TivaWare'in hazır derlenmiş <code>driverlib.lib</code>'i bağlayıcıya zaten eklidir. <code>IntMasterEnable</code>, <code>IntRegister</code> ve GPIO fonksiyonları oradan gelir. Bu yüzden <code>.c</code> dosyalarını eklemek gereksizdir. Aynı fonksiyonların hem <code>main.obj</code>'de hem kütüphanede bulunması bağlayıcıyı kütüphanedeki kopyayı almamaya zorlar. Bu çoğu durumda sorunsuz çalışır, ama kırılgan bir yapıdır (bağlama bu not için denenmedi). Doğrusu <code>.c</code> satırlarını silmek ve başlık dosyalarını tek bir aileden seçmektir: ya yalnız <code>hw_*</code> + <code>driverlib/*.h</code> (7.3, 7.4) ya da <code>tm4c123gh6pm.h</code> ve <code>hw_ints.h</code> eklemeyen <code>driverlib/*.h</code>.</li>
+<li><b>Başlatmanın 2. adımı yok (üç projede):</b> <code>SysTickDisable</code> → <code>SysTickPeriodSet</code> → <code>SysTickEnable</code> arasında STCURRENT'e yazılmaz. <code>SysTickEnable</code>'ın açıklamasına göre sayıcı o anki değerinden devam eder (<code>systick.c</code> satır 63–66). STCURRENT reset sonrasında tanımsız olduğu için ilk aralık 0 ile 2<sup>24</sup> saat (40 MHz'te 0,42 s) arasında herhangi bir değer olabilir. Sonraki aralıklar doğrudur. Yalnız ilk LED değişimi erken ya da geç gelebilir. Doğrusu <code>SysTickPeriodSet</code>'ten sonra <code>HWREG(NVIC_ST_CURRENT) = 0;</code></li>
+<li><b>hafta07systickapiwithint, satır 45:</b> <code>long b=SysCtlClockGet();</code> kullanılmaz (clang <code>-Wunused-variable</code>, bu dosyada 80. uyarı). Değer bir sonraki satırda <code>SysTickPeriodSet(b / 4)</code> gibi kullanılsaydı, satır 60'taki sabit <code>10000000</code> saate bağlı olmaktan çıkardı.</li>
+<li><b>hafta07systickapiwithint, satır 43 ve 61:</b> iki çağrı da yorumdadır ve bu doğrudur. İşleyici startup tablosundan gelir (Yol 1). <code>SysTickIntEnable()</code> INTEN'i açar. PRIMASK reset sonrasında 0'dır. <code>SysTickIntRegister</code> açılsaydı Yol 2'ye geçilirdi. İkisi birlikte de çalışır, çünkü RAM tablosu startup tablosunun kopyasıdır.</li>
+<li><b>systickapikesmeli, satır 68–69:</b> <code>SysTickIntRegister</code> INTEN'i zaten 1 yapar (<code>systick.c</code> satır 129). Ardından gelen <code>SysTickIntEnable()</code> gereksizdir ama zararsızdır. Startup dosyasında SysTick girişi <code>IntDefaultHandler</code>'dır. Kesmenin çalışmasını sağlayan şey <code>IntRegister</code>'ın tabloyu RAM'e taşıyıp VTABLE'ı değiştirmesidir (<a href="#baglama">Bölüm 6</a>). Bu satır silinirse ilk sarmada program <code>IntDefaultHandler</code>'ın sonsuz döngüsünde kalır.</li>
+<li><b>systickapikesmeli satır 44, systickapikesmesiz satır 42:</b> <code>IntMasterEnable()</code> kesmeli projede gereksizdir (PRIMASK zaten 0). Kesmesiz projede hiç kesme kullanılmadığı için anlamsızdır. Saat ayarından önce çağrılması bir sorun yaratmaz.</li>
+<li><b>systickapikesmeli, satır 73–75:</b> <code>systicintcontrol()</code> tanımlıdır ama çağrılmaz. Çağrılsaydı COUNT'u okuyup temizlerdi. Kesmeli çalışmada bu zararsızdır, ama bayrak "kesme bayrağı" değildir. Kesmesiz projede (satır 26 ve 69–71) aynı fonksiyon yoklamayı doğru yapar. <code>bool</code>'a dönüşüm 0x10000'i <code>true</code> yapar.</li>
+<li><b>Port kurulumu:</b> PF0 kilidi (LOCK/CR) ve PF0/PF4 giriş ayarı bu programlarda kullanılmaz, butonlar okunmaz: systickapikesmeli satır 52–53 ve 59–60, systickapikesmesiz 50–51 ve 57–58, hafta07systickapiwithint 49–50 ve 52–53. Zararsızdır. systickapikesmeli satır 50'deki (kesmesizde 48) yorum "asagidaki 3 kod" der, ama kod 2 satırdır.</li>
+<li><b><code>SysCtlPeripheralEnable</code> → GPIO (üç projede):</b> Port F'nin saat kapısı açıldıktan hemen sonra GPIO fonksiyonları çağrılır (hafta07systickapiwithint satır 46 → 47, systickapikesmeli 47 → 48, systickapikesmesiz 45 → 46). API'siz kodlardaki PRGPIO maddesinin karşılığıdır: araya <code>while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }</code> eklenmelidir (7.3, 7.4).</li>
+</ul></div>
+
+<h2 id="hata-ayiklama">8. Hata ayıklama ve düşük güç</h2>
+<p><b>Amaç:</b> SysTick'in hata ayıklayıcı altında ve uyku kiplerinde nasıl davrandığını bilmek.</p>
+<ul>
+<li><b>İşlemci durdurulunca sayıcı durur:</b> veri sayfası bunu açıkça yazar (s. 123). Kesme noktasında beklerken ya da adım adım ilerlerken SysTick saymaz. Program devam edince sayıcı kaldığı değerden sürer. Adım adım çalışırken LED süreleri ölçülemez. Kesme noktasından devam edince ilk aralık kısa ya da uzun görünebilir.</li>
+<li><b>Register penceresi COUNT'u silebilir:</b> hata ayıklayıcı STCTRL'yi DAP üzerinden okursa COUNT, AHB-AP'deki MasterType biti temizse temizlenir (s. 138). CCS'in register penceresi STCTRL'yi gösterirken yoklama döngüsü bir sarmayı kaçırabilir. Yoklamalı bir program hata ayıklanırken STCTRL pencerede açık tutulmamalıdır.</li>
+<li><b>Uyku (Sleep, WFI):</b> işlemci ve bellek saatlenmez, ama sistem saati çalışma kipindeki kaynak ve frekansta kalır (§5.2.6.2, s. 228). SysTick saymaya devam eder ve kesmesi işlemciyi uyandırır. 7.2 ve 7.4'teki boş ana döngüye <code>__asm(" WFI");</code> ya da TivaWare'in <code>SysCtlSleep()</code> çağrısı konunca işlemci her tikte uyanır ve tik bitince yeniden uyur.</li>
+<li><b>Derin uyku (Deep-Sleep):</b> sistem saatinin kaynağı DSLPCLKCFG ile belirlenir, PLL kapatılır (§5.2.6.3, s. 228). Veri sayfasına göre saat işareti durursa SysTick de durur. Derin uykuda çalışmayı sürdürmesi için STCTRL'deki CLK_SRC bitinin kurulması ve DSLPCLKCFG'deki PIOSCPD bitinin temiz olması gerekir (s. 123). Bu durumda SysTick'in saydığı frekans uykuda değişir. Çalışma kipine göre hesaplanmış süreler uykuda geçerli olmaz.</li>
+</ul>
+<p>Uyku kipleri ve uyanma kaynakları ilerideki Uyku kipleri notunda ayrıntılı işlenecek.</p>
+
+<h2 id="lab">9. TI Lab uyarlaması <span class="tag ti">TI Lab</span></h2>
+<p><b>Amaç:</b> Workbook'taki zamanlayıcı kesmesi lab'ını SysTick ile yapmak ve iki birimin kurulum farkını adım adım görmek.</p>
+<p>TI Workbook'ta ayrı bir SysTick lab'ı yoktur. SysTick, Bölüm 4'teki vektör tablosu slaytında istisna 15, ofset 0x3C olarak geçer (s. 4-7). Lab 7'de (USB, s. 7-11) ve Lab 14b'de (s. 14-28) hazır projelerin <code>SysTickIntHandler</code> işleyicisi olarak görünür. Dersin Experiment föylerinde de SysTick konulu bir deney yoktur. Bu yüzden en yakın lab, <b>Lab 4 "Interrupts and the GP Timer"</b> (s. 4-11 – 4-21) SysTick'e uyarlanmıştır. Lab 4, Timer0A'yı 40 MHz'te 10 Hz'lik bir kare dalga için yarım periyotta kesme üretecek biçimde kurar ve mavi LED'i ISR'de yakıp söndürür. Lab'ın GPTM ile yapılışı <a href="../timer/#lab4">Zamanlayıcılar notunda</a> anlatılıyor.</p>
+<table>
+<thead><tr><th>Lab 4 adımı (sayfa)</th><th>Timer0A ile</th><th>SysTick ile</th></tr></thead>
+<tbody>
+<tr><td>2. Başlık dosyaları (4-13)</td><td><code>driverlib/timer.h</code>, <code>interrupt.h</code></td><td><code>driverlib/systick.h</code>, <code>interrupt.h</code>. <code>hw_nvic.h</code> STCURRENT için</td></tr>
+<tr><td>4. Saat (4-14)</td><td><code>SysCtlClockSet(SYSCTL_SYSDIV_5 | …)</code>, 40 MHz</td><td>Aynı</td></tr>
+<tr><td>5. GPIO (4-14)</td><td><code>GPIOPinTypeGPIOOutput(…, PIN_1|PIN_2|PIN_3)</code></td><td>Aynı</td></tr>
+<tr><td>6. Zamanlayıcı (4-14)</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0)</code>, <code>TimerConfigure(…, TIMER_CFG_PERIODIC)</code></td><td><b>Yok.</b> Saat kapısı yoktur, tek kip periyodiktir</td></tr>
+<tr><td>7. Süre (4-15)</td><td><code>ui32Period = (SysCtlClockGet()/10)/2;</code> <code>TimerLoadSet(…, ui32Period - 1)</code></td><td>Aynı hesap. Ön adım <code>SysTickDisable()</code>, 1. adım <code>SysTickPeriodSet(ui32Period)</code> (−1'i fonksiyon yapar, 2 000 000 &lt; 2<sup>24</sup>, sığar), 2. adım <code>HWREG(NVIC_ST_CURRENT) = 0;</code></td></tr>
+<tr><td>8. Kesme izni (4-15)</td><td><code>IntEnable(INT_TIMER0A)</code>, <code>TimerIntEnable(…, TIMER_TIMA_TIMEOUT)</code>, <code>IntMasterEnable()</code></td><td>3. adımın ilk yarısı <code>SysTickIntEnable()</code> (INTEN, NVIC adımı yok), <code>IntMasterEnable()</code></td></tr>
+<tr><td>9. Başlat (4-15)</td><td><code>TimerEnable(TIMER0_BASE, TIMER_A)</code></td><td>3. adımın ikinci yarısı <code>SysTickEnable()</code> (CLK_SRC + ENABLE)</td></tr>
+<tr><td>11. ISR (4-16)</td><td><code>TimerIntClear(…)</code>, sonra LED</td><td>Temizlenecek bayrak yok, yalnız LED</td></tr>
+<tr><td>13. Startup (4-18)</td><td>"Timer 0 subtimer A" satırına <code>Timer0IntHandler</code></td><td>"The SysTick handler" satırına <code>SysTickIntHandler</code></td></tr>
+</tbody></table>
+<div class="code-head"><span class="file">bu not için hazırlandı: st_lab4.c (Workbook Lab 4'ün SysTick uyarlaması)</span><span class="tag ti">TI Lab · 40 MHz</span></div><pre><code class="language-c">// Workbook Lab 4'ün (Timer0A, 10 Hz, mavi LED) SysTick ile yapılışı.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_nvic.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/gpio.h"
+#include "driverlib/systick.h"
+
+// startup_ccs.c'de "The SysTick handler" satırına yazılır (Lab 4 adım 13'teki gibi)
+void SysTickIntHandler(void)
+{
+    // TimerIntClear karşılığı yok: SysTick'te temizlenecek bayrak yok
+    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2))
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, 0);
+    else
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4);
+}
+
+int main(void)
+{
+    uint32_t ui32Period;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL |
+                   SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);     // 40 MHz
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);
+
+    // SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0) ve TimerConfigure gerekmez
+    ui32Period = (SysCtlClockGet() / 10) / 2;   // 2 000 000 çevrim = 50 ms
+    SysTickDisable();                           // ön adım: durdur
+    SysTickPeriodSet(ui32Period);               // 1. RELOAD = ui32Period - 1
+    HWREG(NVIC_ST_CURRENT) = 0;                 // 2. STCURRENT: ilk aralık da tam
+    SysTickIntEnable();                         // 3. INTEN (IntEnable + TimerIntEnable yerine)
+    IntMasterEnable();
+    SysTickEnable();                            // 3. CLK_SRC + ENABLE (TimerEnable yerine)
+
+    while (1)
+    {
+    }
+}</code></pre>
+<p><b>Deney adımları:</b></p>
+<ol>
+<li>Lab 4 projesini içe aktarın ya da yeni bir CCS projesi açın. <code>main.c</code>'yi yukarıdaki kodla değiştirin. Startup dosyasında <code>extern void SysTickIntHandler(void);</code> bildirimini ekleyin ve SysTick satırını değiştirin.</li>
+<li>Derleyip yükleyin. Mavi LED 10 Hz'te yanıp sönmelidir: 50 ms yanık, 50 ms sönük. Bunu gözle ayırt etmek zordur. Osiloskop ya da mantık analizörü varsa PF2'yi ölçün.</li>
+<li><code>ui32Period</code>'u <code>SysCtlClockGet() / 2</code> yapın (0,5 s). 20 000 000 &gt; 16 777 216 olduğu için periyot beklenenden kısa çıkar (<a href="#en-uzun">Bölüm 3'teki kutu</a>). Ölçülen değeri 24 bitlik kırpmayla açıklayın. Sorunu tikleri sayarak çözün.</li>
+<li>Lab 4'ün son bölümü (adım 16–19, s. 4-20) <code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF)</code>'yi yoruma alarak bir hata istisnası (fault) üretir. Aynı denemeyi Timer0 için yapmak mümkündür. SysTick için yapılamaz, çünkü SysTick'in saat kapısı yoktur ve her zaman erişilebilir.</li>
+<li>İşleyiciyi startup dosyasından çıkarın ve <code>SysTickIntEnable()</code> yerine <code>SysTickIntRegister(SysTickIntHandler)</code> kullanın. Hata ayıklayıcıda VTABLE'ın (<code>0xE000.ED08</code>) değerini iki durumda karşılaştırın.</li>
+</ol>
+<p><b>TivaWare örnekleri:</b> <code>examples/boards/ek-tm4c123gxl/qs-rgb/qs-rgb.c</code> (LaunchPad'in hazır yüklü programı) 40 MHz'te <code>SysTickPeriodSet(SysCtlClockGet() / APP_SYSTICKS_PER_SEC)</code> ile 32 Hz'lik bir tik kurar (1 250 000 saat = 31,25 ms). Ardından <code>SysTickEnable()</code>, <code>SysTickIntEnable()</code> ve <code>IntMasterEnable()</code> çağrılır (satır 653–656). Butonlar ve renk geçişleri <code>SysTickIntHandler</code>'da işlenir. İşleyici <code>startup_ccs.c</code>'nin 88. satırında tabloya yazılmıştır (Yol 1). <code>bitband</code> ve <code>interrupts</code> örnekleri saati PLL'siz 16 MHz kristale ayarlar ve <code>SysTickPeriodSet(SysCtlClockGet())</code> ile 1 s'lik bir periyot kurar. 16 000 000 ≤ 16 777 216 olduğu için bu ancak 16 MHz'te mümkündür. Bu periyotla <code>SysTickValueGet()</code> üzerinden saniye gecikmesi yapar (<a href="#gecikme">7.5</a>).</p>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>RELOAD'da −1'i unutmak ya da iki kez çıkarmak:</b> register'a T × f − 1 yazılır. <code>SysTickPeriodSet</code>'e ise T × f verilir. <code>SysTickPeriodSet(N - 1)</code> periyodu bir saat kısaltır.</li>
+<li><b>24 biti aşmak:</b> 80 MHz'te 0,21 s'den uzun bir periyot sessizce kırpılır (<a href="#en-uzun">Bölüm 3</a>). Uzun süreler tik sayarak elde edilir.</li>
+<li><b>STCURRENT'i temizlememek:</b> ilk periyot tanımsız olur. API'de bu adımın fonksiyonu yoktur, <code>HWREG(NVIC_ST_CURRENT) = 0</code> yazılır.</li>
+<li><b>SysTick için NVIC'te kesme açmaya çalışmak:</b> SysTick'in EN0'da biti yoktur. 15'i kesme numarası sanıp EN0'ın bit 15'ini yazmak başka bir kesmeyi, ADC0 sıra 1'i (kesme 15, vektör 31) açar. <code>IntEnable(FAULT_SYSTICK)</code> ise TivaWare'de yalnız INTEN'i kurar (<code>interrupt.c</code> satır 641–646), yani <code>SysTickIntEnable()</code> ile aynı işi yapar.</li>
+<li><b>İşleyiciyi bağlamamak:</b> INTEN = 1 ama startup tablosunda hâlâ <code>IntDefaultHandler</code> varsa program ilk sarmada sonsuz döngüye düşer ve donmuş görünür. <code>SysTick_Handler</code> adını vermek tek başına yetmez (<a href="#baglama">Bölüm 6</a>).</li>
+<li><b>İşleyicide olmayan bayrağı temizlemeye çalışmak:</b> SysTick'te ICR yoktur. COUNT'u okumak gerekmez. INTCTRL'ye PENDSTCLR yazmak ise yalnız o anda bekleyen isteği siler.</li>
+<li><b>COUNT'u yanlışlıkla silmek:</b> <code>NVIC_ST_CTRL_R |= …</code> gibi her oku-değiştir-yaz ve register penceresindeki her okuma bayrağı temizler. Yoklamalı kodda STCTRL'ye yalnız bir yerde dokunulur.</li>
+<li><b>Sabit saat varsaymak:</b> 16 MHz'e göre yazılmış 15 999 999, 40 MHz'te 0,4 s'ye düşer. RELOAD <code>SysCtlClockGet()</code>'ten hesaplanır. SysTick saati değiştikten sonra yeniden kurulur.</li>
+<li><b>Paylaşılan değişkeni <code>volatile</code> yapmamak:</b> işleyicinin artırdığı ve <code>main</code>'in okuduğu bir tik sayacı <code>volatile</code> olmazsa derleyici döngüde eski değeri kullanabilir.</li>
+<li><b>Kütüphanenin <code>.c</code> dosyalarını <code>#include</code> etmek ve başlık ailelerini karıştırmak:</b> <code>driverlib.lib</code> bağlanır, <code>.c</code> eklenmez. <code>hw_ints.h</code> ile <code>tm4c123gh6pm.h</code> birlikte 78 yeniden tanım uyarısı üretir.</li>
+<li><b>Adım adım çalışırken süre beklemek:</b> işlemci durunca SysTick de durur (<a href="#hata-ayiklama">Bölüm 8</a>).</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>RELOAD hesabı:</b> 50 MHz'te 1 ms, 5 ms ve 0,5 s için RELOAD'u bulun. Hangisi 24 bite sığmaz? Sığmayan için tik süresi ve sayaç değeri öneren iki farklı çözüm yazın.</li>
+<li><b>PIOSC/4:</b> 7.1'i CLK_SRC = 0 ile 1 s'lik sarma verecek biçimde değiştirin. RELOAD kaçtır? Saat 80 MHz'e çıkarılınca bu programın süresi değişir mi? Hangi doğruluğu kaybedersiniz?</li>
+<li><b>Süre ölçümü:</b> SysTick'i serbest sayıcı olarak kullanarak <code>SysCtlDelay(1000)</code>'in 40 MHz'te kaç çevrim sürdüğünü ölçen bir program yazın. Sonucu <a href="../saat-pll/#etki">Saat notundaki</a> "3 çevrim/tur" değeriyle karşılaştırın.</li>
+<li><b>Milisaniye sayacı:</b> 7.4'ü 1 ms'lik tik ve <code>volatile uint32_t g_ms</code> sayacıyla yeniden yazın. <code>uint32_t millis(void)</code> ve <code>void bekle_ms(uint32_t)</code> fonksiyonlarını bu sayaçla gerçekleyin. <code>g_ms</code> kaç günde taşar? Taşma anında <code>simdi - baslangic</code> farkı neden yine doğru çıkar?</li>
+<li><b>Öncelik deneyi:</b> 7.2'yi tik 100 ms olacak biçimde değiştirin ve işleyicinin yalnız her 10. tikte (1 s'de bir) 50 ms süren bir bekleme döngüsü çalıştırmasını sağlayın. SW1 (PF4) için kırmızı LED'i (PF1) değiştiren bir GPIO kesmesi ekleyin. SysTick ve Port F önceliklerini (3, 5) ve (5, 3) yapın. Butona bekleme döngüsü sırasında basıldığında PF4 ile PF1 arasındaki gecikmeyi osiloskop ya da mantık analizörüyle ölçün. Sonucu Şekil 4'e göre açıklayın.</li>
+<li><b>Yazılımla tetikleme:</b> SW2'ye (PF0) her basışta PENDSTSET ile SysTick işleyicisini bir kez çalıştıran bir program yazın. INTEN = 0 iken de işleyici çalışır mı? Deneyerek bulun ve <a href="#istisna">Bölüm 6</a>'daki tanımla karşılaştırın.</li>
+<li><b>Ders kodu okuma:</b> <code>systickapikesmeli</code>'yi yalnız <code>driverlib/*.h</code> ve <code>hw_*</code> başlıklarıyla, <code>.c</code> eklemeden ve <code>HWREG(NVIC_ST_CURRENT)</code> adımıyla yeniden yazın. Uyarı sayısı kaça iner?</li>
+</ol>
+
+<h2 id="kaynakca">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): PRIMASK s. 85; §2.5.1 istisna durumları s. 102; §2.5.2 istisna türleri ve Tablo 2-8 s. 102–104; vektör tablosu ve VTABLE hizası s. 106–107; §3.1.1 System Timer (SysTick) s. 123; Tablo 3-8 register haritası s. 134–137; STCTRL s. 138–139; STRELOAD s. 140; STCURRENT s. 141; INTCTRL (PENDSTSET, PENDSTCLR) s. 160–162; SYSPRI3 s. 172; §5.2.6 uyku ve derin uyku kipleri s. 227–228; DSLPCLKCFG s. 264–265; GPIOCR s. 685.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı (rev. 1.22): Bölüm 4 vektör tablosu (s. 4-7); Lab 4 "Interrupts and the GP Timer" (s. 4-11 – 4-21); Lab 7 USB'de <code>SysTickIntHandler</code> (s. 7-11); Lab 14b startup düzenlemesi (s. 14-28).</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/systick.c</code> (<code>SysTickEnable</code> satır 75–81, <code>SysTickIntRegister</code> 119–130, <code>SysTickPeriodSet</code> 221–232, <code>SysTickValueGet</code> 264–270); <code>driverlib/interrupt.c</code> (<code>g_pfnRAMVectors</code> 174–185, <code>IntMasterEnable</code> 211, <code>IntRegister</code> 309–349, <code>IntPrioritySet</code> 539–542); <code>inc/hw_nvic.h</code>, <code>inc/hw_ints.h</code> (<code>FAULT_SYSTICK</code>), <code>inc/tm4c123gh6pm.h</code> (<code>NVIC_ST_…</code>, <code>NVIC_SYS_PRI3_…</code>, <code>NVIC_INT_CTRL_PENDSTSET</code>). Örnekler: <code>examples/boards/ek-tm4c123gxl/qs-rgb/qs-rgb.c</code>, <code>bitband/bitband.c</code>, <code>interrupts/interrupts.c</code>. TivaWare ve belgeler ti.com'dan indirilebilir.</li>
+<li>Ders örnek kodları (EEM 431, SysTick klasörü): <code>hafta07systicnoapinoint</code>, <code>hafta07systicnoapiwithint</code>, <code>hafta07systickapiwithint</code>, <code>systick01kesmesizApisiz</code>, <code>systick01kesmeliApisiz</code>, <code>systickapikesmesiz</code>, <code>systickapikesmeli</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../gpio-kesme/">2. GPIO Kesmeleri</a>, <a href="../saat-pll/">4. Sistem Saati ve PLL</a>, <a href="../timer/">6. Zamanlayıcılar</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 5. SysTick. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

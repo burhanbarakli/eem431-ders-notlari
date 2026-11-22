@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 672" class="stk-svg" role="img" aria-labelledby="stk-title stk-desc">
+<title id="stk-title">SysTick istisnasının yolu, GPIO Port F ile karşılaştırmalı</title>
+<desc id="stk-desc">Sol sütun SysTick, sağ sütun karşılaştırma için GPIO Port F kesmesi. SysTick: sayıcı 1’den 0’a inince (sarma) ve STCTRL.INTEN = 1 ise istek oluşur; izin geçidi SysTick’in kendi register’ındadır, NVIC EN0–EN4 register’larında SysTick biti yoktur. İstisna 15 bekler (pending); yazılım da INTCTRL.PENDSTSET (bit 26) ile bekletebilir, PENDSTCLR (bit 25) bekleme durumunu siler. Öncelik SYSPRI3.TICK alanıdır (bit 31:29, 0xE000.ED20). GPIO Port F: olay ve GPIOIM biti, ardından NVIC EN0 bit 30 (0xE000.E100, IntEnable(INT_GPIOF)), öncelik PRI7 bit 23:21 (0xE000.E41C). İki yol ortak global maskeden geçer: PRIMASK = 0 olmalıdır (IntMasterEnable, CPSIE I). Vektör ofsetleri: SysTick vektör 15, 15 × 4 = 0x3C; GPIO Port F vektör 46, (16 + 30) × 4 = 0xB8. İşleyici adresi VTABLE + ofset konumundan okunur. Tablo iki yerde olabilir: (a) Flash’ta startup dosyasındaki sabit tablo, VTABLE = 0x0000.0000 (reset), işleyici adı vektör 15 girişine yazılır; (b) SRAM’de: SysTickIntRegister, IntRegister’ı çağırır ve INTEN’i 1 yapar; IntRegister ilk çağrıda tabloyu SRAM’e kopyalar, VTABLE’ı oraya çevirir ve girişi yazar. Son adım: SysTick işleyicisinde bayrak temizlemek gerekmez; GPIO işleyicisi GPIOICR ile bayrağı temizler.</desc>
+<defs>
+<marker id="stk-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="stk-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.stk-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.stk-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.stk-svg .stk-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.stk-svg .stk-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.stk-svg .stk-b{font-weight:700}
+.stk-svg .stk-s12{font-size:12px}
+.stk-svg .stk-s13{font-size:13px}
+.stk-svg .stk-s16{font-size:16px}
+.stk-svg .stk-mut{fill:var(--fig-muted,#76746c)}
+.stk-svg .stk-acc{fill:var(--fig-accent,#b4481f)}
+.stk-svg .stk-blu{fill:var(--fig-blue,#1f5fa8)}
+.stk-svg .stk-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.stk-svg .stk-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.stk-svg .stk-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.stk-svg .stk-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.stk-svg .stk-hlb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.12;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.5}
+.stk-svg .stk-head{fill:var(--fig-stroke,#2b2b29)}
+.stk-svg .stk-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.stk-svg .stk-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+</style>
+<text class="stk-s16 stk-b" x="16" y="29">SysTick istisnasının yolu</text>
+<text x="16" y="56"><tspan class="stk-b">SysTick</tspan><tspan class="stk-s13"> · istisna 15, sistem istisnası</tspan></text>
+<text x="476" y="56"><tspan class="stk-s13 stk-mut">Karşılaştırma: </tspan><tspan class="stk-s13 stk-b">GPIO Port F</tspan><tspan class="stk-s13 stk-mut"> · IRQ 30</tspan></text>
+<rect class="stk-box" x="16" y="68" width="436" height="52" rx="8"/>
+<text x="28" y="90"><tspan class="stk-b">Sarma (1 → 0)</tspan><tspan> ve </tspan><tspan class="stk-mono stk-b">STCTRL.INTEN = 1</tspan></text>
+<text class="stk-s13 stk-mut" x="28" y="109">izin biti SysTick’in kendi register’ında</text>
+<rect class="stk-box" x="476" y="68" width="268" height="52" rx="8"/>
+<text x="488" y="90"><tspan class="stk-b">Port F olayı</tspan><tspan> ve </tspan><tspan class="stk-mono stk-b">GPIOIM</tspan></text>
+<text class="stk-s13 stk-mut" x="488" y="109">çevre birimi maskesi geçilir</text>
+<path class="stk-w" d="M234,120 L234,163" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,120 L610,163" marker-end="url(#stk-arr)"/>
+<rect class="stk-hl" x="16" y="130" width="208" height="24" rx="12"/>
+<text class="stk-s12 stk-b stk-acc" x="120" y="146" text-anchor="middle">NVIC EN0–EN4’te SysTick biti yok</text>
+<rect class="stk-box" x="16" y="164" width="274" height="52" rx="8"/>
+<text x="28" y="186"><tspan class="stk-b">İstisna 15 bekler</tspan><tspan class="stk-s13"> (pending)</tspan></text>
+<text x="28" y="205"><tspan class="stk-m12">PENDSTCLR</tspan><tspan class="stk-s12 stk-mut"> (bit 25) bunu siler</tspan></text>
+<rect class="stk-opt" x="310" y="164" width="142" height="52" rx="8"/>
+<text class="stk-s12 stk-b" x="322" y="180">yazılımla da:</text>
+<text class="stk-m12" x="322" y="196">PENDSTSET = 1</text>
+<text class="stk-s12 stk-mut" x="322" y="210">INTCTRL bit 26</text>
+<path class="stk-wt" d="M310,190 L291,190" marker-end="url(#stk-arr)"/>
+<rect class="stk-box" x="476" y="164" width="268" height="52" rx="8"/>
+<text x="488" y="186"><tspan class="stk-b">NVIC: </tspan><tspan class="stk-mono stk-b">EN0</tspan><tspan class="stk-b"> bit 30 = 1 mi?</tspan></text>
+<text x="488" y="205"><tspan class="stk-m12 stk-mut">0xE000.E100</tspan><tspan class="stk-s12 stk-mut"> · </tspan><tspan class="stk-m12 stk-blu">IntEnable(INT_GPIOF)</tspan></text>
+<path class="stk-w" d="M234,216 L234,237" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,216 L610,237" marker-end="url(#stk-arr)"/>
+<rect class="stk-box" x="16" y="238" width="436" height="52" rx="8"/>
+<text x="28" y="260"><tspan class="stk-b">Öncelik: </tspan><tspan class="stk-mono stk-b">SYSPRI3.TICK</tspan><tspan> (bit 31:29)</tspan></text>
+<text x="28" y="279"><tspan class="stk-m12 stk-mut">0xE000.ED20</tspan><tspan class="stk-s13 stk-mut"> · 0–7, küçük sayı daha öncelikli</tspan></text>
+<rect class="stk-box" x="476" y="238" width="268" height="52" rx="8"/>
+<text x="488" y="260"><tspan class="stk-b">Öncelik: </tspan><tspan class="stk-mono stk-b">PRI7</tspan><tspan> bit 23:21</tspan></text>
+<text x="488" y="279"><tspan class="stk-m12 stk-mut">0xE000.E41C</tspan><tspan class="stk-s12 stk-mut"> · </tspan><tspan class="stk-m12 stk-blu">IntPrioritySet()</tspan></text>
+<path class="stk-w" d="M234,290 L234,311" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,290 L610,311" marker-end="url(#stk-arr)"/>
+<rect class="stk-hlb" x="16" y="312" width="728" height="52" rx="8"/>
+<text x="380" y="334" text-anchor="middle"><tspan class="stk-b">Ortak global maske: </tspan><tspan class="stk-mono stk-b">PRIMASK = 0</tspan><tspan class="stk-b"> mı?</tspan></text>
+<text x="380" y="353" text-anchor="middle"><tspan class="stk-m12 stk-blu">IntMasterEnable()</tspan><tspan class="stk-s13 stk-mut"> = </tspan><tspan class="stk-m12">CPSIE I</tspan><tspan class="stk-s13 stk-mut"> · PRIMASK = 1 iken ikisi de bekler</tspan></text>
+<path class="stk-w" d="M234,364 L234,385" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,364 L610,385" marker-end="url(#stk-arr)"/>
+<rect class="stk-box" x="16" y="386" width="436" height="52" rx="8"/>
+<text x="28" y="408"><tspan class="stk-b">Vektör 15</tspan><tspan> → ofset </tspan><tspan class="stk-mono stk-b">0x3C</tspan></text>
+<text class="stk-s13 stk-mut" x="28" y="427">15 × 4 = 60 = 0x3C</text>
+<rect class="stk-box" x="476" y="386" width="268" height="52" rx="8"/>
+<text x="488" y="408"><tspan class="stk-b">Vektör 46</tspan><tspan> → ofset </tspan><tspan class="stk-mono stk-b">0xB8</tspan></text>
+<text class="stk-s13 stk-mut" x="488" y="427">(16 + 30) × 4 = 184 = 0xB8</text>
+<path class="stk-w" d="M234,438 L234,459" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,438 L610,459" marker-end="url(#stk-arr)"/>
+<rect class="stk-code" x="16" y="460" width="728" height="130" rx="8"/>
+<text x="28" y="482" xml:space="preserve"><tspan class="stk-b">İşleyici adresi = </tspan><tspan class="stk-mono stk-b">VTABLE + ofset</tspan><tspan class="stk-s13 stk-mut">     VTABLE register’ı: </tspan><tspan class="stk-m12 stk-mut">0xE000.ED08</tspan></text>
+<rect class="stk-box" x="28" y="494" width="344" height="84" rx="8"/>
+<text class="stk-b" x="40" y="514">(a) Flash: sabit tablo</text>
+<text class="stk-s13" x="40" y="533">startup dosyasındaki vektör dizisi;</text>
+<text x="40" y="550"><tspan class="stk-s13">reset sonrası </tspan><tspan class="stk-m12">VTABLE = 0x0000.0000</tspan></text>
+<text class="stk-s13 stk-mut" x="40" y="567">işleyici adı vektör 15 girişine yazılır</text>
+<rect class="stk-hlb" x="384" y="494" width="348" height="84" rx="8"/>
+<text class="stk-b" x="396" y="514">(b) SRAM: çalışırken kaydedilir</text>
+<text x="396" y="533"><tspan class="stk-m12 stk-blu">SysTickIntRegister(f)</tspan><tspan class="stk-s13"> → </tspan><tspan class="stk-m12 stk-blu">IntRegister</tspan><tspan class="stk-s13"> + INTEN = 1</tspan></text>
+<text class="stk-s13" x="396" y="550">ilk çağrıda tabloyu SRAM’e kopyalar, VTABLE’ı</text>
+<text class="stk-s13" x="396" y="567">oraya çevirir; girişe f’nin adresini yazar</text>
+<path class="stk-w" d="M234,590 L234,611" marker-end="url(#stk-arr)"/>
+<path class="stk-w" d="M610,590 L610,611" marker-end="url(#stk-arr)"/>
+<rect class="stk-hl" x="16" y="612" width="436" height="46" rx="8"/>
+<text class="stk-b" x="28" y="631">SysTick işleyicisi</text>
+<text class="stk-s13 stk-mut" x="28" y="649">bekleme bitini donanım siler; bayrak temizlemek gerekmez</text>
+<rect class="stk-box" x="476" y="612" width="268" height="46" rx="8"/>
+<text class="stk-b" x="488" y="631">GPIO Port F işleyicisi</text>
+<text x="488" y="649"><tspan class="stk-m12">GPIOICR</tspan><tspan class="stk-s13 stk-mut"> ile bayrağı temizler</tspan></text>
+</svg>
