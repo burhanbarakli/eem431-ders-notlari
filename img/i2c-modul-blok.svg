@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 620" class="imb-svg" role="img" aria-labelledby="imb-title imb-desc">
+<title id="imb-title">I2C0 pin yolu ve modül blok şeması (sadeleştirilmiş)</title>
+<desc id="imb-desc">Veri sayfası Şekil 16-1’e dayalı sade şema. PB2 (I2C0SCL) ve PB3 (I2C0SDA) pinleri önce GPIO port B ayarlarından geçer: DEN ve AFSEL’de bit 2 ve 3 = 1 (0x0C), ODR’de yalnız bit 3 = 1 (SDA, 0x08), PCTL’de PMC2 = PMC3 = 3 (0x0000.3300). SCL pininde ODR açılmaz; modülün iç devresi onu açık-drenaj gibi sürer. I2C0 modülünde (taban 0x4002.0000) hatlar isteğe bağlı glitch filtresinden (I2CMCR.GFE = 1 ise; veri sayfası 16.3.1.9, Şekil 16-1’de ayrı blok olarak yok) ve I/O seçiminden geçer. I/O seçimi hatları master ve köle birimlerine verir; I2CMCR.LPBK = 1 iken master ve köle içten birbirine bağlanır (geri döngü testi). Master birimi I2CMSA (köle adresi ve R/S yön biti), I2CMDR (veri baytı), I2CMCS (yazınca komut, okuyunca durum) ve I2CMTPR (SCL üreteci) register’larını içerir ve I2CMCR.MFE = 1 ile açılır. Köle birimi (I2CSOAR kendi adresi, I2CSDR, I2CSCSR) I2CMCR.SFE = 1 ile açılır; bölüm 8’deki loopback örneğinde kullanılır. 7.1’de I2CMCR’a 0x10 yazmak yalnız MFE’yi açar; bölüm 8’de LPBK, MFE ve SFE birlikte yazılır. Master ve köle kesmeleri birleşip tek kesme olarak NVIC’e gider: I2C0 için INT 8, vektör 24. Master kesme register’ları I2CMIMR, I2CMRIS, I2CMMIS, I2CMICR.</desc>
+<defs>
+<marker id="imb-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="imb-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.imb-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.imb-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.imb-svg .imb-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.imb-svg .imb-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.imb-svg .imb-b{font-weight:700}
+.imb-svg .imb-s12{font-size:12px}
+.imb-svg .imb-s13{font-size:13px}
+.imb-svg .imb-s16{font-size:16px}
+.imb-svg .imb-mut{fill:var(--fig-muted,#76746c)}
+.imb-svg .imb-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.imb-svg .imb-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.imb-svg .imb-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.imb-svg .imb-head{fill:var(--fig-stroke,#2b2b29)}
+.imb-svg .imb-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.imb-svg .imb-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="imb-s16 imb-b" x="16" y="29">I2C0: pin yolu ve modül (sadeleştirilmiş)</text>
+<text class="imb-s13 imb-mut" x="16" y="50">Veri sayfası Şekil 16-1’e dayalı; I2C1–I2C3 aynı yapıda.</text>
+<text x="744" y="50" text-anchor="end"><tspan class="imb-s13 imb-b imb-mut">kesikli</tspan><tspan class="imb-s13"> = isteğe bağlı</tspan></text>
+<rect class="imb-pill" x="16" y="145" width="56" height="30" rx="15"/>
+<text class="imb-mono imb-b" x="44" y="165" text-anchor="middle">PB2</text>
+<rect class="imb-pill" x="16" y="237" width="56" height="30" rx="15"/>
+<text class="imb-mono imb-b" x="44" y="257" text-anchor="middle">PB3</text>
+<text class="imb-m12 imb-mut" x="44" y="192" text-anchor="middle">SCL</text>
+<text class="imb-m12 imb-mut" x="44" y="284" text-anchor="middle">SDA</text>
+<rect class="imb-box" x="88" y="92" width="196" height="236" rx="8"/>
+<text class="imb-b" x="100" y="114">GPIO port B</text>
+<text x="100" y="140"><tspan class="imb-m12">DEN</tspan><tspan class="imb-s12"> = </tspan><tspan class="imb-m12">AFSEL</tspan><tspan class="imb-s12"> = 1</tspan></text>
+<text x="100" y="158"><tspan class="imb-s12 imb-mut">bit 2, 3 → </tspan><tspan class="imb-m12 imb-mut">0x0C</tspan></text>
+<text x="100" y="184"><tspan class="imb-m12">ODR</tspan><tspan class="imb-s12"> = 1 yalnız PB3 (SDA)</tspan></text>
+<text x="100" y="202"><tspan class="imb-s12 imb-mut">→ </tspan><tspan class="imb-m12 imb-mut">0x08</tspan></text>
+<text x="100" y="228"><tspan class="imb-m12">PCTL</tspan><tspan class="imb-s12">: PMC2 = PMC3 = 3</tspan></text>
+<text x="100" y="246"><tspan class="imb-s12 imb-mut">→ </tspan><tspan class="imb-m12 imb-mut">0x0000.3300</tspan></text>
+<text class="imb-s12 imb-mut" x="100" y="298">PB2’de ODR yok: modül</text>
+<text class="imb-s12 imb-mut" x="100" y="314">SCL’yi açık-drenaj gibi sürer</text>
+<path class="imb-w" d="M72,160 L88,160"/>
+<path class="imb-w" d="M72,252 L88,252"/>
+<rect class="imb-zone" x="298" y="76" width="446" height="446" rx="10"/>
+<text x="310" y="512"><tspan class="imb-s13 imb-b">I2C0 modülü</tspan><tspan class="imb-s13 imb-mut"> · taban </tspan><tspan class="imb-m12 imb-mut">0x4002.0000</tspan></text>
+<rect class="imb-opt" x="310" y="118" width="64" height="172" rx="8"/>
+<text class="imb-s12" x="342" y="196" text-anchor="middle">glitch</text>
+<text class="imb-s12" x="342" y="213" text-anchor="middle">filtresi</text>
+<text x="342" y="306" text-anchor="middle"><tspan class="imb-m12 imb-mut">GFE</tspan><tspan class="imb-s12 imb-mut"> = 1 ise</tspan></text>
+<text class="imb-s12 imb-mut" x="342" y="322" text-anchor="middle">(16.3.1.9)</text>
+<path class="imb-w" d="M284,160 L310,160"/>
+<path class="imb-w" d="M284,252 L310,252"/>
+<rect class="imb-box" x="388" y="96" width="64" height="304" rx="8"/>
+<text class="imb-s13 imb-b" x="420" y="198" text-anchor="middle">I/O</text>
+<text class="imb-s13 imb-b" x="420" y="215" text-anchor="middle">seçimi</text>
+<text class="imb-m12" x="420" y="296" text-anchor="middle">LPBK</text>
+<text class="imb-s12" x="420" y="312" text-anchor="middle">= 1:</text>
+<text class="imb-s12" x="420" y="328" text-anchor="middle">master ↔</text>
+<text class="imb-s12" x="420" y="344" text-anchor="middle">köle</text>
+<text class="imb-s12" x="420" y="360" text-anchor="middle">içten</text>
+<path class="imb-w" d="M374,160 L388,160"/>
+<path class="imb-w" d="M374,252 L388,252"/>
+<rect class="imb-box" x="468" y="96" width="170" height="204" rx="8"/>
+<text class="imb-b" x="480" y="118">master birimi</text>
+<text x="480" y="136"><tspan class="imb-m12">MFE</tspan><tspan class="imb-s12 imb-mut"> = 1 ile açılır</tspan></text>
+<text class="imb-m12 imb-b" x="480" y="176">I2CMSA</text>
+<text class="imb-s12" x="480" y="191">köle adresi + R/S</text>
+<text class="imb-m12 imb-b" x="480" y="208">I2CMDR</text>
+<text class="imb-s12" x="480" y="223">veri baytı</text>
+<text class="imb-m12 imb-b" x="480" y="240">I2CMCS</text>
+<text class="imb-s12" x="480" y="255">komut / durum</text>
+<text class="imb-m12 imb-b" x="480" y="272">I2CMTPR</text>
+<text class="imb-s12" x="480" y="287">→ SCL üreteci</text>
+<path class="imb-w" d="M452,160 L468,160"/>
+<path class="imb-w" d="M452,252 L468,252"/>
+<rect class="imb-box" x="468" y="316" width="170" height="84" rx="8"/>
+<text class="imb-b" x="480" y="338">köle birimi</text>
+<text x="480" y="356"><tspan class="imb-m12">SFE</tspan><tspan class="imb-s12 imb-mut"> = 1 ile açılır</tspan></text>
+<text x="480" y="374"><tspan class="imb-m12">I2CSOAR</tspan><tspan class="imb-s12"> kendi adresi</tspan></text>
+<text x="480" y="390"><tspan class="imb-m12">I2CSDR</tspan><tspan class="imb-s12">, </tspan><tspan class="imb-m12">I2CSCSR</tspan></text>
+<text class="imb-s12 imb-mut" x="553" y="416" text-anchor="middle">bölüm 8 loopback’te kullanılır</text>
+<path class="imb-w" d="M452,344 L468,344"/>
+<path class="imb-w" d="M452,372 L468,372"/>
+<rect class="imb-box" x="654" y="130" width="80" height="140" rx="8"/>
+<text class="imb-b" x="664" y="152">kesme</text>
+<text class="imb-m12" x="664" y="178">I2CMIMR</text>
+<text class="imb-m12" x="664" y="200">I2CMRIS</text>
+<text class="imb-m12" x="664" y="222">I2CMMIS</text>
+<text class="imb-m12" x="664" y="244">I2CMICR</text>
+<path class="imb-w" d="M638,170 L653,170" marker-end="url(#imb-arr)"/>
+<path class="imb-w" d="M638,358 L678,358 L678,271" marker-end="url(#imb-arr)"/>
+<rect class="imb-box" x="310" y="424" width="328" height="66" rx="8"/>
+<text x="322" y="463"><tspan class="imb-s12">bölüm 8: </tspan><tspan class="imb-m12">LPBK</tspan><tspan class="imb-s12"> | </tspan><tspan class="imb-m12">MFE</tspan><tspan class="imb-s12"> | </tspan><tspan class="imb-m12">SFE</tspan></text>
+<text x="322" y="481"><tspan class="imb-s12 imb-mut">bit 0 </tspan><tspan class="imb-m12 imb-mut">LPBK</tspan><tspan class="imb-s12 imb-mut"> · 4 </tspan><tspan class="imb-m12 imb-mut">MFE</tspan><tspan class="imb-s12 imb-mut"> · 5 </tspan><tspan class="imb-m12 imb-mut">SFE</tspan><tspan class="imb-s12 imb-mut"> · 6 </tspan><tspan class="imb-m12 imb-mut">GFE</tspan></text>
+<text x="322" y="444"><tspan class="imb-mono imb-b">I2CMCR</tspan><tspan class="imb-s13"> ← </tspan><tspan class="imb-mono">0x10</tspan><tspan class="imb-s13"> (7.1): yalnız </tspan><tspan class="imb-mono">MFE</tspan><tspan class="imb-s13"> = 1</tspan></text>
+<rect class="imb-box" x="654" y="538" width="90" height="66" rx="8"/>
+<text class="imb-b" x="664" y="560">NVIC</text>
+<text class="imb-s12" x="664" y="578">INT 8 (I2C0)</text>
+<text class="imb-s12 imb-mut" x="664" y="594">vektör 24</text>
+<path class="imb-w" d="M710,270 L710,537" marker-end="url(#imb-arr)"/>
+<text class="imb-s12 imb-mut" x="704" y="508" text-anchor="end">tek istek</text>
+</svg>

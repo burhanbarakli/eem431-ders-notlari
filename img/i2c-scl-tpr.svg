@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" class="ist-svg" role="img" aria-labelledby="ist-title ist-desc">
+<title id="ist-title">SCL üretimi: I2CMTPR ile SCL periyodu</title>
+<desc id="ist-desc">Veri sayfası 16.3.2.1 ve I2CMTPR açıklamasına dayalı. SCL periyodu = 2 × (1 + TPR) × (SCL_LP + SCL_HP) sistem saati çevrimi; SCL_LP = 6 ve SCL_HP = 4 sabit olduğundan periyot 20 × (1 + TPR) çevrimdir. Bir birim 2 × (1 + TPR) çevrimdir: SCL 6 birim düşük, 4 birim yüksek kalır. Örnek: 16 MHz sistem saati (1 çevrim = 62,5 ns) ve TPR = 7 ile bir birim 16 çevrim (1 µs); düşük bölüm 6 × 16 = 96 çevrim = 6 µs, yüksek bölüm 4 × 16 = 64 çevrim = 4 µs; bir SCL periyodu 160 çevrim = 10 µs, yani 100 kHz. Ters yönde TPR = 16 000 000 / (20 × 100 000) − 1 = 7.</desc>
+<style>
+.ist-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ist-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ist-svg .ist-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ist-svg .ist-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.ist-svg .ist-b{font-weight:700}
+.ist-svg .ist-s12{font-size:12px}
+.ist-svg .ist-s13{font-size:13px}
+.ist-svg .ist-s15{font-size:15px}
+.ist-svg .ist-s16{font-size:16px}
+.ist-svg .ist-mut{fill:var(--fig-muted,#76746c)}
+.ist-svg .ist-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.ist-svg .ist-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.ist-svg .ist-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.ist-svg .ist-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.ist-svg .ist-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.ist-svg .ist-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.ist-svg .ist-wvs{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.2;stroke-linejoin:round}
+</style>
+<text x="16" y="29"><tspan class="ist-s16 ist-b">SCL üretimi: </tspan><tspan class="ist-mono ist-b">I2CMTPR</tspan></text>
+<text class="ist-s13 ist-mut" x="16" y="50">Veri sayfası 16.3.2.1 ve I2CMTPR açıklaması (s. 1003–1004, 1026).</text>
+<rect class="ist-code" x="16" y="66" width="728" height="72" rx="8"/>
+<text x="380" y="94" text-anchor="middle"><tspan class="ist-s15">SCL periyodu = 2 × (1 + </tspan><tspan class="ist-mono ist-b">TPR</tspan><tspan class="ist-s15">) × (</tspan><tspan class="ist-mono">SCL_LP</tspan><tspan class="ist-s15"> + </tspan><tspan class="ist-mono">SCL_HP</tspan><tspan class="ist-s15">) sistem saati çevrimi</tspan></text>
+<text x="380" y="122" text-anchor="middle" xml:space="preserve"><tspan class="ist-m12">SCL_LP</tspan><tspan class="ist-s13"> = 6, </tspan><tspan class="ist-m12">SCL_HP</tspan><tspan class="ist-s13"> = 4 (sabit)  →  </tspan><tspan class="ist-s13 ist-b">periyot = 20 × (1 + </tspan><tspan class="ist-m12 ist-b">TPR</tspan><tspan class="ist-s13 ist-b">) çevrim</tspan></text>
+<text x="16" y="168" xml:space="preserve"><tspan class="ist-s13 ist-b">Örnek: </tspan><tspan class="ist-s13">16 MHz (1 çevrim = 62,5 ns), </tspan><tspan class="ist-m12 ist-b">TPR</tspan><tspan class="ist-s13 ist-b"> = 7</tspan><tspan class="ist-s13">  →  1 birim = 2 × (1 + 7) = 16 çevrim = 1 µs</tspan></text>
+<path class="ist-wm" d="M112,210 L112,204 L468,204 L468,210"/>
+<path class="ist-wm" d="M472,210 L472,204 L708,204 L708,210"/>
+<text x="290" y="196" text-anchor="middle"><tspan class="ist-s13 ist-b">düşük: </tspan><tspan class="ist-m12 ist-b">SCL_LP</tspan><tspan class="ist-s13 ist-b"> = 6 birim</tspan></text>
+<text x="590" y="196" text-anchor="middle"><tspan class="ist-s13 ist-b">yüksek: </tspan><tspan class="ist-m12 ist-b">SCL_HP</tspan><tspan class="ist-s13 ist-b"> = 4 birim</tspan></text>
+<path class="ist-grid" d="M110,220 L110,276"/>
+<path class="ist-grid" d="M170,220 L170,276"/>
+<path class="ist-grid" d="M230,220 L230,276"/>
+<path class="ist-grid" d="M290,220 L290,276"/>
+<path class="ist-grid" d="M350,220 L350,276"/>
+<path class="ist-grid" d="M410,220 L410,276"/>
+<path class="ist-grid" d="M470,220 L470,276"/>
+<path class="ist-grid" d="M530,220 L530,276"/>
+<path class="ist-grid" d="M590,220 L590,276"/>
+<path class="ist-grid" d="M650,220 L650,276"/>
+<path class="ist-grid" d="M710,220 L710,276"/>
+<text class="ist-mono ist-b" x="16" y="252">SCL</text>
+<path class="ist-wva" d="M86,228 L110,228 L110,266 L470,266 L470,228 L710,228 L710,266 L734,266"/>
+<text class="ist-s12 ist-mut" x="16" y="294">çevrim</text>
+<rect class="ist-cellf" x="110" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="140" y="294" text-anchor="middle">16</text>
+<rect class="ist-cellf" x="170" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="200" y="294" text-anchor="middle">16</text>
+<rect class="ist-cellf" x="230" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="260" y="294" text-anchor="middle">16</text>
+<rect class="ist-cellf" x="290" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="320" y="294" text-anchor="middle">16</text>
+<rect class="ist-cellf" x="350" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="380" y="294" text-anchor="middle">16</text>
+<rect class="ist-cellf" x="410" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="440" y="294" text-anchor="middle">16</text>
+<rect class="ist-cell" x="470" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="500" y="294" text-anchor="middle">16</text>
+<rect class="ist-cell" x="530" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="560" y="294" text-anchor="middle">16</text>
+<rect class="ist-cell" x="590" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="620" y="294" text-anchor="middle">16</text>
+<rect class="ist-cell" x="650" y="278" width="60" height="24" rx="0"/>
+<text class="ist-m12" x="680" y="294" text-anchor="middle">16</text>
+<text class="ist-s13" x="290" y="324" text-anchor="middle">6 × 16 = 96 çevrim = 6 µs</text>
+<text class="ist-s13" x="590" y="324" text-anchor="middle">4 × 16 = 64 çevrim = 4 µs</text>
+<path class="ist-wm" d="M112,340 L112,346 L708,346 L708,340"/>
+<text x="410" y="366" text-anchor="middle" xml:space="preserve"><tspan class="ist-s13 ist-b">1 SCL periyodu = 20 × 8 = 160 çevrim = 10 µs  →  </tspan><tspan class="ist-s13 ist-b">100 kHz</tspan></text>
+<text class="ist-s13 ist-b" x="16" y="412">1 birim, büyütülmüş:</text>
+<text x="16" y="430"><tspan class="ist-s12">2 × (1 + </tspan><tspan class="ist-m12">TPR</tspan><tspan class="ist-s12">) = 16 çevrim</tspan></text>
+<path class="ist-wvs" d="M214,428 L214,402 L230.0,402 L230.0,428 L246,428 L246,402 L262.0,402 L262.0,428 L278,428 L278,402 L294.0,402 L294.0,428 L310,428 L310,402 L326.0,402 L326.0,428 L342,428 L342,402 L358.0,402 L358.0,428 L374,428 L374,402 L390.0,402 L390.0,428 L406,428 L406,402 L422.0,402 L422.0,428 L438,428 L438,402 L454.0,402 L454.0,428 L470,428 L470,402 L486.0,402 L486.0,428 L502,428 L502,402 L518.0,402 L518.0,428 L534,428 L534,402 L550.0,402 L550.0,428 L566,428 L566,402 L582.0,402 L582.0,428 L598,428 L598,402 L614.0,402 L614.0,428 L630,428 L630,402 L646.0,402 L646.0,428 L662,428 L662,402 L678.0,402 L678.0,428 L694,428 L694,402 L710.0,402 L710.0,428 L726,428"/>
+<text class="ist-m12 ist-mut" x="222" y="444" text-anchor="middle">1</text>
+<text class="ist-m12 ist-mut" x="702" y="444" text-anchor="middle">16</text>
+<text class="ist-s12 ist-mut" x="470" y="444" text-anchor="middle">sistem saati, 16 MHz</text>
+<text x="16" y="478"><tspan class="ist-s13 ist-b">Ters yönde: </tspan><tspan class="ist-m12">TPR</tspan><tspan class="ist-s13"> = 16 000 000 / (20 × 100 000) − 1 = 7</tspan></text>
+</svg>

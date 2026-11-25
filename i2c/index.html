@@ -1,0 +1,880 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>I2C — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM LaunchPad'de I2C: veri yolu, çerçeve, I2C0 ve PB2/PB3, MCS, TPR, 12 adımlı başlatma, master komutları, API'siz ve TivaWare örnekleri, geri döngü, ders kodları.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 11. I2C</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#amac">0. Amaç</a></li>
+<li><a href="#nedir">1. I2C nedir?</a><ol>
+  <li><a href="#hizlar">Hızlar</a></li>
+  <li><a href="#karsilastirma">UART ve SPI ile</a></li>
+  <li><a href="#seviye">3,3 V ve 5 V</a></li></ol></li>
+<li><a href="#cerceve">2. Çerçeve</a><ol>
+  <li><a href="#tekrarli">Tekrarlı START</a></li>
+  <li><a href="#hakemlik">Hakemlik, saat uzatma</a></li></ol></li>
+<li><a href="#modul">3. TM4C123'te I2C</a><ol>
+  <li><a href="#pinler">Pinler ve pin ayarı</a></li>
+  <li><a href="#cekme">Çekme dirençleri</a></li>
+  <li><a href="#registerlar">Register özeti</a></li>
+  <li><a href="#mcs">MCS: okuma ve yazma</a></li></ol></li>
+<li><a href="#scl">4. SCL hızı ve TPR</a></li>
+<li><a href="#baslatma">5. Başlatma adımları</a></li>
+<li><a href="#komutlar">6. Master komutları</a><ol>
+  <li><a href="#busy-busbsy">BUSY mi, BUSBSY mi?</a></li>
+  <li><a href="#hata-yonetimi">Hata olunca</a></li></ol></li>
+<li><a href="#ornekler">7. Örnekler</a><ol>
+  <li><a href="#ornek-tek">7.1 Tek bayt, API'siz</a></li>
+  <li><a href="#ornek-cok">7.2 Çok bayt, API'siz</a></li>
+  <li><a href="#ornek-apili">7.3 API'li</a></li>
+  <li><a href="#ornek-loopback">7.4 Geri döngü</a></li></ol></li>
+<li><a href="#ti">8. TI uyarlaması</a><ol>
+  <li><a href="#lab14">Lab 14: Sensor Hub</a></li></ol></li>
+<li><a href="#ders-kodlari">9. Ders kodları</a></li>
+<li><a href="#hatalar">10. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">11. Alıştırmalar</a></li>
+<li><a href="#kaynakca">12. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>I2C (Inter-Integrated Circuit)</h1>
+<p class="lead">Bir sıcaklık sensörü, bir EEPROM, bir gerçek zaman saati: hepsini mikrodenetleyiciye yalnız iki telle bağlamak mümkündür. I2C (Inter-Integrated Circuit) bunu adreslemeyle yapar: hattaki her köle kendi adresini duyunca yanıt verir. Bu notta I2C'nin elektriksel yapısını ve çerçevesini, TM4C123GH6PM'nin I2C modülünü, SCL hızını, 12 adımlı başlatmayı ve master komutlarını öğrenecek, LaunchPad'den 0x55 adresli bir köleye (derste bir Arduino) bayt gönderip okuyacağız.</p>
+
+<h2 id="amac">0. Amaç ve öğrenme kazanımları</h2>
+<div class="box goal"><span class="box-title">Amaç</span>
+<p><b>Bu notun amacı</b>, LaunchPad'deki I2C0 modülünü (PB2 = SCL, PB3 = SDA) master olarak kurup bir köleye bayt yazmak, köleden bayt okumak ve bir köle register'ını tekrarlı START ile okumak, her adımda işlemin bitmesini bekleyip hatayı denetlemektir. Bu notun sonunda öğrenci:</p>
+<ol>
+<li>I2C veri yolunun iki telini, açık-drenaj yapıyı, çekme dirençlerini ve 7 bitlik adreslemeyi açıklayabilir, I2C'yi UART ve SPI ile karşılaştırabilir.</li>
+<li>Bir I2C çerçevesini bit bit çizebilir.</li>
+<li>PB2/PB3'ü I2C için doğru ayarlar (AFSEL, DEN, yalnız SDA'da ODR, PCTL = 0x0000.3300) ve MCS register'ının okunurken ve yazılırken farklı anlamlar taşıdığını bilir.</li>
+<li>İstenen SCL hızı için TPR değerini hesaplar, TivaWare'in nasıl yuvarladığını bilir.</li>
+<li>Veri sayfası 16.4.1'in 12 adımını register düzeyinde (API'siz) ve TivaWare ile (API'li) uygular.</li>
+<li>Tek bayt, çok bayt ve register okuma için MCS komutlarını seçer, BUSY'yi bekler, hatada STOP verir.</li>
+<li>Geri döngü kipiyle kartta ek donanımsız deneme yapar, ders kodlarındaki hataları bulabilir.</li>
+</ol></div>
+
+<h2 id="nedir">1. I2C nedir?</h2>
+<p><b>Amaç:</b> veri yolunun elektriksel yapısını, adreslemeyi ve hızları tanımak.</p>
+<p>I2C iki telli, eşzamanlı (saatli), yarı çift yönlü bir seri veri yoludur. <b>SCL</b> (serial clock) saat, <b>SDA</b> (serial data) veri hattıdır. İkisi de iki yönlüdür. Veri yolu, iki hat da yüksekken boştadır (§16.3.1, s. 999). Hatta iki tür birim vardır:</p>
+<ul>
+<li><b>Master</b> (ana birim): iletişimi başlatır, SCL'yi üretir, START ve STOP koşullarını oluşturur. Bu notta LaunchPad masterdır.</li>
+<li><b>Köle</b> (İngilizce <i>slave</i>): kendi adresini duyunca yanıt verir. Derste köle, 0x55 adresine ayarlanmış bir Arduino'dur.</li>
+</ul>
+<p>Her köle 7 bitlik bir adresle seçilir (s. 997). Birden çok masterın aynı anda başlaması hakemlikle (arbitration) çözülür (<a href="#hakemlik">Bölüm 2</a>).</p>
+<p><b>Açık-drenaj ve çekme dirençleri.</b> Hattaki hiçbir birim hattı yükseğe sürmez. Her birim hattı yalnız düşüğe çekebilir ya da bırakabilir (açık-drenaj, <i>open-drain</i>). Bırakılan hattı bir <b>çekme direnci</b> (pull-up) besleme gerilimine çeker. Böylece iki birim aynı anda farklı değer yazmaya kalkarsa kısa devre olmaz: düşüğe çeken kazanır. Bu "kablolu VE" yapısı ACK'yi, saat uzatmayı ve hakemliği mümkün kılar. Veri sayfası SDA ve SCL'nin bir çekme direnciyle pozitif beslemeye bağlanmasını şart koşar ve direnç değeri için I2C belirtimine yönlendirir (§16.3, s. 999). Bütün birimlerin toprakları ortaktır.</p>
+<figure><img class="fig" src="../img/i2c-veriyolu.svg" alt="I2C veri yolu bağlantısı: LaunchPad'in I2C0 modülü PB2 (SCL) ve PB3 (SDA) üzerinden iki hatta bağlı; hatlara 0x55 adresli köle ve başka köleler bağlı; her hat bir çekme direnciyle 3,3 V'a çekilir; birimlerin çıkışları açık-drenaj, toprak ortak"><figcaption><b>Şekil 1.</b> I2C veri yolu (veri sayfası Şekil 16-2, s. 999'a dayalı). Her birim hattı yalnız düşüğe çekebilir. Hattı yükseğe çeken, iki hattaki birer çekme direncidir. Toprak bütün birimlerde ortaktır.</figcaption></figure>
+
+<h3 id="hizlar">Hızlar</h3>
+<p>TM4C123GH6PM'nin I2C modülleri dört hızı destekler (s. 997, §16.3.2 s. 1003):</p>
+<table>
+<thead><tr><th>Kip</th><th>Hız</th><th>TM4C123'te nasıl seçilir</th></tr></thead>
+<tbody>
+<tr><td>Standart (Standard)</td><td>100 kbps</td><td>MTPR.TPR (<a href="#scl">Bölüm 4</a>)</td></tr>
+<tr><td>Hızlı (Fast-mode)</td><td>400 kbps</td><td>MTPR.TPR</td></tr>
+<tr><td>Hızlı artı (Fast-mode plus)</td><td>1 Mbps</td><td>MTPR.TPR (sistem saati en az 40 MHz, Tablo 16-2)</td></tr>
+<tr><td>Yüksek hız (High-speed)</td><td>3,33 Mbps</td><td>MTPR.HS, master kodu MCS = 0x13 ile (s. 1004–1005)</td></tr>
+</tbody></table>
+
+<h3 id="karsilastirma">UART ve SPI ile karşılaştırma</h3>
+<table>
+<thead><tr><th></th><th>UART (<a href="../uart/">UART notu</a>)</th><th>I2C</th><th>SPI (TM4C'de SSI)</th></tr></thead>
+<tbody>
+<tr><td>Tel sayısı</td><td>2 (TX, RX) + toprak</td><td>2 (SCL, SDA) + toprak</td><td>3 + köle başına 1 seçme (SCLK, MOSI, MISO, CS)</td></tr>
+<tr><td>Saat</td><td>Yok (asenkron, iki taraf aynı baud)</td><td>Master üretir</td><td>Master üretir</td></tr>
+<tr><td>Birim sayısı</td><td>Noktadan noktaya, 2</td><td>Çok köle, çok master, adresle seçim</td><td>Çok köle, ayrı CS telleriyle seçim</td></tr>
+<tr><td>Yön</td><td>Tam çift yönlü</td><td>Yarı çift yönlü (tek SDA)</td><td>Tam çift yönlü</td></tr>
+<tr><td>Onay</td><td>Yok (isteğe bağlı eşlik biti)</td><td>Her bayttan sonra ACK/NACK</td><td>Yok</td></tr>
+<tr><td>Tipik hız</td><td>9600–115 200 bps</td><td>100 kbps – 1 Mbps</td><td>MHz mertebesi</td></tr>
+</tbody></table>
+<p>I2C'nin üstünlüğü tel sayısıdır. Bedeli hız (açık-drenaj hatların yükselme süresi) ve protokol karmaşıklığıdır.</p>
+
+<h3 id="seviye">3,3 V ve 5 V: Arduino köleye dikkat</h3>
+<div class="box warn"><span class="box-title">Gerilim seviyeleri</span>
+<p>TM4C123GH6PM 3,3 V ile çalışır. Veri sayfasına göre GPIO pinleri giriş olarak yapılandırıldığında 5 V toleranslıdır. Bunun istisnaları PD4, PD5, PB0 ve PB1'dir (en çok 3,6 V). PB2 ve PB3 istisnalar arasında değildir (§10.1 s. 649, Tablo 24-29 notu s. 1385). Tolerans VDD varken geçerlidir: kart kapalıyken pinlere 5 V uygulamanın süresi sınırlıdır (s. 1385).</p>
+<p>Arduino Uno gibi 5 V'luk bir köle iki sorun çıkarır. (1) AVR tabanlı Arduino'larda Wire kütüphanesi SDA/SCL'de iç çekme dirençlerini açar ve hatlar 5 V'a çekilir. Veri sayfasının toleransı giriş içindir, I2C pinleri ise açık-drenaj çıkıştır da. (2) 5 V'luk bir AVR'nin yüksek giriş eşiği 0,6–0,7 × VCC (3–3,5 V) mertebesindedir: 3,3 V sınırda kalır. <b>Güvenli yol</b>, iki taraf arasına çift yönlü bir I2C seviye dönüştürücü koymak ya da 3,3 V ile çalışan bir köle kullanmaktır. Her durumda topraklar birleştirilir.</p></div>
+
+<h2 id="cerceve">2. Çerçeve</h2>
+<p><b>Amaç:</b> bir I2C aktarımını bit bit okuyabilmek.</p>
+<p>Veri sayfasının işlevsel açıklaması (§16.3.1, s. 999–1001) şöyle özetlenebilir:</p>
+<ul>
+<li><b>START koşulu:</b> SCL yüksekken SDA'nın yüksekten düşüğe inmesi. <b>STOP koşulu:</b> SCL yüksekken SDA'nın düşükten yükseğe çıkması. Veri yolu START'tan sonra meşgul, STOP'tan sonra boş sayılır (s. 999). İkisini de master üretir.</li>
+<li><b>Veri geçerliliği:</b> SDA, SCL yüksekken kararlı kalmalıdır. SDA yalnız SCL düşükken değişebilir (§16.3.1.3, s. 1000). START ve STOP bu kuralın bilinçli istisnalarıdır.</li>
+<li><b>Bayt + onay:</b> her aktarım 9 bittir: 8 veri biti (en anlamlı bit önce, MSB) ve 1 onay (ACK) biti. Bir START ile STOP arasındaki bayt sayısı sınırsızdır (s. 999).</li>
+<li><b>Adres baytı:</b> START'tan sonraki ilk bayt, 7 bitlik köle adresi ve bir yön bitidir. Protokolde bu bite R/W̄ denir: 0 master yazar (W), 1 master okur (R). TM4C123'ün I2CMSA register'ında aynı bit <b>R/S</b> (Receive/Send) adını taşır (§16.3.1.2, s. 1000; s. 1019). 0x55 adresine yazma için adres baytı <code>(0x55 &lt;&lt; 1) | 0</code> = <code>0xAA</code>, okuma için <code>0xAB</code>'dir.</li>
+<li><b>ACK ve NACK:</b> dokuzuncu saat darbesini master üretir. Bu sırada verici SDA'yı bırakır. Alıcı baytı onaylamak için SDA'yı düşüğe çeker: <b>ACK</b>. SDA yüksek kalırsa <b>NACK</b> (onaysız) olur. Adresi tanıyan bir köle yoksa SDA yüksek kalır ve master aktarımı STOP ile bitirir. Master alıcıyken son baytı bilerek onaylamaz (NACK). Böylece köleye "veri yeter" der, köle SDA'yı bırakır ve master STOP ya da tekrarlı START üretir (§16.3.1.4, s. 1001).</li>
+</ul>
+<p>Şekil 2, <a href="#ornek-tek">7.1</a>'deki yazma işleminin hattaki görüntüsüdür: START, <code>0xAA</code> (adres 0x55 + W), kölenin ACK'si, <code>0x41</code> ('A'), kölenin ACK'si, STOP. Toplam 18 SCL darbesi vardır. 100 kbps'te bir bit 10 µs sürdüğü için çerçeve yaklaşık 0,2 ms'dir.</p>
+<figure><img class="fig" src="../img/i2c-cerceve.svg" alt="I2C yazma çerçevesinin dalga biçimi: START, adres baytı 1010101 ve R/W̄ = 0 (0xAA), dokuzuncu darbede kölenin ACK'si, veri baytı 0100 0001 (0x41, 'A'), ACK, STOP; SDA yalnız SCL düşükken değişir"><figcaption><b>Şekil 2.</b> 7.1'deki yazma: köle adresi 0x55, R/W̄ = 0 (hatta <code>0xAA</code>), veri <code>0x41</code> ('A'). Her bayttan sonraki dokuzuncu darbede SDA'yı köle düşüğe çeker (ACK). SDA yalnız SCL düşükken değişir. START ve STOP, SCL yüksekken SDA'nın değişmesidir.</figcaption></figure>
+
+<h3 id="tekrarli">Tekrarlı START</h3>
+<p>Master, STOP üretmeden yeniden START üretebilir: <b>tekrarlı START</b> (repeated START). Veri yolu master'da kalır, araya başka bir master giremez. En yaygın kullanımı <b>köle register'ı okumaktır</b>: master önce yazma yönünde köleye okunacak register'ın adresini gönderir, sonra STOP vermeden tekrarlı START ile okuma yönünde adresler ve veriyi alır (Şekil 16-12, s. 1012). Yön değiştirmek için adres baytı yeniden gönderilir (§16.3.1.5, s. 1001–1002).</p>
+<pre><code class="language-plaintext">S | 0x55+W | A | reg | A | Sr | 0x55+R | A | veri0 | A | veri1 | N | P
+S: START   Sr: tekrarlı START   A: ACK   N: NACK (master)   P: STOP</code></pre>
+
+<h3 id="hakemlik">Hakemlik ve saat uzatma (kısaca)</h3>
+<ul>
+<li><b>Hakemlik</b> (arbitration): iki master aynı anda START üretirse, SCL yüksekken SDA karşılaştırılır. SDA'ya 1 yazmak isteyen ama hattı 0 gören master kaybettiğini anlar, çıkış katını kapatır ve veri yolu boşalana kadar çekilir. Hakemlik adres bitlerinde başlar, aynı köleye gidiliyorsa veri bitlerinde sürer (§16.3.1.8, s. 1003). TM4C123'te MCS.ARBLST ile bildirilir.</li>
+<li><b>Saat uzatma</b> (clock stretching): bir sonraki baytı hazırlayamayan alıcı SCL'yi düşük tutar ve vericiyi bekletir. SCL'yi bıraktığında aktarım sürer (s. 999). TM4C123'te bir köle SCL'yi çok uzun tutarsa <b>saat düşük zaman aşımı</b> (CLTO) devreye girebilir: I2CMCLKOCNT'ye yazılan sayı 12 bitlik bir sayacın üst 8 bitidir. Örneğin 100 kHz'te <code>0xDA</code> → 0xDA0 = 3488 SCL periyodu → 34,88 ms. Süre dolunca MCS.CLKTO ve MRIS.CLKRIS kurulur (§16.3.1.6, s. 1002).</li>
+</ul>
+
+<h2 id="modul">3. TM4C123GH6PM'de I2C modülü</h2>
+<p><b>Amaç:</b> modülün yapısını, pinlerini ve master register'larını veri sayfasından öğrenmek.</p>
+<p>TM4C123GH6PM'de dört I2C modülü vardır. Her modülde bir master ve bir köle birimi bulunur, ikisi aynı anda çalışabilir (s. 997, §16.3 s. 999). Master birimi iş bitince (ya da hatayla kesilince), köle birimi veri alındığında ya da istendiğinde ve START/STOP algılandığında kesme üretebilir. İkisi de aynı kesme hattını kullanır (§16.3.3, s. 1005–1006).</p>
+<table>
+<thead><tr><th>Modül</th><th>Taban adresi (s. 1017)</th><th>SCL</th><th>SDA</th><th>Kesme (s. 104–105)</th></tr></thead>
+<tbody>
+<tr><td>I2C0</td><td><code>0x4002.0000</code></td><td>PB2</td><td>PB3</td><td>8 (vektör 24, <code>INT_I2C0</code>)</td></tr>
+<tr><td>I2C1</td><td><code>0x4002.1000</code></td><td>PA6</td><td>PA7</td><td>37</td></tr>
+<tr><td>I2C2</td><td><code>0x4002.2000</code></td><td>PE4</td><td>PE5</td><td>68</td></tr>
+<tr><td>I2C3</td><td><code>0x4002.3000</code></td><td>PD0</td><td>PD1</td><td>69</td></tr>
+</tbody></table>
+<p>Bütün I2C pinlerinin PCTL kodu 3'tür (Tablo 16-1 s. 998, Tablo 23-5 s. 1351). Bu not LaunchPad'de I2C0'ı, yani PB2 ve PB3'ü kullanır. LaunchPad'de PD0–PB6 ve PD1–PB7 0 Ω dirençlerle (R9, R10) birbirine bağlıdır (<a href="../gpio/">GPIO notu</a>). I2C3 kullanılacaksa PB6/PB7 başka bir işe verilmemelidir.</p>
+<figure><img class="fig" src="../img/i2c-modul-blok.svg" alt="I2C modülü ve pin yolu: PB2 ve PB3 pinleri GPIO bloğunda DEN, AFSEL, yalnız SDA için ODR ve PCTL = 3 ile I2C0'a bağlanır; I2C0'da master birimi (MSA, MDR, MCS, MTPR, MCR, SCL üreteci) ve köle birimi (SOAR, SCSR, SDR), glitch filtresi, MIMR/MRIS/MMIS/MICR üzerinden NVIC'e kesme 8, MCR.LPBK ile iç geri döngü"><figcaption><b>Şekil 3.</b> I2C0 modülü ve pin yolu (veri sayfası Şekil 16-1, s. 998'e dayalı). Pinler GPIO bloğunda I2C'ye verilir. SCL itme-çekme ayarlanır ama iç devre onu açık-drenaj gibi sürer (s. 999). LPBK = 1 iken master ve köle pinlere gitmeden içeriden bağlanır.</figcaption></figure>
+
+<h3 id="pinler">Pinler ve pin ayarı</h3>
+<p>PB2/PB3'ü I2C0'a vermek için dört GPIO register'ı ayarlanır:</p>
+<table>
+<thead><tr><th>Register (sayfa)</th><th>PB2 (SCL)</th><th>PB3 (SDA)</th><th>Değer</th></tr></thead>
+<tbody>
+<tr><td>GPIOAFSEL (s. 671)</td><td>1</td><td>1</td><td><code>|= 0x0C</code></td></tr>
+<tr><td>GPIODEN (s. 682)</td><td>1</td><td>1</td><td><code>|= 0x0C</code></td></tr>
+<tr><td>GPIOODR (s. 676)</td><td><b>0</b></td><td>1</td><td><code>|= 0x08</code></td></tr>
+<tr><td>GPIOPCTL (s. 688–689)</td><td>PMC2 (bit 11:8) = 3</td><td>PMC3 (bit 15:12) = 3</td><td><code>0x0000.3300</code></td></tr>
+</tbody></table>
+<ul>
+<li><b>Neden SCL açık-drenaj değil?</b> Veri sayfasına göre SDA açık-drenaj yapılmalıdır. SCL ise yüksek hız kipini destekleyen iç devre yüzünden açık-drenaj yapılmamalıdır. İç devre onu yine açık-drenaj gibi davrandırır (§16.3, s. 999). Yani SCL'de ODR = 0 bırakılır ve modül hattı yalnız düşüğe çeker. Çekme direnci SCL'de de gereklidir. TivaWare'de <code>GPIOPinTypeI2C</code> açık-drenaj, <code>GPIOPinTypeI2CSCL</code> itme-çekme ayarlar (<code>gpio.c</code> satır 1739–1744, 1789–1794).</li>
+<li><b>PCTL değeri:</b> TivaWare'de <code>GPIO_PB2_I2C0SCL</code> = <code>0x00010803</code> ve <code>GPIO_PB3_I2C0SDA</code> = <code>0x00010C03</code>'tür (<code>pin_map.h</code>). <code>GPIOPinConfigure</code> bunları "port B, kaydırma 8 / 12, değer 3" diye açar (<code>gpio.c</code> satır 2473–2498): birlikte <code>0x0000.3300</code>. API'siz kodda <code>GPIO_PCTL_PB2_I2C0SCL</code>, <code>GPIO_PCTL_PB3_I2C0SDA</code> adları kullanılabilir.</li>
+<li><b>Açılış değeri:</b> PB2/PB3 "özel durumlu" pinlerdir. Reset sonrası Port B'nin GPIOPCTL'sinde PMC2 = PMC3 = 3'tür, yani register <code>0x0000.3300</code> ile açılır. AFSEL ve DEN ise 0'dır (Tablo 10-7 s. 671, Tablo 10-11 s. 688). Veri sayfası bu yüzden I2C0 pinlerinin açılışta I2C işlevinde olduğunu söyler (s. 998), ama AFSEL ve DEN yine yazılmalıdır. Bu ayrıntı <a href="#ders-kodlari">Bölüm 9</a>'daki PCTL hatasının neden fark edilmediğini açıklar.</li>
+</ul>
+
+<h3 id="cekme">Çekme dirençleri yeterli mi?</h3>
+<p>LaunchPad'in şemasında PB2 ve PB3'e bağlı bir çekme direnci yoktur. Direnç ya köle kartında (ör. bir sensör modülü) ya da dışarıdan eklenmelidir. Seçenekler:</p>
+<ul>
+<li><b>Dış direnç:</b> her hattan 3,3 V'a birer direnç, standart kipte tipik 4,7 kΩ, hızlı kipte 2,2 kΩ. Değer hat kapasitesine ve hıza bağlıdır: yükselme süresi direnç ve kapasiteyle belirlenir (s. 999, Tablo 24-35 notu s. 1395).</li>
+<li><b>Dahili çekme direnci (GPIOPUR):</b> 13–30 kΩ'dur (nominal 20 kΩ, Tablo 24-29, s. 1385). Kısa kablolu, tek köleli bir deneyde 100 kbps'te büyük olasılıkla çalışır, ama yükselme süresi uzun olduğu için önerilmez, 400 kbps için yetersizdir. TivaWare açmaz: <code>GPIOPinTypeI2C</code>'nin yorumu "zayıf çekme dirençli" dese de <code>GPIO_PIN_TYPE_OD</code> (<code>0x9</code>) PUR'u temizler (<code>gpio.h</code> satır 115, <code>gpio.c</code> satır 635–637).</li>
+</ul>
+<p>Çekme direnci hiç yoksa master veri yolunu meşgul görebilir, hakemliği kaybedebilir ya da takılabilir.</p>
+
+<h3 id="registerlar">Master register'ları</h3>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Tür, reset</th><th>İçerik</th><th>Sayfa</th></tr></thead>
+<tbody>
+<tr><td>I2CMSA</td><td>0x000</td><td>RW, 0</td><td>SA (bit 7:1): köle adresi, R/S (bit 0): 0 gönder, 1 al</td><td>1019</td></tr>
+<tr><td>I2CMCS</td><td>0x004</td><td>RO/WO, <code>0x0000.0020</code></td><td>Okunurken durum, yazılırken komut (aşağıda)</td><td>1020–1024</td></tr>
+<tr><td>I2CMDR</td><td>0x008</td><td>RW, 0</td><td>DATA (bit 7:0): gönderilecek ya da alınan bayt. Okuma duyarlıdır</td><td>1025</td></tr>
+<tr><td>I2CMTPR</td><td>0x00C</td><td>RW, <code>0x0000.0001</code></td><td>TPR (bit 6:0, 1–127), HS (bit 7, WO)</td><td>1026</td></tr>
+<tr><td>I2CMIMR</td><td>0x010</td><td>RW, 0</td><td>IM (bit 0) iş bitti kesmesi, CLKIM (bit 1)</td><td>1027</td></tr>
+<tr><td>I2CMRIS / I2CMMIS</td><td>0x014 / 0x018</td><td>RO, 0</td><td>RIS/MIS (bit 0), CLKRIS/CLKMIS (bit 1)</td><td>1028–1029</td></tr>
+<tr><td>I2CMICR</td><td>0x01C</td><td>WO, 0</td><td>IC (bit 0), CLKIC (bit 1): 1 yazmak temizler</td><td>1030</td></tr>
+<tr><td>I2CMCR</td><td>0x020</td><td>RW, 0</td><td>LPBK (0), MFE (4) master, SFE (5) köle, GFE (6) glitch filtresi</td><td>1031–1032</td></tr>
+<tr><td>I2CMCLKOCNT</td><td>0x024</td><td>RW, 0</td><td>CNTL (bit 7:0): saat düşük zaman aşımı, 1'den büyük olmalı</td><td>1033</td></tr>
+<tr><td>I2CMBMON</td><td>0x02C</td><td>RO, <code>0x0000.0003</code></td><td>SCL (0), SDA (1): hatların anlık durumu</td><td>1034</td></tr>
+<tr><td>I2CMCR2</td><td>0x038</td><td>RW, 0</td><td>GFPW (bit 6:4): glitch filtresi genişliği, 0 atla … 7 = 31 saat</td><td>1035</td></tr>
+</tbody></table>
+<p>Köle register'ları 0x800'den başlar: I2CSOAR, I2CSCSR (RREQ, TREQ, FBR / DA), I2CSDR (s. 1036–1045). Saat RCGCI2C ile açılır (s. 348), register'lara erişmeden önce 3 sistem saati beklenir (s. 1017): güvenli yol PRI2C'yi (s. 414) beklemektir. <b>Glitch filtresi</b> (GFE + GFPW) çok masterlı sistemlerde kısa darbeleri bastırır, açıkken sinyaller gecikir (§16.3.1.9 s. 1003).</p>
+
+<h3 id="mcs">MCS: okunurken durum, yazılırken komut</h3>
+<p>I2CMCS aynı adreste iki ayrı register gibidir: <b>okunduğunda</b> master denetleyicinin durumunu, <b>yazıldığında</b> bir komutu taşır (s. 1020). Bu yüzden MCS'ye <code>|=</code> ya da <code>&amp;=</code> uygulanmaz: okunan durum bitleri komut olarak geri yazılır.</p>
+<table>
+<thead><tr><th>Bit</th><th>Okuma: durum (RO, s. 1020–1021)</th><th>Yazma: komut (WO, s. 1022–1023)</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><b>BUSY</b>: denetleyici meşgul. 1 iken diğer durum bitleri geçersizdir</td><td><b>RUN</b>: master aktarım yapabilir</td></tr>
+<tr><td>1</td><td><b>ERROR</b>: son işlemde hata (adres ya da veri onaylanmadı)</td><td><b>START</b>: START ya da tekrarlı START üret</td></tr>
+<tr><td>2</td><td><b>ADRACK</b>: 1 = adres onaylanmadı</td><td><b>STOP</b>: bayttan sonra STOP üret</td></tr>
+<tr><td>3</td><td><b>DATACK</b>: 1 = veri onaylanmadı</td><td><b>ACK</b>: alınan baytı master onaylasın</td></tr>
+<tr><td>4</td><td><b>ARBLST</b>: hakemlik kaybedildi</td><td><b>HS</b>: yüksek hız kipi</td></tr>
+<tr><td>5</td><td><b>IDLE</b>: denetleyici boşta (reset değeri 1)</td><td>Ayrılmış</td></tr>
+<tr><td>6</td><td><b>BUSBSY</b>: veri yolu meşgul. START ile 1, STOP ile 0 olur</td><td>Ayrılmış</td></tr>
+<tr><td>7</td><td><b>CLKTO</b>: saat düşük zaman aşımı. STOP ya da master reset'iyle silinir</td><td>Ayrılmış</td></tr>
+</tbody></table>
+<p>İki adlandırma tuzağı vardır. ADRACK ve DATACK 1 olduğunda onay <b>gelmemiştir</b>. BUSY ile BUSBSY farklı şeylerdir: BUSY bu master'ın bir işlem yaptığını, BUSBSY hatta (herhangi bir master tarafından) bir START verilip henüz STOP verilmediğini gösterir.</p>
+
+<h2 id="scl">4. SCL hızı ve TPR</h2>
+<p><b>Amaç:</b> istenen SCL frekansı için MTPR'a yazılacak TPR değerini hesaplamak.</p>
+<p>SCL periyodu bir zamanlayıcıyla üretilir. Periyodun düşük kısmı SCL_LP = 6, yüksek kısmı SCL_HP = 4 birimdir ve bu sayılar sabittir (§16.3.2.1, s. 1003–1004; MTPR s. 1026):</p>
+<p style="text-align:center"><b>SCL_PERIOD = 2 × (1 + TPR) × (SCL_LP + SCL_HP) × CLK_PRD = 20 × (TPR + 1) / f</b></p>
+<p style="text-align:center"><b>TPR = f / (2 × (6 + 4) × f<sub>SCL</sub>) − 1 = f / (20 × f<sub>SCL</sub>) − 1</b></p>
+<p>16 MHz ve 100 kHz için TPR = 16&nbsp;000&nbsp;000 / (20 × 100&nbsp;000) − 1 = 8 − 1 = <b>7</b>. Bir SCL periyodu 20 × 8 = 160 çevrimdir (10 µs): düşük kısım 2 × 8 × 6 = 96 çevrim (6 µs), yüksek kısım 2 × 8 × 4 = 64 çevrim (4 µs).</p>
+<figure><img class="fig" src="../img/i2c-scl-tpr.svg" alt="SCL periyodunun yapısı: 16 MHz ve TPR = 7 için bir SCL periyodu 20 × (7 + 1) = 160 çevrim, 10 µs; düşük kısım SCL_LP = 6 birim, 96 çevrim, 6 µs; yüksek kısım SCL_HP = 4 birim, 64 çevrim, 4 µs; her birim 2 × (TPR + 1) = 16 çevrim; frekans 100 kHz"><figcaption><b>Şekil 4.</b> SCL periyodu: SCL_LP = 6, SCL_HP = 4 birim, bir birim 2 × (TPR + 1) çevrim. 16 MHz ve TPR = 7'de birim 16 çevrim (1 µs), periyot 160 çevrim = 10 µs → 100 kHz. Düşük kısım yüksek kısımdan uzundur (%60 / %40).</figcaption></figure>
+<table>
+<thead><tr><th>Sistem saati</th><th>100 kbps: TPR → f<sub>SCL</sub></th><th>400 kbps: TPR → f<sub>SCL</sub></th><th>1 Mbps: TPR → f<sub>SCL</sub></th></tr></thead>
+<tbody>
+<tr><td>16 MHz (PIOSC ya da kristal, PLL'siz)</td><td>7 → 100 kHz</td><td>1 → 400 kHz</td><td>yok (TPR ≥ 1, en çok 400 kHz)</td></tr>
+<tr><td>40 MHz (SYSDIV_5)</td><td>19 (0x13) → 100 kHz</td><td>4 → 400 kHz</td><td>1 → 1 MHz</td></tr>
+<tr><td>50 MHz (SYSDIV_4, ders API kodları)</td><td>24 (0x18) → 100 kHz</td><td>6 → 357 kHz</td><td>2 → 833 kHz</td></tr>
+<tr><td>80 MHz (SYSDIV2 2,5)</td><td>39 (0x27) → 100 kHz</td><td>9 → 400 kHz</td><td>3 → 1 MHz</td></tr>
+</tbody></table>
+<p>40, 50 ve 80 MHz satırları Tablo 16-2 (s. 1004) ile aynıdır. Formül tam sayı vermediğinde TPR yukarı yuvarlanır, SCL biraz yavaş olur (veri sayfasının 20 MHz örneği: 100 kbps için 9, 400 kbps için 2 → 333 kHz). TPR 7 bittir, 1–127 arasında olmalıdır (s. 1026): 16 MHz'te en hızlı SCL 400 kHz, 80 MHz'te en yavaş 31,25 kHz'tir. Yüksek hız kipinde SCL_LP = 2, SCL_HP = 1'dir ve TPR, MTPR.HS = 1 ile yazılır (s. 1004–1005).</p>
+<p id="tivaware-tpr"><b>TivaWare'in hesabı.</b> <code>I2CMasterInitExpClk(base, f, hızlı)</code> önce MCR.MFE'yi kurar (<code>I2CMasterEnable</code>, <code>i2c.c</code> satır 365), sonra f<sub>SCL</sub>'yi 100&nbsp;000 ya da (<code>hızlı = true</code> ise) 400&nbsp;000 alır ve <code>TPR = (f + 20·f<sub>SCL</sub> − 1) / (20·f<sub>SCL</sub>) − 1</code> yazar (satır 238–240). Pay, bölmeyi yukarı yuvarlar. Böylece SCL hiçbir zaman istenenden hızlı olmaz. 16 MHz'te (16&nbsp;000&nbsp;000 + 1&nbsp;999&nbsp;999) / 2&nbsp;000&nbsp;000 = 8 (tam sayı bölme), TPR = 7. 1 Mbps için MTPR sonradan elle yazılır. Fonksiyon ayrıca I2CPP.HS = 1 ise (TM4C123GH6PM'de reset değeri <code>0x0000.0001</code>, s. 1046) MTPR'a bir kez daha, HS = 1 ile 3,4 Mbps'lik TPR'ı yazar (satır 246–252). TivaWare kılavuzuna göre (SPMU298, s. 335) ilk iletişim 100/400 kbps'te sürer, yüksek hıza ayrı bir komutla geçilir. MTPR.HS biti WO'dur ve HS = 1 ile yazılan TPR yalnız yüksek hız kipinde kullanılır (s. 1005, 1026): standart TPR korunur.</p>
+
+<h2 id="baslatma">5. Başlatma adımları</h2>
+<p><b>Amaç:</b> veri sayfasının "master olarak tek bayt gönderme" sırasını adım adım uygulamak.</p>
+<p>Veri sayfası 16.4.1 (s. 1015–1016) 12 adım verir: 1–7 modülü başlatır, 8–12 tek bir bayt gönderir. Bu nottaki tablo ve kod yorumları bu numaraları kullanır.</p>
+<table>
+<thead><tr><th>Adım</th><th>İş</th><th>Register (I2C0, PB2/PB3)</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>I2C modülünün saati</td><td>RCGCI2C.R0 = 1 (<code>0x400F.E620</code>, s. 348). Sonra PRI2C.R0 beklenir (s. 414)</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0)</code></td></tr>
+<tr><td>2</td><td>GPIO portunun saati</td><td>RCGCGPIO.R1 = 1 (s. 340), PRGPIO.R1 beklenir (s. 406)</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB)</code>, <code>SysCtlPeripheralReady</code></td></tr>
+<tr><td>3</td><td>Pinleri alternatif işleve ver</td><td>GPIOAFSEL |= 0x0C (s. 671), GPIODEN |= 0x0C (s. 682; DEN 16.4.1'de yok ama gerekir)</td><td><code>GPIOPinTypeI2CSCL</code>, <code>GPIOPinTypeI2C</code></td></tr>
+<tr><td>4</td><td>SDA açık-drenaj</td><td>GPIOODR |= 0x08, yalnız PB3 (s. 676)</td><td><code>GPIOPinTypeI2C(…, GPIO_PIN_3)</code></td></tr>
+<tr><td>5</td><td>Pin çoklayıcı</td><td>GPIOPCTL: PMC2 = PMC3 = 3 → <code>0x0000.3300</code> (s. 688, Tablo 23-5 s. 1351)</td><td><code>GPIOPinConfigure(GPIO_PB2_I2C0SCL)</code>, <code>(GPIO_PB3_I2C0SDA)</code></td></tr>
+<tr><td>6</td><td>Master'ı aç</td><td>I2CMCR = <code>0x0000.0010</code> (MFE)</td><td><code>I2CMasterInitExpClk</code> (içinde <code>I2CMasterEnable</code>)</td></tr>
+<tr><td>7</td><td>SCL hızı</td><td>I2CMTPR = TPR (16 MHz, 100 kbps: 7)</td><td><code>I2CMasterInitExpClk(I2C0_BASE, f, false)</code></td></tr>
+<tr><td>8</td><td>Köle adresi ve yön</td><td>I2CMSA = (adres &lt;&lt; 1) | R/S. Veri sayfası örneği <code>0x76</code> (adres 0x3B, gönder). Bu notta <code>0xAA</code></td><td><code>I2CMasterSlaveAddrSet(base, 0x55, false)</code></td></tr>
+<tr><td>9</td><td>Gönderilecek bayt</td><td>I2CMDR = veri</td><td><code>I2CMasterDataPut</code></td></tr>
+<tr><td>10</td><td>Tek bayt gönder</td><td>I2CMCS = <code>0x0000.0007</code> (STOP, START, RUN)</td><td><code>I2CMasterControl(…, I2C_MASTER_CMD_SINGLE_SEND)</code></td></tr>
+<tr><td>11</td><td>Bitmesini bekle</td><td>Veri sayfası metni: BUSBSY = 0 (akış şemaları: BUSY = 0, <a href="#busy-busbsy">Bölüm 6</a>)</td><td><code>while (I2CMasterBusy(…))</code></td></tr>
+<tr><td>12</td><td>Onaylandı mı?</td><td>I2CMCS.ERROR = 0 (ayrıntı ADRACK, DATACK, ARBLST)</td><td><code>I2CMasterErr</code></td></tr>
+</tbody></table>
+<p>16.4.1 sistem saatini 20 MHz varsayar (s. 1015). Bu nottaki API'siz örnekler reset sonrasındaki 16 MHz PIOSC ile çalışır, bu yüzden 7. adımda 7 yazılır. Okumada 8. adımda R/S = 1, 9. adım yok, 10. adımda yine 0x07 (ACK = 0, NACK), 12. adımdan sonra MDR okunur (Şekil 16-9, s. 1009).</p>
+<h3 id="api-esleme">TivaWare fonksiyonlarının register karşılığı</h3>
+<table>
+<thead><tr><th>Fonksiyon</th><th>Yaptığı (TivaWare 2.1.4, <code>i2c.c</code>)</th></tr></thead>
+<tbody>
+<tr><td><code>I2CMasterInitExpClk(base, f, hızlı)</code></td><td>MCR |= MFE, MTPR = TPR (yukarı yuvarlanmış), I2CPP.HS = 1 ise MTPR'a HS TPR'ı da (satır 204–252)</td></tr>
+<tr><td><code>I2CMasterSlaveAddrSet(base, adr, al)</code></td><td>MSA = (adr &lt;&lt; 1) | al (satır 1142). Adres kaydırılmadan verilir</td></tr>
+<tr><td><code>I2CMasterControl</code>, <code>DataPut</code>, <code>DataGet</code></td><td>MCS = komut, MDR = bayt, MDR'yi oku (satır 1318, 1395, 1421). Hiçbiri beklemez</td></tr>
+<tr><td><code>I2CMasterBusy</code></td><td>MCS.<b>BUSY</b> (bit 0) (satır 1199)</td></tr>
+<tr><td><code>I2CMasterBusBusy</code></td><td>MCS.<b>BUSBSY</b> (bit 6) (satır 1234)</td></tr>
+<tr><td><code>I2CMasterErr</code></td><td>BUSY = 1 ise 0 döndürür. ERROR ya da ARBLST varsa MCS &amp; (ARBLST | DATACK | ADRACK), yoksa 0 (satır 1354–1364)</td></tr>
+<tr><td><code>I2CLoopbackEnable</code>, <code>I2CSlaveInit(base, adr)</code></td><td>MCR |= LPBK; MCR |= SFE, SCSR = DA, SOAR = adr (satır 2175, 271–288)</td></tr>
+</tbody></table>
+
+<h2 id="komutlar">6. Master komutları</h2>
+<p><b>Amaç:</b> tek bayt, çok bayt ve register okuma için MCS'ye yazılacak komutları seçmek.</p>
+<p>Master bir durum makinesidir: Boşta (Idle), Master Gönderme (Master Transmit), Master Alma (Master Receive). MCS'ye yazılan dört bit (ACK, STOP, START, RUN) ve MSA'daki R/S biti, o anki duruma göre ne yapılacağını belirler (Tablo 16-5, s. 1023–1024). Aynı sayı farklı durumda farklı iş yapar. Tabloda bulunmayan birleşimler işlem yapmaz (NOP).</p>
+<table>
+<thead><tr><th>İş</th><th>MCS</th><th>ACK STOP START RUN</th><th>Durum</th><th>TivaWare sabiti</th></tr></thead>
+<tbody>
+<tr><td>Tek bayt gönder (R/S = 0)</td><td><code>0x07</code></td><td>– 1 1 1</td><td>Boşta → Boşta</td><td><code>SINGLE_SEND</code></td></tr>
+<tr><td>Tek bayt al (R/S = 1), NACK</td><td><code>0x07</code></td><td>0 1 1 1</td><td>Boşta → Boşta</td><td><code>SINGLE_RECEIVE</code></td></tr>
+<tr><td>Çok bayt gönder: ilk</td><td><code>0x03</code></td><td>– 0 1 1</td><td>Boşta → Gönderme</td><td><code>BURST_SEND_START</code></td></tr>
+<tr><td>Çok bayt gönder: ara</td><td><code>0x01</code></td><td>– 0 0 1</td><td>Gönderme → Gönderme</td><td><code>BURST_SEND_CONT</code></td></tr>
+<tr><td>Çok bayt gönder: son</td><td><code>0x05</code></td><td>– 1 0 1</td><td>Gönderme → Boşta</td><td><code>BURST_SEND_FINISH</code></td></tr>
+<tr><td>Çok bayt al: ilk, ACK</td><td><code>0x0B</code></td><td>1 0 1 1</td><td>Boşta (ya da Gönderme, tekrarlı START) → Alma</td><td><code>BURST_RECEIVE_START</code></td></tr>
+<tr><td>Çok bayt al: ara, ACK</td><td><code>0x09</code></td><td>1 0 0 1</td><td>Alma → Alma</td><td><code>BURST_RECEIVE_CONT</code></td></tr>
+<tr><td>Çok bayt al: son, NACK</td><td><code>0x05</code></td><td>0 1 0 1</td><td>Alma → Boşta</td><td><code>BURST_RECEIVE_FINISH</code></td></tr>
+<tr><td>Hata sonrası yalnız STOP</td><td><code>0x04</code></td><td>– 1 0 0</td><td>Gönderme/Alma → Boşta</td><td><code>BURST_SEND_ERROR_STOP</code></td></tr>
+</tbody></table>
+<p>Sabitler <code>I2C_MASTER_CMD_</code> önekiyle <code>i2c.h</code>'dedir (satır 73–96). Önemli sonuç: <b>Gönderme durumunda <code>0x07</code></b> "tekrarlı START, gönder, STOP" demektir (s. 1024). Çok baytlı yazmanın son baytı <code>0x07</code> ile giderse adres yeniden gönderilir ve son bayt ayrı çerçeveye düşer. Doğrusu <code>0x05</code>'tir.</p>
+<p>Şekil 5 üç akışı gösterir: (A) tek bayt, (B) çok bayt gönderme, (C) register okuma. Her komuttan sonra BUSY = 0 beklenir ve hata bitleri denetlenir (veri sayfası Şekil 16-8 – 16-12, s. 1008–1012). C'de tek bayt okunacaksa <code>0x0B</code> yerine doğrudan <code>0x07</code> yazılır.</p>
+<figure><img class="fig" src="../img/i2c-mcs-akisi.svg" alt="MCS komut akışı, üç sütun: A tek bayt, MSA ve MDR yazılır, MCS = 0x07, BUSY beklenir, ERROR denetlenir; B çok bayt gönder, 0x03 ile ilk bayt, 0x01 ile ara baytlar, 0x05 ile son bayt, her adımda BUSY ve hata denetimi, hatada ARBLST = 0 ise 0x04 STOP; ilk komuttan önce isteğe bağlı BUSBSY denetimi; C register okuma, adres + W ve register 0x03 ile, sonra adres + R ve 0x0B tekrarlı START, 0x09 ara, 0x05 son bayt NACK ve STOP"><figcaption><b>Şekil 5.</b> Master komut akışları (veri sayfası Şekil 16-8 – 16-12'ye dayalı). Kesikli BUSBSY denetimi ilk komuttan öncedir ve tek masterlı sistemde atlanabilir. Her komuttan sonra BUSY = 0 beklenir. Çok baytlı akışlarda hata olursa ARBLST = 0 ise <code>0x04</code> ile STOP verilir.</figcaption></figure>
+<p>Not: Gönderme durumunda R/S = 1 iken <code>0x07</code> için tablo "tekrarlı START, TRANSMIT ve STOP" yazar (s. 1024). Boşta ve Alma durumundaki karşılıkları "RECEIVE ve STOP"tur. Bu bir yazım hatasıdır: TivaWare sensorlib'i (Lab 14'ün sürücüsü, <code>sensorlib/i2cm_drv.c</code> satır 353 ve 648–653) tam bu durumda, <code>BURST_SEND_START</code>'tan sonra R/S = 1 ve <code>0x07</code> ile tek bayt alır.</p>
+
+<h3 id="busy-busbsy">BUSY mi, BUSBSY mi?</h3>
+<p>16.4.1'in 11. adımı işlemin bitmesini <b>BUSBSY</b> ile beklemeyi söyler (s. 1016). Oysa aynı bölümün akış şemaları işlemin bitişini <b>BUSY</b> ile bekler, BUSBSY'yi yalnız işlemden önce, "veri yolu boş mu?" diye denetler ve bu denetimin tek masterlı sistemde atlanabileceğini yazar (Şekil 16-8 – 16-11). TivaWare'in <code>I2CMasterBusy</code>'si de BUSY'yi okur (<code>i2c.c</code> satır 1199). Bu notta BUSY kullanılır, nedeni:</p>
+<ul>
+<li>BUSBSY STOP ile 0 olur. <code>0x03</code>, <code>0x01</code>, <code>0x0B</code>, <code>0x09</code> gibi STOP'suz komutlardan sonra veri yolu master'da kalır ve BUSBSY 1 kalır. Bu komutlardan sonra BUSBSY'yi beklemek sonsuz döngüdür.</li>
+<li>Komut yazıldığı anda START henüz üretilmemiş olabilir. BUSBSY o an 0'sa bekleme hemen biter ve işlem sürerken durum okunur. BUSY = 1 iken diğer durum bitleri geçersizdir (s. 1021).</li>
+</ul>
+<p>BUSY'de de bir pencere olabilir: veri sayfası MCS yazmasından kaç çevrim sonra BUSY'nin 1 olduğunu belirtmez. Komuttan hemen sonra okunan BUSY kısa bir süre 0 olabilir (kaynaklarla doğrulanamadı). Bu yüzden örnekler ucuz bir önlem olarak önce en çok 100 yoklama boyunca BUSY'nin 1 olmasını, sonra 0 olmasını bekler. Bir bayt 100 kbps'te 90 µs sürdüğü için işlem kaçırılmaz. Başka bir yol MRIS.RIS'i (iş bitti, s. 1006, 1028; komuttan önce MICR.IC = 1 ile silinerek) beklemektir.</p>
+
+<h3 id="hata-yonetimi">Hata olunca</h3>
+<ul>
+<li><b>Tek baytlı komut (<code>0x07</code>):</b> komut STOP'u zaten içerir. Hata olsa da master Boşta durumuna döner. Akış şeması hatada ek bir STOP istemez (Şekil 16-8, 16-9). Yapılacak iş hatayı çağırana bildirmektir.</li>
+<li><b>Çok baytlı akış:</b> ERROR = 1 ise ve ARBLST = 0 ise MCS = <code>0x04</code> ile STOP verilir. ARBLST = 1 ise veri yolu artık başka master'dadır, STOP verilmez (Şekil 16-10, 16-11). STOP verilmezse master veri yolunu tutmaya devam eder ve sonraki işlemler başarısız olur.</li>
+<li><b>ADRACK = 1:</b> yanlış (ya da yanlış kaydırılmış) adres, bağlı olmayan köle ya da çekme direnci sorunu. <b>DATACK = 1:</b> köle baytı kabul etmedi.</li>
+</ul>
+
+<h2 id="ornekler">7. Örnekler</h2>
+<p>Örnekler TivaWare 2.1.4 başlıklarıyla clang <code>-Wall</code> altında uyarısız derlenir. Köle olarak 0x55 adresli bir Arduino ya da 3,3 V'luk herhangi bir I2C cihazı kullanılabilir. 7.2 ve 7.3'teki register okuma, kölenin "önce register adresi, sonra veri" düzenini izlediğini varsayar. Bu kölenin yazılımına bağlıdır. Ek donanım olmadan deneme için <a href="#ornek-loopback">7.4</a>.</p>
+
+<h3 id="ornek-tek">7.1 Tek bayt yazma ve okuma <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> 16 MHz'te I2C0'ı 100 kbps master olarak kurmak, 0x55 adresli köleye <code>0x41</code> ('A') yazıp onaylandığını denetlemek, ardından köleden bir bayt okumak.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: i2c_apisiz_tek.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">/* Bu not için hazırlandı: I2C0 master, 16 MHz, 100 kbps, köle 0x55.
+ * 1-12: veri sayfası 16.4.1'in adımları (s. 1015-1016). */
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define KOLE_ADRES  0x55
+#define LED_KIRMIZI 0x02                /* PF1 */
+#define LED_YESIL   0x08                /* PF3 */
+#define MCS_HATA    (I2C_MCS_ERROR | I2C_MCS_ADRACK | I2C_MCS_DATACK | I2C_MCS_ARBLST)
+
+volatile uint32_t hata;                 /* 0: başarılı, değilse MCS hata bitleri */
+volatile uint8_t  gelen;                /* köleden okunan bayt */
+
+void i2c0_baslat(void)
+{
+    SYSCTL_RCGCI2C_R  |= SYSCTL_RCGCI2C_R0;            /* 1: I2C0 saati (s. 348) */
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;           /* 2: Port B saati (s. 340) */
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R1) == 0) { }   /* Port B hazır (s. 406) */
+    GPIO_PORTB_AFSEL_R |= 0x0C;                        /* 3: PB2, PB3 alternatif işlev */
+    GPIO_PORTB_DEN_R   |= 0x0C;                        /*    sayısal işlev açık (s. 682) */
+    GPIO_PORTB_ODR_R   |= 0x08;                        /* 4: yalnız SDA (PB3) açık-drenaj */
+    GPIO_PORTB_PCTL_R = (GPIO_PORTB_PCTL_R &amp; ~(GPIO_PCTL_PB2_M | GPIO_PCTL_PB3_M))
+                      | GPIO_PCTL_PB2_I2C0SCL | GPIO_PCTL_PB3_I2C0SDA;  /* 5: 0x0000.3300 */
+    while ((SYSCTL_PRI2C_R &amp; SYSCTL_PRI2C_R0) == 0) { }     /* I2C0 hazır (s. 414) */
+    I2C0_MCR_R  = I2C_MCR_MFE;                         /* 6: master işlevi (0x0000.0010) */
+    I2C0_MTPR_R = 7;                                   /* 7: 16e6 / (20 * 100e3) - 1 = 7 */
+}
+
+/* 10-12: komut ver, bitmesini bekle, hata bitlerini döndür */
+uint32_t i2c_komut(uint32_t komut)
+{
+    uint32_t n = 0;
+    I2C0_MCS_R = komut;                                /* 10: MCS'ye YAZMAK komut verir */
+    while (((I2C0_MCS_R &amp; I2C_MCS_BUSY) == 0) &amp;&amp; (++n &lt; 100)) { }  /* BUSY kurulsun */
+    while (I2C0_MCS_R &amp; I2C_MCS_BUSY) { }              /* 11: BUSY = 0, işlem bitti */
+    return I2C0_MCS_R &amp; MCS_HATA;                      /* 12: MCS'yi OKUMAK durum verir */
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;           /* Port F: LED'ler */
+    i2c0_baslat();                                     /* 1-7 */
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }   /* Port F hazır */
+    GPIO_PORTF_DIR_R |= LED_KIRMIZI | LED_YESIL;
+    GPIO_PORTF_DEN_R |= LED_KIRMIZI | LED_YESIL;
+
+    /* START, 0xAA, ACK, 0x41, ACK, STOP (Şekil 2) */
+    I2C0_MSA_R = (KOLE_ADRES &lt;&lt; 1) | 0;                /* 8: adres + R/S = 0 -&gt; 0xAA */
+    I2C0_MDR_R = 'A';                                  /* 9: gönderilecek bayt 0x41 */
+    hata = i2c_komut(I2C_MCS_STOP | I2C_MCS_START | I2C_MCS_RUN);  /* 10-12: 0x07 */
+
+    if (hata == 0) {
+        /* START, 0xAB, ACK, veri, NACK, STOP */
+        I2C0_MSA_R = (KOLE_ADRES &lt;&lt; 1) | 1;            /* R/S = 1 -&gt; 0xAB */
+        hata = i2c_komut(0x07);                        /* ACK = 0: tek baytta NACK */
+        if (hata == 0) {
+            gelen = (uint8_t)I2C0_MDR_R;               /* BUSY = 0 olduktan sonra oku */
+        }
+    }
+    GPIO_PORTF_DATA_R = (hata == 0) ? LED_YESIL : LED_KIRMIZI;
+    while (1) { }
+}</code></pre>
+<p><b>Kodun ayrıntıları:</b></p>
+<ul>
+<li>Saat reset sonrasındaki PIOSC'dir (16 MHz), TPR = 7. PCTL alanları önce maskelenir, sonra 3 yazılır.</li>
+<li><code>i2c_komut</code> 10–12. adımları birleştirir. Dönen değerde ADRACK köle yok ya da adres yanlış demektir.</li>
+<li>Okumada da komut <code>0x07</code>'dir: ACK = 0, master tek baytı NACK ile kapatır.</li>
+</ul>
+<p><b>Beklenen davranış:</b> köle bağlı, çekme dirençleri takılı ve adres doğruysa yeşil LED yanar. Mantık analizöründe Şekil 2'deki çerçeve, ardından START, <code>0xAB</code>, ACK, kölenin baytı, NACK, STOP görülür. Köle bağlı değilse (dirençler varken) adres onaylanmaz, <code>hata</code> büyük olasılıkla <code>0x06</code> (ERROR + ADRACK) olur ve kırmızı LED yanar. Çekme direnci hiç yoksa davranış belirsizdir (<a href="#cekme">Bölüm 3</a>).</p>
+
+<h3 id="ornek-cok">7.2 Çok bayt yazma ve register okuma <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> köledeki bir register'dan başlayarak birden çok bayt yazmak ve tekrarlı START ile geri okumak. Her komuttan sonra beklemek, hatada STOP vermek.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: i2c_apisiz_cok.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">/* Bu not için hazırlandı: çok bayt yazma, register okuma. Komutlar: Tablo 16-5. */
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+void     i2c0_baslat(void);                  /* 7.1 */
+uint32_t i2c_komut(uint32_t komut);          /* 7.1: 0 ya da MCS hata bitleri */
+
+/* Hata: hakemlik kaybedilmediyse STOP (0x04) ver */
+static uint32_t i2c_hata_durdur(uint32_t h)
+{
+    if ((h &amp; I2C_MCS_ARBLST) == 0) {
+        I2C0_MCS_R = I2C_MCS_STOP;                     /* 0x04: yalnız STOP */
+        while (I2C0_MCS_R &amp; I2C_MCS_BUSBSY) { }        /* veri yolu boşaldı */
+    }
+    return h;
+}
+
+/* START, adr+W, reg, veri[0] ... veri[n-1], STOP */
+uint32_t i2c_yaz(uint8_t adres, uint8_t reg, const uint8_t *veri, uint32_t n)
+{
+    uint32_t h, i;
+    I2C0_MSA_R = (uint32_t)(adres &lt;&lt; 1);               /* R/S = 0: yazma */
+    I2C0_MDR_R = reg;                                  /* ilk bayt: köledeki register */
+    h = i2c_komut(n ? 0x03 : 0x07);                    /* START+RUN (n = 0 ise STOP da) */
+    if (h) return i2c_hata_durdur(h);
+    for (i = 0; i &lt; n; i++) {
+        I2C0_MDR_R = veri[i];
+        h = i2c_komut((i == n - 1) ? 0x05 : 0x01);     /* son bayt: RUN+STOP, değilse RUN */
+        if (h) return i2c_hata_durdur(h);
+    }
+    return 0;
+}
+
+/* START, adr+W, reg, tekrarlı START, adr+R, tampon[0] ... tampon[n-1] (son NACK), STOP */
+uint32_t i2c_reg_oku(uint8_t adres, uint8_t reg, uint8_t *tampon, uint32_t n)
+{
+    uint32_t h, i;
+    if (n == 0) return 0;
+    I2C0_MSA_R = (uint32_t)(adres &lt;&lt; 1);               /* önce yazma: register adresi */
+    I2C0_MDR_R = reg;
+    h = i2c_komut(0x03);                               /* START+RUN, STOP yok */
+    if (h) return i2c_hata_durdur(h);
+    I2C0_MSA_R = (uint32_t)(adres &lt;&lt; 1) | 1;           /* R/S = 1: okuma */
+    for (i = 0; i &lt; n; i++) {
+        uint32_t k;
+        if (n == 1)          k = 0x07;                 /* tekrarlı START, al, NACK, STOP */
+        else if (i == 0)     k = 0x0B;                 /* tekrarlı START, al, ACK */
+        else if (i == n - 1) k = 0x05;                 /* al, NACK, STOP */
+        else                 k = 0x09;                 /* al, ACK */
+        h = i2c_komut(k);
+        if (h) return i2c_hata_durdur(h);
+        tampon[i] = (uint8_t)I2C0_MDR_R;               /* BUSY = 0 olduktan sonra */
+    }
+    return 0;
+}
+
+volatile uint32_t sonuc;
+uint8_t okunan[3];
+
+int main(void)
+{
+    const uint8_t yazilan[3] = { 'A', 'B', 'C' };
+    i2c0_baslat();
+    sonuc  = i2c_yaz(0x55, 0x00, yazilan, 3);          /* köledeki 0x00'dan başlayarak */
+    sonuc |= i2c_reg_oku(0x55, 0x00, okunan, 3);       /* aynı yerden geri oku */
+    while (1) { }
+}</code></pre>
+<p><b>Nasıl çalışır?</b> <code>i2c_yaz</code> hatta şu çerçeveyi üretir: S, <code>0xAA</code>, A, <code>0x00</code>, A, 'A', A, 'B', A, 'C', A, P. İlk bayt (register adresi) <code>0x03</code> ile, aradakiler <code>0x01</code> ile, son bayt <code>0x05</code> ile gider. <code>i2c_reg_oku</code> önce <code>0x03</code> ile register adresini yazar, STOP vermez, MSA'yı okuma yönüne çevirir ve <code>0x0B</code> ile tekrarlı START üretir: S, <code>0xAA</code>, A, <code>0x00</code>, A, Sr, <code>0xAB</code>, A, b0, A, b1, A, b2, N, P. Hata olursa <code>i2c_hata_durdur</code> (hakemlik kaybedilmediyse) <code>0x04</code> ile STOP verir ve BUSBSY'yi bekler: STOP'tan sonra BUSBSY doğru bittir.</p>
+<p><b>Beklenen davranış:</b> köle "0x00'dan başlayarak sakla, geri ver" diye programlanmışsa <code>okunan</code> = {'A', 'B', 'C'}, <code>sonuc</code> = 0. Köle yoksa <code>sonuc</code> ADRACK içerir, veri yolu STOP ile serbest kalır.</p>
+
+<h3 id="ornek-apili">7.3 Aynı işler TivaWare ile <span class="tag api">API'li</span></h3>
+<p><b>Amaç:</b> 7.1'in tek bayt yazma/okumasını ve 7.2'nin register okumasını <code>driverlib</code> ile, 40 MHz'te yapmak.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: i2c_apili.c</span><span class="tag api">API'li · 40 MHz</span></div><pre><code class="language-c">/* Bu not için hazırlandı: 7.1 ve 7.2 TivaWare ile, 40 MHz, 100 kbps. */
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/i2c.h"
+
+#define KOLE_ADRES 0x55
+
+volatile uint32_t hata;
+volatile uint8_t  gelen;
+uint8_t okunan[3];
+
+/* Komut ver, bitmesini bekle, hatayı döndür (0: yok) */
+static uint32_t komut(uint32_t k)
+{
+    uint32_t n = 0;
+    I2CMasterControl(I2C0_BASE, k);                         /* MCS = k */
+    while (!I2CMasterBusy(I2C0_BASE) &amp;&amp; (++n &lt; 100)) { }    /* BUSY kurulsun */
+    while (I2CMasterBusy(I2C0_BASE)) { }                    /* BUSY = 0 */
+    return I2CMasterErr(I2C0_BASE);                         /* ADRACK/DATACK/ARBLST */
+}
+
+static uint32_t durdur(uint32_t h)                          /* hata: STOP ver */
+{
+    if (!(h &amp; I2C_MASTER_ERR_ARB_LOST)) {
+        I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);  /* 0x04 */
+        while (I2CMasterBusBusy(I2C0_BASE)) { }
+    }
+    return h;
+}
+
+static uint32_t reg_oku(uint8_t reg, uint8_t *tampon, uint32_t n)   /* n &gt;= 2 */
+{
+    uint32_t h, i;
+    I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, false);    /* yazma */
+    I2CMasterDataPut(I2C0_BASE, reg);
+    h = komut(I2C_MASTER_CMD_BURST_SEND_START);             /* 0x03 */
+    if (h) return durdur(h);
+    I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, true);     /* okuma */
+    for (i = 0; i &lt; n; i++) {
+        h = komut(i == 0     ? I2C_MASTER_CMD_BURST_RECEIVE_START     /* 0x0B */
+                : i == n - 1 ? I2C_MASTER_CMD_BURST_RECEIVE_FINISH    /* 0x05 */
+                :              I2C_MASTER_CMD_BURST_RECEIVE_CONT);    /* 0x09 */
+        if (h) return durdur(h);
+        tampon[i] = (uint8_t)I2CMasterDataGet(I2C0_BASE);
+    }
+    return 0;
+}
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);             /* 1 */
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);            /* 2 */
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB)) { }
+    GPIOPinConfigure(GPIO_PB2_I2C0SCL);                     /* 5: PMC2 = 3 */
+    GPIOPinConfigure(GPIO_PB3_I2C0SDA);                     /* 5: PMC3 = 3 */
+    GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);         /* 3: AFSEL, DEN; itme-çekme */
+    GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3);            /* 3-4: AFSEL, DEN, ODR */
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C0)) { }
+    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false); /* 6-7: MFE, TPR = 19 */
+
+    I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, false);    /* 8: 0xAA */
+    I2CMasterDataPut(I2C0_BASE, 'A');                       /* 9 */
+    hata = komut(I2C_MASTER_CMD_SINGLE_SEND);               /* 10-12: 0x07 */
+
+    if (hata == 0) {
+        I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, true); /* 0xAB */
+        hata = komut(I2C_MASTER_CMD_SINGLE_RECEIVE);        /* 0x07, NACK */
+        if (hata == 0) {
+            gelen = (uint8_t)I2CMasterDataGet(I2C0_BASE);
+        }
+    }
+    if (hata == 0) {
+        hata = reg_oku(0x00, okunan, 3);                    /* tekrarlı START ile */
+    }
+    while (1) { }
+}</code></pre>
+<p><b>7.1/7.2'den farklar:</b> sistem saati 40 MHz'tir ve <code>I2CMasterInitExpClk</code> TPR'ı kendisi hesaplar: (40&nbsp;000&nbsp;000 + 1&nbsp;999&nbsp;999) / 2&nbsp;000&nbsp;000 − 1 = 19. TivaWare fonksiyonları beklemez: bekleme ve hata denetimi <code>komut()</code>'tadır. <code>I2CMasterErr</code> BUSY = 1 iken 0 döndürür, yalnız işlem bitince anlamlıdır. <code>I2CMasterSlaveAddrSet</code>'e 7 bitlik adres verilir.</p>
+<p><b>Beklenen davranış:</b> 7.1 ve 7.2 ile aynı. Köle yoksa <code>hata</code> büyük olasılıkla <code>I2C_MASTER_ERR_ADDR_ACK</code> (4) olur.</p>
+
+<h3 id="ornek-loopback">7.4 Geri döngü ile kartta tek başına deneme</h3>
+<p>I2CMCR.LPBK = 1 iken master ve köle pinlere gitmeden içeriden bağlanır (§16.3.4, s. 1006): köle, direnç ya da kablo gerekmez. Örnek TI'ın <code>master_slave_loopback</code>'ine dayandığı için <a href="#ti">Bölüm 8</a>'dedir.</p>
+
+<h2 id="ti">8. TI örneğinin uyarlaması: master_slave_loopback <span class="tag ti">TI örneği</span></h2>
+<p><b>Amaç:</b> TivaWare'in <code>examples/peripherals/i2c/master_slave_loopback.c</code> örneğini LaunchPad'de ek donanımsız çalıştırmak. Örnek I2C0'ı 16 MHz'te 100 kbps master ve 0x3C adresli köle olarak kurar, geri döngüyü açar, 'I', '2', 'C' baytlarını iki yönde aktarır ve sonucu UART0'a <code>UARTprintf</code> ile yazar. Uyarlamada UART yerine LED ve izlenen diziler kullanıldı. UART için <a href="../uart/">UART notu</a>.</p>
+<table>
+<thead><tr><th>TI örneği</th><th>LaunchPad uyarlaması</th></tr></thead>
+<tbody>
+<tr><td>Sonuç UART0'a, <code>uartstdio</code></td><td>Yeşil LED (PF3) 6 bayt doğruysa, kırmızı (PF1) değilse. <code>koleye</code>, <code>mastera</code> dizileri izlenir</td></tr>
+<tr><td>Hazır beklemesi yok</td><td><code>SysCtlPeripheralReady</code> eklendi</td></tr>
+<tr><td>Köle → master: döngüden önce bir <code>SINGLE_RECEIVE</code>, MDR BUSY beklenmeden okunur</td><td>Her bayt: <code>SINGLE_RECEIVE</code> → TREQ → <code>I2CSlaveDataPut</code> → BUSY = 0 → <code>I2CMasterDataGet</code></td></tr>
+</tbody></table>
+<p>TI'ın köle → master döngüsünde her MDR okuması önceki aktarımın baytını verir, sonda bir alma komutu yanıtsız kalır. Uyarlamada her aktarım kendi içinde tamamlanır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: ti_loopback_launchpad.c</span><span class="tag ti">TI uyarlaması · 16 MHz</span></div><pre><code class="language-c">/* Bu not için hazırlandı: TivaWare master_slave_loopback, LaunchPad uyarlaması.
+ * LPBK = 1: master ve köle içeriden bağlı. Yeşil LED = 6 bayt doğru. */
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/i2c.h"
+
+#define KOLE_ADRES 0x3C                       /* TI örneğindeki adres */
+#define N 3
+
+const uint8_t gonder[N] = { 'I', '2', 'C' };
+volatile uint8_t koleye[N], mastera[N];       /* hata ayıklayıcıda izlenir */
+
+static void master_bekle(void)                /* köle yanıt verdiyse BUSY zaten 1'dir */
+{
+    while (I2CMasterBusy(I2C0_BASE)) { }
+}
+
+int main(void)
+{
+    uint32_t i, dogru = 0;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_3);
+    GPIOPinConfigure(GPIO_PB2_I2C0SCL);                     /* TI gibi: pinler de ayarlanır */
+    GPIOPinConfigure(GPIO_PB3_I2C0SDA);
+    GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);
+    GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C0)) { }
+
+    I2CLoopbackEnable(I2C0_BASE);                           /* MCR.LPBK = 1 */
+    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false); /* MFE, TPR = 7 */
+    I2CSlaveInit(I2C0_BASE, KOLE_ADRES);                    /* SFE, SCSR.DA, SOAR = 0x3C */
+
+    /* 1) Master -&gt; köle: her bayt ayrı bir SINGLE_SEND */
+    I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, false);
+    for (i = 0; i &lt; N; i++) {
+        I2CMasterDataPut(I2C0_BASE, gonder[i]);
+        I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_SEND);
+        while (!(I2CSlaveStatus(I2C0_BASE) &amp; I2C_SLAVE_ACT_RREQ)) { }  /* köle aldı */
+        koleye[i] = (uint8_t)I2CSlaveDataGet(I2C0_BASE);
+        master_bekle();
+    }
+
+    /* 2) Köle -&gt; master: komut, köle TREQ, köle veriyi koyar, master okur */
+    I2CMasterSlaveAddrSet(I2C0_BASE, KOLE_ADRES, true);
+    for (i = 0; i &lt; N; i++) {
+        I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+        while (!(I2CSlaveStatus(I2C0_BASE) &amp; I2C_SLAVE_ACT_TREQ)) { }  /* SCL düşük tutulur */
+        I2CSlaveDataPut(I2C0_BASE, gonder[i]);
+        master_bekle();
+        mastera[i] = (uint8_t)I2CMasterDataGet(I2C0_BASE);
+    }
+
+    for (i = 0; i &lt; N; i++) {
+        dogru += (koleye[i] == gonder[i]) + (mastera[i] == gonder[i]);
+    }
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_3,
+                 (dogru == 2 * N) ? GPIO_PIN_3 : GPIO_PIN_1);
+    while (1) { }
+}</code></pre>
+<p><b>Akış:</b> master → köle yönünde her bayt bir <code>0x07</code>'dir (START, <code>0x78</code>, bayt, STOP). Köle adresi tanır, onaylar, baytı alınca SCSR.RREQ = 1 olur (köle SDR okunana dek SCL'yi tutar, s. 1038) ve SDR okunur. Köle → master yönünde master <code>0x07</code>'yi R/S = 1 ile verir (<code>0x79</code>). Köle adresi onaylayınca SCSR.TREQ = 1 olur ve köle SDR'ye yazana kadar SCL'yi düşük tutar (saat uzatma). Burada BUSY'yi doğrudan beklemek güvenlidir: <code>master_bekle</code>'ye köle RREQ ya da TREQ'i gördükten sonra gelinir, aktarım o anda kesin başlamıştır.</p>
+<p><b>Beklenen gözlem:</b> yeşil LED hemen yanar. <code>koleye</code> ve <code>mastera</code> dizileri {'I', '2', 'C'} (0x49, 0x32, 0x43) olur. Pinlere bir şey bağlanmaz, PB2/PB3'te sinyal beklenmez. <code>I2CLoopbackEnable</code> silinirse ve pinlerde çekme direnci yoksa program büyük olasılıkla ilk RREQ beklemesinde takılır.</p>
+<p><b>Uzantılar:</b> master → köle yönünü <code>BURST_SEND_*</code> ile tek çerçevede gönderin (ilk baytta SCSR.FBR, s. 1037). Köleyi <code>slave_receive_int.c</code>'deki gibi bir I2C0 işleyicisiyle (ISR, kesme 8) yazın. Yanlış adres: <a href="#alistirmalar">Alıştırma 4</a>.</p>
+
+<h3 id="lab14">TI Workbook Lab 14: Sensor Hub BoosterPack</h3>
+<p>TI'ın LaunchPad Workshop kitapçığındaki I2C uygulaması Lab 14'tür (s. 14-1 – 14-31). <b>BOOSTXL-SENSHUB BoosterPack'i gerektirir</b>. Kartta beş I2C sensörü vardır: TMP006 kızılötesi sıcaklık (0x41), BMP180 basınç (0x77), MPU-9150 9 eksenli hareket (0x68), ISL29023 ışık (0x44), SHT21 nem (0x40) (s. 14-4 – 14-6). Lab 14a hazır "air mouse" programını yükleyip LaunchPad'i USB fare olarak kullanır. Lab 14b, ISL29023 ışık sensörünü TivaWare'in <b>sensorlib</b>'iyle okur:</p>
+<ul>
+<li>Saat 40 MHz. I2C3 kullanılır: <code>GPIO_PD0_I2C3SCL</code>, <code>GPIO_PD1_I2C3SDA</code>, <code>GPIOPinTypeI2CSCL(…, GPIO_PIN_0)</code>, <code>GPIOPinTypeI2C(…, GPIO_PIN_1)</code>. PD0/PD1, LaunchPad'de R9/R10 ile PB6/PB7'ye bağlıdır.</li>
+<li><code>I2CMInit(&amp;inst, I2C3_BASE, INT_I2C3, 0xFF, 0xFF, saat)</code>: sensorlib'in I2C master sürücüsü kesme tabanlıdır. I2C3 işleyicisi <code>I2CMIntHandler</code>'ı çağırır. Her işlem bitince bir geri çağırma (callback) fonksiyonu bayrak kurar, ana program bayrağı bekler.</li>
+<li><code>ISL29023Init</code>, <code>ISL29023ReadModifyWrite</code> ile sürekli ölçüm kipi, döngüde <code>ISL29023DataRead</code> ve <code>ISL29023DataLightVisibleGetFloat</code>. Sonuç CCS'de izlenir.</li>
+</ul>
+<p><code>I2CMIntHandler</code>, bu notun MCS komutlarını kesme içinde sırayla verir. BoosterPack yoksa aynı yapı 3,3 V'luk herhangi bir I2C sensörüyle I2C0'da denenebilir.</p>
+
+<h2 id="ders-kodlari">9. Ders kodları üzerinden inceleme</h2>
+<p>Derste kullanılan dokuz CCS projesi vardır. API'siz: <code>hafta0di2capisiz01</code>, <code>hafta0di2capisiz2</code>, <code>hafta0di2capisiz3</code>, <code>hafta0di2capisiz4</code>, <code>i2capisiz</code>, <code>i2capisiz2</code>. API'li: <code>hafta0di2capili</code>, <code>i2c_01</code>. <code>hafta0d2ogr_i2c0</code> boş bir öğrenci şablonudur (yalnız <code>main</code> ve <code>return 0</code>). Hepsi 0x55 adresli bir köleyle (yorumlara göre Arduino) I2C0 üzerinden konuşur. Kodlar olduğu gibi gösterilir. Satır numaraları orijinal dosyalara göredir.</p>
+<p>Derleme (clang, <code>-Wall</code>, TivaWare 2.1.4; projeler TivaWare 2.2.0.295 ile hazırlanmış ve <code>driverlib.lib</code>'i bağlar): <code>i2capisiz2</code> derlenmez (satır 18). <code>hafta0di2capili</code> 80, <code>i2c_01</code> 81 uyarı verir. API'siz projelerin uyarıları kullanılmayan değişkenlerdir. Ayrıca <code>i2capisiz</code> satır 12'de öncelik uyarısı, <code>hafta0di2capisiz3</code> satır 69'da dönüş değeri uyarısı vardır.</p>
+
+<h3 id="ders-apisiz01">hafta0di2capisiz01 ve i2capisiz: tek bayt</h3>
+<p>Veri sayfası 16.4.1'in metni yorum olarak kodun içine yazılmış ve adım adım uygulanmıştır. 16 MHz'te TPR = 7, 0x55'e bir bayt yazılır, sonra bir bayt okunur. <code>i2capisiz</code> aynı işi yapar (adres satır 12 ve 32, veri 'v').</p>
+<div class="code-head"><span class="file">hafta0di2capisiz01/main.c, satır 13–43 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">    I2C0_MSA_R= (0x55&lt;&lt;1)+0; //kölenin adresi=0x55+write yapmak istiyorum; //1010101
+
+//  9. Place data (byte) to be transmitted in the data register by writing the I2CMDR register with the
+//  desired data.
+    I2C0_MDR_R='w';
+
+//  10. Initiate a single byte transmit of the data from Master to Slave by writing the I2CMCS register
+//  with a value of 0x0000.0007 (STOP, START, RUN)
+    I2C0_MCS_R=0x07; // haberleşme başladı
+
+//  11. Wait until the transmission completes by polling the I2CMCS register's BUSBSY bit until it has
+//  been cleared
+    while(I2C0_MCS_R &amp; 0x01); // busy bekler
+
+//  12. Check the ERROR bit in the I2CMCS register to confirm the transmit was acknowledged.
+    if (!(I2C0_MCS_R &amp; 0x02))
+    {
+        int x=7;
+    }
+
+    // receive
+    I2C0_MSA_R= (0x55&lt;&lt;1)+1; // arduino i2c slave - adama cevap vermem lazım
+    I2C0_MCS_R=0x07; // haberleşme başladı
+    while(I2C0_MCS_R &amp; 0x01); // busy bekler
+
+    if (!(I2C0_MCS_R &amp; 0x02))
+    {
+        int x=7;
+    }
+
+    uint8_t geleveri=I2C0_MDR_R;</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0di2capisiz01, i2capisiz</span>
+<ul>
+<li><b>PCTL yanlış alana yazılıyor (capisiz01 satır 71, i2capisiz satır 68):</b> <code>|= 0x33</code> PMC0 ve PMC1'e, yani PB0 ve PB1'in alanlarına 3 yazar. PB2 ve PB3'ün alanları bit 11:8 ve 15:12'dir, doğru değer <code>0x0000.3300</code>'dür. Yorumdaki "??" bu belirsizliği gösterir. <b>Kod yine de çalışır:</b> Port B'nin PCTL'si reset'ten sonra zaten <code>0x0000.3300</code>'dür (Tablo 10-7 s. 671) ve <code>|=</code> bu alanları silmez. PB0/PB1'in alanına yazılan 3 etkisizdir, çünkü AFSEL bitleri 0'dır (Tablo 23-5'te o pinlerde 3 numaralı işlev de yoktur). Satır <code>=</code> ile yazılsaydı ya da başka bir kod PCTL'yi değiştirseydi (ör. PB2'de T3CCP0 için 7) I2C bozulurdu. Sağlam yazım: <code>PCTL = (PCTL &amp; ~0x0000FF00) | 0x00003300</code>.</li>
+<li><b>Hata denetimi boş (capisiz01 satır 28–31, 38–41; i2capisiz satır 27–29, 37–39):</b> <code>if (!(MCS &amp; 0x02)) { int x=7; }</code> hata <b>yokken</b> çalışır ve bir şey yapmaz. Hata olunca okuma yine yapılır. <code>0x07</code> STOP'u içerdiği için ek STOP gerekmez (Şekil 16-8). Eksik olan hatanın bildirilmesidir. <code>x</code>, <code>k</code> büyük olasılıkla kesme noktası içindir.</li>
+<li><b>Yorumlar veri sayfasının 20 MHz örneğinden kalma:</b> TPR = 7, 16 MHz için doğrudur, ama yorumda "0x0000.0009" kalmıştır (capisiz01 satır 83; i2capisiz satır 77–79, doğru hesap satır 81). Satır 11–12'deki <code>0x76</code> / 0x3B da veri sayfası örneğidir.</li>
+<li><b>BUSBSY yorumu, BUSY kodu (capisiz01 satır 23–25, i2capisiz satır 22–24):</b> yorum 11. adımı aktarıp BUSBSY der, kod <code>0x01</code> (BUSY) bekler. Kod doğrudur (<a href="#busy-busbsy">Bölüm 6</a>).</li>
+<li><b><code>i2capisiz</code> satır 12, <code>0x55&lt;&lt;1+0</code>:</b> <code>+</code> önce gelir: <code>0x55 &lt;&lt; (1+0)</code> = <code>0xAA</code>, sonuç tesadüfen doğrudur. <code>+1</code> olsaydı <code>0x55 &lt;&lt; 2</code> = <code>0x154</code> olurdu (clang <code>-Wshift-op-parentheses</code>). Satır 32'deki <code>0x55&lt;&lt;1 | 1</code> doğrudur.</li>
+<li><b>Hazır beklemesi yok (capisiz01 satır 56 → 61):</b> RCGCGPIO'dan hemen sonra Port B'ye erişilir. Küçük bir zayıflık.</li>
+</ul>
+<p>Doğru olan: adım sırası, AFSEL/DEN, yalnız SDA'da ODR, MCR = MFE, TPR = 7, adres baytları (capisiz01 satır 13, 34), BUSY beklemesi, MDR'nin BUSY'den sonra okunması, <code>i2capisiz</code> satır 37'deki <code>0x0e</code> maskesi.</p></div>
+
+<h3 id="ders-apisiz2">hafta0di2capisiz2 ve hafta0di2capisiz4: bekleyen döngü beklemiyor</h3>
+<p><code>hafta0di2capisiz2</code> yazma ve okumayı fonksiyonlara ayırır. <code>hafta0di2capisiz4</code> aynı <code>Read</code>/<code>Write</code>'a bir <code>WriteMulti</code> ekler. Başlatma iki projede de capisiz01'inkiyle aynıdır, PCTL satırı <code>|= 0x03</code>'tür (capisiz2 satır 57, capisiz4 satır 85).</p>
+<div class="code-head"><span class="file">hafta0di2capisiz2/main.c, satır 5–31 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">uint8_t Read(){
+    I2C0_MSA_R= (0x55&lt;&lt;1)+0; // adres + write
+    //I2C0_MDR_R='w';
+    I2C0_MCS_R = 0x07; //stop start run
+    while((I2C0_MCS_R &amp;= 0x00000040)==1); //poll busy bit
+
+    I2C0_MSA_R= (0x55&lt;&lt;1)+1; // adres + write
+    I2C0_MCS_R=0x07; // haberleşme başladı
+    while((I2C0_MCS_R &amp;= 0x00000040)==1); //poll busy bit
+
+    return I2C0_MDR_R;
+}
+
+void Write(uint8_t data){
+    I2C0_MSA_R= (0x55&lt;&lt;1)+0; // adres + write
+    I2C0_MDR_R=data;
+    I2C0_MCS_R = 0x07; //stop start run
+    while((I2C0_MCS_R &amp;= 0x00000040)==1); //poll busy bit
+}
+
+int main()
+{
+    // topraklar ortak
+    init_i2c();
+    Write('A');
+    uint8_t gelendeger=Read();
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0di2capisiz2, hafta0di2capisiz4</span>
+<ul>
+<li><b><code>while((I2C0_MCS_R &amp;= 0x00000040)==1);</code> hiç beklemez (capisiz2 satır 9, 13, 22; capisiz4 satır 12, 16, 25, 32, 40, 46):</b> <code>&amp;=</code> MCS'yi okur, 0x40 ile VE'ler ve sonucu <b>MCS'ye yazar</b>, yani komut register'ına. Yazılan 0x00 ya da 0x40'ta RUN = START = STOP = 0 olduğu için bu bir NOP'tur (Tablo 16-5). Asıl sorun karşılaştırmadır: sonuç 0 ya da 0x40'tır, hiçbir zaman 1 değildir, döngü hiç dönmez. Ayrıca 0x40 BUSBSY'dir, işlem bitişi BUSY (0x01) ile beklenir.</li>
+<li><b>Sonuç: işlemler üst üste biner.</b> Bir bayt 90 µs sürer, işlemci sonraki MSA/MDR/MCS yazmasına mikrosaniyeler içinde gelir. Sürerken MDR'ye ya da MCS'ye yazmanın sonucu veri sayfasında tanımlı değildir. <code>Read()</code> MDR'yi alma bitmeden okur (satır 15).</li>
+<li><b><code>Read()</code>'in ilk yarısı (satır 6–9):</b> veri yazılmadan (satır 7 yorumda) <code>0x07</code> ile gönderilir. MDR'de ne varsa o gider, <code>main</code>'deki <code>Write('A')</code>'dan sonra büyük olasılıkla yine 'A'. Register adresi yazıp okumak için STOP'suz <code>0x03</code> ve tekrarlı START gerekir (<a href="#ornek-cok">7.2</a>). Satır 11'deki "adres + write" yorumu yanlış, <code>+1</code> okumadır.</li>
+<li><b>capisiz4 <code>WriteMulti</code> son bayt (satır 39):</b> Gönderme durumunda <code>0x07</code> "tekrarlı START, gönder, STOP" demektir (Tablo 16-5). Son bayt ayrı bir çerçeveye düşer. Doğrusu <code>0x05</code>. Satır 30'daki 'K' kölenin protokolüne bağlıdır.</li>
+<li><b>Hata denetimi yok</b>, <code>main</code> sonunda <code>while(1)</code> yok.</li>
+</ul>
+<p>Doğru olan: fonksiyonlara ayırma, <code>WriteMulti</code>'nin <code>0x03</code> → <code>0x01</code> sırası, <code>break</code> (capisiz4 satır 41).</p></div>
+
+<h3 id="ders-apisiz3">hafta0di2capisiz3: çok bayt yazma ve okuma</h3>
+<p>Adres parametreli <code>Writei2c</code>/<code>Readi2c</code> (tek bayt), <code>WriteMulti</code>/<code>WriteMulti2</code> (çok bayt yazma) ve <code>Readmulti</code> (yaz + tekrarlı START + çok bayt okuma) vardır. <code>main</code> <code>WriteMulti(0x55, data, 3)</code>, <code>Readmulti(0x55, 3)</code> ve <code>Readi2c(0x55)</code>'i çağırır.</p>
+<div class="code-head"><span class="file">hafta0di2capisiz3/main.c, satır 44–69 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">uint8_t Readmulti(uint32_t adress, int count){
+    I2C0_MSA_R= (adress&lt;&lt;1)+0; // write modu adres seçimi
+    I2C0_MDR_R='O'; // karşı taraftaki adamin ram adresi
+    I2C0_MCS_R=0x03; // start, transmit
+    while((I2C0_MCS_R &amp;=0x40)==1); // busy bekler
+
+    I2C0_MSA_R= (adress&lt;&lt;1)+1; // write modu adres seçimi
+
+    I2C0_MCS_R = 0x0b;
+    while((I2C0_MCS_R &amp;=0x40)==1);
+    data[0]=I2C0_MDR_R;
+
+    int i=1;
+    while(i&lt;count){
+        if((count==1) || (i==count-1)){
+            I2C0_MCS_R=0x05;
+            data[i]=I2C0_MDR_R;
+            while((I2C0_MCS_R &amp;=0x40)==1); // busy bekler
+        } else {
+            I2C0_MCS_R=0x09;
+            data[i]=I2C0_MDR_R;
+            while((I2C0_MCS_R &amp;=0x40)==1); // busy bekler
+            i++;
+        }
+    }
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0di2capisiz3</span>
+<ul>
+<li><b><code>Readmulti</code>'de sonsuz döngü (satır 58–61):</b> son bayt dalında ne <code>i++</code> ne <code>break</code> vardır. MCS'ye durmadan <code>0x05</code> yazılır (master Boşta'ya geçtikten sonra bu bir NOP'tur). <code>main</code> <code>Readmulti</code>'yi çağırdığı için program burada takılır, <code>Readi2c</code> (satır 113) hiç çalışmaz. <code>WriteMulti2</code>'de aynı hata vardır (satır 80–83), ama çağrılmaz.</li>
+<li><b>MDR işlem bitmeden okunuyor (satır 54, 59–60, 63–64):</b> 59–60 ve 63–64'te MDR bekleme satırından bile <b>önce</b> okunur, önceki bayt gelir. Bekleme satırları da <code>&amp;= … ==1</code> biçimindedir ve beklemez (satır 26, 33, 38, 48, 53, 61, 65).</li>
+<li><b>Son bayt <code>0x07</code> ile (satır 32, 82):</b> tekrarlı START üretir, doğrusu <code>0x05</code>.</li>
+<li><b><code>uint8_t Readmulti</code> değer döndürmez:</b> clang <code>-Wreturn-type</code> (satır 69). Okunanlar global <code>data[]</code>'ya, yani gönderilen verinin dizisine yazılır (satır 5).</li>
+<li><b><code>Writei2c</code>, <code>Readi2c</code>'de BUSBSY beklemesi (satır 13, 98):</b> <code>0x07</code>'den hemen sonra START henüz üretilmemişse BUSBSY 0'dır, döngü hemen biter ve durum işlem sürerken okunur.</li>
+<li><b>PCTL <code>|= 0x03</code> (satır 129):</b> capisiz01'deki gibi yanlış alan, reset değeri sayesinde çalışır.</li>
+<li><b>'O' baytı (satır 24, 46, 74):</b> "karşı taraftaki RAM adresi" kölenin yazılımına bağlı bir protokol kararıdır.</li>
+</ul>
+<p>Doğru olan: komut seçimi büyük ölçüde doğrudur: <code>0x03</code> ile register adresi, MSA'yı okumaya çevirip <code>0x0B</code> ile tekrarlı START (satır 50–52), <code>0x09</code>, son <code>0x05</code>.</p></div>
+
+<h3 id="ders-apisiz-iyi">i2capisiz2: en iyi API'siz örnek, ama derlenmiyor</h3>
+<p><code>I2C0_Write_Multiple</code> ve (adı yanıltıcı) <code>I2C3_read_Multiple</code>, köle register'ına yazma ve oradan okuma yapar. Hata denetimli bir bekleme fonksiyonu vardır.</p>
+<div class="code-head"><span class="file">i2capisiz2/main.c, satır 12–18 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">    char data[2] = {65,66};
+    I2C0_Init();
+
+    I2C0_Write_Multiple(0x55, 0, 1, &amp;data[0]);
+    //I2C3_Write_Multiple(0x55, 0, 1, &amp;data[1]);
+    I2C3_read_Multiple(0x55, 0, 1, &amp;data[1]);
+"       while(1);</code></pre>
+<div class="code-head"><span class="file">i2capisiz2/main.c, satır 76–112 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">char I2C0_Write_Multiple(int slave_address, char slave_memory_address, int bytes_count, char* data){
+    char error;
+    if (bytes_count &lt;=0 ){
+        return -1;
+    }
+    I2C0_MSA_R=slave_address&lt;&lt;1; //&amp; 0xFE; // slave adress
+    I2C0_MDR_R=slave_memory_address;
+    I2C0_MCS_R=0x03; // start run
+
+    error=i2c_bekle();
+
+    if (error) return error;
+
+    while(bytes_count&gt;1){
+        I2C0_MDR_R=*data++;
+        I2C0_MCS_R=1; /* -data-ACK- */
+        error=i2c_bekle();
+        if (error) return error;
+        bytes_count--;
+    }
+
+    /* send last byte and a STOP */
+    I2C0_MDR_R=*data++;
+    I2C0_MCS_R=5; /* -data-ACK-P */
+    error=i2c_bekle();
+
+    while(I2C0_MCS_R &amp; 0x40 ); // stop condition oluştumu
+
+    if (error) return error;
+    return 0;
+
+
+}
+int i2c_bekle(void){
+    while(I2C0_MCS_R &amp; 0x01); // busy bekler
+    return (I2C0_MCS_R &amp; 0x0e);
+}</code></pre>
+<div class="box ok"><span class="box-title">İyi olan: i2capisiz2</span>
+<p><code>i2c_bekle</code> (satır 109–112) BUSY'yi bekler ve <code>MCS &amp; 0x0E</code> (ERROR, ADRACK, DATACK) döndürür. Yazma <code>0x03</code> → <code>0x01</code> → <code>0x05</code>, okuma <code>0x03</code> → <code>0x0B</code> (tek baytsa <code>0x07</code>) → <code>0x09</code> → <code>0x05</code>'tir (satır 29–70, 81–99): veri sayfasının akış şemalarıyla aynı. MDR beklemeden sonra okunur. STOP'tan sonra BUSBSY beklenir (satır 51, 71, 102): BUSBSY'nin doğru kullanımı.</p></div>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: i2capisiz2</span>
+<ul>
+<li><b>Satır 18 derlenmez:</b> satır başındaki fazladan <code>"</code> için clang "missing terminating '"' character" uyarısı ve "expected expression" hatası verir. Proje bu hâliyle çalıştırılamaz.</li>
+<li><b>Hatada STOP yok (satır 34, 45, 59, 68, 87, 93):</b> fonksiyon hemen döner. Çok baytlı akışta ARBLST değilse <code>0x04</code> verilmelidir (Şekil 16-10, 16-11), yoksa master veri yolunu tutar.</li>
+<li><b>Ad <code>I2C3_read_Multiple</code>, modül I2C0:</b> büyük olasılıkla I2C3 için yazılmış bir örnekten uyarlanmıştır.</li>
+<li><b><code>return -1</code> (satır 27, 79):</b> ARM'da <code>char</code> işaretsizdir, 255 döner. <code>if (error)</code> çalışır, <code>&lt; 0</code> çalışmaz.</li>
+<li>PCTL <code>|= 0X33</code> (satır 135) ve 20 MHz yorumları (satır 144–146) capisiz01'deki gibidir.</li>
+</ul></div>
+
+<h3 id="ders-apili">hafta0di2capili ve i2c_01: TivaWare</h3>
+<p>İki proje de sistem saatini 50 MHz'e ayarlar (<code>SYSCTL_SYSDIV_4</code>, PLL), I2C0'ı TivaWare ile kurar, döngüde 0x55'e bir bayt yazıp bir bayt okur. 50 MHz'te <code>I2CMasterInitExpClk(…, false)</code> TPR = 24 yazar, SCL = 100 kHz. <code>i2c_01</code> ayrıca Port F'nin LED ve butonlarını kurar (satır 49–62), ama kullanmaz.</p>
+<div class="code-head"><span class="file">hafta0di2capili/main.c, satır 15–43 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">int main(void)
+{
+
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
+
+    GPIOPinConfigure(GPIO_PB2_I2C0SCL);
+    GPIOPinConfigure(GPIO_PB3_I2C0SDA);
+    GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);
+    GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3); // sda
+
+    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false);
+    I2CMasterSlaveAddrSet(I2C0_BASE, 0x55, 0);// gönderirici
+
+    while(1)
+    {
+        I2CMasterDataPut(I2C0_BASE, 'f');
+        I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_SEND );
+
+        while(I2CMasterBusy(I2C0_BASE));
+
+        I2CMasterSlaveAddrSet(I2C0_BASE, 0x55, 1);// alcıcı
+        I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE );
+        uint8_t gv=I2CMasterDataGet(I2C0_BASE);
+
+
+    }
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0di2capili, i2c_01</span>
+<ul>
+<li><b>Okuma beklenmeden alınıyor (hafta0di2capili satır 38–39):</b> <code>SINGLE_RECEIVE</code>'dan hemen sonra <code>I2CMasterDataGet</code> çağrılır, önceki değer gelir (büyük olasılıkla en son yazılan 'f'). <code>i2c_01</code>'de bekleme vardır (satır 38).</li>
+<li><b>İkinci turdan itibaren yazılmıyor (hafta0di2capili satır 28, 37):</b> yazma adresi döngüden önce bir kez kurulur. Satır 37 R/S'yi 1 yapar ve geri alınmaz. İkinci turdan sonra satır 33'teki <code>SINGLE_SEND</code> (<code>0x07</code>) R/S = 1 olduğu için aslında bir okumadır. <code>i2c_01</code> adresi her turda kurar (satır 26).</li>
+<li><b>Hata denetimi yok:</b> <code>I2CMasterErr</code> hiç çağrılmaz.</li>
+<li><b><code>.c</code> eklemek (hafta0di2capili satır 6, 10; i2c_01 satır 6, 8, 11):</b> proje <code>driverlib.lib</code>'i bağladığı için gereksizdir. Uyarıların kaynağı <code>inc/tm4c123gh6pm.h</code>'nin (satır 12 / 13) TivaWare'in <code>hw_ints.h</code> ve <code>hw_flash.h</code>'siyle birlikte eklenmesidir: 79 makro yeniden tanımı (78 <code>INT_…</code>, 1 <code>FLASH_FMA_OFFSET_M</code>). Ek olarak kullanılmayan <code>gv</code> (satır 39) ya da boş gövdeli <code>while</code> (satır 31) ve kullanılmayan <code>xx</code> (satır 39): toplam 80 ve 81 uyarı (TivaWare 2.1.4 ile). <code>tm4c123gh6pm.h</code>'den hiçbir ad kullanılmaz.</li>
+<li><b>Hazır beklemesi:</b> hafta0di2capili'de <code>SysCtlPeripheralReady</code> yok (satır 19–22). <code>i2c_01</code> yalnız I2C0'ı bekler (satır 72).</li>
+<li><b>i2c_01:</b> <code>device_address</code> (satır 17) kullanılmaz. <code>xx=4;</code> (satır 41) okunanı ezer, büyük olasılıkla kesme noktası içindir.</li>
+</ul>
+<p>Doğru olan: <code>GPIOPinConfigure</code> + <code>GPIOPinTypeI2CSCL</code> / <code>GPIOPinTypeI2C</code>, <code>I2CMasterInitExpClk(…, SysCtlClockGet(), false)</code>, 7 bitlik adres, <code>i2c_01</code>'deki okuma beklemesi.</p></div>
+
+<p><b>Ortak:</b> hiçbir projede çekme direnci açılmaz (hatlar köle kartına güvenir), hiçbiri hatada STOP vermez. Dersin amacına uygun sürümler 7.1, 7.2 ve 7.3'tür.</p>
+
+<h2 id="hatalar">10. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Çekme direnci yok:</b> LaunchPad'de PB2/PB3'te direnç yoktur. Hatlar düşük kalır, master takılır ya da hakemliği kaybeder.</li>
+<li><b>SCL'yi açık-drenaj yapmak:</b> ODR yalnız SDA'da (PB3) kurulur. SCL için veri sayfası açık-drenajı yasaklar.</li>
+<li><b>PCTL'ye yanlış alan yazmak:</b> PB2 bit 11:8, PB3 bit 15:12. Değer <code>0x0000.3300</code>. <code>|=</code> eski alanı silemez, önce maskeleyin.</li>
+<li><b>Adresi yanlış kaydırmak:</b> MSA'ya <code>(adres &lt;&lt; 1) | R/S</code> yazılır. <code>I2CMasterSlaveAddrSet</code>'e kaydırılmamış adres verilir.</li>
+<li><b>MCS'ye <code>|=</code> ya da <code>&amp;=</code>:</b> okunan durum komut olarak geri yazılır. MCS'ye yalnız <code>=</code> ile komut yazılır, durumu okumak için yalnız okunur.</li>
+<li><b>Beklemeden MDR okumak ya da yeni komut vermek:</b> her komuttan sonra BUSY = 0 beklenir. TivaWare fonksiyonları da beklemez.</li>
+<li><b>İşlem bitişini BUSBSY ile beklemek:</b> STOP'suz komutlardan sonra BUSBSY 1 kalır. İşlem bitişi BUSY ile, veri yolunun boşalması BUSBSY ile beklenir.</li>
+<li><b>Çok baytlı yazmanın son baytını <code>0x07</code> ile göndermek:</b> Gönderme durumunda tekrarlı START üretir. Son bayt <code>0x05</code> ile gider.</li>
+<li><b>Hatada STOP vermemek:</b> çok baytlı akışta hata olunca (ARBLST değilse) <code>0x04</code> yazılır.</li>
+<li><b>Okumada son baytı onaylamak:</b> son bayt ACK = 0 ile (<code>0x05</code> / <code>0x07</code>) alınır.</li>
+<li><b>TPR'ı yanlış saate göre hesaplamak:</b> veri sayfası örneği 20 MHz içindir (9). 16 MHz'te 7, 50 MHz'te 24, 80 MHz'te 39 yazılır.</li>
+<li><b>5 V köleyi doğrudan bağlamak</b> ve <b>I2C3 ile PB6/PB7'yi birlikte kullanmak</b> (R9/R10).</li>
+</ol></div>
+
+<h2 id="alistirmalar">11. Alıştırmalar</h2>
+<ol>
+<li><b>TPR hesabı:</b> sistem saati 80 MHz. 100 kbps ve 400 kbps için TPR nedir? 1 Mbps için? 300 kbps istenirse TivaWare'in yuvarlama kuralıyla hangi TPR seçilir, SCL kaç olur?
+<details><summary>Cevap</summary><p>100 kbps: 80&nbsp;000&nbsp;000 / (20 × 100&nbsp;000) − 1 = 39. 400 kbps: 80&nbsp;000&nbsp;000 / 8&nbsp;000&nbsp;000 − 1 = 9. 1 Mbps: 80&nbsp;000&nbsp;000 / 20&nbsp;000&nbsp;000 − 1 = 3 (Tablo 16-2 ile aynı). 300 kbps: 80&nbsp;000&nbsp;000 / 6&nbsp;000&nbsp;000 = 13,33. Yukarı yuvarlanır: 14, TPR = 13. SCL = 80&nbsp;000&nbsp;000 / (20 × 14) = 285,7 kHz, istenenden yavaş.</p></details></li>
+<li><b>Çerçeve çizimi:</b> 7.2'deki <code>i2c_reg_oku(0x55, 0x10, tampon, 2)</code> çağrısının hatta ürettiği bayt dizisini ve her baytı kimin onayladığını yazın. Kaç SCL darbesi vardır?
+<details><summary>Cevap</summary><p>S, <code>0xAA</code>, A (köle), <code>0x10</code>, A (köle), Sr, <code>0xAB</code>, A (köle), b0, A (master, <code>0x0B</code> ile), b1, N (master, <code>0x05</code> ile), P. Beş bayt × 9 = 45 SCL darbesi (START, Sr ve STOP darbe sayılmaz).</p></details></li>
+<li><b>Kod okuma:</b> <code>hafta0di2capisiz3</code>'ün <code>Readmulti</code>'sini en az değişiklikle çalışır hâle getirin. Hangi satırlar değişir?
+<details><summary>Cevap</summary><p>Bütün bekleme satırları (48, 53, 61, 65) <code>while (I2C0_MCS_R &amp; 0x01) { }</code> olur. Satır 59–60 ve 63–64'te sıra değişir: önce komut, sonra bekleme, sonra <code>data[i]=I2C0_MDR_R;</code>. Satır 61'den sonra <code>break;</code> (ya da <code>i++;</code>) eklenir. Satır 48'den sonra ERROR denetimi eklenmelidir. Fonksiyon tipi <code>void</code> yapılır ya da bir hata kodu döndürülür. Satır 54'ten önce de bekleme olduğu için ilk bayt doğru okunur. count == 1 için ilk komut <code>0x0B</code> değil <code>0x07</code> olmalıdır: <code>0x0B</code> ACK verir ve STOP üretmez.</p></details></li>
+<li><b>Geri döngüde hata:</b> 8. bölümdeki programda master'ın adresini 0x3D yapın (köle 0x3C kalsın). <code>I2CMasterErr</code> ne döndürür? Program nerede takılır, nasıl düzeltirsiniz?
+<details><summary>Cevap</summary><p>Hiçbir köle 0x3D'yi tanımadığı için adres onaylanmaz: <code>I2CMasterErr</code> = <code>I2C_MASTER_ERR_ADDR_ACK</code> (4). Köle RREQ'i hiç kurmaz, program ilk <code>while (!(I2CSlaveStatus(…) &amp; I2C_SLAVE_ACT_RREQ))</code> döngüsünde takılır. Düzeltme: RREQ beklemesinde master'ı da denetlemek: <code>while (!(I2CSlaveStatus(…) &amp; I2C_SLAVE_ACT_RREQ)) { if (!I2CMasterBusy(…) &amp;&amp; I2CMasterErr(…)) break; }</code> ya da bir zaman aşımı sayacı. Önce BUSY = 0 beklenemez: adres doğruyken köle SDR okunana dek SCL'yi tutar (RREQ, s. 1038), master STOP veremez.</p></details></li>
+<li><b>Çekme direnci:</b> hat kapasitesi 100 pF. Yükselme süresi kabaca 0,85 × R × C, I2C belirtimindeki sınır standart kipte 1000 ns, hızlı kipte 300 ns. Dahili dirençle (20 kΩ) hangi kip olur? 400 kbps için en çok kaç kΩ gerekir?
+<details><summary>Cevap</summary><p>0,85 × 20&nbsp;000 × 100 × 10<sup>−12</sup> = 1,7 µs: standart kip bile sınırı aşar (dahili direnç en düşük 13 kΩ'da 1,1 µs). 400 kbps için R ≤ 300 ns / (0,85 × 100 pF) ≈ 3,5 kΩ: tipik 2,2 kΩ seçilir. Bu yüzden dış direnç kullanılır.</p></details></li>
+</ol>
+
+<h2 id="kaynakca">12. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): s. 104–105, 340, 348, 406, 414, 649, 671 (Tablo 10-7), 676, 682, 688–689; Bölüm 16 I2C s. 997–1047 (§16.3 s. 999–1006, Tablo 16-2 s. 1004, akış şemaları s. 1008–1015, §16.4.1 s. 1015–1016, register'lar s. 1017–1046); Tablo 23-5 s. 1351; Tablo 24-29 s. 1385; Tablo 24-35 s. 1395.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı: Bölüm 14 Sensor Hub, Lab 14a ve 14b, s. 14-1 – 14-31.</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/i2c.c</code>, <code>driverlib/i2c.h</code>, <code>driverlib/gpio.c</code>, <code>driverlib/gpio.h</code>, <code>driverlib/pin_map.h</code>, <code>inc/hw_i2c.h</code>, <code>inc/tm4c123gh6pm.h</code> (satır numaraları metinde); örnekler <code>examples/peripherals/i2c/master_slave_loopback.c</code> ve <code>slave_receive_int.c</code>. TivaWare ve belgeler ti.com'dan indirilebilir.</li>
+<li>EK-TM4C123GXL LaunchPad şeması (kullanıcı kılavuzu, s. 20).</li>
+<li>NXP, <em>I2C-bus specification and user manual</em> (UM10204): çekme direnci seçimi ve yükselme süresi sınırları için veri sayfasının yönlendirdiği belge.</li>
+<li>Ders örnek kodları (EEM 431, I2C klasörü): <code>hafta0di2capisiz01</code>, <code>hafta0di2capisiz2</code>, <code>hafta0di2capisiz3</code>, <code>hafta0di2capisiz4</code>, <code>i2capisiz</code>, <code>i2capisiz2</code>, <code>hafta0di2capili</code>, <code>i2c_01</code>, <code>hafta0d2ogr_i2c0</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../saat-pll/">4. Sistem Saati ve PLL</a>, <a href="../uart/">8. UART</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 11. I2C. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 811" class="ima-svg" role="img" aria-labelledby="ima-title ima-desc">
+<title id="ima-title">I2CMCS komut akışları: tek bayt gönder, çok bayt gönder, register oku</title>
+<desc id="ima-desc">Veri sayfası master akış şemalarına (Şekil 16-8, 16-10, 16-11, 16-12) dayalı üç akış. MSA, MDR, MCS: I2CMSA, I2CMDR, I2CMCS. Her akışta ilk MCS yazımından önce isteğe bağlı olarak BUSBSY = 0 beklenir (başka master hattı tutuyor olabilir; tek master’lı sistemde atlanabilir). Her MCS yazımından sonra BUSY = 0 olana dek beklenir, sonra ERROR = 0 mı diye bakılır; değilse hata işlenir: (B) ve (C)’de ARBLST = 0 ise MCS ← 0x04 (STOP) yazılır, ARBLST = 1 ise STOP yazılmaz; sonra Idle. (A) tek bayt gönder: MSA ← adres&lt;&lt;1 | 0 (0x55 için 0xAA), MDR ← veri (örnek 0x41), MCS ← 0x07 (STOP + START + RUN), BUSY = 0, ERROR = 0 ise Idle. (B) çok bayt gönder: MSA ← adres&lt;&lt;1 | 0 ve MDR ← ilk bayt, MCS ← 0x03 (START + RUN), bekle; karar: sıradaki son bayt mı? Hayırsa MDR ← sonraki bayt, MCS ← 0x01 (RUN), bekle ve karara dön; evetse MDR ← son bayt, MCS ← 0x05 (RUN + STOP), bekle, Idle. (C) register oku: MSA ← adres&lt;&lt;1 | 0 ve MDR ← register adresi, MCS ← 0x03 (START + RUN, STOP yok), bekle; MSA ← adres&lt;&lt;1 | 1 (oku), ardından tekrarlı START. Tek bayt için MCS ← 0x07 (START + RUN + STOP, ACK = 0 yani NACK); çok bayt için MCS ← 0x0B (START + RUN + ACK). Bekle, veri ← MDR; 0x07 ise Idle. 0x0B ise karar: sıradaki son bayt mı? Hayırsa MCS ← 0x09 (RUN + ACK), bekle, veri ← MDR ve karara dön; evetse MCS ← 0x05 (RUN + STOP, ACK = 0 yani NACK), bekle, veri ← MDR, Idle. İki baytlık okumada 0x0B’den sonra doğrudan 0x05 gelir. BUSY son komutun sürdüğünü gösterir ve 1 iken diğer durum bitleri geçersizdir; BUSBSY hattın meşgul olduğunu gösterir: START ile 1, STOP ile 0.</desc>
+<defs>
+<marker id="ima-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ima-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.ima-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.ima-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.ima-svg .ima-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.ima-svg .ima-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.ima-svg .ima-b{font-weight:700}
+.ima-svg .ima-s12{font-size:12px}
+.ima-svg .ima-s13{font-size:13px}
+.ima-svg .ima-s16{font-size:16px}
+.ima-svg .ima-mut{fill:var(--fig-muted,#76746c)}
+.ima-svg .ima-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.ima-svg .ima-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.ima-svg .ima-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.ima-svg .ima-head{fill:var(--fig-stroke,#2b2b29)}
+.ima-svg .ima-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+</style>
+<text class="ima-s16 ima-b" x="16" y="29">I2CMCS komut akışları (master)</text>
+<text x="16" y="50"><tspan class="ima-s13 ima-mut">Veri sayfası Şekil 16-8, 16-10, 16-11, 16-12’ye dayalı. </tspan><tspan class="ima-m12 ima-mut">MSA</tspan><tspan class="ima-s13 ima-mut">, </tspan><tspan class="ima-m12 ima-mut">MDR</tspan><tspan class="ima-s13 ima-mut">, </tspan><tspan class="ima-m12 ima-mut">MCS</tspan><tspan class="ima-s13 ima-mut"> = </tspan><tspan class="ima-m12 ima-mut">I2CMSA</tspan><tspan class="ima-s13 ima-mut">, </tspan><tspan class="ima-m12 ima-mut">I2CMDR</tspan><tspan class="ima-s13 ima-mut">, </tspan><tspan class="ima-m12 ima-mut">I2CMCS</tspan><tspan class="ima-s13 ima-mut">.</tspan></text>
+<text x="16" y="70" xml:space="preserve"><tspan class="ima-s12 ima-b">gri yuvarlak</tspan><tspan class="ima-s12"> = </tspan><tspan class="ima-m12">MCS</tspan><tspan class="ima-s12"> okunur   </tspan><tspan class="ima-s12 ima-b">altıgen</tspan><tspan class="ima-s12"> = karar   </tspan><tspan class="ima-s12 ima-b">oval</tspan><tspan class="ima-s12"> = Idle (boşta)   </tspan><tspan class="ima-s12 ima-b ima-mut">kesikli</tspan><tspan class="ima-s12"> = isteğe bağlı</tspan></text>
+<text class="ima-s13 ima-b" x="16" y="98">(A) tek bayt gönder</text>
+<text class="ima-s12 ima-mut" x="16" y="114">Şekil 16-8</text>
+<rect class="ima-box" x="16" y="124" width="220" height="36" rx="6"/>
+<text x="26" y="139"><tspan class="ima-mono ima-b">MSA</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono">adres&lt;&lt;1 | 0</tspan></text>
+<text x="26" y="155"><tspan class="ima-m12 ima-mut">0x55</tspan><tspan class="ima-s12 ima-mut"> → </tspan><tspan class="ima-m12 ima-mut">0xAA</tspan><tspan class="ima-s12 ima-mut"> (yaz)</tspan></text>
+<path class="ima-w" d="M91.0,160 L91.0,170" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="16" y="171" width="220" height="36" rx="6"/>
+<text x="26" y="186"><tspan class="ima-mono ima-b">MDR</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-s13">veri</tspan></text>
+<text x="26" y="202"><tspan class="ima-s12 ima-mut">ör. </tspan><tspan class="ima-m12 ima-mut">0x41</tspan><tspan class="ima-s12 ima-mut"> ('A')</tspan></text>
+<path class="ima-w" d="M91.0,207 L91.0,217" marker-end="url(#ima-arr)"/>
+<rect class="ima-opt" x="16" y="218" width="150" height="22" rx="11"/>
+<text x="91" y="233.5" text-anchor="middle"><tspan class="ima-m12">BUSBSY</tspan><tspan class="ima-s12"> = 0 bekle</tspan></text>
+<text class="ima-s12 ima-mut" x="176" y="226">tek master’da</text>
+<text class="ima-s12 ima-mut" x="176" y="239">atlanabilir</text>
+<path class="ima-w" d="M91.0,240 L91.0,250" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="16" y="251" width="220" height="36" rx="6"/>
+<text x="26" y="266"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x07</tspan></text>
+<text class="ima-s12 ima-mut" x="26" y="282">STOP + START + RUN</text>
+<path class="ima-w" d="M91.0,287 L91.0,297" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="16" y="298" width="150" height="22" rx="11"/>
+<text x="91" y="313.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="182" y="297" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="201" y="313.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M166,309.0 L181,309.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M91.0,320 L91.0,334" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="97" y="332">evet</text>
+<path class="ima-box" d="M43.0,348 A48.0,13 0 1 0 139.0,348 A48.0,13 0 1 0 43.0,348 Z"/>
+<text class="ima-s12 ima-b" x="91" y="352.5" text-anchor="middle">Idle</text>
+<text x="16" y="401"><tspan class="ima-m12 ima-b">BUSY</tspan><tspan class="ima-s12"> (bit 0): son komut sürüyor.</tspan></text>
+<text x="16" y="417"><tspan class="ima-s12">Her </tspan><tspan class="ima-m12">MCS</tspan><tspan class="ima-s12"> yazımından sonra 0 olana</tspan></text>
+<text x="16" y="433"><tspan class="ima-s12">dek bekle; 1 iken diğer durum</tspan></text>
+<text x="16" y="449"><tspan class="ima-s12">bitleri geçersiz.</tspan></text>
+<text x="16" y="475"><tspan class="ima-m12 ima-b">BUSBSY</tspan><tspan class="ima-s12"> (bit 6): hat meşgul, START</tspan></text>
+<text x="16" y="491"><tspan class="ima-s12">ile 1, STOP ile 0. Tek komutu değil,</tspan></text>
+<text x="16" y="507"><tspan class="ima-s12">hattı gösterir; başka bir master</tspan></text>
+<text x="16" y="523"><tspan class="ima-s12">hattı tutuyor olabilir.</tspan></text>
+<text x="16" y="549"><tspan class="ima-s12 ima-b">hata</tspan><tspan class="ima-s12">: (B) ve (C)’de </tspan><tspan class="ima-m12">ARBLST</tspan><tspan class="ima-s12"> = 0 ise</tspan></text>
+<text x="16" y="565"><tspan class="ima-m12">MCS</tspan><tspan class="ima-s12"> ← </tspan><tspan class="ima-m12">0x04</tspan><tspan class="ima-s12"> (STOP); </tspan><tspan class="ima-m12">ARBLST</tspan><tspan class="ima-s12"> = 1 ise</tspan></text>
+<text x="16" y="581"><tspan class="ima-s12">STOP yok. (A)’da </tspan><tspan class="ima-m12">0x07</tspan><tspan class="ima-s12"> STOP’u içerir.</tspan></text>
+<text x="16" y="597"><tspan class="ima-s12">Sonra Idle.</tspan></text>
+<text class="ima-s13 ima-b" x="252" y="98">(B) çok bayt gönder</text>
+<text class="ima-s12 ima-mut" x="252" y="114">Şekil 16-10</text>
+<rect class="ima-box" x="270" y="124" width="220" height="36" rx="6"/>
+<text x="280" y="139"><tspan class="ima-mono ima-b">MSA</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono">adres&lt;&lt;1 | 0</tspan></text>
+<text x="280" y="155"><tspan class="ima-mono ima-b">MDR</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-s13">ilk bayt</tspan></text>
+<path class="ima-w" d="M345.0,160 L345.0,170" marker-end="url(#ima-arr)"/>
+<rect class="ima-opt" x="270" y="171" width="150" height="22" rx="11"/>
+<text x="345" y="186.5" text-anchor="middle"><tspan class="ima-m12">BUSBSY</tspan><tspan class="ima-s12"> = 0 bekle</tspan></text>
+<text class="ima-s12 ima-mut" x="430" y="179">tek master’da</text>
+<text class="ima-s12 ima-mut" x="430" y="192">atlanabilir</text>
+<path class="ima-w" d="M345.0,193 L345.0,203" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="270" y="204" width="220" height="36" rx="6"/>
+<text x="280" y="219"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x03</tspan></text>
+<text class="ima-s12 ima-mut" x="280" y="235">START + RUN</text>
+<path class="ima-w" d="M345.0,240 L345.0,250" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="270" y="251" width="150" height="22" rx="11"/>
+<text x="345" y="266.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="434" y="250" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="453" y="266.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M420,262.0 L433,262.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M345.0,273 L345.0,283" marker-end="url(#ima-arr)"/>
+<path class="ima-box" d="M282,284 L408,284 L420,298.0 L408,312 L282,312 L270,298.0 Z"/>
+<text class="ima-s12" x="345" y="302.5" text-anchor="middle">son bayt mı?</text>
+<path class="ima-w" d="M345.0,312 L345.0,326" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="351" y="324">hayır</text>
+<rect class="ima-box" x="270" y="327" width="203" height="36" rx="6"/>
+<text x="280" y="342"><tspan class="ima-mono ima-b">MDR</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-s13">sonraki bayt</tspan></text>
+<text x="280" y="358" xml:space="preserve"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x01</tspan><tspan class="ima-s12 ima-mut">  RUN</tspan></text>
+<path class="ima-w" d="M345.0,363 L345.0,373" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="270" y="374" width="150" height="22" rx="11"/>
+<text x="345" y="389.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="434" y="373" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="453" y="389.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M420,385.0 L433,385.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M270,385.0 L258,385.0 L258,298.0 L269,298.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M420,298.0 L481,298.0 L481,412" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="426" y="293">evet</text>
+<rect class="ima-box" x="270" y="413" width="220" height="36" rx="6"/>
+<text x="280" y="428"><tspan class="ima-mono ima-b">MDR</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-s13">son bayt</tspan></text>
+<text x="280" y="444" xml:space="preserve"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x05</tspan><tspan class="ima-s12 ima-mut">  RUN + STOP</tspan></text>
+<path class="ima-w" d="M345.0,449 L345.0,459" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="270" y="460" width="150" height="22" rx="11"/>
+<text x="345" y="475.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="434" y="459" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="453" y="475.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M420,471.0 L433,471.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M345.0,482 L345.0,496" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="351" y="494">evet</text>
+<path class="ima-box" d="M297.0,510 A48.0,13 0 1 0 393.0,510 A48.0,13 0 1 0 297.0,510 Z"/>
+<text class="ima-s12 ima-b" x="345" y="514.5" text-anchor="middle">Idle</text>
+<text class="ima-s13 ima-b" x="506" y="98">(C) register oku</text>
+<text class="ima-s12 ima-mut" x="506" y="114">Şekil 16-12 ve 16-11</text>
+<rect class="ima-box" x="524" y="124" width="220" height="36" rx="6"/>
+<text x="534" y="139"><tspan class="ima-mono ima-b">MSA</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono">adres&lt;&lt;1 | 0</tspan></text>
+<text x="534" y="155"><tspan class="ima-mono ima-b">MDR</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-s13">register adresi</tspan></text>
+<path class="ima-w" d="M599.0,160 L599.0,170" marker-end="url(#ima-arr)"/>
+<rect class="ima-opt" x="524" y="171" width="150" height="22" rx="11"/>
+<text x="599" y="186.5" text-anchor="middle"><tspan class="ima-m12">BUSBSY</tspan><tspan class="ima-s12"> = 0 bekle</tspan></text>
+<text class="ima-s12 ima-mut" x="684" y="179">tek master’da</text>
+<text class="ima-s12 ima-mut" x="684" y="192">atlanabilir</text>
+<path class="ima-w" d="M599.0,193 L599.0,203" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="524" y="204" width="220" height="36" rx="6"/>
+<text x="534" y="219"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x03</tspan></text>
+<text class="ima-s12 ima-mut" x="534" y="235">START + RUN (STOP yok)</text>
+<path class="ima-w" d="M599.0,240 L599.0,250" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="524" y="251" width="150" height="22" rx="11"/>
+<text x="599" y="266.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="688" y="250" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="707" y="266.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M674,262.0 L687,262.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M599.0,273 L599.0,283" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="524" y="284" width="220" height="36" rx="6"/>
+<text x="534" y="299"><tspan class="ima-mono ima-b">MSA</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono">adres&lt;&lt;1 | 1</tspan></text>
+<text class="ima-s12 ima-mut" x="534" y="315">R/S = 1 (oku) → tekrarlı START</text>
+<path class="ima-w" d="M577.0,320 L577.0,344" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M691.0,320 L691.0,344" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="583" y="337">tek bayt</text>
+<text class="ima-s12 ima-mut" x="697" y="337">çok bayt</text>
+<rect class="ima-box" x="524" y="345" width="106" height="50" rx="6"/>
+<text x="534" y="359"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x07</tspan></text>
+<text class="ima-s12 ima-mut" x="534" y="375">START + RUN</text>
+<text class="ima-s12 ima-mut" x="534" y="391">+ STOP, NACK</text>
+<rect class="ima-box" x="638" y="345" width="106" height="50" rx="6"/>
+<text x="648" y="359"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x0B</tspan></text>
+<text class="ima-s12 ima-mut" x="648" y="375">START + RUN</text>
+<text class="ima-s12 ima-mut" x="648" y="391">+ ACK</text>
+<path class="ima-w" d="M577.0,395 L577.0,411" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M691.0,395 L691.0,402 L660,402 L660,411" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="524" y="412" width="150" height="22" rx="11"/>
+<text x="599" y="427.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="688" y="411" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="707" y="427.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M674,423.0 L687,423.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M599.0,434 L599.0,444" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="524" y="445" width="106" height="24" rx="6"/>
+<text x="534" y="462"><tspan class="ima-s13">veri</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">MDR</tspan></text>
+<path class="ima-box" d="M688.0,457 A28.0,13 0 1 0 744.0,457 A28.0,13 0 1 0 688.0,457 Z"/>
+<text class="ima-s12 ima-b" x="716" y="461.5" text-anchor="middle">Idle</text>
+<path class="ima-w" d="M630,457.0 L687,457.0" marker-end="url(#ima-arr)"/>
+<text x="659" y="452" text-anchor="middle"><tspan class="ima-m12 ima-mut">0x07</tspan><tspan class="ima-s12 ima-mut"> ise</tspan></text>
+<path class="ima-w" d="M599.0,469 L599.0,483" marker-end="url(#ima-arr)"/>
+<text x="605" y="481"><tspan class="ima-m12 ima-mut">0x0B</tspan><tspan class="ima-s12 ima-mut"> ise</tspan></text>
+<path class="ima-box" d="M536,484 L662,484 L674,498.0 L662,512 L536,512 L524,498.0 Z"/>
+<text class="ima-s12" x="599" y="502.5" text-anchor="middle">son bayt mı?</text>
+<path class="ima-w" d="M599.0,512 L599.0,526" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="605" y="524">hayır</text>
+<rect class="ima-box" x="524" y="527" width="203" height="36" rx="6"/>
+<text x="534" y="542" xml:space="preserve"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x09</tspan><tspan class="ima-s12 ima-mut">  RUN + ACK</tspan></text>
+<text class="ima-s12 ima-mut" x="534" y="558">ara bayt</text>
+<path class="ima-w" d="M599.0,563 L599.0,573" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="524" y="574" width="150" height="22" rx="11"/>
+<text x="599" y="589.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="688" y="573" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="707" y="589.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M674,585.0 L687,585.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M599.0,596 L599.0,606" marker-end="url(#ima-arr)"/>
+<rect class="ima-box" x="524" y="607" width="106" height="24" rx="6"/>
+<text x="534" y="624"><tspan class="ima-s13">veri</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">MDR</tspan></text>
+<path class="ima-w" d="M524,619.0 L512,619.0 L512,498.0 L523,498.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M674,498.0 L735,498.0 L735,647" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="680" y="493">evet</text>
+<rect class="ima-box" x="524" y="648" width="220" height="36" rx="6"/>
+<text x="534" y="663" xml:space="preserve"><tspan class="ima-mono ima-b">MCS</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">0x05</tspan><tspan class="ima-s12 ima-mut">  RUN + STOP</tspan></text>
+<text class="ima-s12 ima-mut" x="534" y="679">ACK = 0 → son bayta NACK</text>
+<path class="ima-w" d="M599.0,684 L599.0,694" marker-end="url(#ima-arr)"/>
+<rect class="ima-pill" x="524" y="695" width="150" height="22" rx="11"/>
+<text x="599" y="710.5" text-anchor="middle"><tspan class="ima-m12">BUSY</tspan><tspan class="ima-s12"> = 0 → </tspan><tspan class="ima-m12">ERROR</tspan><tspan class="ima-s12"> = 0 ?</tspan></text>
+<rect class="ima-box" x="688" y="694" width="38" height="24" rx="4"/>
+<text class="ima-s12" x="707" y="710.5" text-anchor="middle">hata</text>
+<path class="ima-w" d="M674,706.0 L687,706.0" marker-end="url(#ima-arr)"/>
+<path class="ima-w" d="M599.0,717 L599.0,731" marker-end="url(#ima-arr)"/>
+<text class="ima-s12 ima-mut" x="605" y="729">evet</text>
+<rect class="ima-box" x="524" y="732" width="106" height="24" rx="6"/>
+<text x="534" y="749"><tspan class="ima-s13">veri</tspan><tspan class="ima-s13"> ← </tspan><tspan class="ima-mono ima-b">MDR</tspan></text>
+<path class="ima-w" d="M599.0,756 L599.0,766" marker-end="url(#ima-arr)"/>
+<path class="ima-box" d="M551.0,780 A48.0,13 0 1 0 647.0,780 A48.0,13 0 1 0 551.0,780 Z"/>
+<text class="ima-s12 ima-b" x="599" y="784.5" text-anchor="middle">Idle</text>
+</svg>

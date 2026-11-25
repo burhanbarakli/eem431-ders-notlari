@@ -17,6 +17,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `uart/` | 8. UART ve seri port (PC tarafı C# dahil) |
 | `uyku-hibernate/` | 9. Uyku modları ve Hibernate |
 | `watchdog/` | 10. Watchdog zamanlayıcısı |
+| `i2c/` | 11. I2C |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

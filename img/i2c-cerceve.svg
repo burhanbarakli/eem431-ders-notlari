@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 540" class="icr-svg" role="img" aria-labelledby="icr-title icr-desc">
+<title id="icr-title">I2C çerçevesi: köle 0x55’e tek bayt (A = 0x41) yazma</title>
+<desc id="icr-desc">SCL ve SDA dalga biçimi. Boşta iki hat da yüksek. START: SCL yüksekken SDA düşer. Ardından 7 bit köle adresi 0x55 = 101 0101, MSB önce (A6 … A0 = 1, 0, 1, 0, 1, 0, 1), sonra R/W̅ biti 0 (yaz); hatta giden ilk bayt 0xAA = 1010 1010. Dokuzuncu saatte master SDA’yı bırakır, köle SDA’yı 0’a çekerek ACK verir. Sonra veri baytı 0x41 = ‘A’ = 0100 0001, MSB önce (D7 … D0 = 0, 1, 0, 0, 0, 0, 0, 1), yine köleden ACK (0). STOP: SCL yüksekken SDA yükselir. SCL’yi her zaman master üretir. SDA yalnız SCL düşükken değişir; SCL yüksekken sabit kalır ve alıcı bu sırada okur. Renk: turuncu = master sürer, yeşil = köle sürer. Bu çerçeveyi I2CMSA ← 0xAA, I2CMDR ← 0x41, I2CMCS ← 0x07 komutu üretir. SCL 6:4 oranında düşük:yüksek kalır (TM4C’de SCL_LP = 6, SCL_HP = 4). 100 kbps’te bir bit 10 µs sürer.</desc>
+<style>
+.icr-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.icr-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.icr-svg .icr-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.icr-svg .icr-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.icr-svg .icr-b{font-weight:700}
+.icr-svg .icr-ovl{text-decoration:overline}
+.icr-svg .icr-s12{font-size:12px}
+.icr-svg .icr-s13{font-size:13px}
+.icr-svg .icr-s15{font-size:15px}
+.icr-svg .icr-s16{font-size:16px}
+.icr-svg .icr-mut{fill:var(--fig-muted,#76746c)}
+.icr-svg .icr-acc{fill:var(--fig-accent,#b4481f)}
+.icr-svg .icr-grn{fill:var(--fig-green,#2f7d4f)}
+.icr-svg .icr-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.icr-svg .icr-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.icr-svg .icr-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.icr-svg .icr-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.icr-svg .icr-wvg{fill:none;stroke:var(--fig-green,#2f7d4f);stroke-width:2.6;stroke-linejoin:round}
+.icr-svg .icr-tintg{fill:var(--fig-green,#2f7d4f);fill-opacity:.22;stroke:none}
+.icr-svg .icr-tintm{fill:var(--fig-muted,#76746c);fill-opacity:.2;stroke:none}
+.icr-svg .icr-tinta{fill:var(--fig-accent,#b4481f);fill-opacity:.12;stroke:none}
+</style>
+<text x="16" y="29"><tspan class="icr-s16 icr-b">I2C çerçevesi: köle </tspan><tspan class="icr-mono icr-b">0x55</tspan><tspan class="icr-s16 icr-b">’e </tspan><tspan class="icr-mono icr-b">'A'</tspan><tspan class="icr-s16 icr-b"> (</tspan><tspan class="icr-mono icr-b">0x41</tspan><tspan class="icr-s16 icr-b">) yazma</tspan></text>
+<text x="16" y="51" xml:space="preserve"><tspan class="icr-s13 icr-b icr-acc">turuncu</tspan><tspan class="icr-s13"> = master sürer   </tspan><tspan class="icr-s13 icr-b icr-grn">yeşil</tspan><tspan class="icr-s13"> = köle sürer (ACK)   </tspan><tspan class="icr-s13 icr-b icr-mut">gri bant</tspan><tspan class="icr-s13"> = SCL yüksek: SDA sabit, alıcı okur</tspan></text>
+<text class="icr-s13 icr-mut" x="16" y="71">MSB önce. START: SCL = 1 iken SDA düşer · STOP: SCL = 1 iken SDA yükselir.</text>
+<text class="icr-mono icr-b" x="16" y="161">SCL</text>
+<text class="icr-s12 icr-acc" x="16" y="175">master</text>
+<text class="icr-mono icr-b" x="16" y="215">SDA</text>
+<rect class="icr-tintm" x="164.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="226.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="288.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="350.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="412.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="474.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="536.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="598.6" y="190" width="24.8" height="40" rx="0"/>
+<path class="icr-grid" d="M146,142 L146,230"/>
+<path class="icr-grid" d="M208,142 L208,230"/>
+<path class="icr-grid" d="M270,142 L270,230"/>
+<path class="icr-grid" d="M332,142 L332,230"/>
+<path class="icr-grid" d="M394,142 L394,230"/>
+<path class="icr-grid" d="M456,142 L456,230"/>
+<path class="icr-grid" d="M518,142 L518,230"/>
+<path class="icr-grid" d="M580,142 L580,230"/>
+<path class="icr-grid" d="M642,142 L642,230"/>
+<path class="icr-grid" d="M704,142 L704,230"/>
+<text class="icr-s13 icr-b" x="177" y="110" text-anchor="middle">A6</text>
+<text class="icr-s15 icr-b icr-acc" x="177" y="130" text-anchor="middle">1</text>
+<text class="icr-s13 icr-b" x="239" y="110" text-anchor="middle">A5</text>
+<text class="icr-s15 icr-b icr-acc" x="239" y="130" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="301" y="110" text-anchor="middle">A4</text>
+<text class="icr-s15 icr-b icr-acc" x="301" y="130" text-anchor="middle">1</text>
+<text class="icr-s13 icr-b" x="363" y="110" text-anchor="middle">A3</text>
+<text class="icr-s15 icr-b icr-acc" x="363" y="130" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="425" y="110" text-anchor="middle">A2</text>
+<text class="icr-s15 icr-b icr-acc" x="425" y="130" text-anchor="middle">1</text>
+<text class="icr-s13 icr-b" x="487" y="110" text-anchor="middle">A1</text>
+<text class="icr-s15 icr-b icr-acc" x="487" y="130" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="549" y="110" text-anchor="middle">A0</text>
+<text class="icr-s15 icr-b icr-acc" x="549" y="130" text-anchor="middle">1</text>
+<text x="611" y="110" text-anchor="middle"><tspan class="icr-s13 icr-b">R/</tspan><tspan class="icr-s13 icr-b icr-ovl">W</tspan></text>
+<text class="icr-s15 icr-b icr-acc" x="611" y="130" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="673" y="110" text-anchor="middle">ACK</text>
+<text class="icr-s15 icr-b icr-grn" x="673" y="130" text-anchor="middle">0</text>
+<rect class="icr-tintg" x="660.6" y="190" width="24.8" height="40" rx="0"/>
+<rect class="icr-tinta" x="96" y="142" width="50" height="88" rx="0"/>
+<text class="icr-s13 icr-b" x="121" y="110" text-anchor="middle">START</text>
+<path class="icr-wmd" d="M712,176 L730,176"/>
+<path class="icr-wva" d="M76,148 L130,148 L130,176 L146,176 L164.6,176 L164.6,148 L189.4,148 L189.4,176 L208,176 L226.6,176 L226.6,148 L251.4,148 L251.4,176 L270,176 L288.6,176 L288.6,148 L313.4,148 L313.4,176 L332,176 L350.6,176 L350.6,148 L375.4,148 L375.4,176 L394,176 L412.6,176 L412.6,148 L437.4,148 L437.4,176 L456,176 L474.6,176 L474.6,148 L499.4,148 L499.4,176 L518,176 L536.6,176 L536.6,148 L561.4,148 L561.4,176 L580,176 L598.6,176 L598.6,148 L623.4,148 L623.4,176 L642,176 L660.6,176 L660.6,148 L685.4,148 L685.4,176 L704,176 L712,176"/>
+<path class="icr-wva" d="M76,196 L112,196 L112,224 L146,224"/>
+<path class="icr-wva" d="M146,224 L146,196 L208,196"/>
+<path class="icr-wva" d="M208,196 L208,224 L270,224"/>
+<path class="icr-wva" d="M270,224 L270,196 L332,196"/>
+<path class="icr-wva" d="M332,196 L332,224 L394,224"/>
+<path class="icr-wva" d="M394,224 L394,196 L456,196"/>
+<path class="icr-wva" d="M456,196 L456,224 L518,224"/>
+<path class="icr-wva" d="M518,224 L518,196 L580,196"/>
+<path class="icr-wva" d="M580,196 L580,224 L642,224"/>
+<path class="icr-wvg" d="M642,224 L642,224 L704,224"/>
+<path class="icr-wva" d="M704,224 L704,224 L712,224"/>
+<path class="icr-wmd" d="M712,224 L730,224"/>
+<path class="icr-wm" d="M148,240 L148,246 L578,246 L578,240"/>
+<text x="363" y="263" text-anchor="middle"><tspan class="icr-s13">adres </tspan><tspan class="icr-mono">0x55 = 101 0101</tspan></text>
+<path class="icr-wm" d="M148,274 L148,280 L640,280 L640,274"/>
+<text x="394" y="297" text-anchor="middle"><tspan class="icr-s13">hatta ilk bayt </tspan><tspan class="icr-mono">0xAA = 1010 1010</tspan></text>
+<text class="icr-s12 icr-grn" x="673" y="252" text-anchor="middle">köle 0’a</text>
+<text class="icr-s12 icr-grn" x="673" y="267" text-anchor="middle">çeker</text>
+<text class="icr-mono icr-b" x="16" y="391">SCL</text>
+<text class="icr-s12 icr-acc" x="16" y="405">master</text>
+<text class="icr-mono icr-b" x="16" y="445">SDA</text>
+<rect class="icr-tintm" x="118.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="180.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="242.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="304.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="366.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="428.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="490.6" y="420" width="24.8" height="40" rx="0"/>
+<rect class="icr-tintm" x="552.6" y="420" width="24.8" height="40" rx="0"/>
+<path class="icr-grid" d="M100,372 L100,460"/>
+<path class="icr-grid" d="M162,372 L162,460"/>
+<path class="icr-grid" d="M224,372 L224,460"/>
+<path class="icr-grid" d="M286,372 L286,460"/>
+<path class="icr-grid" d="M348,372 L348,460"/>
+<path class="icr-grid" d="M410,372 L410,460"/>
+<path class="icr-grid" d="M472,372 L472,460"/>
+<path class="icr-grid" d="M534,372 L534,460"/>
+<path class="icr-grid" d="M596,372 L596,460"/>
+<path class="icr-grid" d="M658,372 L658,460"/>
+<text class="icr-s13 icr-b" x="131" y="340" text-anchor="middle">D7</text>
+<text class="icr-s15 icr-b icr-acc" x="131" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="193" y="340" text-anchor="middle">D6</text>
+<text class="icr-s15 icr-b icr-acc" x="193" y="360" text-anchor="middle">1</text>
+<text class="icr-s13 icr-b" x="255" y="340" text-anchor="middle">D5</text>
+<text class="icr-s15 icr-b icr-acc" x="255" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="317" y="340" text-anchor="middle">D4</text>
+<text class="icr-s15 icr-b icr-acc" x="317" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="379" y="340" text-anchor="middle">D3</text>
+<text class="icr-s15 icr-b icr-acc" x="379" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="441" y="340" text-anchor="middle">D2</text>
+<text class="icr-s15 icr-b icr-acc" x="441" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="503" y="340" text-anchor="middle">D1</text>
+<text class="icr-s15 icr-b icr-acc" x="503" y="360" text-anchor="middle">0</text>
+<text class="icr-s13 icr-b" x="565" y="340" text-anchor="middle">D0</text>
+<text class="icr-s15 icr-b icr-acc" x="565" y="360" text-anchor="middle">1</text>
+<text class="icr-s13 icr-b" x="627" y="340" text-anchor="middle">ACK</text>
+<text class="icr-s15 icr-b icr-grn" x="627" y="360" text-anchor="middle">0</text>
+<rect class="icr-tintg" x="614.6" y="420" width="24.8" height="40" rx="0"/>
+<path class="icr-wmd" d="M74,406 L92,406"/>
+<rect class="icr-tinta" x="658" y="372" width="50" height="88" rx="0"/>
+<text class="icr-s13 icr-b" x="683" y="340" text-anchor="middle">STOP</text>
+<path class="icr-wva" d="M92,406 L100,406 L118.6,406 L118.6,378 L143.4,378 L143.4,406 L162,406 L180.6,406 L180.6,378 L205.4,378 L205.4,406 L224,406 L242.6,406 L242.6,378 L267.4,378 L267.4,406 L286,406 L304.6,406 L304.6,378 L329.4,378 L329.4,406 L348,406 L366.6,406 L366.6,378 L391.4,378 L391.4,406 L410,406 L428.6,406 L428.6,378 L453.4,378 L453.4,406 L472,406 L490.6,406 L490.6,378 L515.4,378 L515.4,406 L534,406 L552.6,406 L552.6,378 L577.4,378 L577.4,406 L596,406 L614.6,406 L614.6,378 L639.4,378 L639.4,406 L658,406 L674,406 L674,378 L728,378"/>
+<path class="icr-wmd" d="M74,454 L100,454"/>
+<path class="icr-wva" d="M100,454 L100,454 L162,454"/>
+<path class="icr-wva" d="M162,454 L162,426 L224,426"/>
+<path class="icr-wva" d="M224,426 L224,454 L286,454"/>
+<path class="icr-wva" d="M286,454 L286,454 L348,454"/>
+<path class="icr-wva" d="M348,454 L348,454 L410,454"/>
+<path class="icr-wva" d="M410,454 L410,454 L472,454"/>
+<path class="icr-wva" d="M472,454 L472,454 L534,454"/>
+<path class="icr-wva" d="M534,454 L534,426 L596,426"/>
+<path class="icr-wvg" d="M596,426 L596,454 L658,454"/>
+<path class="icr-wva" d="M658,454 L658,454 L692,454 L692,426 L728,426"/>
+<path class="icr-wm" d="M102,470 L102,476 L594,476 L594,470"/>
+<text x="348" y="493" text-anchor="middle"><tspan class="icr-s13">veri </tspan><tspan class="icr-mono">0x41 = 'A' = 0100 0001</tspan></text>
+<text class="icr-s12 icr-grn" x="627" y="482" text-anchor="middle">köle 0’a</text>
+<text class="icr-s12 icr-grn" x="627" y="497" text-anchor="middle">çeker</text>
+<text x="16" y="522" xml:space="preserve"><tspan class="icr-s13 icr-b">Komut: </tspan><tspan class="icr-m12">I2CMSA ← 0xAA</tspan><tspan class="icr-s13">  ·  </tspan><tspan class="icr-m12">I2CMDR ← 0x41</tspan><tspan class="icr-s13">  ·  </tspan><tspan class="icr-m12">I2CMCS ← 0x07</tspan><tspan class="icr-s13 icr-mut">.  100 kbps’te 1 bit = 1 SCL periyodu = 10 µs.</tspan></text>
+</svg>
