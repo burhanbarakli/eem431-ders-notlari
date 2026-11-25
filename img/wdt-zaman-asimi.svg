@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 648" class="wza-svg" role="img" aria-labelledby="wza-title wza-desc">
+<title id="wza-title">Watchdog zaman çizelgesi: sağlıklı ve takılmış program</title>
+<desc id="wza-desc">Örnek: 16 MHz sistem saati (PLL yok), WDTLOAD = 16 000 000 − 1 = 15 999 999, her zaman aşımı yaklaşık 1 s. t = 0’da INTEN = 1 ile sayma başlar. (a) Sağlıklı: ana döngü çalışır; sayaç (WDTVALUE) 15 999 999’dan 0’a iner, her zaman aşımında WDTRIS = 1 olur, kesme ISR’yi çalıştırır, ISR WDTICR’a yazar; RIS 0 olur ve sayaç yeniden yüklenir. Reset olmaz. (b) Ana döngü örnekte yaklaşık 2,4 s’de takılır. 1, 2 ve 3 s’deki kesmelerde ISR besler; ayrı bir satır g_canli bayrağını gösterir: ana döngü bayrağı kurar, ISR besleyince siler; 2 s’de silinen bayrağı ana döngü takılmadan önce yeniden kurmuştur, 3 s’deki son beslemeden sonra 0 kalır. 4 s’deki zaman aşımında bayrak 0 olduğu için ISR beslemez ve temizlemeden döner; WDTRIS 1 kalır, sayaç donanımca yeniden yüklenir. 5 s’de ikinci zaman aşımında RIS hâlâ 1 olduğu için (RESEN = 1) reset olur, RESC.WDT0 = 1 olur ve program baştan çalışır. Son beslemeden reset’e yaklaşık 2 s, takılmadan reset’e yaklaşık 2,6 s geçer. Zaman ölçeği yaklaşık; darbe genişlikleri abartılı.</desc>
+<defs>
+<marker id="wza-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wza-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.wza-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.wza-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.wza-svg .wza-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.wza-svg .wza-b{font-weight:700}
+.wza-svg .wza-s12{font-size:12px}
+.wza-svg .wza-s13{font-size:13px}
+.wza-svg .wza-s16{font-size:16px}
+.wza-svg .wza-mut{fill:var(--fig-muted,#76746c)}
+.wza-svg .wza-acc{fill:var(--fig-accent,#b4481f)}
+.wza-svg .wza-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.wza-svg .wza-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.wza-svg .wza-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wza-svg .wza-headm{fill:var(--fig-muted,#76746c)}
+.wza-svg .wza-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.wza-svg .wza-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wza-svg .wza-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.wza-svg .wza-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+</style>
+<text class="wza-s16 wza-b" x="16" y="29">İki zaman aşımı: sağlıklı ve takılmış program</text>
+<text x="16" y="50"><tspan class="wza-s13 wza-mut">16 MHz sistem saati (PLL yok), </tspan><tspan class="wza-m12 wza-mut">WDTLOAD = 16 000 000 − 1</tspan><tspan class="wza-s13 wza-mut"> → zaman aşımı ≈ 1 s; t = 0’da </tspan><tspan class="wza-m12 wza-mut">INTEN = 1</tspan></text>
+<text x="16" y="84"><tspan class="wza-s13 wza-b">(a) sağlıklı:</tspan><tspan class="wza-s13"> ana döngü çalışır, ISR her zaman aşımında besler</tspan></text>
+<text class="wza-s13" x="16" y="111">ana döngü</text>
+<text class="wza-m12" x="16" y="174">WDTVALUE</text>
+<text class="wza-m12" x="16" y="227">WDTRIS</text>
+<text class="wza-s13" x="16" y="263">reset</text>
+<text class="wza-m12 wza-mut" x="144" y="148" text-anchor="end">15 999 999</text>
+<text class="wza-m12 wza-mut" x="144" y="200" text-anchor="end">0</text>
+<path class="wza-grid" d="M244,120 L244,270"/>
+<path class="wza-grid" d="M338,120 L338,270"/>
+<path class="wza-grid" d="M432,120 L432,270"/>
+<path class="wza-grid" d="M526,120 L526,270"/>
+<path class="wza-grid" d="M620,120 L620,270"/>
+<path class="wza-grid" d="M150,196 L695.2,196"/>
+<rect class="wza-box" x="150" y="96" width="545.2" height="20" rx="3"/>
+<text class="wza-s12" x="422.6" y="111" text-anchor="middle">çalışıyor</text>
+<path class="wza-w" d="M150,144 L244,196 L244,144 L338,196 L338,144 L432,196 L432,144 L526,196 L526,144 L620,196 L620,144 L695.2,185.6"/>
+<path class="wza-wa" d="M150,234 L244,234 L244,212 L250,212 L250,234 L338,234 L338,212 L344,212 L344,234 L432,234 L432,212 L438,212 L438,234 L526,234 L526,212 L532,212 L532,234 L620,234 L620,212 L626,212 L626,234 L695.2,234"/>
+<text x="256" y="229"><tspan class="wza-s12 wza-mut">ISR → </tspan><tspan class="wza-m12 wza-mut">WDTICR</tspan></text>
+<path class="wza-wa" d="M150,266 L695.2,266"/>
+<text class="wza-s12 wza-mut" x="156" y="261">reset yok</text>
+<text x="16" y="294"><tspan class="wza-s13 wza-b">(b) ana döngü takılır</tspan><tspan class="wza-s13"> (örnekte ≈ 2,4 s): ISR beslemez → ikinci zaman aşımında reset</tspan></text>
+<text class="wza-m12" x="16" y="357">g_canli</text>
+<text class="wza-s13" x="16" y="321">ana döngü</text>
+<text class="wza-m12" x="16" y="414">WDTVALUE</text>
+<text class="wza-m12" x="16" y="467">WDTRIS</text>
+<text class="wza-s13" x="16" y="503">reset</text>
+<text class="wza-m12 wza-mut" x="144" y="388" text-anchor="end">15 999 999</text>
+<text class="wza-m12 wza-mut" x="144" y="440" text-anchor="end">0</text>
+<path class="wza-grid" d="M244,330 L244,510"/>
+<path class="wza-grid" d="M338,330 L338,510"/>
+<path class="wza-grid" d="M432,330 L432,510"/>
+<path class="wza-grid" d="M526,330 L526,510"/>
+<path class="wza-grid" d="M620,330 L620,510"/>
+<path class="wza-grid" d="M150,436 L695.2,436"/>
+<path class="wza-w" d="M150,342 L250,342 L250,358 L255,358 L255,342 L344,342 L344,358 L349,358 L349,342 L438,342 L438,358 L620,358"/>
+<text class="wza-s12 wza-acc" x="446" y="353">0 kalır</text>
+<text class="wza-s12 wza-mut" x="356" y="355">yine kuruldu</text>
+<rect class="wza-box" x="150" y="306" width="225.6" height="20" rx="3"/>
+<text class="wza-s12" x="262.8" y="321" text-anchor="middle">çalışıyor</text>
+<rect class="wza-hl" x="375.6" y="306" width="244.4" height="20" rx="3"/>
+<text class="wza-s12 wza-b" x="497.8" y="321" text-anchor="middle">takıldı</text>
+<rect class="wza-opt" x="620" y="306" width="75.2" height="20" rx="3"/>
+<text class="wza-s12" x="657.6" y="321" text-anchor="middle">baştan</text>
+<path class="wza-w" d="M150,384 L244,436 L244,384 L338,436 L338,384 L432,436 L432,384 L526,436 L526,384 L620,436"/>
+<path class="wza-wa" d="M150,474 L244,474 L244,452 L250,452 L250,474 L338,474 L338,452 L344,452 L344,474 L432,474 L432,452 L438,452 L438,474 L526,474 L526,452 L620,452 L620,474 L695.2,474"/>
+<text x="256" y="469"><tspan class="wza-s12 wza-mut">ISR → </tspan><tspan class="wza-m12 wza-mut">WDTICR</tspan></text>
+<text class="wza-s12 wza-b" x="444" y="469">son besleme</text>
+<text x="534" y="446"><tspan class="wza-m12 wza-b wza-acc">RIS</tspan><tspan class="wza-s12 wza-b wza-acc"> 1 kalır</tspan></text>
+<text class="wza-s12 wza-acc" x="534" y="470">ISR beslemez</text>
+<text class="wza-s12" x="530" y="377">1. zaman aşımı</text>
+<path class="wza-wa" d="M150,506 L620,506 L620,490 L626,490 L626,506 L695.2,506"/>
+<text x="632" y="492"><tspan class="wza-s12 wza-b wza-acc">2. zaman aşımı</tspan></text>
+<text x="632" y="520"><tspan class="wza-m12">RESC.WDT0 = 1</tspan></text>
+<path class="wza-wm" d="M432,532 L432,544"/>
+<path class="wza-wm" d="M620,532 L620,544"/>
+<path class="wza-wm" d="M526,538 L433,538" marker-end="url(#wza-arrm)"/>
+<path class="wza-wm" d="M526,538 L619,538" marker-end="url(#wza-arrm)"/>
+<text class="wza-s12 wza-b" x="526" y="556" text-anchor="middle">son beslemeden reset’e ≈ 2 s</text>
+<path class="wza-wm" d="M375.6,568 L375.6,580"/>
+<path class="wza-wm" d="M620,568 L620,580"/>
+<path class="wza-wm" d="M497.8,574 L376.6,574" marker-end="url(#wza-arrm)"/>
+<path class="wza-wm" d="M497.8,574 L619,574" marker-end="url(#wza-arrm)"/>
+<text class="wza-s12 wza-b" x="497.8" y="592" text-anchor="middle">takılmadan reset’e ≈ 2,6 s</text>
+<path class="wza-wm" d="M150,614 L695.2,614"/>
+<path class="wza-wm" d="M150,610 L150,618"/>
+<text class="wza-m12 wza-mut" x="150" y="632" text-anchor="middle">0</text>
+<path class="wza-wm" d="M244,610 L244,618"/>
+<text class="wza-m12 wza-mut" x="244" y="632" text-anchor="middle">1</text>
+<path class="wza-wm" d="M338,610 L338,618"/>
+<text class="wza-m12 wza-mut" x="338" y="632" text-anchor="middle">2</text>
+<path class="wza-wm" d="M432,610 L432,618"/>
+<text class="wza-m12 wza-mut" x="432" y="632" text-anchor="middle">3</text>
+<path class="wza-wm" d="M526,610 L526,618"/>
+<text class="wza-m12 wza-mut" x="526" y="632" text-anchor="middle">4</text>
+<path class="wza-wm" d="M620,610 L620,618"/>
+<text class="wza-m12 wza-mut" x="620" y="632" text-anchor="middle">5</text>
+<text class="wza-s12 wza-mut" x="138" y="632" text-anchor="end">t (s, yaklaşık)</text>
+</svg>

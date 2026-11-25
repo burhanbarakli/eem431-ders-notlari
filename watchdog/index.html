@@ -1,0 +1,820 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Watchdog Zamanlayıcısı — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM / EK-TM4C123GXL LaunchPad'de Watchdog Timer: WDT0 ve WDT1, iki zaman aşımı mantığı, WDTLOAD/WDTCTL/WDTICR/WDTLOCK/WDTTEST, süre hesabı, 5 adımlı başlatma, RESC ile reset nedeni, beslemenin yeri, API'siz ve TivaWare örnekleri, ders kodları ve TI watchdog örneğinin LaunchPad uyarlaması.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 10. Watchdog Zamanlayıcısı</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#nedir">1. Watchdog nedir?</a></li>
+<li><a href="#iki-wdt">2. TM4C123'te iki watchdog</a><ol>
+  <li><a href="#blok">Blok yapısı</a></li>
+  <li><a href="#iki-zaman-asimi">İki zaman aşımı</a></li>
+  <li><a href="#inttype">Kesme mi, NMI mı?</a></li>
+  <li><a href="#kilit">INTEN ve kilit</a></li>
+  <li><a href="#stall">Hata ayıklarken: STALL</a></li>
+  <li><a href="#wdt1">WDT1 ve WRC</a></li>
+  <li><a href="#registerlar">Register özeti</a></li></ol></li>
+<li><a href="#sure">3. Süre hesabı</a></li>
+<li><a href="#baslatma">4. Başlatma adımları</a></li>
+<li><a href="#resc">5. Reset nedeni: RESC</a></li>
+<li><a href="#ornekler">6. Örnekler</a><ol>
+  <li><a href="#besleme-yeri">Besleme nereye konur?</a></li>
+  <li><a href="#ornek-apisiz">6.1 WDT0, API'siz</a></li>
+  <li><a href="#ornek-apili">6.2 WDT0, API'li</a></li>
+  <li><a href="#ornek-dongu">6.3 Ana döngüden besleme</a></li>
+  <li><a href="#ornek-wdt1">6.4 WDT1 (PIOSC)</a></li>
+  <li><a href="#ornek-stall">6.5 Hata ayıklarken STALL</a></li></ol></li>
+<li><a href="#ders-kodlari">7. Ders kodları</a></li>
+<li><a href="#ti">8. TI örneği uyarlaması</a></li>
+<li><a href="#hatalar">9. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">10. Alıştırmalar</a></li>
+<li><a href="#kaynakca">11. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>Watchdog Zamanlayıcısı (WDT)</h1>
+<p class="lead">Bir gömülü sistemin yanında çoğu zaman kimse yoktur. Program bir sonsuz döngüye girerse, bir gürültü darbesi program sayacını anlamsız bir adrese atarsa ya da beklenen bir sensör hiç yanıt vermezse, sistem yeniden çalıştırılana kadar takılı kalır. Watchdog (bekçi köpeği) zamanlayıcısı bu durumda sistemi kendiliğinden kurtaran donanımdır: program onu düzenli olarak "beslemezse" önce bir kesme, sonra bir reset üretir. Bu notta TM4C123GH6PM'deki iki watchdog modülünü, süre hesabını, başlatma sırasını, reset nedeninin nasıl okunacağını ve dersteki üç projeyi inceleyeceğiz.</p>
+
+<div class="box goal"><span class="box-title">Amaç ve öğrenme kazanımları</span>
+<p><b>Bu notun amacı</b>, LaunchPad'de takılan bir programı watchdog ile kendiliğinden yeniden başlatmak ve açılışta bunun olduğunu anlamaktır: watchdog doğru süreyle kurulur, yalnız program gerçekten sağlıklıyken beslenir, gerekirse kilitlenir ve reset nedeni RESC'ten okunur. Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Watchdog'un neden gerektiğini ve "besleme" kavramını açıklayabilir.</li>
+<li>WDT0 ile WDT1'in farkını (sistem saati / PIOSC, WRC biti), iki zaman aşımı mantığını, INTTYPE, STALL ve kilit mekanizmasını veri sayfasına dayanarak anlatabilir.</li>
+<li>İstenen zaman aşımı için WDTLOAD değerini ve reset'e kadar geçen süreyi hesaplayabilir, en uzun süreyi bulabilir.</li>
+<li>Veri sayfası 12.3'teki 5 adımı register düzeyinde (API'siz) ve TivaWare ile (API'li) uygulayabilir, WDT1'de her yazmadan sonra WRC'yi bekler.</li>
+<li>Açılışta RESC register'ını okuyup watchdog reset'ini diğer reset nedenlerinden ayırt eder ve yapışkan bitleri temizler.</li>
+<li>Beslemenin nereye konacağına karar verir: işleyicide (ISR) koşulsuz beslemenin neden işe yaramadığını gösterir, "canlı bayrağı" ya da ana döngüden besleme kullanır.</li>
+<li>Ders kodlarındaki zayıflıkları bulabilir, TI'ın watchdog örneğini LaunchPad'e uyarlayabilir.</li>
+</ol></div>
+
+<h2 id="nedir">1. Watchdog nedir, neden gerekir?</h2>
+<p><b>Amaç:</b> watchdog'un çözdüğü sorunu ve "besleme" kavramını tanımak.</p>
+<p>Watchdog, yazılımdan bağımsız sayan bir geri sayıcıdır. Program sayaca belli aralıklarla "her şey yolunda" demek zorundadır. Bu işleme <b>besleme</b> (İngilizce <i>servicing</i>, <i>feeding</i>, <i>kicking</i>) denir. Besleme sayacı baştan başlatır. Program besleyemeyecek kadar bozulmuşsa sayaç sıfıra iner ve watchdog sistemi kurtarmak için harekete geçer. Veri sayfasının tanımıyla watchdog, sistem bir yazılım hatası ya da bir dış birimin beklenen biçimde yanıt vermemesi yüzünden çöktüğünde denetimi geri almak için kullanılır (§12, s. 774).</p>
+<p>Watchdog'un yakaladığı tipik durumlar:</p>
+<ul>
+<li><b>Sonsuz döngü:</b> çıkış koşulu hiç doğru olmayan bir <code>while</code>, örneğin döngü içinde yeniden okunmayan bir değişkeni bekleyen döngü (<a href="#ders-apisiz">Bölüm 7</a>'deki satır 84 böyledir).</li>
+<li><b>Yanıt vermeyen dış birim:</b> bir sensörün hazır bitini sonsuza kadar beklemek.</li>
+<li><b>Gürültü ve bellek bozulması:</b> elektriksel bir darbe ya da taşan bir yığın, program sayacını ya da bir değişkeni bozabilir. Program "çalışıyor" görünür ama yanlış yerdedir.</li>
+<li><b>Kilitlenen kesme:</b> bayrağı temizlenmeyen bir kesme işleyicisi art arda girilir ve ana döngü hiç çalışamaz.</li>
+</ul>
+<p>Watchdog hatayı düzeltmez. Yaptığı şey sistemi bilinen bir başlangıç durumuna döndürmektir: önce programa son bir şans olarak bir kesme verir, düzelmezse mikrodenetleyiciyi reset'ler. Açılışta programın "neden yeniden başladım?" sorusunu sorabilmesi için reset nedeni RESC register'ında saklanır (<a href="#resc">Bölüm 5</a>).</p>
+<p>TI'ın LaunchPad Workshop kitapçığı TM4C123GH6PM'nin zamanlayıcıları arasında "ayrı saatli 2 watchdog zamanlayıcısı" sayar (s. 1-6). Watchdog için ayrı bir Lab yoktur. Bu notun TI kısmı TivaWare'deki <code>watchdog</code> örneğinin uyarlamasıdır (<a href="#ti">Bölüm 8</a>).</p>
+
+<h2 id="iki-wdt">2. TM4C123'te iki watchdog</h2>
+<p><b>Amaç:</b> iki modülün yapısını, iki zaman aşımı mantığını ve koruma mekanizmalarını veri sayfasından öğrenmek.</p>
+<p>TM4C123GH6PM'de iki watchdog modülü vardır (s. 774). <b>WDT0</b> sistem saatiyle, <b>WDT1</b> PIOSC (16 MHz iç osilatör) ile sürülür. İki modül aynıdır. Tek fark WDT1'in ayrı bir saat alanında olması ve bu yüzden register erişimlerinin senkronize edilmesidir. Veri sayfası iki modülün bulunma nedenini bir saat kaynağının arızalanma olasılığıyla açıklar (§5.2.2.6, s. 217): PLL ya da kristal bozulsa bile PIOSC'den beslenen WDT1 saymaya devam eder.</p>
+<table>
+<thead><tr><th></th><th>WDT0</th><th>WDT1</th></tr></thead>
+<tbody>
+<tr><td>Taban adresi (s. 776)</td><td><code>0x4000.0000</code></td><td><code>0x4000.1000</code></td></tr>
+<tr><td>Saat</td><td>Sistem saati (16, 40, 80 MHz …)</td><td>PIOSC, 16 MHz (±%3, s. 219)</td></tr>
+<tr><td>WDTCTL reset değeri (s. 777)</td><td><code>0x0000.0000</code></td><td><code>0x8000.0000</code> (WRC = 1)</td></tr>
+<tr><td>Erişim kısıtı</td><td>Yok</td><td>Her yazmadan sonra WRC = 1 beklenir (§12.2.1)</td></tr>
+<tr><td>Saat açma / hazır biti</td><td>RCGCWD.R0, PRWD.R0</td><td>RCGCWD.R1, PRWD.R1</td></tr>
+<tr><td>RESC'teki biti (s. 252–253)</td><td>WDT0, bit 3</td><td>WDT1, bit 5</td></tr>
+<tr><td>Kesme</td><td colspan="2">İkisi de kesme 18'i paylaşır (vektör 34, adres <code>0x0000.0088</code>, s. 104)</td></tr>
+<tr><td>TivaWare</td><td><code>WATCHDOG0_BASE</code>, <code>SYSCTL_PERIPH_WDOG0</code></td><td><code>WATCHDOG1_BASE</code>, <code>SYSCTL_PERIPH_WDOG1</code></td></tr>
+</tbody></table>
+<p>Modülün özellikleri (s. 774): yükleme register'lı 32 bitlik geri sayıcı, açma bitli ayrı watchdog saati, maskelenebilir ve isteğe bağlı NMI olabilen kesme, kaçak yazılıma karşı kilit register'ı, açılıp kapatılabilen reset üretimi, hata ayıklayıcı CPU'yu durdurduğunda isteğe bağlı durma (stall).</p>
+
+<h3 id="blok">Blok yapısı</h3>
+<p>Şekil 1 modülün yapısını gösterir. 32 bitlik sayaç WDTLOAD'dan yüklenir ve saat kaynağıyla (WDT0'da sistem saati, WDT1'de PIOSC) geri sayar. Karşılaştırıcı sayacın <code>0x0000.0000</code>'a ulaştığını görünce denetim bloğu, WDTCTL'deki bitlere göre kesme (ya da NMI) ve reset üretir. Kesme durumu WDTRIS ve WDTMIS'ten okunur, WDTICR'a yazılarak temizlenir. WDTLOCK yazma korumasını, WDTTEST hata ayıklayıcıda durmayı denetler.</p>
+<figure><img class="fig" src="../img/wdt-blok.svg" alt="Watchdog modülü blok şeması: saat kaynağı (WDT0 sistem saati, WDT1 PIOSC), WDTLOAD'dan yüklenen 32 bitlik geri sayıcı, sıfır karşılaştırıcısı, WDTCTL (INTEN, RESEN, INTTYPE, WRC), WDTRIS/WDTMIS/WDTICR kesme mantığı, NVIC'e kesme 18 ya da NMI, sistem reset'i ve RESC, WDTLOCK ve WDTTEST.STALL"><figcaption><b>Şekil 1.</b> Watchdog modülü (veri sayfası Şekil 12-1, s. 775'e dayalı, işlev yollarıyla genişletilmiş). İki modül aynıdır. WDT0 sistem saatiyle, WDT1 PIOSC ile sayar ve WDT1'in WDTCTL'sinde WRC biti vardır.</figcaption></figure>
+
+<h3 id="iki-zaman-asimi">İki zaman aşımı: önce kesme, sonra reset</h3>
+<p>Veri sayfasının işlevsel açıklaması (§12.2, s. 775–776) şöyle özetlenebilir:</p>
+<ol>
+<li><b>Başlatma:</b> sayaç açılınca (INTEN = 1) watchdog kesmesi de açılır. Sayaç WDTLOAD'dan geri saymaya başlar.</li>
+<li><b>İlk zaman aşımı:</b> sayaç sıfıra ulaşınca WDTRIS = 1 olur ve kesme (INTTYPE = 1 ise NMI) üretilir. Sayaç WDTLOAD'dan <b>yeniden yüklenir</b> ve saymayı sürdürür.</li>
+<li><b>Besleme:</b> kesme ikinci zaman aşımından önce WDTICR'a yazılarak temizlenirse sayaç yeniden WDTLOAD'dan yüklenir, her şey baştan başlar.</li>
+<li><b>İkinci zaman aşımı:</b> sayaç, ilk kesme temizlenmeden yeniden sıfıra ulaşırsa ve RESEN = 1 ise watchdog sisteme reset işaretini verir. RESEN = 0 ise reset olmaz.</li>
+</ol>
+<p>Dört ayrıntı daha (s. 775–778, 782):</p>
+<ul>
+<li>Sayaç çalışırken WDTLOAD'a yeni değer yazılırsa sayaç hemen bu değerle yüklenir ve saymayı sürdürür. Yani <b>WDTLOAD'a yazmak da sayacı baştan başlatır</b>.</li>
+<li><b>WDTLOAD'a yazmak etkin bir kesmeyi temizlemez.</b> Kesme yalnız WDTICR'a yazılarak temizlenir. WDTICR'a herhangi bir değer yazmak hem kesmeyi temizler hem sayacı yeniden yükler.</li>
+<li>WDTLOAD'a <code>0x0000.0000</code> yazılırsa kesme hemen üretilir.</li>
+<li>Watchdog reset sonrasında kapalıdır. Veri sayfası en güçlü koruma için watchdog'un reset vektörünün başında açılabileceğini belirtir.</li>
+</ul>
+<p>Watchdog reset'i çekirdeği ve bütün çevre birimlerini reset'ler, JTAG'da yalnız pin ayarlarını (Tablo 5-2, s. 213). Watchdog modülü de reset'lenir: program baştan başlar ve watchdog'u yeniden kurmalıdır. Reset işareti iç reset zaman aşımından sonra (T<sub>IRWDR</sub> nominal 2,10 µs, Tablo 24-11, s. 1370) bırakılır, işlemci yığın göstericisini ve reset vektörünü yükleyip çalışmaya başlar (s. 217–218).</p>
+<div class="box warn"><span class="box-title">Temizlenmeyen kesme işleyiciye geri döner</span>
+<p>Watchdog kesmesi seviye duyarlıdır: WDTICR'a yazılana kadar etkin kalır. Cortex-M4'te seviye duyarlı bir kesmenin işareti işleyiciden dönerken hâlâ etkinse kesme yeniden bekleyen duruma geçer ve işlemci işleyiciye hemen yeniden girer (§3.1.2.1–3.1.2.2, s. 124–125). Watchdog işleyicisi beslemeden dönerse işlemci işleyiciye art arda girer (tail-chaining), ana döngü bir daha çalışamaz. RESEN = 1 ise bu sorun değildir, hatta istenen davranıştır: ikinci zaman aşımında reset gelir (TI'ın örneği böyle çalışır, <a href="#ti">Bölüm 8</a>). <b>RESEN = 0 iken temizlenmeyen kesme sistemi kurtarmak yerine kilitler.</b></p></div>
+
+<h3 id="inttype">Kesme mi, NMI mı?</h3>
+<p>WDTCTL'deki <b>INTTYPE</b> biti (bit 2, s. 781) ilk zaman aşımının türünü seçer: 0 standart kesme (kesme 18), 1 maskelenemeyen kesme, NMI (Non-Maskable Interrupt). NMI istisna 2'dir, vektör adresi <code>0x0000.0008</code>, önceliği sabit −2'dir: reset dışında hiçbir istisna onu engelleyemez ya da kesemez (Tablo 2-8, s. 102–103). PRIMASK = 1 iken ya da daha öncelikli bir işleyici takılmışken standart kesme hiç gelmez, NMI yine gelir. Dolayısıyla son bir kurtarma işi (bir hatayı kaydetmek, çıkışları güvenli duruma almak) NMI ile daha güvenilirdir.</p>
+<p>NMI'ın dört kaynağı vardır: NMI pini (PD7 ya da PF0), ana osilatör doğrulama hatası, INTCTRL.NMISET ve INTTYPE = 1 olan watchdog. İşleyici nedeni kendisi ayırt etmelidir (§5.2.3, s. 218), örneğin WDTMIS'e bakarak. TivaWare'de tür <code>WatchdogIntTypeSet(base, WATCHDOG_INT_TYPE_NMI)</code> ile seçilir. NMI işleyicisi <code>WatchdogIntRegister</code> ile değil <code>IntRegister(FAULT_NMI, …)</code> ile kaydedilir, ve kesme NMI işleyicisinde de <code>WatchdogIntClear</code> ile temizlenmelidir (<code>watchdog.c</code>, belge yorumları satır 343–347 ve 526–528). CCS startup dosyasındaki varsayılan <code>NmiSR</code> sonsuz bir döngüdür.</p>
+
+<h3 id="kilit">INTEN tek yönlüdür, WDTLOCK yazmayı kilitler</h3>
+<p>Watchdog'un kaçak bir yazılım tarafından kapatılmaması için iki koruma vardır:</p>
+<ul>
+<li><b>INTEN bir kez 1 yapılınca yazılım onu silemez.</b> Veri sayfasına göre INTEN 1 olduktan sonra bu bite yapılan bütün yazmalar yok sayılır. Yazmayı yeniden mümkün kılan tek yol bir donanım reset'i ya da SRWD register'ıyla (s. 310) yapılan bir yazılım reset'idir (s. 780–781). INTEN = 1 aynı zamanda watchdog'u başlatan bittir. Yani başlatılan watchdog INTEN'e yazılarak durdurulamaz (yalnız reset ya da SRWD ile modül reset'i). RESEN ise kilit yokken silinebilir (<code>WatchdogResetDisable</code>).</li>
+<li><b>WDTLOCK</b> (ofset 0xC00, s. 786): <code>0x1ACC.E551</code> yazmak diğer bütün register'lara yazmayı açar. <b>Başka herhangi bir değer yazmak kilidi yeniden koyar</b>. Kilit 2 saat çevrimi sonra etkin olur. Okunduğunda kilitliyse <code>0x0000.0001</code>, açıksa <code>0x0000.0000</code> döner. Reset değeri 0'dır: watchdog açık (kilitsiz) başlar. 12.3'teki "herhangi bir değer yazılarak kilitlenir" ifadesi gevşektir: s. 786'ya göre <code>0x1ACC.E551</code> kilidi açar.</li>
+</ul>
+<p>Kilitten etkilenmeyen iki register vardır. <b>WDTICR</b> kilitten etkilenmez, böylece kesme her zaman temizlenebilir ve watchdog kilitliyken de beslenebilir (s. 782). <b>WDTTEST</b> de kilitten etkilenmez, ama veri sayfası kilitliyken WDTTEST'e yazılmamasını önerir (s. 786). Sonuç: kilitli bir watchdog'u yalnız WDTICR ile besleyebilirsiniz. WDTLOAD'a yazarak beslemek için önce kilidi açmak gerekir.</p>
+<p>Veri sayfasının 12.3'teki 5. adımı "INTEN'i kur: watchdog'u ve kesmeleri aç, denetim register'ını kilitle" der (s. 776). Register açıklaması ise yalnız INTEN yazmalarının yok sayıldığını söyler (s. 780–781). Bu yüzden buradaki "kilit" büyük olasılıkla INTEN'in tek yönlü olmasıdır. INTTYPE gibi diğer ayarlar her durumda 5. adımdan önce yapılır. Bütün register'ların kilitlenmesi ayrı bir iştir: WDTLOCK'a <code>0x1ACC.E551</code> dışında bir değer yazılır.</p>
+
+<h3 id="stall">Hata ayıklarken: STALL</h3>
+<p>WDTTEST'in <b>STALL</b> biti (bit 8, ofset 0x418, reset 0, s. 785): 0 iken mikrodenetleyici hata ayıklayıcıyla durdurulsa da watchdog saymayı sürdürür. 1 iken hata ayıklayıcı işlemciyi durdurunca watchdog da durur, işlemci devam edince kaldığı yerden sayar. STALL = 0 ve RESEN = 1 iken bir kesme noktasında birkaç saniye beklemek kartı reset'ler, çünkü durmuş işlemci watchdog'u besleyemez (<a href="#ornek-stall">6.5</a>).</p>
+
+<h3 id="wdt1">WDT1 ve WRC</h3>
+<p>WDT1 bağımsız bir saat alanında olduğu için register'larına art arda yazılamaz (§12.2.1, s. 776). İki yazma arasında, ya da bir yazmanın ardından okumadan önce, WDTCTL'deki <b>WRC</b> (Write Complete, bit 31) biti beklenir. WRC yazma başlayınca 0 olur, yazma tamamlanınca 1 olur. Art arda okumalarda kısıt yoktur. WDT0 sistem saatiyle çalıştığı için bu kısıt yoktur ve onda bit 31 ayrılmıştır (s. 780).</p>
+<div class="box warn"><span class="box-title">TivaWare WRC'yi beklemez</span>
+<p>TivaWare 2.1.4'ün <code>watchdog.c</code> dosyasındaki hiçbir fonksiyon WRC'yi denetlemez: <code>WatchdogReloadSet</code> doğrudan WDTLOAD'a, <code>WatchdogResetEnable</code> doğrudan WDTCTL'ye yazar (satır 262–274, 125–137). WDT1 TivaWare ile kullanılacaksa beklemeyi kullanıcı yazar: <code>while ((HWREG(WATCHDOG1_BASE + WDT_O_CTL) &amp; WDT_CTL_WRC) == 0) { }</code>. Hibernation modülünde ise TivaWare bu beklemeyi kendisi yapıyordu (<a href="../uyku-hibernate/#hib-saat">Uyku notu</a>).</p></div>
+
+<h3 id="registerlar">Register özeti</h3>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Tür, reset</th><th>İçerik</th><th>Sayfa</th></tr></thead>
+<tbody>
+<tr><td>WDTLOAD</td><td>0x000</td><td>RW, <code>0xFFFF.FFFF</code></td><td>32 bitlik yükleme değeri. Yazılınca sayaç hemen yeniden yüklenir</td><td>778</td></tr>
+<tr><td>WDTVALUE</td><td>0x004</td><td>RO, <code>0xFFFF.FFFF</code></td><td>Sayacın o anki değeri</td><td>779</td></tr>
+<tr><td>WDTCTL</td><td>0x008</td><td>RW, 0 (WDT1: <code>0x8000.0000</code>)</td><td>WRC (31, yalnız WDT1), INTTYPE (2), RESEN (1), INTEN (0)</td><td>780–781</td></tr>
+<tr><td>WDTICR</td><td>0x00C</td><td>WO</td><td>Herhangi bir değer yazmak kesmeyi siler ve sayacı yeniden yükler. Kilitten etkilenmez</td><td>782</td></tr>
+<tr><td>WDTRIS</td><td>0x010</td><td>RO, 0</td><td>WDTRIS (0): zaman aşımı oldu</td><td>783</td></tr>
+<tr><td>WDTMIS</td><td>0x014</td><td>RO, 0</td><td>WDTMIS (0) = WDTRIS AND INTEN</td><td>784</td></tr>
+<tr><td>WDTTEST</td><td>0x418</td><td>RW, 0</td><td>STALL (8)</td><td>785</td></tr>
+<tr><td>WDTLOCK</td><td>0xC00</td><td>RW, 0</td><td>Yaz: <code>0x1ACC.E551</code> açar, başka değer kilitler. Oku: 1 kilitli, 0 açık</td><td>786</td></tr>
+</tbody></table>
+<p>Ofset 0xFD0–0xFFC'deki WDTPeriphID0–7 ve WDTPCellID0–3 sabit kimlik register'larıdır (s. 787–798), programlamada kullanılmaz. <code>inc/tm4c123gh6pm.h</code>'de adlar <code>WATCHDOG0_LOAD_R</code>, <code>WATCHDOG1_CTL_R</code> gibidir. Bit maskeleri <code>WDT_CTL_INTEN</code> (0x1), <code>WDT_CTL_RESEN</code> (0x2), <code>WDT_CTL_INTTYPE</code> (0x4), <code>WDT_CTL_WRC</code> (<code>0x80000000</code>), <code>WDT_TEST_STALL</code> (0x100), <code>WDT_LOCK_UNLOCK</code> (<code>0x1ACCE551</code>), <code>WDT_LOCK_LOCKED</code> (1)'dir.</p>
+
+<h2 id="sure">3. Süre hesabı</h2>
+<p><b>Amaç:</b> istenen zaman aşımı için WDTLOAD değerini ve reset'e kadar geçen süreyi hesaplamak.</p>
+<p>Sayaç her saat çevriminde bir azalır ve sıfıra ulaşınca zaman aşımı olur. WDTLOAD = 0 yazılınca kesme hemen geldiği için (s. 778) ilk zaman aşımına kadar geçen süre:</p>
+<p style="text-align:center"><b>T = WDTLOAD / f</b> &nbsp;&nbsp; (f: WDT0'da sistem saati, WDT1'de PIOSC = 16 MHz)</p>
+<p>Veri sayfası, yeniden yüklemenin ayrıca bir saat çevrimi alıp almadığını açıkça yazmaz. Ardışık iki zaman aşımı arası büyük olasılıkla (WDTLOAD + 1) / f'dir. Fark tek bir saat çevrimidir (16 MHz'te 62,5 ns) ve watchdog için önemsizdir. Bu yüzden ders kodlarındaki gibi 1 s için WDTLOAD = f − 1 de, TI örneğindeki gibi WDTLOAD = f de doğrudur. Bu notta T ≈ WDTLOAD / f kullanılır.</p>
+<p>Reset ancak ikinci zaman aşımında geldiği için <b>son beslemeden reset'e kadar geçen süre ≈ 2T</b>'dir. Program bir anda takılırsa reset'e kadar geçen süre T ile 2T arasında, ya da beslemenin nasıl yapıldığına göre biraz daha uzundur (<a href="#ornek-apisiz">6.1</a>'de 2T ile 3T arası).</p>
+<table>
+<thead><tr><th>Saat (f)</th><th>1 s için WDTLOAD (ya da f)</th><th>En uzun T (WDTLOAD = <code>0xFFFF.FFFF</code>)</th><th>Son beslemeden reset'e en uzun süre (2T)</th></tr></thead>
+<tbody>
+<tr><td>16 MHz (PIOSC, reset sonrası; 6.1)</td><td>16&nbsp;000&nbsp;000 − 1 = 15&nbsp;999&nbsp;999</td><td>268,4 s</td><td>536,9 s</td></tr>
+<tr><td>40 MHz (PLL, SYSDIV 5; 6.2, ders kodları)</td><td>40&nbsp;000&nbsp;000 − 1 = 39&nbsp;999&nbsp;999</td><td>107,4 s</td><td>214,7 s</td></tr>
+<tr><td>80 MHz (PLL, en yüksek)</td><td>80&nbsp;000&nbsp;000 − 1 = 79&nbsp;999&nbsp;999</td><td>53,7 s</td><td>107,4 s</td></tr>
+<tr><td>WDT1, PIOSC 16 MHz (sistem saatinden bağımsız; 6.4)</td><td>15&nbsp;999&nbsp;999</td><td>268,4 s (±%3: 260–276 s)</td><td>536,9 s</td></tr>
+</tbody></table>
+<p>Hesap: 4&nbsp;294&nbsp;967&nbsp;295 / 16&nbsp;000&nbsp;000 = 268,4 s. 32 bitlik sayaç SysTick'in 24 bitlik sayacından (16 MHz'te en çok 1,05 s, <a href="../systick/#en-uzun">SysTick notu</a>) çok daha uzun süreler verir. Watchdog'un süresi uygulamaya göre seçilir: en uzun normal döngü süresinden belirgin biçimde uzun, ama sistemin takılı kalmasına izin verilebilecek süreden kısa. WDT0'ın süresi sistem saatine bağlıdır: program saati değiştirirse (örneğin 16 MHz'ten 80 MHz'e) aynı WDTLOAD 5 kat kısa bir süre verir. WDT1'in süresi değişmez.</p>
+<figure><img class="fig" src="../img/wdt-zaman-asimi.svg" alt="İki zaman aşımı zaman çizelgesi, 16 MHz ve WDTLOAD = 15 999 999 (T yaklaşık 1 s): üstte sağlıklı çalışma, WDTVALUE her saniye 15 999 999'dan 0'a iner ve işleyici WDTICR'a yazar; altta ana döngü t ≈ 2,4 s'de takılır, t = 3 s'deki kesme son kez besler, t = 4 s'de besleme yok ve WDTRIS 1 kalır, t = 5 s'de ikinci zaman aşımında reset ve RESC.WDT0 = 1"><figcaption><b>Şekil 2.</b> 6.1 örneğinin zaman çizelgesi (16 MHz, WDTLOAD = 15&nbsp;999&nbsp;999, T ≈ 1 s). Üstte ana döngü sağlıklıdır ve her kesmede beslenir. Altta SW1'e t ≈ 2,4 s'de basılır ve ana döngü takılır. t = 3 s'deki kesme, basıştan önce kurulmuş canlı bayrağıyla son kez besler. t = 4 s'deki zaman aşımı temizlenmez, t = 5 s'de reset gelir: son beslemeden 2T, basıştan yaklaşık 2,6 s sonra.</figcaption></figure>
+
+<h2 id="baslatma">4. Başlatma adımları</h2>
+<p><b>Amaç:</b> veri sayfasının watchdog başlatma sırasını adım adım uygulamak.</p>
+<p>Veri sayfası 12.3, watchdog'un saatinin RCGCWD ile açılmasını ister (s. 776) ve ardından beş adım verir. Bu nottaki tablo, Şekil 3 ve kod yorumlarındaki adım numaraları bu beş adımdır. Saat açma "ön adım" olarak numarasız, isteğe bağlı satırlar "—" ile gösterilmiştir.</p>
+<table>
+<thead><tr><th>Adım</th><th>İş</th><th>Register (veri sayfası)</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>Ön adım</td><td>Modülün saati ve hazır bekleme</td><td>RCGCWD (<code>0x400F.E600</code>) R0 / R1 = 1 (s. 337). Saat açılmadan erişim bus fault üretir. Sonra PRWD (<code>0x400F.EA00</code>) R0 / R1 = 1 beklenir (s. 403). Veri sayfası en az 3 sistem saati bekleme ister (s. 227)</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0)</code>, <code>SysCtlPeripheralReady(…)</code></td></tr>
+<tr><td>—</td><td>Hata ayıklayıcıda durma (isteğe bağlı)</td><td>WDTTEST.STALL = 1, kilitten önce</td><td><code>WatchdogStallEnable(base)</code></td></tr>
+<tr><td>1</td><td>Yükleme değeri</td><td>WDTLOAD = f × T (− 1)</td><td><code>WatchdogReloadSet(base, değer)</code></td></tr>
+<tr><td>2</td><td>WDT1 ise WRC'yi bekle</td><td>WDTCTL.WRC = 1</td><td>Yok, kullanıcı yazar</td></tr>
+<tr><td>3</td><td>Reset istenirse RESEN</td><td>WDTCTL.RESEN = 1</td><td><code>WatchdogResetEnable(base)</code></td></tr>
+<tr><td>4</td><td>WDT1 ise WRC'yi bekle</td><td>WDTCTL.WRC = 1</td><td>Yok, kullanıcı yazar</td></tr>
+<tr><td>—</td><td>NMI istenirse (isteğe bağlı)</td><td>WDTCTL.INTTYPE = 1, adım 5'ten önce</td><td><code>WatchdogIntTypeSet(base, WATCHDOG_INT_TYPE_NMI)</code></td></tr>
+<tr><td>5</td><td>Watchdog'u ve kesmeyi aç</td><td>WDTCTL.INTEN = 1. Sayaç başlar, bu bit artık yalnız reset ile silinir</td><td><code>WatchdogEnable(base)</code> ya da aynı işi yapan <code>WatchdogIntEnable(base)</code></td></tr>
+<tr><td>—</td><td>NVIC (kesme kullanılacaksa)</td><td>EN0 (<code>0xE000.E100</code>) bit 18 = 1 (s. 104)</td><td><code>IntEnable(INT_WATCHDOG)</code> ya da bunu da yapan <code>WatchdogIntRegister(base, işleyici)</code></td></tr>
+<tr><td>—</td><td>Tam kilit (isteğe bağlı)</td><td>WDTLOCK ← <code>0x1ACC.E551</code> dışında bir değer (s. 786)</td><td><code>WatchdogLock(base)</code></td></tr>
+</tbody></table>
+<p>Yalnız reset isteyen bir program da INTEN'i kurmak zorundadır, çünkü watchdog'u başlatan bit odur. Kesme NVIC'te açılmazsa ilk zaman aşımı yalnız WDTRIS'i kurar, işleyici çalışmaz, ikinci zaman aşımı reset'tir (<a href="#ornek-dongu">6.3</a>). Kilit konulacaksa beslemenin WDTICR ile yapılacağı unutulmamalıdır. NVIC'in adım 5'ten önce mi sonra mı açıldığı önemsizdir: INTEN'den önce WDTRIS 0'dır ve bekleyen kesme yoktur, INTEN'den sonra ilk zaman aşımı T kadar uzaktadır. Bu yüzden 6.1 NVIC'i 5. adımdan sonra, 6.2 ise <code>WatchdogIntRegister</code> ile önce açar. WDTLOCK ise her zaman en sona konur.</p>
+<figure><img class="fig" src="../img/wdt-baslatma.svg" alt="Watchdog başlatma akışı: ön adım RCGCWD ve PRWD bekleme; isteğe bağlı WDTTEST.STALL; 1 WDTLOAD; 2 WDT1 ise WRC bekle; 3 WDTCTL.RESEN; 4 WDT1 ise WRC bekle; isteğe bağlı WDTCTL.INTTYPE (NMI); 5 WDTCTL.INTEN, watchdog sayar; NVIC EN0 bit 18; isteğe bağlı WDTLOCK, 0x1ACC.E551 dışında bir değer; çalışma: işleyici canlı bayrağı kuruluysa WDTICR'a yazar (ya da ana döngü WDTLOAD'a yazar)"><figcaption><b>Şekil 3.</b> Watchdog başlatma sırası. Numaralar veri sayfası 12.3'ün sırasıdır (s. 776) ve yukarıdaki tabloyla aynıdır. 2. ve 4. adımlar yalnız WDT1 içindir. INTEN = 1 olduktan sonra watchdog INTEN'e yazılarak durdurulamaz (yalnız reset ya da SRWD ile modül reset'i).</figcaption></figure>
+<h3 id="api-esleme">TivaWare fonksiyonlarının register karşılığı</h3>
+<p>TivaWare 2.1.4 <code>driverlib/watchdog.c</code>'den (satır numaraları fonksiyon başlarıdır):</p>
+<table>
+<thead><tr><th>Fonksiyon</th><th>Yaptığı</th></tr></thead>
+<tbody>
+<tr><td><code>WatchdogReloadSet(b, v)</code> (262)</td><td>WDTLOAD = v</td></tr>
+<tr><td><code>WatchdogResetEnable</code> / <code>Disable</code> (125, 153)</td><td>WDTCTL |= RESEN / &amp;= ~RESEN</td></tr>
+<tr><td><code>WatchdogEnable</code> (97), <code>WatchdogIntEnable</code> (427)</td><td>İkisi de WDTCTL |= INTEN. Biri çağrılınca diğeri gereksizdir</td></tr>
+<tr><td><code>WatchdogRunning</code> (70)</td><td>WDTCTL &amp; INTEN</td></tr>
+<tr><td><code>WatchdogIntRegister(b, f)</code> (353)</td><td><code>IntRegister(INT_WATCHDOG_TM4C123, f)</code> (kesme 18, vektör 34; tablo RAM'e taşınır) ve <code>IntEnable(…)</code></td></tr>
+<tr><td><code>WatchdogIntClear</code> (501)</td><td>WDTICR = 1</td></tr>
+<tr><td><code>WatchdogIntStatus(b, masked)</code> (457)</td><td>WDTMIS ya da WDTRIS</td></tr>
+<tr><td><code>WatchdogIntTypeSet(b, t)</code> (539)</td><td>WDTCTL.INTTYPE = t (<code>WATCHDOG_INT_TYPE_NMI</code> = 4)</td></tr>
+<tr><td><code>WatchdogStallEnable</code> (575)</td><td>WDTTEST |= STALL</td></tr>
+<tr><td><code>WatchdogLock</code> / <code>Unlock</code> / <code>LockState</code> (178, 204, 230)</td><td>WDTLOCK = 1 / = <code>0x1ACCE551</code> / WDTLOCK == 1</td></tr>
+<tr><td><code>SysCtlResetCauseGet</code> / <code>Clear(x)</code> (<code>sysctl.c</code> 1764, 1791)</td><td>RESC'i döndürür / RESC &amp;= ~x</td></tr>
+</tbody></table>
+
+<h2 id="resc">5. Reset nedeni: RESC</h2>
+<p><b>Amaç:</b> açılışta programın watchdog yüzünden mi, güç verildiği için mi, RESET düğmesiyle mi başladığını anlamak.</p>
+<p>TM4C123GH6PM'nin altı reset kaynağı vardır: POR, RST pini, brown-out (BOR), yazılım reset'i, watchdog ve MOSC hatası (§5.2.2.1, s. 213). Reset'ten sonra neden <b>RESC</b> register'ına yazılır (<code>0x400F.E05C</code>, s. 252–253):</p>
+<table>
+<thead><tr><th>Bit</th><th>Ad</th><th>1 ise</th><th>Başlık / TivaWare</th></tr></thead>
+<tbody>
+<tr><td>16</td><td>MOSCFAIL</td><td>Ana osilatör doğrulaması başarısız oldu ve reset üretti</td><td><code>SYSCTL_RESC_MOSCFAIL</code> / (2.1.4'te tanımı yok)</td></tr>
+<tr><td>5</td><td>WDT1</td><td>Watchdog 1 zaman aşımıyla reset üretti</td><td><code>SYSCTL_RESC_WDT1</code> / <code>SYSCTL_CAUSE_WDOG1</code></td></tr>
+<tr><td>4</td><td>SW</td><td>Yazılım reset'i (örneğin APINT.SYSRESREQ, s. 217)</td><td><code>SYSCTL_RESC_SW</code> / <code>SYSCTL_CAUSE_SW</code></td></tr>
+<tr><td>3</td><td>WDT0</td><td>Watchdog 0 zaman aşımıyla reset üretti</td><td><code>SYSCTL_RESC_WDT0</code> / <code>SYSCTL_CAUSE_WDOG0</code></td></tr>
+<tr><td>2</td><td>BOR</td><td>Brown-out (BOR0 ya da BOR1)</td><td><code>SYSCTL_RESC_BOR</code> / <code>SYSCTL_CAUSE_BOR</code></td></tr>
+<tr><td>1</td><td>POR</td><td>Güç açılışı (Hibernate'ten uyanış da)</td><td><code>SYSCTL_RESC_POR</code> / <code>SYSCTL_CAUSE_POR</code></td></tr>
+<tr><td>0</td><td>EXT</td><td>RST pini (LaunchPad'de RESET düğmesi)</td><td><code>SYSCTL_RESC_EXT</code> / <code>SYSCTL_CAUSE_EXT</code></td></tr>
+</tbody></table>
+<ul>
+<li><b>Bitler yapışkandır:</b> birden çok reset boyunca korunur. Tek istisna dahili POR'dur: POR olunca POR dışındaki bütün bitler silinir (s. 213–214, 252). Program RESC'i temizlemezse, örneğin bir RESET düğmesi basışından sonra hem EXT hem önceki WDT0 görülür.</li>
+<li><b>Temizleme 0 yazarak yapılır</b> (her bitin açıklaması "Writing a 0 to this bit clears it"). Okunan bitleri silmenin güvenli yolu <code>SYSCTL_RESC_R &amp;= ~neden;</code>'dir. TivaWare'de <code>SysCtlResetCauseClear(neden)</code> tam olarak bunu yapar (<code>sysctl.c</code> satır 1791–1797). TivaWare'in belgesi de nedenler okunduktan sonra hepsinin temizlenmesini önerir.</li>
+<li>TivaWare 2.1.4'ün <code>SYSCTL_CAUSE_</code> listesinde <code>HSRVREQ</code> ve <code>HIB</code> da vardır. Bunlar TM4C123GH6PM'nin RESC'inde yoktur. Hibernate'ten uyanış POR olarak görülür (<a href="../uyku-hibernate/#cikis">Uyku notu</a>).</li>
+</ul>
+<p>Açılış akışı Şekil 4'teki gibidir: RESC bir kez okunur, değer bir değişkende saklanır, register temizlenir, sonra karar verilir ve watchdog yeniden kurulur. Watchdog reset'leri sayılmak istenirse sayaç reset'ten etkilenmeyen bir yerde tutulmalıdır: C başlangıç kodu RAM'deki değişkenleri her reset'te yeniden ilklendirir. Hibernation modülünün HIBDATA sözcükleri VDD var oldukça korunur (<a href="../uyku-hibernate/#hibdata">Uyku notu</a>), EEPROM da kullanılabilir.</p>
+<figure><img class="fig" src="../img/wdt-reset-nedeni.svg" alt="Açılışta reset nedenini belirleme akışı: RESC okunur ve saklanır, okunan bitler temizlenir; WDT0 (bit 3) ya da WDT1 (bit 5) ise hata durumu (kırmızı LED), değilse normal açılış; iki yol watchdog kurulumunda birleşir. Yanda RESC bit düzeni ve temizlenmeyen bitlerin birikme örneği"><figcaption><b>Şekil 4.</b> Açılışta reset nedenini ayırt etme (RESC, s. 252–253). Okunan değer saklanıp register temizlenir. Böylece bir sonraki açılışta yalnız yeni neden görülür. 6.1 ve 6.2 bu akışın watchdog dalını uygular.</figcaption></figure>
+
+<h2 id="ornekler">6. Örnekler</h2>
+<p>Örnekler LaunchPad içindir ve TivaWare 2.1.4 başlıklarıyla clang <code>-Wall</code> altında uyarısız derlenir. API'siz örnekler <code>inc/tm4c123gh6pm.h</code>'nin register adlarını kullanır ve işleyiciyi startup dosyasındaki tabloya bağlar (<a href="../systick/#baglama">SysTick notu, Yol 1</a>). API'li örnekler <code>driverlib</code> fonksiyonlarını kullanır. Bütün örneklerde SW1 (PF4) basılı tutulunca ana döngü bir yazılım hatasını taklit ederek takılır.</p>
+
+<h3 id="besleme-yeri">Besleme nereye konur?</h3>
+<p>Watchdog'un değeri, beslemenin yalnız program sağlıklıyken yapılmasına bağlıdır. Şekil 5 üç yaklaşımı karşılaştırır:</p>
+<ul>
+<li><b>A. İşleyicide koşulsuz besleme:</b> watchdog kesmesi her zaman aşımında WDTICR'a yazar. Ana döngü takılsa bile kesmeler gelmeye devam ettiği için watchdog her seferinde beslenir, ikinci zaman aşımı hiç olmaz. RESEN = 1 olsa da reset gelmez. Bu durumda watchdog yalnız bir periyodik zamanlayıcıdır. Derste kullanılan <code>watchdogapisiz</code> ve <code>wachdogapili2</code> böyledir (<a href="#ders-kodlari">Bölüm 7</a>).</li>
+<li><b>B. İşleyicide "canlı bayrağı" ile besleme:</b> ana döngü her turunda bir bayrak kurar. İşleyici bayrak kuruluysa siler ve besler, değilse beslemeden döner. Ana döngü takılınca bayrak kurulmaz, ikinci zaman aşımında reset gelir. İlk zaman aşımı kesmesi, reset'ten önce bir hata kaydı yazmak ya da çıkışları güvenli duruma almak için kullanılabilir (<a href="#ornek-apisiz">6.1</a>, <a href="#ornek-apili">6.2</a>, TI örneği).</li>
+<li><b>C. Ana döngüden besleme:</b> kesme kullanılmaz. Ana döngü her turunda WDTLOAD'a yazar. Sayaç hiç sıfıra inmediği için WDTRIS de hiç kurulmaz. Döngü takılınca ilk zaman aşımı WDTRIS'i kurar, ikincisi reset üretir. En basit ve en yaygın yoldur: beslemenin olduğu satıra ulaşılması, döngünün gerçekten döndüğünün kanıtıdır (<a href="#ornek-dongu">6.3</a>).</li>
+</ul>
+<figure><img class="fig" src="../img/wdt-besleme-yeri.svg" alt="Beslemenin yeri, üç yaklaşım: işleyicide koşulsuz besleme, ana döngü takılsa da kesme her seferinde WDTICR'a yazar ve reset gelmez; işleyicide canlı bayrağı ile besleme, ana döngü bayrağı kurar, takılınca bayrak kurulmaz ve ikinci zaman aşımında reset gelir; ana döngüden besleme, döngü her turunda WDTLOAD'a yazar, takılınca iki zaman aşımı sonra reset"><figcaption><b>Şekil 5.</b> Beslemenin yeri. Yalnız B ve C takılan ana döngüyü yakalar. İşleyicide koşulsuz besleme (A) yalnız işlemcinin kesmeleri işleyebildiğini kanıtlar, programın doğru çalıştığını değil.</figcaption></figure>
+<p>Birden çok görevi olan programlarda (örneğin bir RTOS altında) her görev kendi bayrağını kurar. Besleme yalnız bütün bayraklar kuruluysa yapılır, ardından bayraklar silinir. Bayrak işleyiciyle ana döngü arasında paylaşıldığı için <code>volatile</code> tanımlanır.</p>
+
+<h3 id="ornek-apisiz">6.1 Watchdog 0, API'siz <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> register düzeyinde, 16 MHz'te 1 s'lik bir watchdog kurmak. İşleyici yalnız ana döngü canlıysa besler. SW1 basılı tutulunca ana döngü takılır ve kart reset'lenir. Açılışta RESC'e bakılır, önceki reset watchdog'dansa kırmızı LED yanar.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: wdt_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı. Watchdog 0, API'siz: işleyici (ISR) yalnız ana döngü canlıysa besler.
+// Saat kodu yok: sistem saati reset sonrasındaki PIOSC 16 MHz'tir.
+// İşleyici startup dosyasındaki tablodan bağlanır (tm4c123gh6pm_startup_ccs.c):
+//   extern void WDT0_Isleyici(void);  ve "Watchdog timer" satırına WDT0_Isleyici
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define SW1      0x10u  // PF4
+#define KIRMIZI  0x02u  // PF1: son reset watchdog'dan
+#define MAVI     0x04u  // PF2: her beslemede değişir (kalp atışı)
+
+volatile uint32_t g_canli = 0;  // ana döngü kurar, işleyici siler
+
+void WDT0_Isleyici(void)
+{
+    if (g_canli)  // ana döngü son 1 s içinde döndü mü?
+    {
+        g_canli = 0;
+        WATCHDOG0_ICR_R = 1;  // besle: kesmeyi sil ve yeniden yükle (WO, '=' ile)
+        GPIO_PORTF_DATA_R ^= MAVI;
+    }
+    // Döngü takıldıysa temizleme yok: RIS = 1 kalır, ikinci zaman aşımında reset.
+}
+
+int main(void)
+{
+    uint32_t neden = SYSCTL_RESC_R;  // reset nedeni (yapışkan bitler)
+    SYSCTL_RESC_R &amp;= ~neden;  // okunanları temizle (0 yazılarak)
+
+    SYSCTL_RCGCGPIO_R |= 0x20;  // Port F saati
+    while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) { }
+    GPIO_PORTF_DIR_R = (GPIO_PORTF_DIR_R &amp; ~SW1) | KIRMIZI | MAVI;
+    GPIO_PORTF_PUR_R |= SW1;
+    GPIO_PORTF_DEN_R |= SW1 | KIRMIZI | MAVI;
+    if (neden &amp; SYSCTL_RESC_WDT0)
+    {
+        GPIO_PORTF_DATA_R |= KIRMIZI;  // önceki reset watchdog'dandı
+    }
+
+    // Ön adım: Watchdog 0 saati ve hazır bekleme (RCGCWD s. 337, PRWD s. 403)
+    SYSCTL_RCGCWD_R |= SYSCTL_RCGCWD_R0;
+    while ((SYSCTL_PRWD_R &amp; SYSCTL_PRWD_R0) == 0) { }
+    WATCHDOG0_TEST_R |= WDT_TEST_STALL;  // hata ayıklayıcı durdurunca sayma (6.5)
+    // 1. Yükleme değeri: 16 000 000 - 1 -&gt; zaman aşımı yaklaşık 1 s
+    WATCHDOG0_LOAD_R = 16000000u - 1u;
+    // 2. (yalnız WDT1) WRC bekle
+    // 3. İkinci zaman aşımında reset
+    WATCHDOG0_CTL_R |= WDT_CTL_RESEN;
+    // 4. (yalnız WDT1) WRC bekle
+    // 5. INTEN = 1: watchdog sayar; bu bit artık yalnız reset ile silinir
+    WATCHDOG0_CTL_R |= WDT_CTL_INTEN;
+    NVIC_EN0_R = 1u &lt;&lt; 18;  // NVIC: kesme 18 (Watchdog 0 ve 1)
+    WATCHDOG0_LOCK_R = WDT_LOCK_LOCKED;  // tam kilit: 0x1ACCE551 dışındaki her değer
+
+    while (1)
+    {
+        g_canli = 1;  // "ana döngü canlı"
+        while ((GPIO_PORTF_DATA_R &amp; SW1) == 0) { }  // SW1 basılıyken takıl (hata benzetimi)
+    }
+}</code></pre>
+<p><b>Kodun ayrıntıları:</b></p>
+<ul>
+<li>PLL ayarı yoktur. Sistem saati reset sonrasındaki PIOSC'dir (16 MHz). WDTLOAD = 15&nbsp;999&nbsp;999, T ≈ 1 s (<a href="#sure">Bölüm 3</a>).</li>
+<li>RESC programın en başında bir kez okunur ve temizlenir. Böylece bir sonraki açılışta eski WDT0 biti görülmez.</li>
+<li>WDTICR yalnız yazılabilir (WO) bir register'dır. Bu yüzden <code>|=</code> değil <code>=</code> ile yazılır. <code>|=</code> önce okuma yapar ve okunan değer tanımsızdır (s. 782).</li>
+<li>Kilit en sonda konur. Kilitten sonra WDTLOAD'a, WDTCTL'ye yazılamaz, ama işleyicideki WDTICR yazması çalışır. STALL kilitten önce yazılır.</li>
+<li>Bayrak temizlenmediğinde işleyici beslemeden döner. Kesme seviye duyarlı olduğu için işlemci işleyiciye art arda girer (<a href="#iki-zaman-asimi">Bölüm 2</a>), mavi LED artık değişmez, reset kesinleşir.</li>
+</ul>
+<p><b>Beklenen davranış:</b> mavi LED her saniye durum değiştirir (2 s periyotla yanıp söner). SW1 basılı tutulunca mavi LED donar, yaklaşık 2–3 s sonra kart reset'lenir ve kırmızı LED yanar (Şekil 2: basış 2,4 s'de, son besleme 3 s'de, reset 5 s'de). Program baştan başladığı için mavi LED yeniden yanıp sönmeye başlar. Kırmızı LED bir sonraki reset'e kadar yanık kalır. RESET düğmesine basılınca RESC = EXT olur ve kırmızı LED söner. Kısa basışlarda reset olmaz: işleyici, iki kesme arasındaki aralığın tamamında ana döngü hiç dönmemişse beslemez. 1 s'den kısa bir basış hiçbir aralığı tümüyle kaplayamaz. 2 s'den uzun bir basış mutlaka kaplar. Arası basışın kesmelere göre fazına bağlıdır. Bir kesme beslemeden döndükten sonra SW1'i bırakmak kurtarmaz: işleyici art arda girildiği için ana döngü bir daha çalışamaz.</p>
+
+<h3 id="ornek-apili">6.2 Watchdog 0, API'li <span class="tag api">API'li</span></h3>
+<p><b>Amaç:</b> 6.1'in davranışını TivaWare ile, 40 MHz'te kurmak.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: wdt_apili.c</span><span class="tag api">API'li · 40 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı. Watchdog 0, API'li (TivaWare), 40 MHz: 6.1 ile aynı davranış.
+// İşleyici WatchdogIntRegister ile RAM'deki vektör tablosuna yazılır (startup'a dokunulmaz).
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/watchdog.h"
+
+volatile bool g_canli = false;  // ana döngü kurar, işleyici siler
+
+void WDT0_Isleyici(void)
+{
+    if (g_canli)
+    {
+        g_canli = false;
+        WatchdogIntClear(WATCHDOG0_BASE);  // WDTICR: sil ve yeniden yükle
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2,
+                     GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2) ^ GPIO_PIN_2);
+    }
+}
+
+int main(void)
+{
+    uint32_t neden = SysCtlResetCauseGet();  // RESC
+    SysCtlResetCauseClear(neden);  // RESC &amp;= ~neden
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
+                   SYSCTL_OSC_MAIN);  // 400 MHz / 2 / 5 = 40 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA,
+                     GPIO_PIN_TYPE_STD_WPU);  // SW1 pull-up
+    if (neden &amp; SYSCTL_CAUSE_WDOG0)
+    {
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);  // kırmızı
+    }
+
+    // Ön adım: saat ve hazır bekleme
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0)) { }
+    if (WatchdogLockState(WATCHDOG0_BASE))  // reset olmadan yeniden başlatıldıysa
+    {
+        WatchdogUnlock(WATCHDOG0_BASE);
+    }
+    WatchdogStallEnable(WATCHDOG0_BASE);  // WDTTEST.STALL (6.5)
+    // 1. WDTLOAD = 40 000 000 - 1 -&gt; yaklaşık 1 s
+    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet() - 1);
+    // 3. RESEN
+    WatchdogResetEnable(WATCHDOG0_BASE);
+    // İşleyiciyi kaydet; fonksiyon IntEnable(INT_WATCHDOG) da çağırır
+    WatchdogIntRegister(WATCHDOG0_BASE, WDT0_Isleyici);
+    // 5. INTEN: watchdog başlar (WatchdogIntEnable aynı biti yazar)
+    WatchdogEnable(WATCHDOG0_BASE);
+    WatchdogLock(WATCHDOG0_BASE);  // WDTLOCK = 1
+    IntMasterEnable();  // PRIMASK = 0 (reset sonrası zaten 0)
+
+    while (1)
+    {
+        g_canli = true;
+        while (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0) { }  // SW1: takıl
+    }
+}</code></pre>
+<p><b>6.1'den farklar:</b> sistem saati 40 MHz'tir, <code>SysCtlClockGet() − 1</code> = 39&nbsp;999&nbsp;999 yine 1 s verir. İşleyici startup dosyasına değil, <code>WatchdogIntRegister</code> ile RAM'e taşınan vektör tablosuna yazılır (SysTick notundaki Yol 2). Bu fonksiyon NVIC'te kesmeyi de açar (<code>IntEnable</code>, <code>watchdog.c</code> satır 353–369), ayrıca <code>IntEnable(INT_WATCHDOG)</code> gerekmez. <code>WatchdogLockState</code> denetimi, hata ayıklayıcının programı reset'lemeden yeniden başlattığı durum içindir: watchdog modülü reset'lenmediyse kilitli kalmış olabilir, o zaman sonraki ayar yazmaları yok sayılır. Başlatılmış watchdog'u reset'siz yeniden başlatmanın bir sınırı daha vardır: INTEN zaten 1'dir ve sayaç saymaya devam etmektedir.</p>
+<p><b>Beklenen davranış:</b> 6.1 ile aynı. Mavi LED her saniye değişir. SW1 basılı tutulunca 2–3 s sonra reset gelir, açılışta kırmızı LED yanar.</p>
+
+<h3 id="ornek-dongu">6.3 Yalnız ana döngüden besleme (kesmesiz) <span class="tag api">API'li</span></h3>
+<p><b>Amaç:</b> kesme kullanmadan, beslemeyi ana döngünün sonuna koymak. INTEN watchdog'u başlatmak için yine kurulur, ama NVIC'te kesme 18 açılmaz.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: wdt_dongu.c</span><span class="tag api">API'li · 40 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı. Watchdog 0, kesmesiz: yalnız ana döngü besler (API'li, 40 MHz).
+// NVIC'te kesme 18 açılmaz; ilk zaman aşımı yalnız RIS'i kurar, ikincisi reset üretir.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/watchdog.h"
+
+int main(void)
+{
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
+                   SYSCTL_OSC_MAIN);  // 40 MHz
+    uint32_t f = SysCtlClockGet();
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);  // yeşil
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA,
+                     GPIO_PIN_TYPE_STD_WPU);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);  // ön adım
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0)) { }
+    WatchdogStallEnable(WATCHDOG0_BASE);
+    WatchdogReloadSet(WATCHDOG0_BASE, f / 2);  // 1. 20 000 000 -&gt; 0,5 s
+    WatchdogResetEnable(WATCHDOG0_BASE);  // 3.
+    WatchdogEnable(WATCHDOG0_BASE);  // 5. kilit yok: döngü WDTLOAD'a yazacak
+
+    uint8_t led = 0;
+    while (1)
+    {
+        led ^= GPIO_PIN_3;
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, led);  // işin yerine
+        SysCtlDelay(f / 12);  // 0,25 s (döngü başına 3 çevrim)
+        while (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0) { }  // SW1: takıl
+        WatchdogReloadSet(WATCHDOG0_BASE, f / 2);  // besle: sayaç baştan (s. 776)
+    }
+}</code></pre>
+<p><b>Nasıl çalışır?</b> WDTLOAD = 20&nbsp;000&nbsp;000, T = 0,5 s. Döngü 0,25 s'de bir döner ve her turunda WDTLOAD'a yazar. Bu, veri sayfasının 12.3'te önerdiği besleme biçimidir: "sayacı yeniden başlatmak için yükleme değerini düzenli olarak WDTLOAD'a yeniden yazın" (s. 776). Sayaç hiç sıfıra inmediği için WDTRIS 0 kalır. SW1 basılı tutulunca son beslemeden 0,5 s sonra ilk zaman aşımı WDTRIS'i kurar (NVIC kapalı olduğu için işleyici çalışmaz), 1,0 s sonra ikinci zaman aşımı reset üretir.</p>
+<ul>
+<li><b>WDTLOAD ile besleme WDTRIS'i silmez</b> (s. 776). Bir besleme bir kez 0,5 s'den geç kalırsa WDTRIS = 1 kalır ve artık tek bir zaman aşımı reset için yeter. Bu bayrak bir "erken uyarı" olarak okunabilir: <code>WatchdogIntStatus(WATCHDOG0_BASE, false)</code> 1 dönerse döngü en az bir kez geç kalmıştır.</li>
+<li>WDTLOAD'a yazıldığı için kilit konmaz. Kilit istenirse ya her beslemede <code>WatchdogUnlock</code> – <code>WatchdogReloadSet</code> – <code>WatchdogLock</code> yapılır ya da besleme <code>WatchdogIntClear</code> ile yapılır (WDTICR kilitten etkilenmez ve WDTRIS'i de siler). Veri sayfası WDTICR'ın yalnız kesme oluştuğunda yazılmasını önerir (s. 782). Bu yüzden bu örnek WDTLOAD'ı kullanır.</li>
+</ul>
+<p><b>Ne zaman tercih edilir?</b> Program tek bir ana döngüden oluşuyorsa ve reset'ten önce yapılacak özel bir iş yoksa. Kesme gerekmez, işleyici ile döngü arasında paylaşılan bayrak yoktur, hata olasılığı en azdır. İlk zaman aşımında bir kurtarma işi (hata kaydı, güvenli durum) gerekiyorsa 6.1/6.2'deki kesmeli yol seçilir. Bekleme döngüsü (<code>SysCtlDelay</code>) uzarsa watchdog süresi de büyütülmelidir.</p>
+<p><b>Beklenen davranış:</b> yeşil LED 0,25 s'de bir değişir. SW1 basılı tutulunca LED donar ve son beslemeden 1 s sonra, yani basıştan 0,75–1 s sonra kart reset'lenir, yeşil yeniden yanıp sönmeye başlar. SW1 ikinci zaman aşımından önce bırakılırsa döngü yeniden besler ve reset olmaz, ama WDTRIS 1 kalır. Kesme kullanılmadığı için burada 6.1'deki gibi art arda giriş yoktur.</p>
+
+<h3 id="ornek-wdt1">6.4 Watchdog 1 (PIOSC) <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> sistem saatinden bağımsız WDT1'i kurmak ve her yazmadan sonra WRC'yi beklemek.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: wdt1_apisiz.c</span><span class="tag reg">API'siz · PIOSC 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı. Watchdog 1 (PIOSC, 16 MHz), API'siz: her yazmadan sonra WRC beklenir.
+// Besleme mantığı 6.1 ile aynıdır; süre sistem saatinden bağımsızdır. Startup: "Watchdog timer"
+// satırına WDT1_Isleyici (WDT0 ve WDT1 aynı kesmeyi, 18'i, paylaşır).
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define SW1   0x10u  // PF4
+#define MAVI  0x04u  // PF2
+
+volatile uint32_t g_canli = 0;
+
+static void wrc_bekle(void)  // WDT1 yazması PIOSC alanına geçene kadar
+{
+    while ((WATCHDOG1_CTL_R &amp; WDT_CTL_WRC) == 0) { }
+}
+
+void WDT1_Isleyici(void)
+{
+    if ((WATCHDOG1_MIS_R &amp; WDT_MIS_WDTMIS) &amp;&amp; g_canli)
+    {
+        g_canli = 0;
+        WATCHDOG1_ICR_R = 1;  // besle
+        wrc_bekle();  // dönüşten önce kesme işareti insin
+        GPIO_PORTF_DATA_R ^= MAVI;
+    }
+}
+
+int main(void)
+{
+    SYSCTL_RCGCGPIO_R |= 0x20;
+    while ((SYSCTL_PRGPIO_R &amp; 0x20) == 0) { }
+    GPIO_PORTF_DIR_R = (GPIO_PORTF_DIR_R &amp; ~SW1) | MAVI;
+    GPIO_PORTF_PUR_R |= SW1;
+    GPIO_PORTF_DEN_R |= SW1 | MAVI;
+
+    SYSCTL_RCGCWD_R |= SYSCTL_RCGCWD_R1;  // ön adım: WDT1 saati
+    while ((SYSCTL_PRWD_R &amp; SYSCTL_PRWD_R1) == 0) { }
+    WATCHDOG1_LOAD_R = 16000000u - 1u;  // 1. PIOSC ile yaklaşık 1 s
+    wrc_bekle();  // 2.
+    WATCHDOG1_CTL_R |= WDT_CTL_RESEN;  // 3.
+    wrc_bekle();  // 4.
+    WATCHDOG1_CTL_R |= WDT_CTL_INTEN;  // 5.
+    wrc_bekle();
+    NVIC_EN0_R = 1u &lt;&lt; 18;
+
+    while (1)
+    {
+        g_canli = 1;
+        while ((GPIO_PORTF_DATA_R &amp; SW1) == 0) { }  // SW1: takıl
+    }
+}</code></pre>
+<p>Adım 2 ve 4'teki beklemeler artık gerçek koddur. Sonuncusu INTEN yazmasının tamamlanmasını bekler. İşleyicide WDTICR yazmasından sonra da WRC beklenir: yazma PIOSC alanına geçmeden işleyiciden dönülürse kesme işareti hâlâ etkin olabilir ve işleyici gereksiz yere bir kez daha girilir. WDT0 ve WDT1 aynı kesme numarasını kullandığı için işleyici WDTMIS'e bakar. İkisi birden kullanılıyorsa her modülün WDTMIS'i ayrı ayrı denetlenir. Açılış nedeni RESC'in WDT1 bitinden (bit 5, <code>SYSCTL_RESC_WDT1</code>) okunur.</p>
+<p><b>Beklenen davranış:</b> mavi LED ve reset 6.1'deki gibidir. Bu kod RESC okumadığı için kırmızı LED yanmaz. Süre PIOSC'nin doğruluğuna bağlıdır (±%3, yaklaşık 0,97–1,03 s). Sistem saati 80 MHz'e çıkarılsa da süre değişmez.</p>
+
+<h3 id="ornek-stall">6.5 Hata ayıklarken STALL</h3>
+<p><b>Amaç:</b> kesme noktasında beklerken kartın reset'lenmesini önlemek.</p>
+<p>STALL = 0 iken (reset değeri) hata ayıklayıcı işlemciyi durdurduğunda watchdog saymaya devam eder (s. 785). İşlemci durduğu için işleyici çalışmaz, WDTICR'a yazılmaz. RESEN = 1 iken en geç 2T sonra watchdog kartı reset'ler: STALL satırı olmasaydı 6.1'de bir kesme noktasında 2 s'den uzun beklemek yeterdi. Hata ayıklayıcı bu sırada programın baştan başladığını görür ya da bağlantıyı kaybedebilir. Çözüm başlatmanın başında STALL'u kurmaktır:</p>
+<ul>
+<li>API'siz: <code>WATCHDOG0_TEST_R |= WDT_TEST_STALL;</code> (6.1)</li>
+<li>API'li: <code>WatchdogStallEnable(WATCHDOG0_BASE);</code> (6.2, 6.3)</li>
+</ul>
+<p>STALL yalnız hata ayıklayıcı CPU'yu durdurduğunda etkilidir, sahadaki çalışmayı değiştirmez. Bu yüzden son üründe de bırakılabilir. WDTTEST kilitten etkilenmese de veri sayfası kilitliyken bu register'a yazılmamasını önerir. STALL, kilitten önce kurulur.</p>
+
+<h2 id="ders-kodlari">7. Ders kodları üzerinden inceleme</h2>
+<p>Derste kullanılan üç CCS projesi vardır: <code>watchdogapisiz</code> (register), <code>wachdogapili</code> ve <code>wachdogapili2</code> (TivaWare). Kodlar olduğu gibi gösterilir, hatalar uyarı kutularında açıklanır. Satır numaraları orijinal dosyalara göredir. Yorumlar UTF-8'e çevrilmiştir.</p>
+<p>Derleme (clang, <code>-Wall</code>, TivaWare 2.1.4): <code>wachdogapili2</code> uyarısızdır. <code>watchdogapisiz</code> 2 uyarı verir (satır 78 boş gövdeli <code>while</code>, satır 62 kullanılmayan <code>a</code>). <code>wachdogapili</code> 79 uyarı verir: <code>tm4c123gh6pm.h</code>, TivaWare'in <code>hw_ints.h</code> ve <code>hw_flash.h</code> başlıklarıyla çakışır (78 <code>INT_…</code>, 1 <code>FLASH_FMA_OFFSET_M</code> yeniden tanımı). Projeler TivaWare 2.2.0.295 ile hazırlanmış ve <code>driverlib.lib</code>'i bağlar. O sürümde sayılar biraz farklı olabilir. Hiçbir proje RESC okumaz ve STALL'u kurmaz.</p>
+
+<h3 id="ders-apisiz">watchdogapisiz: register düzeyi</h3>
+<p>Port F'nin beş pini açılır, PF0 (SW2) için kilit açılır, PF0 ve PF4'e pull-up verilir (satır 14–23). Satır 24–40 veri sayfası 12.3'ün metnidir. Watchdog 16 MHz'te 1 s ile kurulur, RESEN ve INTEN açılır, kesme 18 NVIC'te açılır. İşleyici <code>wdt</code> startup dosyasındaki tabloya yazılmıştır ("Watchdog timer" satırı) ve her kesmede mavi LED'i değiştirir. Ana döngüde SW1'e basılıp bırakılınca yeşil LED değişir. SW2'ye basılıysa satır 84'te döngü takılır.</p>
+<div class="code-head"><span class="file">watchdogapisiz/main.c, satır 6–10 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">void wdt(void){
+    GPIO_PORTF_DATA_R ^=0x04;
+    WATCHDOG0_ICR_R=0x01;
+    WATCHDOG0_LOAD_R =16000000-1;
+}</code></pre>
+<div class="code-head"><span class="file">watchdogapisiz/main.c, satır 42–85 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">    // 0. enerji wathdog
+    SYSCTL_RCGCWD_R |=0x01;
+
+
+
+    // 1. Load the WDTLOAD register with the desired timer load value.
+    WATCHDOG0_LOAD_R=16000000-1;
+
+    //    2. If WDT1, wait for the WRC bit in the WDTCTL register to be set.
+
+    //    3. If the Watchdog is configured to trigger system resets, set the RESEN bit in the WDTCTL register.
+    WATCHDOG0_CTL_R |=0x02; //WDT_CTL_RESEN
+
+    //    4. If WDT1, wait for the WRC bit in the WDTCTL register to be set.
+
+    //    5. Set the INTEN bit in the WDTCTL register to enable the Watchdog, enable interrupts, and lock
+    //    the control register.
+
+    WATCHDOG0_CTL_R |=0x01;
+    WATCHDOG0_LOCK_R = 0x1ACCE551 ;
+    int a=5;
+    a=6;
+
+
+
+    // syf 104
+    NVIC_EN0_R|=(1&lt;&lt;18);
+
+    while(1)
+    {
+        unsigned int value;
+        value=GPIO_PORTF_DATA_R;
+
+
+        if ((value &amp; 0x10)==0)// pf4 için
+        {
+            while((GPIO_PORTF_DATA_R &amp; 0x10)==0);
+
+                GPIO_PORTF_DATA_R ^=0x08;
+
+        }
+
+        while ((value &amp; 0x01)==0){}
+    }</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: watchdogapisiz</span>
+<ul>
+<li><b>Koşulsuz besleme (satır 8):</b> işleyici her kesmede WDTICR'a yazar. Ana döngü satır 84'te takılsa bile kesmeler gelmeye devam ettiği için watchdog her saniye beslenir. İkinci zaman aşımı hiç olmaz, RESEN = 1 (satır 53) olmasına rağmen reset gelmez. Takılmayı yakalamak için besleme bir "canlı bayrağına" bağlanmalıdır (<a href="#ornek-apisiz">6.1</a>).</li>
+<li><b>Satır 84, <code>while ((value &amp; 0x01)==0){}</code>:</b> <code>value</code> satır 73'te bir kez okunur, döngüde yeniden okunmaz. O anda SW2 basılıysa koşul hiç değişmez, düğme bırakılsa da döngü sonsuzdur. Takılmayı taklit etmek amaçlanmışsa amaç tuttu, ama watchdog bunu yakalamaz: mavi LED yanıp sönmeye devam eder, kart reset'lenmez.</li>
+<li><b>Satır 9 gereksiz:</b> WDTICR yazması sayacı zaten WDTLOAD'dan yeniden yükler (s. 782). Aynı değeri yeniden WDTLOAD'a yazmak bir şey değiştirmez.</li>
+<li><b>Satır 61, <code>WATCHDOG0_LOCK_R = 0x1ACCE551</code>:</b> bu değer kilidi <b>açar</b> (s. 786). Üstteki yorum (satır 57–58, veri sayfasının 5. adımı) "denetim register'ını kilitle" der, ama oradaki kilit WDTLOCK değildir (<a href="#kilit">Bölüm 2</a>). Register'lar reset sonrasında zaten açık olduğu için satır etkisizdir, watchdog kilitsiz kalır. Kilitlemek için <code>0x1ACCE551</code> dışında bir değer, örneğin 1 yazılır. Karışıklığın kaynağı büyük olasılıkla 12.3'ün gevşek "herhangi bir değer" ifadesidir (<a href="#kilit">Bölüm 2</a>).</li>
+<li><b>Satır 62–63, <code>int a=5; a=6;</code>:</b> etkisizdir (clang <code>-Wunused-but-set-variable</code> uyarısı). Büyük olasılıkla hata ayıklayıcıda kesme noktası koymak için bırakılmıştır. Ama STALL kurulmadığı için orada beklemek kartı en geç 2 s içinde reset'ler: işlemci durunca işleyici de çalışamaz ve watchdog beslenmez.</li>
+<li><b>Satır 43 → 48:</b> RCGCWD'den sonra PRWD beklenmez. Veri sayfası saat açıldıktan sonra en az 3 sistem saati bekleme ister (s. 227). Araya <code>while ((SYSCTL_PRWD_R &amp; 0x01) == 0) { }</code> konmalıdır. Port F için de PRGPIO beklenmez (satır 14 → 16).</li>
+<li><b>Satır 7 ve 80:</b> işleyici ve ana döngü aynı DATA register'ında okuma-değiştirme-yazma yapar. İşleyici satır 80'in okuması ile yazması arasına girerse mavi LED'in değişimi kaybolabilir. Küçük bir zayıflıktır.</li>
+</ul>
+<p>Doğru olan: adım sırası veri sayfasıyla aynıdır (satır 47–60), WDTICR <code>=</code> ile yazılmıştır, kesme numarası (18, satır 68) doğrudur, startup tablosuna işleyici yazılmıştır. <code>GPIO_PORTF_CR_R = 0x01</code> (satır 17) bir hata değildir: CR'ın yalnız korumalı pin bitleri yazılabilir (s. 685).</p></div>
+
+<h3 id="ders-apili">wachdogapili: TivaWare, bayraklı işleyici</h3>
+<p>Saat 40 MHz'e ayarlanır, LED'ler ve iki buton kurulur (satır 49–68), açılışta yeşil LED yanar (satır 84). Watchdog 1 s ile kurulur ve işleyici <code>WatchdogIntRegister</code> ile kaydedilir. RESEN yorum satırındadır. İşleyici <code>wcd</code> bayrağı kuruluysa besler ve LED'e 4 (mavi) yazar. Ana döngü bayrağı sürekli kurar.</p>
+<div class="code-head"><span class="file">wachdogapili/main.c, satır 16–47 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">bool wcd=false;
+int a=4;
+void wdtkesme()
+{
+    if(wcd)
+    {
+        wcd=false;
+        WatchdogIntClear(WATCHDOG0_BASE);
+        WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet()-1);
+        GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3,a);
+    }
+}
+void SetInitSettings();
+// api li
+
+int main(void)
+ {
+
+    SetInitSettings();
+
+    while(1)
+    {
+         wcd=true;
+
+//        while(!GPIOPinRead(GPIO_PORTF_BASE,GPIO_PIN_4))
+//        {
+//            wcd=true;
+//        }
+    }
+
+
+}</code></pre>
+<div class="code-head"><span class="file">wachdogapili/main.c, satır 70–90 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0))
+    {
+    }
+    // Unlock Watchdog
+//    if(WatchdogLockState(WATCHDOG0_BASE) == true){
+//        WatchdogUnlock(WATCHDOG0_BASE);
+//    }
+   // IntEnable (INT_WATCHDOG);
+    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());
+
+    //WatchdogResetEnable(WATCHDOG0_BASE);
+    WatchdogIntRegister(WATCHDOG0_BASE, wdtkesme);
+
+    GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3,8);
+    WatchdogIntEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
+    //WatchdogIntTypeSet(WATCHDOG0_BASE, WATCHDOG_INT_TYPE_INT);
+
+    //WatchdogIntClear(WATCHDOG0_BASE);
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: wachdogapili</span>
+<ul>
+<li><b>Reset yok (satır 81):</b> <code>WatchdogResetEnable</code> yorumdadır. Watchdog yalnız kesme üretir, hiçbir durumda kartı reset'lemez.</li>
+<li><b>Temizlenmeyen kesme (satır 20–26):</b> <code>wcd</code> false iken işleyici WDTICR'a yazmadan döner. Kesme seviye duyarlı olduğu için işlemci işleyiciye hemen yeniden girer, ana döngü hiç çalışamaz (s. 124–125). RESEN = 0 olduğu için reset de gelmez: sistem kurtarılmak yerine kilitlenir. Şu anki kodda bu dal pratikte çalışmaz, çünkü ana döngü (satır 38) bayrağı sürekli kurar ve 1 s'lik aralıkta mutlaka döner. Satır 38 silinip yorumdaki satır 40–43 etkinleştirilseydi bayrak yalnız SW1 basılıyken kurulurdu. SW1'e basılmadan gelen ilk kesmede işleyici art arda girilir ve kart, SW1'e basılsa da bir daha çalışmaz, çünkü butonu okuyacak ana döngü artık hiç çalışmaz.</li>
+<li><b>Bayrak <code>volatile</code> değil (satır 16):</b> derleyici en iyileme yaparsa satır 36–44'teki döngüyü tek bir yazmaya indirebilir. O durumda ilk kesmeden sonra bayrak bir daha kurulmaz. Projelerde en iyileme düzeyi belirtilmemiştir, Debug yapılandırmasında bu sorun büyük olasılıkla görülmez.</li>
+<li><b>Satır 24:</b> WDTICR (satır 23) sayacı zaten yeniden yükler. Ayrıca yükleme değeri satır 79'da <code>SysCtlClockGet()</code>, burada <code>SysCtlClockGet()-1</code>'dir. Fark bir çevrimdir, ama <code>SysCtlClockGet</code> RCC/RCC2'yi okuyup frekansı hesaplayan uzun bir fonksiyondur (<code>sysctl.c</code> satır 2743) ve işleyicide çağrılmamalıdır.</li>
+<li><b>LED sabit (satır 17, 25):</b> <code>a</code> hep 4'tür. İlk kesmede yeşil söner, mavi yanar ve öyle kalır. LED yanıp sönmez.</li>
+<li><b>Satır 85–86:</b> <code>WatchdogIntEnable</code> ve <code>WatchdogEnable</code> aynı işi yapar (WDTCTL |= INTEN, <code>watchdog.c</code> satır 97–109 ve 427–439). İkinci çağrı gereksizdir.</li>
+<li><b>Satır 8, 11 ve 12:</b> <code>#include "driverlib/sysctl.c"</code> gereksizdir, çünkü proje <code>driverlib.lib</code>'i bağlar. 79 uyarının asıl kaynağı ise <code>inc/tm4c123gh6pm.h</code>'nin (satır 11) TivaWare'in <code>hw_ints.h</code>'si (satır 12'de ve <code>sysctl.c</code> üzerinden) ve <code>hw_flash.h</code>'si (<code>sysctl.c</code> üzerinden) ile birlikte eklenmesidir. Kod <code>tm4c123gh6pm.h</code>'den hiçbir ad kullanmaz (<code>HWREG</code>, <code>GPIO_O_LOCK</code>, <code>GPIO_LOCK_KEY</code> TivaWare başlıklarındandır). Satır 11 silinince uyarılar biter, satır 8 de silinebilir.</li>
+</ul>
+<p>Doğru olan: watchdog için <code>SysCtlPeripheralReady</code> beklenir (satır 71–73; Port F için satır 53 → 54'te beklenmez). <code>IntEnable(INT_WATCHDOG)</code>'un yorumda olması (satır 78) doğrudur, çünkü <code>WatchdogIntRegister</code> bunu kendisi yapar. 40 MHz'te <code>SysCtlClockGet()</code> = 40&nbsp;000&nbsp;000, T = 1 s. Bayrağa bağlı besleme fikri doğrudur, eksik olan RESEN'dir.</p></div>
+
+<h3 id="ders-apili2">wachdogapili2: watchdog bir LED zamanlayıcısı olarak</h3>
+<p>Saat 40 MHz'tir, watchdog 1 s ile kurulur, işleyici her kesmede önce kesmeyi temizler, sonra <code>tetik</code> doğruysa yeşil LED'i değiştirir.</p>
+<div class="code-head"><span class="file">wachdogapili2/main.c, satır 24–73 (derste kullanılan kod)</span><span class="tag api">API'li</span></div><pre><code class="language-c">    // Enable the Watchdog 0 peripheral
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+    // Wait for the Watchdog 0 module to be ready.
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0))
+    {
+    }
+    // Check to see if the registers are locked, and if so, unlock them.
+//    if(WatchdogLockState(WATCHDOG0_BASE) == true)
+//    {
+//        WatchdogUnlock(WATCHDOG0_BASE);
+//    }
+    // Initialize the watchdog timer.
+    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet()-1); //500ms approx
+    // Enable the reset.
+    //WatchdogResetEnable(WATCHDOG0_BASE);
+    WatchdogIntRegister(WATCHDOG0_BASE, WatchdogIntHandler);
+    // Enable the watchdog timer
+    //IntEnable(INT_WATCHDOG);
+    WatchdogIntEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
+    // Wait for the reset to occur.
+    while(1)
+    {
+        tetik=true;
+    }
+}
+
+void WatchdogIntHandler(void)
+{
+
+    // Clear the watchdog interrupt
+    WatchdogIntClear(WATCHDOG0_BASE);
+    if (tetik==true)
+    {
+        // Read the current state of the GPIO pin and
+        // toggle the led state with respect to previous state
+        if(GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_3))
+        {
+            //Green led off
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0);
+        }
+        else
+        {
+            //green led on
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
+        }
+    }
+
+
+}</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: wachdogapili2</span>
+<ul>
+<li><b>Satır 36, "500ms approx":</b> 40 MHz'te <code>SysCtlClockGet()-1</code> = 39&nbsp;999&nbsp;999, T ≈ 1 s'dir. Yorum yanlıştır. 0,5 s için <code>SysCtlClockGet()/2</code> yazılırdı.</li>
+<li><b>Satır 38 ve 44:</b> <code>WatchdogResetEnable</code> yorumda olduğu için "Wait for the reset to occur" (satır 44) gerçekleşmez, reset hiç gelmez.</li>
+<li><b>Koşulsuz besleme (satır 55):</b> kesme <code>tetik</code>'e bakılmadan temizlenir. <code>tetik</code> hiç false yapılmadığı için satır 56'daki koşul da her zaman doğrudur. Sonuç: watchdog, yeşil LED'i her saniye değiştiren bir periyodik zamanlayıcı olarak kullanılmıştır (LED 2 s periyotla yanıp söner). Program takılsa bunu algılamaz.</li>
+<li><b>Satır 63:</b> "Green led off" dalı üç pini birden sıfırlar. Burada yalnız yeşil yandığı için etkisi aynıdır, ama kırmızı ve maviyi de söndürür. Doğrusu <code>GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0)</code>.</li>
+<li><b>Satır 42–43:</b> <code>WatchdogIntEnable</code> watchdog'u zaten başlatır, <code>WatchdogEnable</code> gereksizdir (ikisi de INTEN'i kurar, s. 781).</li>
+</ul>
+<p>Doğru olan: watchdog'un hazır beklemesi (satır 27–29; Port F için satır 20 → 22'de yok), işleyicinin kesmeyi <code>WatchdogIntClear</code> ile temizlemesi ve <code>IntEnable</code>'ın yorumda olması (satır 41, <code>WatchdogIntRegister</code> yapar) doğrudur. Watchdog'u periyodik zamanlayıcı olarak kullanmak çalışır, ama bunun için GPTM ya da SysTick daha uygundur.</p></div>
+
+<h3 id="ders-genel">Üç projede ortak eksikler</h3>
+<ul>
+<li><b>RESC okunmaz:</b> program açılışta watchdog reset'inden sonra mı başladığını bilmez (<a href="#resc">Bölüm 5</a>).</li>
+<li><b>STALL kurulmaz:</b> RESEN'li olan <code>watchdogapisiz</code>'de kesme noktasında beklemek kartı reset'ler. Diğer ikisinde reset yoktur, devam edilince bekleyen kesme hemen işlenir.</li>
+<li><b>Hiçbiri takılan ana döngüyü yakalamaz:</b> <code>watchdogapisiz</code> ve <code>wachdogapili2</code>'de besleme koşulsuzdur, <code>wachdogapili</code> ve <code>wachdogapili2</code>'de RESEN kapalıdır. Dersin amacına uygun bir sürüm 6.1 ve 6.2'dir.</li>
+</ul>
+
+<h2 id="ti">8. TI watchdog örneğinin uyarlaması <span class="tag ti">TI örneği</span></h2>
+<p><b>Amaç:</b> TivaWare'deki watchdog örneğini LaunchPad'de çalıştırmak: LED her beslemede değişir, butona basılınca besleme durur ve kart reset'lenir.</p>
+<p>LaunchPad Workshop kitapçığında watchdog Lab'ı yoktur. TivaWare 2.1.4'te TM4C123 sınıfı kartlardan DK-TM4C123G ve EK-LM4F232 için birer <code>watchdog</code> örneği vardır. İkisi kart adı dışında aynıdır (<code>examples/boards/dk-tm4c123g/watchdog/watchdog.c</code>). Örnek watchdog'u bir "kalp atışı" olarak kullanır: kesme her saniye gelir, işleyici kesmeyi temizler ve bir LED'i değiştirir. Select düğmesine basılınca bir bayrak işleyiciye beslemeyi bırakmasını söyler ve sistem reset'lenir. Bu, Bölüm 6'daki "işleyicide bayrakla besleme" yaklaşımının tersidir: bayrak beslemeye izin vermek için değil, beslemeyi durdurmak için kullanılır. Ekran ve grafik kütüphanesi LaunchPad'de olmadığı için çıkarılmıştır.</p>
+<table>
+<thead><tr><th>TI örneği (DK-TM4C123G)</th><th>LaunchPad uyarlaması</th></tr></thead>
+<tbody>
+<tr><td><code>ROM_FPULazyStackingEnable()</code></td><td>Çıkarıldı (işleyicide kayan nokta yok)</td></tr>
+<tr><td>16 MHz kristal, PLL yok (<code>SYSDIV_1 | USE_OSC</code>)</td><td>Aynı. LaunchPad'de de 16 MHz kristal vardır</td></tr>
+<tr><td>CFAL96x64x16 ekran, <code>grlib</code>, "Feeding Watchdog" yazıları</td><td>Çıkarıldı. Besleme yeşil LED ile, açlık kırmızı LED ile gösterilir</td></tr>
+<tr><td>LED: PG2</td><td>Yeşil LED PF3</td></tr>
+<tr><td>Select düğmesi, <code>ButtonsPoll</code></td><td>SW1 (PF4), <code>GPIOPinRead</code> ile yoklama, iç pull-up</td></tr>
+<tr><td><code>ROM_</code> fonksiyonları</td><td>Normal <code>driverlib</code> çağrıları (LaunchPad'in ROM'unda da aynıları vardır)</td></tr>
+<tr><td>Hazır beklemesi yok</td><td><code>SysCtlPeripheralReady</code> eklendi</td></tr>
+<tr><td>İşleyici startup tablosunda</td><td>Aynı: "Watchdog timer" satırına <code>WatchdogIntHandler</code>, NVIC <code>IntEnable(INT_WATCHDOG)</code></td></tr>
+</tbody></table>
+<div class="code-head"><span class="file">bu not için hazırlandı: ti_wdt_launchpad.c</span><span class="tag ti">TI uyarlaması · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı. TI DK-TM4C123G "watchdog" örneğinin LaunchPad uyarlaması.
+// Ekran ve grlib çıkarıldı; PG2 LED yerine yeşil PF3, Select yerine SW1 (PF4).
+// İşleyici TI'daki gibi startup tablosundan bağlanır: "Watchdog timer" satırına
+// WatchdogIntHandler (extern void WatchdogIntHandler(void);).
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/watchdog.h"
+
+volatile bool g_bFeedWatchdog = true;  // işleyici beslesin mi?
+
+void WatchdogIntHandler(void)
+{
+    if (!g_bFeedWatchdog)
+    {
+        return;  // temizlemeden dön: ikinci zaman aşımında reset
+    }
+    WatchdogIntClear(WATCHDOG0_BASE);
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3,
+                 GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_3) ^ GPIO_PIN_3);
+}
+
+int main(void)
+{
+    // TI ile aynı: PLL yok, 16 MHz kristal doğrudan sistem saati
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+                   SYSCTL_XTAL_16MHZ);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_WDOG0)) { }
+    IntMasterEnable();
+
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_3);
+    GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_3, 0);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA,
+                     GPIO_PIN_TYPE_STD_WPU);
+
+    IntEnable(INT_WATCHDOG);  // NVIC, kesme 18
+    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());  // 16 000 000 -&gt; 1 s
+    WatchdogResetEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
+
+    while (1)
+    {
+        if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0)  // SW1 basıldı
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);  // "Starving"
+            g_bFeedWatchdog = false;
+            while (1) { }
+        }
+    }
+}</code></pre>
+<p><b>Adımlar:</b></p>
+<ol>
+<li>Yeni bir CCS projesi açın (TivaWare dahil yolu ve <code>driverlib.lib</code>), <code>main.c</code>'ye yukarıdaki kodu yazın.</li>
+<li>Startup dosyasında <code>extern void WatchdogIntHandler(void);</code> bildirimini ekleyin, vektör tablosunda "Watchdog timer" satırındaki <code>IntDefaultHandler</code>'ı <code>WatchdogIntHandler</code> yapın.</li>
+<li>Derleyip yükleyin, çalıştırın. Yeşil LED her saniye durum değiştirmelidir.</li>
+<li>SW1'e basın. Kırmızı LED yanar, yeşil LED donar, 1–2 s içinde kart reset'lenir: LED'ler söner ve yeşil yeniden yanıp sönmeye başlar.</li>
+<li>Hata ayıklayıcıyla çalışırken bir kesme noktasında durup 2 s bekleyin: STALL kurulmadığı için kart reset'lenir. Başlatmaya <code>WatchdogStallEnable(WATCHDOG0_BASE)</code> ekleyip tekrarlayın.</li>
+</ol>
+<p><b>Beklenen gözlem:</b> WDTLOAD = <code>SysCtlClockGet()</code> = 16&nbsp;000&nbsp;000, T = 1 s. Basıştan sonraki ilk zaman aşımı (en çok 1 s sonra) temizlenmez. İşleyici beslemeden döndüğü için art arda girilir. Bir T sonra ikinci zaman aşımı reset üretir. Basıştan reset'e kadar 1–2 s geçer. Bu örnekte bayrak basış anında değiştiği için 6.1'deki gibi fazladan bir besleme olmaz.</p>
+<p><b>Uzantılar:</b> 6.2'deki gibi açılışta <code>SysCtlResetCauseGet()</code> ile watchdog reset'ini algılayıp mavi LED yakın. <code>WatchdogLock</code> ekleyin ve işleyicinin yine beslediğini doğrulayın (WDTICR kilitten etkilenmez). SW2 ile <code>WatchdogIntTypeSet(…, WATCHDOG_INT_TYPE_NMI)</code> denemesi için <a href="#alistirmalar">Alıştırma 6</a>.</p>
+
+<h2 id="hatalar">9. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>İşleyicide koşulsuz besleme:</b> kesmeler geldikçe watchdog beslenir, takılan ana döngü yakalanmaz. Besleme bir canlı bayrağına ya da ana döngüye bağlanır.</li>
+<li><b>WDTLOCK'a <code>0x1ACCE551</code> yazıp kilitlediğini sanmak:</b> bu değer kilidi açar. Kilitlemek için başka herhangi bir değer yazılır.</li>
+<li><b>Kilitledikten sonra WDTLOAD ile beslemek:</b> yazma yok sayılır, watchdog reset atar. Kilitliyken WDTICR kullanılır ya da önce kilit açılır.</li>
+<li><b>RESEN'i açmamak:</b> watchdog yalnız kesme üretir, kart hiç reset'lenmez.</li>
+<li><b>RESEN = 0 iken kesmeyi temizlemeden dönmek:</b> seviye duyarlı kesme işleyiciyi art arda çağırır, sistem kilitlenir.</li>
+<li><b>Watchdog'u durdurmaya çalışmak:</b> INTEN = 1 olduktan sonra yazılımla silinemez. Yalnız reset (ya da SRWD) durdurur.</li>
+<li><b>WDT1'de WRC beklememek:</b> art arda yazmalar kaybolur. TivaWare bu beklemeyi yapmaz.</li>
+<li><b>Saat açıldıktan hemen sonra erişmek:</b> PRWD (ya da <code>SysCtlPeripheralReady</code>) beklenir. Saatsiz modüle erişim bus fault'tur.</li>
+<li><b>WDTICR'a <code>|=</code> ile yazmak:</b> WO register okunmaz. <code>=</code> kullanılır.</li>
+<li><b>STALL'u unutmak:</b> kesme noktasında beklerken kart reset'lenir ve hata başka yerde aranır.</li>
+<li><b>RESC'i okumamak ya da temizlememek:</b> yapışkan bitler eski nedenleri taşır. Okunur, saklanır, <code>&amp;= ~neden</code> ile temizlenir.</li>
+<li><b>Paylaşılan bayrağı <code>volatile</code> yapmamak:</b> en iyileme açıkken ana döngünün yazması ya da işleyicinin okuması kaybolabilir.</li>
+<li><b>Sistem saatini değiştirip WDTLOAD'ı güncellememek:</b> WDT0'ın süresi sistem saatine bağlıdır. 16 MHz için hesaplanmış değer 80 MHz'te 5 kat kısa bir süre verir.</li>
+</ol></div>
+
+<h2 id="alistirmalar">10. Alıştırmalar</h2>
+<ol>
+<li><b>Süre hesabı:</b> sistem saati 80 MHz. İlk zaman aşımının 0,5 s olması için WDTLOAD ne olmalıdır? Ana döngü takılırsa son beslemeden kaç saniye sonra reset gelir? Aynı değer WDT1'e yazılsaydı?
+<details><summary>Cevap</summary><p>WDTLOAD = 80&nbsp;000&nbsp;000 × 0,5 = 40&nbsp;000&nbsp;000 (ya da 39&nbsp;999&nbsp;999). Reset son beslemeden 2T = 1 s sonra gelir. WDT1 PIOSC (16 MHz) ile saydığı için aynı değer T = 40&nbsp;000&nbsp;000 / 16&nbsp;000&nbsp;000 = 2,5 s, reset 5 s verir (±%3).</p></details></li>
+<li><b>En uzun süre:</b> 40 MHz'te WDT0'ın verebileceği en uzun reset süresi nedir? 10 dakikalık bir süre gerekseydi ne yapardınız?
+<details><summary>Cevap</summary><p>T<sub>en çok</sub> = 4&nbsp;294&nbsp;967&nbsp;295 / 40&nbsp;000&nbsp;000 = 107,4 s, reset için 2T = 214,7 s. 10 dakika (600 s) sığmaz, WDT1 bile en çok 536,9 s verir. Bir yol işleyicide sayaç tutmaktır: WDTLOAD = 4&nbsp;000&nbsp;000&nbsp;000 (T = 100 s). Ana döngü bayrağı kurdukça sayaç 0'lanır. Bayrak kurulmadığı her kesmede sayaç bir artar ve işleyici sayaç 4'ü geçmedikçe beslemeyi sürdürür. Ana döngü takılınca 4 kesme daha beslenir (400 s), beşinci kesme beslenmez ve bir T sonra reset gelir: takılmadan 600–700 s sonra. Bedeli, ayrıntının (granularity) 100 s olmasıdır.</p></details></li>
+<li><b>Kod okuma:</b> <code>watchdogapisiz</code>'i en az değişiklikle, SW2 basılı tutulunca kartı reset'leyecek hâle getirin. Hangi satırlar değişir?
+<details><summary>Cevap</summary><p>Bir <code>volatile</code> bayrak eklenir. Satır 8 bayrağa bağlanır: <code>if (canli) { canli = 0; WATCHDOG0_ICR_R = 1; }</code>, mavi LED satırı da bu bloğa alınır. Satır 9 silinir. Ana döngünün başına (satır 72'den önce) <code>canli = 1;</code> eklenir. Satır 84 olduğu gibi kalabilir. Ayrıca satır 61 kilitlemek isteniyorsa <code>= 1</code> yapılır. SW2 basılıyken satır 73 okunursa döngü takılır, 2–3 s sonra reset gelir. Bayrak eklenince satır 78'deki SW1 bekleme döngüsü de takılma sayılır: SW1 2 s'den uzun basılı tutulursa kart yine reset'lenir.</p></details></li>
+<li><b>RESC yorumu:</b> program RESC'i hiç temizlemiyor. Bir açılışta RESC = <code>0x0000.000A</code> okunuyor. Ne olmuştur? Sıra nedir? Sonra RESET düğmesine basılırsa ne okunur?
+<details><summary>Cevap</summary><p><code>0x0A</code> = POR (bit 1) + WDT0 (bit 3). POR diğer bitleri sildiği için önce güç verilmiş (POR), sonra bir watchdog reset'i olmuştur. RESET düğmesinden sonra EXT (bit 0) eklenir: <code>0x0B</code>. Bu yüzden RESC okunduktan sonra temizlenir.</p></details></li>
+<li><b>Kilit:</b> 6.1'de kilit konduktan sonra ana döngüye yanlışlıkla <code>WATCHDOG0_LOAD_R = 0;</code> satırı girse ne olur? <code>WATCHDOG0_ICR_R = 1;</code> satırı girse ne olur? Hangisi daha tehlikelidir?
+<details><summary>Cevap</summary><p>WDTLOAD yazması kilit yüzünden yok sayılır, bir şey olmaz (kilit olmasaydı kesme hemen gelirdi, s. 778). WDTICR kilitten etkilenmez: ana döngü her turda watchdog'u besler. Döngü takılmadıkça zararsız görünür, ama işleyicideki canlı bayrağı denetimi anlamsızlaşır. Döngü WDTICR satırından önce takılırsa yine reset gelir, satırın kendisi bir döngünün içindeyse gelmez. İkincisi daha tehlikelidir, çünkü sessizce korumayı zayıflatır. WDTICR'a yalnız watchdog işleyicisi ya da tek bir besleme noktası yazmalıdır.</p></details></li>
+<li><b>NMI:</b> 6.2'yi watchdog kesmesi NMI olacak biçimde değiştirin. Hangi çağrılar değişir, hangi sırayla? NMI'ın standart kesmeye göre üstünlüğü nedir?
+<details><summary>Cevap</summary><p><code>WatchdogIntRegister</code> yerine <code>IntRegister(FAULT_NMI, WDT0_Isleyici)</code> yazılır. <code>WatchdogIntTypeSet(WATCHDOG0_BASE, WATCHDOG_INT_TYPE_NMI)</code>, <code>WatchdogEnable</code>'dan ve <code>WatchdogLock</code>'tan önce çağrılır. İşleyici NMI'ın başka kaynakları da olduğu için önce <code>WatchdogIntStatus(WATCHDOG0_BASE, true)</code>'ya bakar, beslerken yine <code>WatchdogIntClear</code> kullanır (<code>watchdog.c</code> belge yorumu satır 526–528). NMI PRIMASK ile maskelenemez ve öncelik −2'dir: kesmeler kapalıyken ya da başka bir işleyici takılmışken de çalışır, reset'ten önceki son işi güvenle yapar (s. 102–103, 218).</p></details></li>
+</ol>
+
+<h2 id="kaynakca">11. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): Tablo 2-8 ve 2-9 s. 102–106; §3.1.2 seviye duyarlı kesmeler s. 124–125; §5.2.2 reset kaynakları s. 213–218 (Tablo 5-2 s. 213, watchdog reset'i s. 217–218, NMI s. 218); §5.2.6 s. 227; RESC s. 252–253; SRWD s. 310; RCGCWD s. 337; PRWD s. 403; GPIOCR s. 685; Bölüm 12 Watchdog Timers s. 774–798 (§12.2 s. 775–776, §12.2.1 ve §12.3 s. 776, register'lar s. 777–786); Tablo 24-11 s. 1370.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı: TM4C123GH6PM çevre birimleri, s. 1-6.</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/watchdog.c</code>, <code>driverlib/watchdog.h</code>, <code>driverlib/sysctl.c</code> (satır numaraları metinde), <code>inc/hw_watchdog.h</code>, <code>inc/hw_sysctl.h</code>, <code>inc/hw_ints.h</code>, <code>inc/tm4c123gh6pm.h</code>; örnek <code>examples/boards/dk-tm4c123g/watchdog/watchdog.c</code> (EK-LM4F232 sürümü aynıdır). TivaWare ve belgeler ti.com'dan indirilebilir.</li>
+<li>Ders örnek kodları (EEM 431, Watchdog klasörü): <code>watchdogapisiz</code>, <code>wachdogapili</code>, <code>wachdogapili2</code>.</li>
+<li>İlgili notlar: <a href="../gpio-kesme/">2. GPIO Kesmeleri</a>, <a href="../saat-pll/">4. Sistem Saati ve PLL</a>, <a href="../systick/">5. SysTick</a>, <a href="../timer/">6. Zamanlayıcılar</a>, <a href="../uyku-hibernate/">9. Uyku Modları ve Hibernate</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 10. Watchdog Zamanlayıcısı. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

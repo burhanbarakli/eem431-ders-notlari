@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 518" class="wby-svg" role="img" aria-labelledby="wby-title wby-desc">
+<title id="wby-title">Beslemeyi nereye koymalı: üç desen</title>
+<desc id="wby-desc">Üç sütun, her birinde üstte normal çalışma, altta ana döngü takılınca ne olduğu. Üç desende de RESEN = 1. A, ISR’de koşulsuz besleme: ana döngünün watchdog’la bağı yoktur; zaman aşımı kesmesinde ISR her seferinde WDTICR’a yazar. Ana döngü takılınca ISR yine çalışır ve besler, reset hiç gelmez; watchdog işe yaramaz. B, ISR ve canlı bayrağı: ana döngü her turda g_canli = 1 yapar; ISR yalnız g_canli 1 ise WDTICR’a yazar ve g_canli’yi 0 yapar. Ana döngü takılınca bayrak kurulmaz, ISR beslemez, WDTRIS 1 kalır ve ikinci zaman aşımında reset olur. C, ana döngüden doğrudan besleme: ana döngü her turda WDTLOAD’a yazarak sayacı yeniden yükler; watchdog kesmesi NVIC’de kapalıdır, ISR yoktur, yalnız RESEN kullanılır; WDTLOAD yazılacağı için WDTLOCK kullanılmaz. Sayaç sıfıra inmez, WDTRIS hiç kurulmaz. Ana döngü takılınca besleme durur, birinci zaman aşımında WDTRIS 1 olur, ikinci zaman aşımında reset olur.</desc>
+<defs>
+<marker id="wby-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wby-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="wby-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wby-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.wby-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.wby-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.wby-svg .wby-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.wby-svg .wby-b{font-weight:700}
+.wby-svg .wby-s12{font-size:12px}
+.wby-svg .wby-s13{font-size:13px}
+.wby-svg .wby-s16{font-size:16px}
+.wby-svg .wby-mut{fill:var(--fig-muted,#76746c)}
+.wby-svg .wby-acc{fill:var(--fig-accent,#b4481f)}
+.wby-svg .wby-grn{fill:var(--fig-green,#2f7d4f)}
+.wby-svg .wby-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.wby-svg .wby-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.wby-svg .wby-boxm{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.wby-svg .wby-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wby-svg .wby-hlg{fill:var(--fig-green,#2f7d4f);fill-opacity:.12;stroke:var(--fig-green,#2f7d4f);stroke-width:1.5}
+.wby-svg .wby-circs{fill:var(--fig-stroke,#2b2b29)}
+.wby-svg .wby-head{fill:var(--fig-stroke,#2b2b29)}
+.wby-svg .wby-headm{fill:var(--fig-muted,#76746c)}
+.wby-svg .wby-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.wby-svg .wby-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.wby-svg .wby-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="wby-s16 wby-b" x="16" y="29">Beslemeyi nereye koymalı?</text>
+<text x="744" y="29" text-anchor="end" xml:space="preserve"><tspan class="wby-s13 wby-b wby-grn">yeşil</tspan><tspan class="wby-s13"> = takılma yakalanır   </tspan><tspan class="wby-s13 wby-b wby-acc">turuncu</tspan><tspan class="wby-s13"> = takılma kaçar</tspan></text>
+<text class="wby-s13 wby-mut" x="16" y="50">Üstte normal çalışma, altta ana döngü takılınca ne olduğu.</text>
+<rect class="wby-zone" x="16" y="66" width="232" height="412" rx="10"/>
+<circle class="wby-circs" cx="40" cy="96" r="13"/>
+<text class="wby-num" x="40" y="101" text-anchor="middle">A</text>
+<text class="wby-s13 wby-b" x="62" y="92">ISR’de koşulsuz</text>
+<text class="wby-s12 wby-mut" x="62" y="110">besleme</text>
+<text class="wby-s12 wby-mut" x="28" y="140">normal çalışma</text>
+<rect class="wby-box" x="28" y="150" width="208" height="46" rx="8"/>
+<text class="wby-s13 wby-b" x="38" y="169">ana döngü</text>
+<text class="wby-s12 wby-mut" x="38" y="187">watchdog’la bağı yok</text>
+<rect class="wby-box" x="60" y="216" width="176" height="34" rx="8"/>
+<text class="wby-s12" x="70" y="238">zaman aşımı kesmesi</text>
+<rect class="wby-box" x="60" y="272" width="176" height="54" rx="8"/>
+<text class="wby-s13 wby-b" x="70" y="295">ISR</text>
+<text x="70" y="313"><tspan class="wby-m12">WDTICR</tspan><tspan class="wby-s12"> yaz (koşulsuz)</tspan></text>
+<path class="wby-w" d="M148,250 L148,271" marker-end="url(#wby-arr)"/>
+<text class="wby-s13 wby-b" x="28" y="356">ana döngü takılınca:</text>
+<rect class="wby-hl" x="28" y="368" width="208" height="92" rx="8"/>
+<text class="wby-s12" x="38" y="397">ISR yine çalışır ve besler</text>
+<text class="wby-s13 wby-b wby-acc" x="38" y="419">→ reset hiç gelmez</text>
+<text class="wby-s12" x="38" y="441">watchdog işe yaramaz</text>
+<rect class="wby-zone" x="264" y="66" width="232" height="412" rx="10"/>
+<circle class="wby-circs" cx="288" cy="96" r="13"/>
+<text class="wby-num" x="288" y="101" text-anchor="middle">B</text>
+<text class="wby-s13 wby-b" x="310" y="92">ISR + canlı bayrağı</text>
+<text class="wby-s12 wby-mut" x="310" y="110">bayrağı ana döngü kurar</text>
+<text class="wby-s12 wby-mut" x="276" y="140">normal çalışma</text>
+<rect class="wby-box" x="276" y="150" width="208" height="46" rx="8"/>
+<text class="wby-s13 wby-b" x="286" y="169">ana döngü</text>
+<text x="286" y="187"><tspan class="wby-s12">her turda </tspan><tspan class="wby-m12">g_canli = 1</tspan></text>
+<rect class="wby-box" x="308" y="216" width="176" height="34" rx="8"/>
+<text class="wby-s12" x="318" y="238">zaman aşımı kesmesi</text>
+<rect class="wby-box" x="308" y="272" width="176" height="54" rx="8"/>
+<text x="318" y="295"><tspan class="wby-s13 wby-b">ISR: </tspan><tspan class="wby-m12">g_canli</tspan><tspan class="wby-s12"> 1 ise</tspan></text>
+<text x="318" y="313"><tspan class="wby-m12">WDTICR</tspan><tspan class="wby-s12"> yaz, </tspan><tspan class="wby-m12">g_canli = 0</tspan></text>
+<path class="wby-w" d="M396,250 L396,271" marker-end="url(#wby-arr)"/>
+<path class="wby-wmd" d="M294,196 L294,299 L307,299" marker-end="url(#wby-arrm)"/>
+<text class="wby-s13 wby-b" x="276" y="356">ana döngü takılınca:</text>
+<rect class="wby-hlg" x="276" y="368" width="208" height="92" rx="8"/>
+<text x="286" y="397"><tspan class="wby-m12">g_canli</tspan><tspan class="wby-s12"> kurulmaz → ISR beslemez</tspan></text>
+<text x="286" y="419"><tspan class="wby-m12">WDTRIS</tspan><tspan class="wby-s12"> 1 kalır</tspan></text>
+<text class="wby-s13 wby-b wby-grn" x="286" y="441">→ 2. zaman aşımında reset</text>
+<rect class="wby-zone" x="512" y="66" width="232" height="412" rx="10"/>
+<circle class="wby-circs" cx="536" cy="96" r="13"/>
+<text class="wby-num" x="536" y="101" text-anchor="middle">C</text>
+<text class="wby-s13 wby-b" x="558" y="92">ana döngüden</text>
+<text class="wby-s12 wby-mut" x="558" y="110">doğrudan besleme</text>
+<text class="wby-s12 wby-mut" x="524" y="140">normal çalışma</text>
+<rect class="wby-box" x="524" y="150" width="208" height="46" rx="8"/>
+<text class="wby-s13 wby-b" x="534" y="169">ana döngü</text>
+<text x="534" y="187"><tspan class="wby-s12">her turda </tspan><tspan class="wby-m12">WDTLOAD</tspan><tspan class="wby-s12"> yaz</tspan></text>
+<rect class="wby-boxm" x="556" y="208" width="176" height="50" rx="8"/>
+<text class="wby-s12 wby-mut" x="566" y="229">sayaç sıfıra inmez,</text>
+<text x="566" y="247"><tspan class="wby-m12 wby-mut">WDTRIS</tspan><tspan class="wby-s12 wby-mut"> hiç kurulmaz</tspan></text>
+<rect class="wby-boxm" x="556" y="268" width="176" height="64" rx="8"/>
+<text class="wby-s12 wby-mut" x="566" y="288">kesme NVIC’de kapalı;</text>
+<text class="wby-s12 wby-mut" x="566" y="305">ISR yok</text>
+<text x="566" y="322"><tspan class="wby-m12 wby-mut">WDTLOCK</tspan><tspan class="wby-s12 wby-mut"> kullanılmaz</tspan></text>
+<text class="wby-s13 wby-b" x="524" y="356">ana döngü takılınca:</text>
+<rect class="wby-hlg" x="524" y="368" width="208" height="92" rx="8"/>
+<text class="wby-s12" x="534" y="397">besleme durur</text>
+<text x="534" y="419"><tspan class="wby-s12">1. zaman aşımı: </tspan><tspan class="wby-m12">WDTRIS = 1</tspan></text>
+<text class="wby-s13 wby-b wby-grn" x="534" y="441">→ 2. zaman aşımında reset</text>
+<text x="16" y="502"><tspan class="wby-s12 wby-mut">Üç desende de </tspan><tspan class="wby-m12 wby-mut">RESEN = 1</tspan><tspan class="wby-s12 wby-mut">; A ve B’de watchdog kesmesi NVIC’de açık (INT 18).</tspan></text>
+</svg>

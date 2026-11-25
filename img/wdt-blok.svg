@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 522" class="wbk-svg" role="img" aria-labelledby="wbk-title wbk-desc">
+<title id="wbk-title">Watchdog modülü blok şeması (sadeleştirilmiş)</title>
+<desc id="wbk-desc">Veri sayfası Şekil 12-1’e dayalı sade blok şeması. WDT0 ve WDT1 aynı yapıdadır; WDT0 sistem saatiyle, WDT1 PIOSC (16 MHz) ile sayar. WDT1 ayrı saat alanında olduğu için her register yazımından sonra WDTCTL.WRC = 1 beklenir. WDTLOAD yazılınca 32 bit aşağı sayaç hemen yüklenir; sayacın anlık değeri WDTVALUE’dan okunur. WDTCTL.INTEN = 1 sayacı başlatır ve bir bundan sonra yalnız reset ile silinir. Sıfır algılayıcı zaman aşımını bildirir. İlk zaman aşımında WDTRIS = 1 olur ve sayaç WDTLOAD’dan yeniden yüklenir; ikinci zaman aşımında RIS hâlâ 1 ise reset isteği oluşur. Kesme yolu: WDTRIS ve INTEN birlikte WDTMIS’i verir; INTTYPE = 0 ise NVIC’e INT 18 (iki modülde ortak), INTTYPE = 1 ise NMI gider. Reset yolu: reset isteği RESEN = 1 ise sistem reset’ine gider ve RESC’te WDT0 ya da WDT1 biti 1 olur. WDTICR’a herhangi bir değer yazmak kesmeyi temizler ve sayacı yeniden yükler (besleme); WDTLOAD yazmak kesmeyi temizlemez. WDTLOCK’a 0x1ACC.E551 yazmak kilidi açar, başka bir değer kilitler; WDTICR ve WDTTEST kilitten etkilenmez. WDTTEST.STALL = 1 iken hata ayıklayıcı CPU’yu durdurunca sayma durur.</desc>
+<defs>
+<marker id="wbk-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wbk-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="wbk-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wbk-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="wbk-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wbk-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.wbk-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.wbk-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.wbk-svg .wbk-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.wbk-svg .wbk-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.wbk-svg .wbk-b{font-weight:700}
+.wbk-svg .wbk-s12{font-size:12px}
+.wbk-svg .wbk-s13{font-size:13px}
+.wbk-svg .wbk-s16{font-size:16px}
+.wbk-svg .wbk-mut{fill:var(--fig-muted,#76746c)}
+.wbk-svg .wbk-acc{fill:var(--fig-accent,#b4481f)}
+.wbk-svg .wbk-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.wbk-svg .wbk-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wbk-svg .wbk-dota{fill:var(--fig-accent,#b4481f)}
+.wbk-svg .wbk-head{fill:var(--fig-stroke,#2b2b29)}
+.wbk-svg .wbk-heada{fill:var(--fig-accent,#b4481f)}
+.wbk-svg .wbk-headm{fill:var(--fig-muted,#76746c)}
+.wbk-svg .wbk-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.wbk-svg .wbk-wt{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.wbk-svg .wbk-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wbk-svg .wbk-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.wbk-svg .wbk-zone{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:4 4}
+</style>
+<text class="wbk-s16 wbk-b" x="16" y="29">Watchdog modülü (sadeleştirilmiş)</text>
+<text x="744" y="29" text-anchor="end"><tspan class="wbk-s13 wbk-b wbk-acc">turuncu</tspan><tspan class="wbk-s13"> = zaman aşımı yolu</tspan></text>
+<text class="wbk-s13 wbk-mut" x="16" y="50">Veri sayfası Şekil 12-1’e dayalı; WDT0 ve WDT1 aynı yapıda, yalnız saatleri farklı.</text>
+<rect class="wbk-zone" x="152" y="66" width="482" height="440" rx="10"/>
+<text x="164" y="492"><tspan class="wbk-s13 wbk-b">WDTn modülü</tspan><tspan class="wbk-s13 wbk-mut"> · n = 0 ya da 1</tspan></text>
+<rect class="wbk-box" x="16" y="166" width="124" height="48" rx="8"/>
+<text class="wbk-b" x="26" y="186.5">saat, n = 0</text>
+<text class="wbk-s12" x="26" y="203.5">sistem saati</text>
+<rect class="wbk-box" x="16" y="228" width="124" height="100" rx="8"/>
+<text class="wbk-b" x="26" y="249">saat, n = 1</text>
+<text class="wbk-s12" x="26" y="266">PIOSC (16 MHz)</text>
+<text class="wbk-s12" x="26" y="283">ayrı saat alanı;</text>
+<text class="wbk-s12" x="26" y="300">her yazımdan sonra</text>
+<text x="26" y="317"><tspan class="wbk-m12">WRC</tspan><tspan class="wbk-s12"> = 1 beklenir</tspan></text>
+<path class="wbk-wm" d="M140,190 L167,190" marker-end="url(#wbk-arrm)"/>
+<path class="wbk-wm" d="M140,244 L167,244" marker-end="url(#wbk-arrm)"/>
+<rect class="wbk-box" x="168" y="80" width="150" height="64" rx="8"/>
+<text class="wbk-mono wbk-b" x="178" y="100">WDTLOAD</text>
+<text class="wbk-s12" x="178" y="117">yazılınca sayaç</text>
+<text class="wbk-s12" x="178" y="134">hemen yüklenir</text>
+<rect class="wbk-box" x="338" y="80" width="250" height="64" rx="8"/>
+<text x="348" y="100"><tspan class="wbk-mono wbk-b">WDTICR</tspan><tspan class="wbk-s12"> ← herhangi bir değer</tspan></text>
+<text class="wbk-s12" x="348" y="117">kesmeyi temizler, sayacı yeniden yükler</text>
+<text class="wbk-s12 wbk-mut" x="348" y="134">(WDTLOAD yazımı kesmeyi temizlemez)</text>
+<rect class="wbk-box" x="168" y="176" width="150" height="80" rx="8"/>
+<text class="wbk-s13 wbk-b" x="178" y="204">32 bit aşağı</text>
+<text class="wbk-s13 wbk-b" x="178" y="221">sayaç</text>
+<text x="178" y="238"><tspan class="wbk-m12">WDTVALUE</tspan><tspan class="wbk-s12"> okunur</tspan></text>
+<rect class="wbk-box" x="338" y="176" width="72" height="80" rx="8"/>
+<text class="wbk-b" x="348" y="204">= 0 ?</text>
+<text class="wbk-s12" x="348" y="221">sıfır</text>
+<text class="wbk-s12" x="348" y="238">algılama</text>
+<rect class="wbk-hl" x="430" y="168" width="112" height="150" rx="8"/>
+<text class="wbk-s13 wbk-b" x="440" y="188">zaman aşımı</text>
+<text class="wbk-s12 wbk-b" x="440" y="205">1. aşım:</text>
+<text x="440" y="222"><tspan class="wbk-m12">WDTRIS</tspan><tspan class="wbk-s12"> = 1,</tspan></text>
+<text class="wbk-s12" x="440" y="239">sayaç yeniden</text>
+<text class="wbk-s12" x="440" y="256">yüklenir</text>
+<text class="wbk-s12 wbk-b" x="440" y="273">2. aşım:</text>
+<text x="440" y="290"><tspan class="wbk-m12">RIS</tspan><tspan class="wbk-s12"> hâlâ 1 ise</tspan></text>
+<text class="wbk-s12 wbk-b wbk-acc" x="440" y="307">→ reset isteği</text>
+<path class="wbk-w" d="M243,144 L243,175" marker-end="url(#wbk-arr)"/>
+<text class="wbk-s12 wbk-mut" x="251" y="165">yükle</text>
+<path class="wbk-w" d="M318,216 L337,216" marker-end="url(#wbk-arr)"/>
+<path class="wbk-wa" d="M410,216 L429,216" marker-end="url(#wbk-arra)"/>
+<path class="wbk-w" d="M352,144 L352,160 L296,160 L296,175" marker-end="url(#wbk-arr)"/>
+<text class="wbk-s12 wbk-mut" x="360" y="164">yeniden yükle</text>
+<path class="wbk-w" d="M520,144 L520,167" marker-end="url(#wbk-arr)"/>
+<text class="wbk-m12 wbk-mut" x="512" y="164" text-anchor="end">RIS = 0</text>
+<rect class="wbk-box" x="552" y="188" width="26" height="26" rx="3"/>
+<text class="wbk-s13 wbk-b" x="565" y="206" text-anchor="middle">&amp;</text>
+<rect class="wbk-box" x="552" y="262" width="26" height="26" rx="3"/>
+<text class="wbk-s13 wbk-b" x="565" y="280" text-anchor="middle">&amp;</text>
+<path class="wbk-wa" d="M542,201.0 L551,201.0" marker-end="url(#wbk-arra)"/>
+<path class="wbk-wa" d="M542,275.0 L551,275.0" marker-end="url(#wbk-arra)"/>
+<text class="wbk-m12" x="565" y="166" text-anchor="middle">INTEN</text>
+<path class="wbk-wt" d="M565.0,171 L565.0,187" marker-end="url(#wbk-arr)"/>
+<path class="wbk-wt" d="M565.0,308 L565.0,289" marker-end="url(#wbk-arr)"/>
+<text class="wbk-m12" x="565" y="322" text-anchor="middle">RESEN</text>
+<rect class="wbk-box" x="644" y="144" width="100" height="62" rx="8"/>
+<text class="wbk-s13 wbk-b" x="654" y="163">NVIC</text>
+<text class="wbk-s12" x="654" y="180">INT 18 (ortak)</text>
+<text class="wbk-m12 wbk-mut" x="654" y="197">INTTYPE = 0</text>
+<rect class="wbk-box" x="644" y="214" width="100" height="46" rx="8"/>
+<text class="wbk-s13 wbk-b" x="654" y="233.5">NMI</text>
+<text class="wbk-m12 wbk-mut" x="654" y="250.5">INTTYPE = 1</text>
+<rect class="wbk-hl" x="644" y="268" width="100" height="80" rx="8"/>
+<text class="wbk-s13 wbk-b" x="654" y="287.5">sistem reset’i</text>
+<text class="wbk-m12" x="654" y="304.5">RESC.WDT0</text>
+<text class="wbk-s12" x="654" y="321.5">ya da WDT1 = 1</text>
+<text class="wbk-s12" x="654" y="338.5">olur</text>
+<path class="wbk-wa" d="M578,201.0 L638,201.0 L638,175 L643,175" marker-end="url(#wbk-arra)"/>
+<path class="wbk-wa" d="M638,201.0 L638,237 L643,237" marker-end="url(#wbk-arra)"/>
+<circle class="wbk-dota" cx="638" cy="201" r="3.2"/>
+<text class="wbk-m12 wbk-mut" x="581" y="195">WDTMIS</text>
+<path class="wbk-wa" d="M578,275.0 L643,275.0" marker-end="url(#wbk-arra)"/>
+<rect class="wbk-box" x="168" y="344" width="242" height="106" rx="8"/>
+<text class="wbk-mono wbk-b" x="178" y="366">WDTCTL</text>
+<text class="wbk-m12" x="178" y="388">INTEN</text>
+<text class="wbk-s12" x="246" y="388">yalnız reset ile silinir</text>
+<text class="wbk-m12" x="178" y="405">RESEN</text>
+<text class="wbk-s12" x="246" y="405">reset çıkışını açar</text>
+<text class="wbk-m12" x="178" y="422">INTTYPE</text>
+<text class="wbk-s12" x="246" y="422">0 kesme, 1 NMI</text>
+<text class="wbk-m12" x="178" y="439">WRC</text>
+<text class="wbk-s12" x="246" y="439">yazım bitti (yalnız WDT1)</text>
+<path class="wbk-wt" d="M243,344 L243,257" marker-end="url(#wbk-arr)"/>
+<text x="251" y="306"><tspan class="wbk-m12">INTEN</tspan><tspan class="wbk-s12 wbk-mut"> = 1 → sayma başlar</tspan></text>
+<rect class="wbk-box" x="430" y="344" width="180" height="76" rx="8"/>
+<text class="wbk-mono wbk-b" x="440" y="361.5">WDTLOCK</text>
+<text x="440" y="378.5"><tspan class="wbk-m12">0x1ACC.E551</tspan><tspan class="wbk-s12"> açar;</tspan></text>
+<text class="wbk-s12" x="440" y="395.5">başka değer kilitler</text>
+<text class="wbk-s12 wbk-mut" x="440" y="412.5">(WDTICR ve WDTTEST hariç)</text>
+<rect class="wbk-box" x="430" y="430" width="180" height="62" rx="8"/>
+<text class="wbk-mono wbk-b" x="440" y="449">WDTTEST.STALL</text>
+<text class="wbk-s12" x="440" y="466">hata ayıklayıcı CPU’yu</text>
+<text class="wbk-s12" x="440" y="483">durdurunca sayma durur</text>
+</svg>

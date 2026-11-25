@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 658" class="wrn-svg" role="img" aria-labelledby="wrn-title wrn-desc">
+<title id="wrn-title">Açılışta reset nedenini okuma akışı</title>
+<desc id="wrn-desc">Üstte RESC register’ı (taban 0x400F.E000, ofset 0x05C) bit düzeni: 31–17 ayrılmış, 16 MOSCFAIL, 15–6 ayrılmış, 5 WDT1, 4 SW, 3 WDT0, 2 BOR, 1 POR, 0 EXT. Bitler yapışkandır: POR dışındaki reset’lerde korunur; güç açma reset’i (POR) diğer bütün bitleri temizler. Her bit 0 yazılarak temizlenir. Akış: reset, sonra RESC okunur ve bir değişkende saklanır (SysCtlResetCauseGet); hemen ardından okunan bitler 0 yazılarak temizlenir (SysCtlResetCauseClear); temizlenmezse sonraki bir reset’te eski WDT biti hâlâ 1 görünür. Saklanan değerde WDT0 ya da WDT1 biti 1 ise hata durumu işlenir, örneğin kırmızı LED (PF1) yakılır ve olay sayılır ya da kaydedilir. Değilse neden POR, EXT, SW, BOR ya da MOSCFAIL’dir ve normal açılış yapılır. İki yol birleşir: watchdog kurulur ve ana döngüye girilir. Yan kutu, RESC hiç temizlenmezse bitlerin nasıl biriktiğini gösterir: güç açma → POR = 1; watchdog reset’i → POR ve WDT0 = 1; RESET düğmesi → POR, WDT0 ve EXT = 1; yeniden güç açma → POR = 1, diğerleri 0.</desc>
+<defs>
+<marker id="wrn-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wrn-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="wrn-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="wrn-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.wrn-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.wrn-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.wrn-svg .wrn-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.wrn-svg .wrn-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.wrn-svg .wrn-b{font-weight:700}
+.wrn-svg .wrn-s12{font-size:12px}
+.wrn-svg .wrn-s13{font-size:13px}
+.wrn-svg .wrn-s16{font-size:16px}
+.wrn-svg .wrn-mut{fill:var(--fig-muted,#76746c)}
+.wrn-svg .wrn-acc{fill:var(--fig-accent,#b4481f)}
+.wrn-svg .wrn-blu{fill:var(--fig-blue,#1f5fa8)}
+.wrn-svg .wrn-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.wrn-svg .wrn-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.wrn-svg .wrn-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.wrn-svg .wrn-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wrn-svg .wrn-head{fill:var(--fig-stroke,#2b2b29)}
+.wrn-svg .wrn-heada{fill:var(--fig-accent,#b4481f)}
+.wrn-svg .wrn-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.wrn-svg .wrn-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.wrn-svg .wrn-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.wrn-svg .wrn-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text class="wrn-s16 wrn-b" x="16" y="29">Açılışta reset nedenini okumak</text>
+<text x="16" y="50"><tspan class="wrn-m12 wrn-mut">RESC</tspan><tspan class="wrn-s13 wrn-mut"> bitleri yapışkan: POR dışındaki reset’lerde korunur, POR diğerlerini temizler (veri sayfası s. 252–253).</tspan></text>
+<text x="16" y="82" xml:space="preserve"><tspan class="wrn-m12 wrn-b">RESC</tspan><tspan class="wrn-m12 wrn-mut">  0x400F.E05C</tspan></text>
+<rect class="wrn-cellf" x="16" y="92" width="112" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="72" y="141" text-anchor="middle">31–17</text>
+<text class="wrn-s12 wrn-mut" x="72" y="114" text-anchor="middle">ayrılmış</text>
+<rect class="wrn-cell" x="128" y="92" width="100" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="178" y="141" text-anchor="middle">16</text>
+<text class="wrn-mono" x="178" y="114" text-anchor="middle">MOSCFAIL</text>
+<rect class="wrn-cellf" x="228" y="92" width="96" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="276" y="141" text-anchor="middle">15–6</text>
+<text class="wrn-s12 wrn-mut" x="276" y="114" text-anchor="middle">ayrılmış</text>
+<rect class="wrn-hl" x="324" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="359" y="141" text-anchor="middle">5</text>
+<text class="wrn-mono wrn-b" x="359" y="114" text-anchor="middle">WDT1</text>
+<rect class="wrn-cell" x="394" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="429" y="141" text-anchor="middle">4</text>
+<text class="wrn-mono" x="429" y="114" text-anchor="middle">SW</text>
+<rect class="wrn-hl" x="464" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="499" y="141" text-anchor="middle">3</text>
+<text class="wrn-mono wrn-b" x="499" y="114" text-anchor="middle">WDT0</text>
+<rect class="wrn-cell" x="534" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="569" y="141" text-anchor="middle">2</text>
+<text class="wrn-mono" x="569" y="114" text-anchor="middle">BOR</text>
+<rect class="wrn-cell" x="604" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="639" y="141" text-anchor="middle">1</text>
+<text class="wrn-mono" x="639" y="114" text-anchor="middle">POR</text>
+<rect class="wrn-cell" x="674" y="92" width="70" height="34" rx="0"/>
+<text class="wrn-m12 wrn-mut" x="709" y="141" text-anchor="middle">0</text>
+<text class="wrn-mono" x="709" y="114" text-anchor="middle">EXT</text>
+<text class="wrn-s12 wrn-mut" x="744" y="82" text-anchor="end">her bit 0 yazılarak temizlenir</text>
+<rect class="wrn-pill" x="168" y="160" width="120" height="32" rx="16"/>
+<text class="wrn-b" x="228" y="181" text-anchor="middle">reset</text>
+<path class="wrn-w" d="M228.0,192 L228.0,211" marker-end="url(#wrn-arr)"/>
+<rect class="wrn-box" x="16" y="212" width="424" height="40" rx="8"/>
+<text x="30" y="237"><tspan class="wrn-mono wrn-b">RESC</tspan><tspan> oku, değişkende sakla</tspan></text>
+<text class="wrn-m12 wrn-blu" x="428" y="237" text-anchor="end">SysCtlResetCauseGet</text>
+<path class="wrn-w" d="M228.0,252 L228.0,271" marker-end="url(#wrn-arr)"/>
+<rect class="wrn-box" x="16" y="272" width="424" height="56" rx="8"/>
+<text x="30" y="297"><tspan>okunan </tspan><tspan class="wrn-mono wrn-b">RESC</tspan><tspan> bitlerini temizle</tspan></text>
+<text class="wrn-s13 wrn-mut" x="30" y="315">temizlenmezse sonraki reset’te eski WDT biti yine 1 görünür</text>
+<text class="wrn-m12 wrn-blu" x="428" y="297" text-anchor="end">SysCtlResetCauseClear</text>
+<path class="wrn-w" d="M228.0,328 L228.0,349" marker-end="url(#wrn-arr)"/>
+<path class="wrn-box" d="M228.0,350 L356.0,390 L228.0,430 L100.0,390 Z"/>
+<text x="228" y="387" text-anchor="middle"><tspan class="wrn-m12">WDT0</tspan><tspan class="wrn-s13"> ya da </tspan><tspan class="wrn-m12">WDT1</tspan></text>
+<text class="wrn-s13" x="228" y="405" text-anchor="middle">= 1 ?</text>
+<path class="wrn-wa" d="M356.0,390 L475,390" marker-end="url(#wrn-arra)"/>
+<text class="wrn-s13 wrn-b wrn-acc" x="366" y="382">evet</text>
+<rect class="wrn-hl" x="476" y="352" width="268" height="76" rx="8"/>
+<text class="wrn-s13 wrn-b" x="490" y="374">hata durumu: watchdog reset’i</text>
+<text class="wrn-s12" x="490" y="394">ör. kırmızı LED (PF1) yak,</text>
+<text class="wrn-s12" x="490" y="411">olayı say ya da kaydet</text>
+<path class="wrn-w" d="M228.0,430 L228.0,455" marker-end="url(#wrn-arr)"/>
+<text class="wrn-s13 wrn-b" x="238" y="448">hayır</text>
+<rect class="wrn-box" x="16" y="456" width="424" height="52" rx="8"/>
+<text class="wrn-s13 wrn-b" x="30" y="479">normal açılış</text>
+<text x="30" y="497"><tspan class="wrn-m12">POR</tspan><tspan class="wrn-s12">, </tspan><tspan class="wrn-m12">EXT</tspan><tspan class="wrn-s12">, </tspan><tspan class="wrn-m12">SW</tspan><tspan class="wrn-s12">, </tspan><tspan class="wrn-m12">BOR</tspan><tspan class="wrn-s12"> ya da </tspan><tspan class="wrn-m12">MOSCFAIL</tspan></text>
+<path class="wrn-w" d="M228.0,508 L228.0,533" marker-end="url(#wrn-arr)"/>
+<rect class="wrn-box" x="16" y="534" width="424" height="52" rx="8"/>
+<text class="wrn-s13 wrn-b" x="30" y="557">watchdog’u kur</text>
+<text class="wrn-s13 wrn-mut" x="30" y="575">ön adım ve 1–5 (Şekil 3)</text>
+<path class="wrn-w" d="M610.0,428 L610.0,560 L441,560" marker-end="url(#wrn-arr)"/>
+<path class="wrn-w" d="M228.0,586 L228.0,605" marker-end="url(#wrn-arr)"/>
+<rect class="wrn-box" x="16" y="606" width="424" height="36" rx="8"/>
+<text x="30" y="629" xml:space="preserve"><tspan class="wrn-b">ana döngü</tspan><tspan class="wrn-s13 wrn-mut">  düzenli besleme</tspan></text>
+<rect class="wrn-code" x="476" y="212" width="268" height="116" rx="8"/>
+<text class="wrn-s13 wrn-b" x="490" y="236">temizlenmezse (örnek)</text>
+<text x="490" y="258"><tspan class="wrn-s12">güç açma → </tspan><tspan class="wrn-m12">POR = 1</tspan></text>
+<text x="490" y="276"><tspan class="wrn-s12">watchdog reset’i → </tspan><tspan class="wrn-m12">POR, WDT0 = 1</tspan></text>
+<text x="490" y="294"><tspan class="wrn-s12">RESET düğmesi → </tspan><tspan class="wrn-m12">POR, WDT0, EXT = 1</tspan></text>
+<text x="490" y="312"><tspan class="wrn-s12">yeniden güç açma → </tspan><tspan class="wrn-m12">POR = 1</tspan><tspan class="wrn-s12">, diğerleri 0</tspan></text>
+</svg>
