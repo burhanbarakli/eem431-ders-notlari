@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 540" class="pwmt-svg" role="img" aria-labelledby="pwmt-title pwmt-desc">
+<title id="pwmt-title">PWM: aynı periyot, farklı görev oranı</title>
+<desc id="pwmt-desc">Üç PWM dalgası aynı T periyoduyla çizilmiştir; yalnız her periyotta yüksek kalma süresi t_H değişir. Görev oranı D = t_H / T. D = %25 iken sinyal periyodun dörtte birinde 3,3 V, kalanında 0 V’tur ve ortalama gerilim 3,3 V × 0,25 ≈ 0,83 V olur; D = %50 iken ortalama 1,65 V; D = %75 iken ≈ 2,48 V. Ortalama değer yeşil yatay çizgiyle gösterilmiştir. Bir LED, motor ya da RC süzgeç bu ortalamayı görür.</desc>
+<style>
+.pwmt-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pwmt-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pwmt-svg .pwmt-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.pwmt-svg .pwmt-b{font-weight:700}
+.pwmt-svg .pwmt-it{font-style:italic}
+.pwmt-svg .pwmt-s12{font-size:12px}
+.pwmt-svg .pwmt-s13{font-size:13px}
+.pwmt-svg .pwmt-s15{font-size:15px}
+.pwmt-svg .pwmt-s16{font-size:16px}
+.pwmt-svg .pwmt-mut{fill:var(--fig-muted,#76746c)}
+.pwmt-svg .pwmt-grn{fill:var(--fig-green,#2f7d4f)}
+.pwmt-svg .pwmt-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.pwmt-svg .pwmt-wg{fill:none;stroke:var(--fig-green,#2f7d4f);stroke-width:2}
+.pwmt-svg .pwmt-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.pwmt-svg .pwmt-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.pwmt-svg .pwmt-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.pwmt-svg .pwmt-tinta{fill:var(--fig-accent,#b4481f);fill-opacity:.12;stroke:none}
+</style>
+<text class="pwmt-s16 pwmt-b" x="16" y="29">PWM: aynı periyot, farklı görev oranı</text>
+<text x="16" y="50"><tspan class="pwmt-s13 pwmt-mut pwmt-it">T</tspan><tspan class="pwmt-s13 pwmt-mut"> sabit kalır, yalnız yüksek kalma süresi </tspan><tspan class="pwmt-s13 pwmt-mut pwmt-it">t</tspan><tspan class="pwmt-s12 pwmt-mut pwmt-it" dy="3">H</tspan><tspan class="pwmt-s13 pwmt-mut" dy="-3"> değişir.</tspan></text>
+<path class="pwmt-grid" d="M168,84 L168,452"/>
+<path class="pwmt-grid" d="M338,84 L338,452"/>
+<path class="pwmt-grid" d="M508,84 L508,452"/>
+<path class="pwmt-grid" d="M678,84 L678,452"/>
+<path class="pwmt-wm" d="M340,84 L340,78 L506,78 L506,84"/>
+<text x="423" y="72" text-anchor="middle"><tspan class="pwmt-s13 pwmt-b pwmt-it">T</tspan><tspan class="pwmt-s13"> = 1 periyot (üç satırda aynı)</tspan></text>
+<rect class="pwmt-tinta" x="168" y="120" width="42.5" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="338" y="120" width="42.5" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="508" y="120" width="42.5" height="64" rx="0"/>
+<path class="pwmt-wva" d="M168,184 L168,120 L210.5,120 L210.5,184 L338,184 L338,120 L380.5,120 L380.5,184 L508,184 L508,120 L550.5,120 L550.5,184 L678,184"/>
+<path class="pwmt-wg" d="M168,168.0 L678,168.0"/>
+<text class="pwmt-s13 pwmt-b pwmt-grn" x="686" y="173">≈ 0,83 V</text>
+<text class="pwmt-s12 pwmt-grn" x="686" y="189">ortalama</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="125" text-anchor="end">3,3 V</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="189" text-anchor="end">0 V</text>
+<text class="pwmt-s15 pwmt-b" x="16" y="142">D = %25</text>
+<text x="16" y="162"><tspan class="pwmt-s13 pwmt-it">t</tspan><tspan class="pwmt-s12 pwmt-it" dy="3">H</tspan><tspan class="pwmt-s13" dy="-3"> = </tspan><tspan class="pwmt-s13 pwmt-it">T</tspan><tspan class="pwmt-s13"> / 4</tspan></text>
+<path class="pwmt-wm" d="M170,116 L170,110 L208.5,110 L208.5,116"/>
+<text x="218.5" y="114"><tspan class="pwmt-s12 pwmt-it">t</tspan><tspan class="pwmt-s12 pwmt-it" dy="3">H</tspan></text>
+<rect class="pwmt-tinta" x="168" y="244" width="85" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="338" y="244" width="85" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="508" y="244" width="85" height="64" rx="0"/>
+<path class="pwmt-wva" d="M168,308 L168,244 L253.0,244 L253.0,308 L338,308 L338,244 L423.0,244 L423.0,308 L508,308 L508,244 L593.0,244 L593.0,308 L678,308"/>
+<path class="pwmt-wg" d="M168,276.0 L678,276.0"/>
+<text class="pwmt-s13 pwmt-b pwmt-grn" x="686" y="281">1,65 V</text>
+<text class="pwmt-s12 pwmt-grn" x="686" y="297">ortalama</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="249" text-anchor="end">3,3 V</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="313" text-anchor="end">0 V</text>
+<text class="pwmt-s15 pwmt-b" x="16" y="266">D = %50</text>
+<text x="16" y="286"><tspan class="pwmt-s13 pwmt-it">t</tspan><tspan class="pwmt-s12 pwmt-it" dy="3">H</tspan><tspan class="pwmt-s13" dy="-3"> = </tspan><tspan class="pwmt-s13 pwmt-it">T</tspan><tspan class="pwmt-s13"> / 2</tspan></text>
+<path class="pwmt-wm" d="M170,240 L170,234 L251.0,234 L251.0,240"/>
+<rect class="pwmt-tinta" x="168" y="368" width="127.5" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="338" y="368" width="127.5" height="64" rx="0"/>
+<rect class="pwmt-tinta" x="508" y="368" width="127.5" height="64" rx="0"/>
+<path class="pwmt-wva" d="M168,432 L168,368 L295.5,368 L295.5,432 L338,432 L338,368 L465.5,368 L465.5,432 L508,432 L508,368 L635.5,368 L635.5,432 L678,432"/>
+<path class="pwmt-wg" d="M168,384.0 L678,384.0"/>
+<text class="pwmt-s13 pwmt-b pwmt-grn" x="686" y="389">≈ 2,48 V</text>
+<text class="pwmt-s12 pwmt-grn" x="686" y="405">ortalama</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="373" text-anchor="end">3,3 V</text>
+<text class="pwmt-m12 pwmt-mut" x="160" y="437" text-anchor="end">0 V</text>
+<text class="pwmt-s15 pwmt-b" x="16" y="390">D = %75</text>
+<text x="16" y="410"><tspan class="pwmt-s13 pwmt-it">t</tspan><tspan class="pwmt-s12 pwmt-it" dy="3">H</tspan><tspan class="pwmt-s13" dy="-3"> = 3</tspan><tspan class="pwmt-s13 pwmt-it">T</tspan><tspan class="pwmt-s13"> / 4</tspan></text>
+<path class="pwmt-wm" d="M170,364 L170,358 L293.5,358 L293.5,364"/>
+<rect class="pwmt-code" x="16" y="474" width="728" height="50" rx="8"/>
+<text x="380" y="505" text-anchor="middle" xml:space="preserve"><tspan class="pwmt-s15">görev oranı  D = </tspan><tspan class="pwmt-s15 pwmt-it">t</tspan><tspan class="pwmt-s13 pwmt-it" dy="3">H</tspan><tspan class="pwmt-s15" dy="-3"> / </tspan><tspan class="pwmt-s15 pwmt-it">T</tspan><tspan class="pwmt-s15">        ortalama gerilim = D × 3,3 V</tspan></text>
+</svg>

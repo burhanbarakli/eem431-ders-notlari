@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 758" class="pwmb-svg" role="img" aria-labelledby="pwmb-title pwmb-desc">
+<title id="pwmb-title">PWM saat yolu, modül yapısı ve LaunchPad pinleri (sadeleştirilmiş)</title>
+<desc id="pwmb-desc">Veri sayfası Şekil 20-1 ve 20-2’ye dayalı sade şema. Sistem saati PWM saatine iki yoldan gider: RCC.USEPWMDIV = 0 ise doğrudan, 1 ise PWMDIV bölücüsünden (RCC bit 19:17; ÷2, 4, 8, 16, 32, 64). Bölücü iki PWM modülü için ortaktır. Notun 5.1 örneğinde 16 MHz ÷ 2 = 8 MHz, 5.3’te bölücüsüz 16 MHz, Workbook Lab 15’te 40 MHz ÷ 64 = 625 kHz kullanılır. Her modülde dört üreteç vardır. Açık çizilen üreteç 0: 16 bit sayaç (PWM0LOAD, PWM0COUNT, PWM0CTL) load, zero ve dir sinyallerini; karşılaştırıcılar (PWM0CMPA, PWM0CMPB) cmpA ve cmpB sinyallerini üretir. Sinyal üreteci (PWM0GENA, PWM0GENB) bu olaylara göre pwmA ve pwmB’yi kurar. Ölü bant üreteci (PWM0DBCTL) isteğe bağlıdır, kapalıyken sinyalleri aynen geçirir. Çıkış denetimi (PWMENABLE, PWMINVERT) hangi sinyalin pine gideceğini ve tersini seçer. PWM0 üreteç 0 çıkışları M0PWM0 = PB6 ve M0PWM1 = PB7 (PCTL 4). PWM1’de üreteç 0 → M1PWM0 = PD0 (Lab 15 servo, J3.03) ve M1PWM1 = PD1; üreteç 2 → M1PWM5 = PF1 kırmızı LED; üreteç 3 → M1PWM6 = PF2 mavi LED, M1PWM7 = PF3 yeşil LED (PCTL 5). LaunchPad’de PB6–PD0 R9, PB7–PD1 R10 ile 0 Ω bağlıdır. Hata girişi, kesme/ADC tetikleyici ve kullanılmayan üreteçler soluk çizilmiştir.</desc>
+<defs>
+<marker id="pwmb-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="pwmb-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="pwmb-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="pwmb-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.pwmb-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pwmb-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pwmb-svg .pwmb-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.pwmb-svg .pwmb-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.pwmb-svg .pwmb-b{font-weight:700}
+.pwmb-svg .pwmb-s12{font-size:12px}
+.pwmb-svg .pwmb-s13{font-size:13px}
+.pwmb-svg .pwmb-s16{font-size:16px}
+.pwmb-svg .pwmb-mut{fill:var(--fig-muted,#76746c)}
+.pwmb-svg .pwmb-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.pwmb-svg .pwmb-boxm{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.pwmb-svg .pwmb-opt{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5;stroke-dasharray:6 4}
+.pwmb-svg .pwmb-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.pwmb-svg .pwmb-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.pwmb-svg .pwmb-gate{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.pwmb-svg .pwmb-dot{fill:var(--fig-stroke,#2b2b29)}
+.pwmb-svg .pwmb-head{fill:var(--fig-stroke,#2b2b29)}
+.pwmb-svg .pwmb-headm{fill:var(--fig-muted,#76746c)}
+.pwmb-svg .pwmb-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.pwmb-svg .pwmb-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+</style>
+<text class="pwmb-s16 pwmb-b" x="16" y="29">PWM: saat yolu, modül ve LaunchPad pinleri (sadeleştirilmiş)</text>
+<text class="pwmb-s13 pwmb-mut" x="16" y="50">Veri sayfası Şekil 20-1, 20-2’ye dayalı; PWM0 ve PWM1 aynı yapıda.</text>
+<text x="744" y="50" text-anchor="end"><tspan class="pwmb-s13 pwmb-b pwmb-mut">kesikli</tspan><tspan class="pwmb-s13"> = isteğe bağlı · </tspan><tspan class="pwmb-s13 pwmb-b pwmb-mut">soluk</tspan><tspan class="pwmb-s13"> = burada kullanılmıyor</tspan></text>
+<rect class="pwmb-box" x="16" y="96" width="136" height="44" rx="8"/>
+<text class="pwmb-s13 pwmb-b" x="84" y="114" text-anchor="middle">sistem saati</text>
+<text class="pwmb-s12 pwmb-mut" x="84" y="131" text-anchor="middle">16 MHz (Lab 15: 40 MHz)</text>
+<rect class="pwmb-box" x="182" y="96" width="140" height="44" rx="8"/>
+<text x="252" y="114" text-anchor="middle"><tspan class="pwmb-s13 pwmb-b">÷ </tspan><tspan class="pwmb-m12 pwmb-b">PWMDIV</tspan><tspan class="pwmb-s12 pwmb-mut"> (RCC 19:17)</tspan></text>
+<text class="pwmb-s12" x="252" y="131" text-anchor="middle">÷2, 4, 8, 16, 32, 64</text>
+<path class="pwmb-w" d="M152,118 L181,118" marker-end="url(#pwmb-arr)"/>
+<circle class="pwmb-dot" cx="166" cy="118" r="3"/>
+<path class="pwmb-gate" d="M354,66 L378,76 L378,122 L354,132 Z"/>
+<text class="pwmb-m12" x="361" y="84">0</text>
+<text class="pwmb-m12" x="361" y="122">1</text>
+<path class="pwmb-w" d="M166,118 L166,80 L353,80" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M322,118 L353,118" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M366,158 L366,129" marker-end="url(#pwmb-arr)"/>
+<text x="376" y="156"><tspan class="pwmb-m12">USEPWMDIV</tspan><tspan class="pwmb-s12 pwmb-mut"> (RCC bit 20)</tspan></text>
+<rect class="pwmb-pill" x="404" y="70" width="216" height="62" rx="18"/>
+<text class="pwmb-s13 pwmb-b" x="512" y="88" text-anchor="middle">PWM saati</text>
+<text class="pwmb-s12 pwmb-mut" x="512" y="105" text-anchor="middle">5.1: 8 MHz · 5.3: 16 MHz (÷ yok)</text>
+<text class="pwmb-s12 pwmb-mut" x="512" y="121" text-anchor="middle">Lab 15: 40 MHz ÷ 64 = 625 kHz</text>
+<path class="pwmb-w" d="M378,99 L403,99" marker-end="url(#pwmb-arr)"/>
+<text class="pwmb-s12 pwmb-mut" x="630" y="95">bölücü iki modül</text>
+<text class="pwmb-s12 pwmb-mut" x="630" y="112">için ortak</text>
+<path class="pwmb-w" d="M560,132 L560,166 L22,166 L22,634"/>
+<rect class="pwmb-code" x="32" y="174" width="580" height="260" rx="10"/>
+<text x="44" y="193"><tspan class="pwmb-s13 pwmb-b">PWM0 modülü</tspan><tspan class="pwmb-s12 pwmb-mut"> · taban </tspan><tspan class="pwmb-m12 pwmb-mut">0x4002.8000</tspan></text>
+<rect class="pwmb-boxm" x="44" y="202" width="466" height="180" rx="8"/>
+<text x="56" y="221"><tspan class="pwmb-s13 pwmb-b">Üreteç 0</tspan><tspan class="pwmb-s12 pwmb-mut"> (Gen 0)</tspan></text>
+<rect class="pwmb-box" x="56" y="232" width="94" height="80" rx="8"/>
+<rect class="pwmb-box" x="174" y="232" width="94" height="80" rx="8"/>
+<rect class="pwmb-box" x="292" y="232" width="94" height="80" rx="8"/>
+<rect class="pwmb-opt" x="410" y="232" width="94" height="80" rx="8"/>
+<text class="pwmb-s13 pwmb-b" x="103" y="250" text-anchor="middle">16 bit sayaç</text>
+<text class="pwmb-m12" x="103" y="268" text-anchor="middle">PWM0LOAD</text>
+<text class="pwmb-m12" x="103" y="284" text-anchor="middle">PWM0COUNT</text>
+<text class="pwmb-m12" x="103" y="301" text-anchor="middle">PWM0CTL</text>
+<text class="pwmb-s12 pwmb-b" x="221" y="250" text-anchor="middle">karşılaştırıcı</text>
+<text class="pwmb-m12" x="221" y="268" text-anchor="middle">PWM0CMPA</text>
+<text class="pwmb-m12" x="221" y="284" text-anchor="middle">PWM0CMPB</text>
+<text class="pwmb-s12 pwmb-mut" x="221" y="301" text-anchor="middle">→ cmpA, cmpB</text>
+<text class="pwmb-s12 pwmb-b" x="339" y="250" text-anchor="middle">sinyal üreteci</text>
+<text class="pwmb-m12" x="339" y="268" text-anchor="middle">PWM0GENA</text>
+<text class="pwmb-m12" x="339" y="284" text-anchor="middle">PWM0GENB</text>
+<text class="pwmb-s12 pwmb-mut" x="339" y="301" text-anchor="middle">→ pwmA, pwmB</text>
+<text class="pwmb-s13 pwmb-b" x="457" y="250" text-anchor="middle">ölü bant</text>
+<text class="pwmb-m12" x="457" y="268" text-anchor="middle">PWM0DBCTL</text>
+<text class="pwmb-s12 pwmb-mut" x="457" y="284" text-anchor="middle">kapalıyken</text>
+<text class="pwmb-s12 pwmb-mut" x="457" y="301" text-anchor="middle">aynen geçirir</text>
+<path class="pwmb-w" d="M150,272 L173,272" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M268,258 L291,258" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M386,258 L409,258" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M268,286 L291,286" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M386,286 L409,286" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M103.0,312 L103.0,332 L339.0,332 L339.0,313" marker-end="url(#pwmb-arr)"/>
+<text class="pwmb-s12" x="221" y="326" text-anchor="middle">load, zero, dir</text>
+<rect class="pwmb-boxm" x="56" y="346" width="172" height="26" rx="6"/>
+<text x="142" y="363" text-anchor="middle"><tspan class="pwmb-s12 pwmb-mut">hata girişi · </tspan><tspan class="pwmb-m12 pwmb-mut">PWM0FLTSRC0</tspan></text>
+<rect class="pwmb-boxm" x="240" y="346" width="264" height="26" rx="6"/>
+<text x="372" y="363" text-anchor="middle"><tspan class="pwmb-s12 pwmb-mut">kesme / ADC tetik · </tspan><tspan class="pwmb-m12 pwmb-mut">PWM0INTEN</tspan></text>
+<rect class="pwmb-boxm" x="44" y="392" width="466" height="30" rx="8"/>
+<text x="277" y="412" text-anchor="middle"><tspan class="pwmb-s12 pwmb-mut">Üreteç 1, 2, 3: aynı yapı → </tspan><tspan class="pwmb-m12 pwmb-mut">M0PWM2</tspan><tspan class="pwmb-s12 pwmb-mut"> … </tspan><tspan class="pwmb-m12 pwmb-mut">M0PWM7</tspan></text>
+<circle class="pwmb-dot" cx="22" cy="272" r="3"/>
+<path class="pwmb-w" d="M22,272 L55,272" marker-end="url(#pwmb-arr)"/>
+<circle class="pwmb-dot" cx="22" cy="407" r="3"/>
+<path class="pwmb-w" d="M22,407 L43,407" marker-end="url(#pwmb-arr)"/>
+<rect class="pwmb-box" x="528" y="232" width="76" height="190" rx="8"/>
+<text class="pwmb-s13 pwmb-b" x="566" y="250" text-anchor="middle">çıkış</text>
+<text class="pwmb-s13 pwmb-b" x="566" y="266" text-anchor="middle">denetimi</text>
+<text class="pwmb-m12" x="566" y="296" text-anchor="middle">PWMENABLE</text>
+<text class="pwmb-m12" x="566" y="314" text-anchor="middle">PWMINVERT</text>
+<text class="pwmb-m12 pwmb-mut" x="566" y="344" text-anchor="middle">PWMFAULT</text>
+<path class="pwmb-w" d="M504,258 L527,258" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-w" d="M504,286 L527,286" marker-end="url(#pwmb-arr)"/>
+<path class="pwmb-wm" d="M510,407 L527,407" marker-end="url(#pwmb-arrm)"/>
+<rect class="pwmb-pill" x="668" y="246" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="263" text-anchor="middle">PB6</text>
+<text class="pwmb-s12 pwmb-mut" x="722" y="262">R9</text>
+<path class="pwmb-w" d="M604,258 L667,258" marker-end="url(#pwmb-arr)"/>
+<text class="pwmb-m12" x="636" y="252" text-anchor="middle">M0PWM0</text>
+<rect class="pwmb-pill" x="668" y="288" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="305" text-anchor="middle">PB7</text>
+<text class="pwmb-s12 pwmb-mut" x="722" y="304">R10</text>
+<path class="pwmb-w" d="M604,300 L667,300" marker-end="url(#pwmb-arr)"/>
+<text class="pwmb-m12" x="636" y="294" text-anchor="middle">M0PWM1</text>
+<text class="pwmb-s12 pwmb-mut" x="692" y="330" text-anchor="middle">PCTL 4</text>
+<rect class="pwmb-code" x="32" y="452" width="580" height="220" rx="10"/>
+<text x="44" y="471"><tspan class="pwmb-s13 pwmb-b">PWM1 modülü</tspan><tspan class="pwmb-s12 pwmb-mut"> · taban </tspan><tspan class="pwmb-m12 pwmb-mut">0x4002.9000</tspan></text>
+<rect class="pwmb-box" x="44" y="486" width="120" height="56" rx="6"/>
+<text class="pwmb-s13 pwmb-b" x="56" y="519">Üreteç 0</text>
+<path class="pwmb-w" d="M164,514.0 L195,514.0" marker-end="url(#pwmb-arr)"/>
+<rect class="pwmb-boxm" x="44" y="548" width="120" height="22" rx="6"/>
+<text class="pwmb-s12 pwmb-mut" x="56" y="564">Üreteç 1</text>
+<rect class="pwmb-box" x="44" y="578" width="120" height="24" rx="6"/>
+<text class="pwmb-s13 pwmb-b" x="56" y="595">Üreteç 2</text>
+<path class="pwmb-w" d="M164,590.0 L195,590.0" marker-end="url(#pwmb-arr)"/>
+<rect class="pwmb-box" x="44" y="606" width="120" height="56" rx="6"/>
+<text class="pwmb-s13 pwmb-b" x="56" y="639">Üreteç 3</text>
+<path class="pwmb-w" d="M164,634.0 L195,634.0" marker-end="url(#pwmb-arr)"/>
+<circle class="pwmb-dot" cx="22" cy="514" r="3"/>
+<path class="pwmb-w" d="M22,514.0 L43,514.0" marker-end="url(#pwmb-arr)"/>
+<circle class="pwmb-dot" cx="22" cy="559" r="3"/>
+<path class="pwmb-wm" d="M22,559.0 L43,559.0" marker-end="url(#pwmb-arrm)"/>
+<circle class="pwmb-dot" cx="22" cy="590" r="3"/>
+<path class="pwmb-w" d="M22,590.0 L43,590.0" marker-end="url(#pwmb-arr)"/>
+<circle class="pwmb-dot" cx="22" cy="634" r="3"/>
+<path class="pwmb-w" d="M22,634.0 L43,634.0" marker-end="url(#pwmb-arr)"/>
+<rect class="pwmb-box" x="196" y="486" width="76" height="176" rx="8"/>
+<text class="pwmb-s13 pwmb-b" x="234" y="504" text-anchor="middle">çıkış</text>
+<text class="pwmb-s13 pwmb-b" x="234" y="520" text-anchor="middle">denetimi</text>
+<text class="pwmb-m12" x="234" y="572" text-anchor="middle">PWMENABLE</text>
+<text class="pwmb-m12" x="234" y="590" text-anchor="middle">PWMINVERT</text>
+<rect class="pwmb-pill" x="668" y="488" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="505" text-anchor="middle">PD0</text>
+<text class="pwmb-s12 pwmb-mut" x="722" y="504">R9</text>
+<path class="pwmb-w" d="M272,500 L667,500" marker-end="url(#pwmb-arr)"/>
+<text x="282" y="494" xml:space="preserve"><tspan class="pwmb-m12">M1PWM0</tspan><tspan class="pwmb-s12">  · Lab 15 servo (J3.03)</tspan></text>
+<rect class="pwmb-pill" x="668" y="516" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="533" text-anchor="middle">PD1</text>
+<text class="pwmb-s12 pwmb-mut" x="722" y="532">R10</text>
+<path class="pwmb-w" d="M272,528 L667,528" marker-end="url(#pwmb-arr)"/>
+<text x="282" y="522"><tspan class="pwmb-m12">M1PWM1</tspan></text>
+<rect class="pwmb-pill" x="668" y="578" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="595" text-anchor="middle">PF1</text>
+<path class="pwmb-w" d="M272,590 L667,590" marker-end="url(#pwmb-arr)"/>
+<text x="282" y="584" xml:space="preserve"><tspan class="pwmb-m12">M1PWM5</tspan><tspan class="pwmb-s12">  · kırmızı LED</tspan></text>
+<rect class="pwmb-pill" x="668" y="608" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="625" text-anchor="middle">PF2</text>
+<path class="pwmb-w" d="M272,620 L667,620" marker-end="url(#pwmb-arr)"/>
+<text x="282" y="614" xml:space="preserve"><tspan class="pwmb-m12">M1PWM6</tspan><tspan class="pwmb-s12">  · mavi LED</tspan></text>
+<rect class="pwmb-pill" x="668" y="636" width="48" height="24" rx="12"/>
+<text class="pwmb-mono pwmb-b" x="692" y="653" text-anchor="middle">PF3</text>
+<path class="pwmb-w" d="M272,648 L667,648" marker-end="url(#pwmb-arr)"/>
+<text x="282" y="642" xml:space="preserve"><tspan class="pwmb-m12">M1PWM7</tspan><tspan class="pwmb-s12">  · yeşil LED</tspan></text>
+<text class="pwmb-s12 pwmb-mut" x="692" y="678" text-anchor="middle">PCTL 5</text>
+<rect class="pwmb-code" x="16" y="692" width="728" height="50" rx="8"/>
+<text x="28" y="712"><tspan class="pwmb-s13 pwmb-b">LaunchPad: </tspan><tspan class="pwmb-s13">PB6–PD0 (R9) ve PB7–PD1 (R10) 0 Ω dirençle bağlı; her çiftte yalnız bir pin çıkış olarak sürülmeli.</tspan></text>
+<text x="28" y="730"><tspan class="pwmb-s13">Derste PB6/PB7 (PWM0), Lab 15’te PD0 (PWM1) kullanılır; öteki pin giriş (reset durumu) kalır.</tspan></text>
+</svg>

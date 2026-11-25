@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 540" class="pwmv-svg" role="img" aria-labelledby="pwmv-title pwmv-desc">
+<title id="pwmv-title">Servo denetimi (Workbook Lab 15): 55 Hz, 1–2 ms darbe</title>
+<desc id="pwmv-desc">Sistem saati 40 MHz, PWMDIV ÷64 → PWM saati 625 kHz (1 tık = 1,6 µs). ui32Load = 625 000 / 55 − 1 = 11 362; PWMGenPeriodSet bunu periyot olarak alır, LOAD = 11 361; periyot 11 362 tık ≈ 18,18 ms, ≈ 55 Hz. Darbe genişliği ui8Adjust × 11 362 / 1000 tık: 56 → 636 tık ≈ 1,02 ms (bir uç), 83 → 943 tık ≈ 1,51 ms (orta), 111 → 1261 tık ≈ 2,02 ms (öbür uç). Üstte iki periyot gerçek ölçekte: darbe periyodun ancak %5–11’i kadardır. Altta ilk 2,5 ms büyütülmüştür. SW1 (PF4) basılı tutulursa ui8Adjust her döngüde 1 azalır (alt sınır 56), SW2 (PF0) basılıysa 1 artar (üst sınır 111). Bir adım ≈ 11,4 tık ≈ 18,2 µs. Çıkış PD0 = M1PWM0 (LaunchPad J3.03).</desc>
+<defs>
+<marker id="pwmv-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="pwmv-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.pwmv-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pwmv-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pwmv-svg .pwmv-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.pwmv-svg .pwmv-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.pwmv-svg .pwmv-b{font-weight:700}
+.pwmv-svg .pwmv-s12{font-size:12px}
+.pwmv-svg .pwmv-s13{font-size:13px}
+.pwmv-svg .pwmv-s16{font-size:16px}
+.pwmv-svg .pwmv-mut{fill:var(--fig-muted,#76746c)}
+.pwmv-svg .pwmv-acc{fill:var(--fig-accent,#b4481f)}
+.pwmv-svg .pwmv-boxm{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.pwmv-svg .pwmv-head{fill:var(--fig-stroke,#2b2b29)}
+.pwmv-svg .pwmv-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.pwmv-svg .pwmv-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.pwmv-svg .pwmv-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.pwmv-svg .pwmv-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.pwmv-svg .pwmv-tintm{fill:var(--fig-muted,#76746c);fill-opacity:.2;stroke:none}
+</style>
+<text class="pwmv-s16 pwmv-b" x="16" y="29">Servo denetimi (Workbook Lab 15): 55 Hz, 1–2 ms darbe</text>
+<text x="16" y="50"><tspan class="pwmv-s13 pwmv-mut">40 MHz ÷ 64 = 625 kHz PWM saati (1 tık = 1,6 µs) · aşağı sayma · çıkış </tspan><tspan class="pwmv-m12 pwmv-mut">PD0</tspan><tspan class="pwmv-s13 pwmv-mut"> = </tspan><tspan class="pwmv-m12 pwmv-mut">M1PWM0</tspan><tspan class="pwmv-s13 pwmv-mut"> (J3.03)</tspan></text>
+<text class="pwmv-s13 pwmv-b" x="16" y="86">Gerçek ölçek, iki periyot (ui8Adjust = 83):</text>
+<rect class="pwmv-tintm" x="106" y="110" width="46.5055" height="44" rx="3"/>
+<path class="pwmv-wva" d="M80,146 L110.0,146 L110.0,118 L133.23886639676113,118 L133.23886639676113,146 L390.0,146 L390.0,118 L413.2388663967611,118 L413.2388663967611,146 L670.0,146 L670.0,118 L693.2388663967612,118 L693.2388663967612,146 L730.0,146"/>
+<path class="pwmv-grid" d="M110.0,104 L110.0,154"/>
+<path class="pwmv-grid" d="M390.0,104 L390.0,154"/>
+<path class="pwmv-grid" d="M670.0,104 L670.0,154"/>
+<text class="pwmv-mono pwmv-b" x="16" y="146">PD0</text>
+<path class="pwmv-wm" d="M392.0,111 L392.0,106 L668.0,106 L668.0,111"/>
+<text class="pwmv-s13" x="530" y="100" text-anchor="middle">periyot = 11 362 tık ≈ 18,18 ms (Workbook kodu, LOAD = 11 361)</text>
+<text x="139.239" y="136"><tspan class="pwmv-s12 pwmv-b pwmv-acc">1,51 ms</tspan></text>
+<text class="pwmv-s12 pwmv-mut" x="419.239" y="136">darbe ≈ %8</text>
+<rect class="pwmv-boxm" x="220" y="206" width="520" height="230" rx="8"/>
+<path class="pwmv-wm" d="M106,154 L220,206"/>
+<path class="pwmv-wm" d="M152.50554479845098,154 L740,206"/>
+<text class="pwmv-s13 pwmv-b" x="16" y="210">İlk 2,5 ms büyütülmüş:</text>
+<path class="pwmv-grid" d="M431.20000000000005,220 L431.20000000000005,402"/>
+<path class="pwmv-grid" d="M528.8,220 L528.8,402"/>
+<path class="pwmv-grid" d="M626.4000000000001,220 L626.4000000000001,402"/>
+<path class="pwmv-wva" d="M236,268 L236,242 L434.63552000000004,242 L434.63552000000004,268 L724,268"/>
+<text x="16" y="252"><tspan class="pwmv-m12">ui8Adjust</tspan><tspan class="pwmv-m12 pwmv-b"> = 56</tspan></text>
+<text x="16" y="269"><tspan class="pwmv-s12 pwmv-mut">56 × 11 362 / 1000</tspan></text>
+<text x="16" y="285"><tspan class="pwmv-s12 pwmv-mut">= 636</tspan><tspan class="pwmv-s12 pwmv-mut"> tık</tspan></text>
+<text x="442.636" y="255" xml:space="preserve"><tspan class="pwmv-s13 pwmv-b pwmv-acc">1,02 ms</tspan><tspan class="pwmv-s12">  bir uç</tspan></text>
+<path class="pwmv-wva" d="M236,332 L236,306 L530.51776,306 L530.51776,332 L724,332"/>
+<text x="16" y="316"><tspan class="pwmv-m12">ui8Adjust</tspan><tspan class="pwmv-m12 pwmv-b"> = 83</tspan></text>
+<text x="16" y="333"><tspan class="pwmv-s12 pwmv-mut">83 × 11 362 / 1000</tspan></text>
+<text x="16" y="349"><tspan class="pwmv-s12 pwmv-mut">= 943</tspan><tspan class="pwmv-s12 pwmv-mut"> tık</tspan></text>
+<text x="538.518" y="319" xml:space="preserve"><tspan class="pwmv-s13 pwmv-b pwmv-acc">1,51 ms</tspan><tspan class="pwmv-s12">  orta</tspan></text>
+<path class="pwmv-wva" d="M236,396 L236,370 L629.83552,370 L629.83552,396 L724,396"/>
+<text x="16" y="380"><tspan class="pwmv-m12">ui8Adjust</tspan><tspan class="pwmv-m12 pwmv-b"> = 111</tspan></text>
+<text x="16" y="397"><tspan class="pwmv-s12 pwmv-mut">111 × 11 362 / 1000</tspan></text>
+<text x="16" y="413"><tspan class="pwmv-s12 pwmv-mut">= 1261</tspan><tspan class="pwmv-s12 pwmv-mut"> tık</tspan></text>
+<text x="637.836" y="383" xml:space="preserve"><tspan class="pwmv-s13 pwmv-b pwmv-acc">2,02 ms</tspan><tspan class="pwmv-s12">  öbür uç</tspan></text>
+<path class="pwmv-wm" d="M236,410 L724,410"/>
+<path class="pwmv-wm" d="M236.0,406 L236.0,414"/>
+<text class="pwmv-m12 pwmv-mut" x="236" y="428" text-anchor="middle">0,0</text>
+<path class="pwmv-wm" d="M333.6,406 L333.6,414"/>
+<text class="pwmv-m12 pwmv-mut" x="333.6" y="428" text-anchor="middle">0,5</text>
+<path class="pwmv-wm" d="M431.20000000000005,406 L431.20000000000005,414"/>
+<text class="pwmv-m12 pwmv-mut" x="431.2" y="428" text-anchor="middle">1,0</text>
+<path class="pwmv-wm" d="M528.8,406 L528.8,414"/>
+<text class="pwmv-m12 pwmv-mut" x="528.8" y="428" text-anchor="middle">1,5</text>
+<path class="pwmv-wm" d="M626.4000000000001,406 L626.4000000000001,414"/>
+<text class="pwmv-m12 pwmv-mut" x="626.4" y="428" text-anchor="middle">2,0</text>
+<path class="pwmv-wm" d="M724.0,406 L724.0,414"/>
+<text class="pwmv-m12 pwmv-mut" x="724" y="428" text-anchor="middle">2,5</text>
+<text class="pwmv-s12 pwmv-mut" x="218" y="428" text-anchor="end">ms</text>
+<path class="pwmv-w" d="M520.8000000000001,470 L432.20000000000005,470" marker-end="url(#pwmv-arr)"/>
+<path class="pwmv-w" d="M536.8000000000001,470 L625.4000000000001,470" marker-end="url(#pwmv-arr)"/>
+<text x="423.2" y="475" text-anchor="end"><tspan class="pwmv-s13 pwmv-b">SW1 (</tspan><tspan class="pwmv-m12 pwmv-b">PF4</tspan><tspan class="pwmv-s13 pwmv-b">): </tspan><tspan class="pwmv-m12">ui8Adjust--</tspan></text>
+<text class="pwmv-s12" x="423.2" y="492" text-anchor="end">alt sınır 56</text>
+<text x="634.4" y="475"><tspan class="pwmv-s13 pwmv-b">SW2 (</tspan><tspan class="pwmv-m12 pwmv-b">PF0</tspan><tspan class="pwmv-s13 pwmv-b">): </tspan><tspan class="pwmv-m12">++</tspan></text>
+<text class="pwmv-s12" x="634.4" y="492">üst sınır 111</text>
+<text class="pwmv-s12 pwmv-mut" x="528.8" y="492" text-anchor="middle">basılıyken her döngüde 1 adım</text>
+<text x="16" y="522" xml:space="preserve"><tspan class="pwmv-s13">1 adım = 11 362 / 1000 ≈ 11,4 tık ≈ 18,2 µs</tspan><tspan class="pwmv-s12 pwmv-mut">  (tamsayı bölme: adımlar 11 ya da 12 tık)</tspan></text>
+</svg>

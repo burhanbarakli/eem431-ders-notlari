@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 546" class="pwms-svg" role="img" aria-labelledby="pwms-title pwms-desc">
+<title id="pwms-title">Aşağı sayma kipinde sayaç, olaylar, pwmA ve pwmB</title>
+<desc id="pwms-desc">MODE = 0 (aşağı sayma; çalışırken PWM0CTL = 0x1), PWM saati 16 MHz ÷ 2 = 8 MHz, 1 tık = 125 ns. Sayaç LOAD = 319’dan 0’a iner, sonra yeniden 319’a yüklenir; periyot LOAD + 1 = 320 tık = 40 µs, yani 25 kHz. Her periyotta dört olay vardır: LOAD (sayaç 319), CMPA aşağı (sayaç 239, periyot başından 80 tık sonra), CMPB aşağı (sayaç 79, 240 tık sonra) ve sıfır (319 tık sonra; hemen ardından LOAD gelir). GENA = 0x8C: LOAD’da pwmA yüksek, CMPA aşağıda düşük; pwmA 319 − 239 = 80 tık = 10 µs yüksek kalır, görev oranı %25 (PB6, M0PWM0). GENB = 0x80C: LOAD’da pwmB yüksek, CMPB aşağıda düşük; pwmB 319 − 79 = 240 tık = 30 µs yüksek, %75 (PB7, M0PWM1).</desc>
+<style>
+.pwms-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pwms-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pwms-svg .pwms-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.pwms-svg .pwms-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.pwms-svg .pwms-b{font-weight:700}
+.pwms-svg .pwms-s12{font-size:12px}
+.pwms-svg .pwms-s13{font-size:13px}
+.pwms-svg .pwms-s16{font-size:16px}
+.pwms-svg .pwms-mut{fill:var(--fig-muted,#76746c)}
+.pwms-svg .pwms-acc{fill:var(--fig-accent,#b4481f)}
+.pwms-svg .pwms-dot{fill:var(--fig-stroke,#2b2b29)}
+.pwms-svg .pwms-dota{fill:var(--fig-accent,#b4481f)}
+.pwms-svg .pwms-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.pwms-svg .pwms-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.pwms-svg .pwms-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.pwms-svg .pwms-wvs{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.2;stroke-linejoin:round}
+</style>
+<text class="pwms-s16 pwms-b" x="16" y="29">Aşağı sayma kipi: sayaç, olaylar, pwmA ve pwmB</text>
+<text x="16" y="50"><tspan class="pwms-m12 pwms-mut">MODE</tspan><tspan class="pwms-s13 pwms-mut"> = 0 (aşağı sayma; çalışırken </tspan><tspan class="pwms-m12 pwms-mut">PWM0CTL</tspan><tspan class="pwms-s13 pwms-mut"> = 0x1) · PWM saati 16 MHz ÷ 2 = 8 MHz, 1 tık = 125 ns</tspan></text>
+<path class="pwms-grid" d="M120,102.0 L714.0,102.0"/>
+<text class="pwms-m12" x="112" y="106" text-anchor="end">LOAD = 319</text>
+<path class="pwms-grid" d="M120,139.61755485893417 L714.0,139.61755485893417"/>
+<text class="pwms-m12" x="112" y="143.618" text-anchor="end">CMPA = 239</text>
+<path class="pwms-grid" d="M120,214.8526645768025 L714.0,214.8526645768025"/>
+<text class="pwms-m12" x="112" y="218.853" text-anchor="end">CMPB = 79</text>
+<path class="pwms-grid" d="M120,252.0 L714.0,252.0"/>
+<text class="pwms-m12" x="112" y="256" text-anchor="end">0</text>
+<path class="pwms-grid" d="M120.0,96.0 L120.0,440"/>
+<path class="pwms-grid" d="M187.5,96.0 L187.5,440"/>
+<path class="pwms-grid" d="M322.5,96.0 L322.5,440"/>
+<path class="pwms-grid" d="M390.0,96.0 L390.0,440"/>
+<path class="pwms-grid" d="M457.5,96.0 L457.5,440"/>
+<path class="pwms-grid" d="M592.5,96.0 L592.5,440"/>
+<path class="pwms-grid" d="M660.0,96.0 L660.0,440"/>
+<path class="pwms-wvs" d="M120.0,102.0 L390.0,252.0 L390.0,102.0 L660.0,252.0 L660.0,102.0 L714.0,132.0"/>
+<text class="pwms-s13 pwms-b" x="16" y="181">sayaç</text>
+<circle class="pwms-dot" cx="120" cy="102" r="4.5"/>
+<circle class="pwms-dota" cx="187.5" cy="139.618" r="4.5"/>
+<circle class="pwms-dota" cx="322.5" cy="214.853" r="4.5"/>
+<circle class="pwms-dot" cx="389.156" cy="252" r="4.5"/>
+<circle class="pwms-dot" cx="390" cy="102" r="4.5"/>
+<circle class="pwms-dota" cx="457.5" cy="139.618" r="4.5"/>
+<circle class="pwms-dota" cx="592.5" cy="214.853" r="4.5"/>
+<circle class="pwms-dot" cx="659.156" cy="252" r="4.5"/>
+<circle class="pwms-dot" cx="660" cy="102" r="4.5"/>
+<text class="pwms-s12 pwms-b" x="129" y="95">LOAD olayı</text>
+<text class="pwms-s12 pwms-b pwms-acc" x="196.5" y="132.618">CMPA↓</text>
+<text class="pwms-s12 pwms-b pwms-acc" x="331.5" y="207.853">CMPB↓</text>
+<text class="pwms-s12 pwms-b" x="389.156" y="270" text-anchor="middle">sıfır olayı</text>
+<text class="pwms-s12 pwms-b" x="399" y="95">LOAD</text>
+<text class="pwms-s12 pwms-mut" x="712" y="270" text-anchor="end">↓ = aşağı sayarken eşleşme</text>
+<path class="pwms-wva" d="M102.0,346 L120.0,346 L120.0,318 L187.5,318 L187.5,346 L390.0,346 L390.0,318 L457.5,318 L457.5,346 L660.0,346 L660.0,318 L714.0,318"/>
+<path class="pwms-wva" d="M102.0,432 L120.0,432 L120.0,404 L322.5,404 L322.5,432 L390.0,432 L390.0,404 L592.5,404 L592.5,432 L660.0,432 L660.0,404 L714.0,404"/>
+<text class="pwms-mono pwms-b" x="16" y="322">pwmA</text>
+<text x="16" y="339"><tspan class="pwms-m12">GENA</tspan><tspan class="pwms-m12"> = 0x8C</tspan></text>
+<text class="pwms-s12 pwms-mut" x="16" y="355">PB6 · M0PWM0</text>
+<text class="pwms-mono pwms-b" x="16" y="408">pwmB</text>
+<text x="16" y="425"><tspan class="pwms-m12">GENB</tspan><tspan class="pwms-m12"> = 0x80C</tspan></text>
+<text class="pwms-s12 pwms-mut" x="16" y="441">PB7 · M0PWM1</text>
+<path class="pwms-wm" d="M122.0,313 L122.0,308 L185.5,308 L185.5,313"/>
+<text x="195.5" y="312"><tspan class="pwms-s13 pwms-b">319 − 239 = 80 tık = 10 µs → %25</tspan></text>
+<path class="pwms-wm" d="M122.0,399 L122.0,394 L320.5,394 L320.5,399"/>
+<text class="pwms-s13 pwms-b" x="221.25" y="388" text-anchor="middle">319 − 79 = 240 tık = 30 µs → %75</text>
+<text x="193.5" y="363"><tspan class="pwms-s12">CMPA↓: düşük (</tspan><tspan class="pwms-m12">ACTCMPAD</tspan><tspan class="pwms-s12"> = 2)</tspan></text>
+<text x="384" y="336" text-anchor="end"><tspan class="pwms-s12">LOAD: yüksek (</tspan><tspan class="pwms-m12">ACTLOAD</tspan><tspan class="pwms-s12"> = 3) →</tspan></text>
+<text x="328.5" y="449"><tspan class="pwms-s12">CMPB↓: düşük (</tspan><tspan class="pwms-m12">ACTCMPBD</tspan><tspan class="pwms-s12"> = 2)</tspan></text>
+<text x="126" y="422"><tspan class="pwms-s12">LOAD: yüksek (</tspan><tspan class="pwms-m12">ACTLOAD</tspan><tspan class="pwms-s12"> = 3)</tspan></text>
+<path class="pwms-wm" d="M120,470 L714.0,470"/>
+<path class="pwms-wm" d="M120.0,466 L120.0,474"/>
+<text class="pwms-m12 pwms-mut" x="120" y="490" text-anchor="middle">0</text>
+<path class="pwms-wm" d="M187.5,466 L187.5,474"/>
+<text class="pwms-m12 pwms-mut" x="187.5" y="490" text-anchor="middle">10</text>
+<path class="pwms-wm" d="M255.0,466 L255.0,474"/>
+<text class="pwms-m12 pwms-mut" x="255" y="490" text-anchor="middle">20</text>
+<path class="pwms-wm" d="M322.5,466 L322.5,474"/>
+<text class="pwms-m12 pwms-mut" x="322.5" y="490" text-anchor="middle">30</text>
+<path class="pwms-wm" d="M390.0,466 L390.0,474"/>
+<text class="pwms-m12 pwms-mut" x="390" y="490" text-anchor="middle">40</text>
+<path class="pwms-wm" d="M457.5,466 L457.5,474"/>
+<text class="pwms-m12 pwms-mut" x="457.5" y="490" text-anchor="middle">50</text>
+<path class="pwms-wm" d="M525.0,466 L525.0,474"/>
+<text class="pwms-m12 pwms-mut" x="525" y="490" text-anchor="middle">60</text>
+<path class="pwms-wm" d="M592.5,466 L592.5,474"/>
+<text class="pwms-m12 pwms-mut" x="592.5" y="490" text-anchor="middle">70</text>
+<path class="pwms-wm" d="M660.0,466 L660.0,474"/>
+<text class="pwms-m12 pwms-mut" x="660" y="490" text-anchor="middle">80</text>
+<text class="pwms-s12 pwms-mut" x="112" y="490" text-anchor="end">t (µs)</text>
+<path class="pwms-wm" d="M122.0,505 L122.0,510 L388.0,510 L388.0,505"/>
+<text x="255" y="528" text-anchor="middle"><tspan class="pwms-s13 pwms-b">periyot = </tspan><tspan class="pwms-m12 pwms-b">LOAD</tspan><tspan class="pwms-s13 pwms-b"> + 1 = 320 tık = 40 µs → 25 kHz</tspan></text>
+</svg>

@@ -18,6 +18,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `uyku-hibernate/` | 9. Uyku modları ve Hibernate |
 | `watchdog/` | 10. Watchdog zamanlayıcısı |
 | `i2c/` | 11. I2C |
+| `pwm/` | 12. PWM |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

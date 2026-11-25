@@ -1,0 +1,855 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PWM — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM LaunchPad'de PWM: periyot ve görev oranı, iki modül ve sekiz üreteç, PWM saati, sayaç kipleri, GENA/GENB eylemleri, hizalama, uç durumlar, 11 adımlı başlatma, API'siz ve TivaWare örnekleri, Lab 15 servo uyarlaması, ders kodları.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 12. PWM</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#amac">0. Amaç</a></li>
+<li><a href="#nedir">1. PWM nedir?</a><ol>
+  <li><a href="#cozunurluk">Frekans ve çözünürlük</a></li></ol></li>
+<li><a href="#modul">2. TM4C123'te PWM</a><ol>
+  <li><a href="#gptm-farki">GPTM PWM'inden farkı</a></li>
+  <li><a href="#pinler">LaunchPad pinleri</a></li>
+  <li><a href="#saat">Saat ve saat geçidi</a></li></ol></li>
+<li><a href="#uretec">3. Üreteç nasıl çalışır?</a><ol>
+  <li><a href="#sayac">Sayaç ve olaylar</a></li>
+  <li><a href="#gen">GENA ve GENB</a></li>
+  <li><a href="#formuller">Frekans ve görev oranı</a></li>
+  <li><a href="#hizalama">Hizalama</a></li>
+  <li><a href="#uc-durumlar">%0 ve %100</a></li>
+  <li><a href="#guncelleme">Değer güncelleme</a></li>
+  <li><a href="#cikis">Çıkış denetimi, diğerleri</a></li></ol></li>
+<li><a href="#baslatma">4. Başlatma adımları</a><ol>
+  <li><a href="#api-esleme">TivaWare karşılıkları</a></li></ol></li>
+<li><a href="#ornekler">5. Örnekler</a><ol>
+  <li><a href="#ornek-apisiz">5.1 PB6/PB7, API'siz</a></li>
+  <li><a href="#ornek-tarama">5.2 Görev oranı taraması</a></li>
+  <li><a href="#ornek-apili">5.3 RGB LED, API'li</a></li></ol></li>
+<li><a href="#ti">6. TI Lab 15 uyarlaması</a></li>
+<li><a href="#ders-kodlari">7. Ders kodları</a></li>
+<li><a href="#hatalar">8. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">9. Alıştırmalar</a></li>
+<li><a href="#kaynakca">10. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>PWM (Darbe Genişlik Modülasyonu)</h1>
+<p class="lead">Bir LED'i yarı parlaklıkta yakmak, bir DC motoru yavaş döndürmek, bir servoyu ortaya getirmek: üçünde de mikrodenetleyici bir pini yalnız 0 ya da 1 yapabilir. Çözüm, pini çok hızlı açıp kapatmak ve açık kalma süresinin oranını ayarlamaktır. Buna darbe genişlik modülasyonu, PWM (Pulse Width Modulation) denir. Bu notta PWM'in temel büyüklüklerini, TM4C123GH6PM'nin iki PWM modülünü, üretecin sayaç-karşılaştırıcı-eylem yapısını ve 11 adımlı başlatmayı öğrenecek, LaunchPad'de PB6/PB7'de %25/%75 sinyal, RGB LED'de renk geçişi ve 55 Hz'lik bir servo sinyali üreteceğiz.</p>
+
+<h2 id="amac">0. Amaç ve öğrenme kazanımları</h2>
+<div class="box goal"><span class="box-title">Amaç</span>
+<p><b>Bu notun amacı</b>, TM4C123GH6PM'nin PWM modülüyle istenen frekansta ve görev oranında sinyal üretmeyi, görev oranını çalışırken güvenle değiştirmeyi ve bunu hem register düzeyinde (API'siz) hem TivaWare ile (API'li) yapabilmektir. Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Periyot, frekans, görev oranı, ortalama değer ve çözünürlüğü tanımlar, birbirinden hesaplar.</li>
+<li>TM4C123'ün 2 modül × 4 üreteç yapısını, GPTM'nin PWM kipinden farkını ve LaunchPad'deki PWM pinlerini (PB6/PB7, PD0/PD1, PF1–PF3) bilir, PCTL değerini seçer.</li>
+<li>PWM saatini RCC'nin USEPWMDIV/PWMDIV alanlarıyla ayarlar, modül saatini RCGCPWM ile açıp PRPWM ile bekler.</li>
+<li>Aşağı ve yukarı/aşağı sayma kiplerinde olayları, GENA/GENB eylem kodlarını çözer. Sola, sağa ve merkez hizalı sinyal kurar.</li>
+<li>LOAD ve CMPA/CMPB değerlerini frekans ve görev oranından hesaplar. %0, %100 ve CMPA ≥ LOAD gibi uç durumları doğru ele alır.</li>
+<li>Veri sayfası 20.4'ün 11 adımını 16 MHz'e uyarlayarak register düzeyinde ve TivaWare ile uygular.</li>
+<li>Workbook Lab 15'in servo sinyalini ek donanımsız gözlenebilir hâle getirir ve ders kodlarındaki hataları bulur.</li>
+</ol></div>
+
+<h2 id="nedir">1. PWM nedir?</h2>
+<p><b>Amaç:</b> bir PWM sinyalini tanımlayan büyüklükleri ve kullanım alanlarını tanımak.</p>
+<p>PWM sinyali, frekansı sabit bir kare dalgadır. Değişen tek şey her periyotta sinyalin yüksek kaldığı süredir. Veri sayfası PWM'i analog bir seviyeyi sayısal olarak kodlama tekniği diye tanımlar: yüksek çözünürlüklü sayaçlarla bir kare dalga üretilir ve görev oranı analog bilgiyi taşır (s. 1230).</p>
+<ul>
+<li><b>Periyot</b> T: bir tam çevrimin süresi. <b>Frekans</b> f = 1/T.</li>
+<li><b>Yüksek süre</b> (darbe genişliği) t<sub>H</sub>: bir periyotta çıkışın 1 olduğu süre.</li>
+<li><b>Görev oranı</b> (duty cycle) D = t<sub>H</sub> / T, genellikle yüzde olarak verilir.</li>
+<li><b>Ortalama değer:</b> 0 ile V<sub>H</sub> arasında gidip gelen bir sinyalin ortalaması D × V<sub>H</sub>'dir. 3,3 V'luk bir pinde %25 görev oranı ortalama 0,825 V demektir.</li>
+</ul>
+<figure><img class="fig" src="../img/pwm-temel.svg" alt="Aynı periyotta üç PWM sinyali: yüzde 25, yüzde 50 ve yüzde 75 görev oranı; her birinde yüksek süre, periyot ve yeşil çizgiyle ortalama değer gösterilmiş"><figcaption><b>Şekil 1.</b> Aynı periyot T ile üç görev oranı. Frekans değişmez, yalnız yüksek süre t<sub>H</sub> değişir. Yeşil çizgi ortalamadır: D × 3,3 V.</figcaption></figure>
+<p>Ortalama değeri kullanan yük, hızlı değişimi kendisi süzer. <b>LED</b>'de göz süzer: frekans yeterince yüksekse titreşim görülmez, parlaklık görev oranıyla artar. <b>DC motorda</b> sargının endüktansı ve rotorun eylemsizliği süzer, hız ortalama gerilimle değişir. <b>RC servo</b> ise ortalamaya değil darbenin kendisine bakar: 50–60 Hz'lik bir sinyalde 1–2 ms'lik yüksek süre konumu belirler (Workbook s. 15-8, <a href="#ti">Bölüm 6</a>). Veri sayfası ayrıca anahtarlamalı güç kaynaklarını ve motor denetimini sayar (s. 1230).</p>
+
+<h3 id="cozunurluk">Frekans ve çözünürlük</h3>
+<p>Donanım PWM'i bir sayaçla üretilir. Sayacın bir periyotta attığı tık sayısı N, görev oranının kaç adımda ayarlanabileceğini, yani <b>çözünürlüğü</b> belirler:</p>
+<pre><code class="language-plaintext">N = f(PWM saati) / f(PWM)          adım = 1 / N          bit ≈ log2(N)
+8 MHz / 25 kHz = 320 tık   ->  adım = %0,3125   ->  yaklaşık 8,3 bit</code></pre>
+<p>Aynı PWM saatiyle frekans iki katına çıkarsa adım sayısı yarıya iner. TM4C123'te sayaç 16 bittir (s. 1230), N en çok 65&nbsp;536 olabilir. Çok düşük frekanslar için PWM saati bölünür (<a href="#saat">Bölüm 2</a>).</p>
+
+<h2 id="modul">2. TM4C123GH6PM'de PWM modülü</h2>
+<p><b>Amaç:</b> modülün yapısını, pinlerini ve saat yolunu veri sayfasından öğrenmek.</p>
+<p>TM4C123GH6PM'de iki PWM modülü (PWM0 ve PWM1) vardır. Her modülde dört <b>PWM üreteci</b> (generator) ve bir denetim bloğu bulunur. Her üreteç aynı sayaçtan iki sinyal üretir: toplam 2 × 4 × 2 = 16 çıkış (s. 1230). Bir üretecin içinde (Şekil 20-2, s. 1232):</p>
+<ul>
+<li><b>16 bitlik sayaç</b>: aşağı ya da yukarı/aşağı sayar. Sıfırda ve LOAD değerinde birer olay üretir.</li>
+<li><b>İki karşılaştırıcı</b> (A ve B): sayaç CMPA ya da CMPB'ye eşit olunca birer olay üretir.</li>
+<li><b>Sinyal üreteci</b>: bu olaylara GENA ve GENB register'larında yazılı eylemleri uygular, pwmA ve pwmB'yi üretir.</li>
+<li><b>Ölü bant üreteci</b>: istenirse pwmA'dan, aralarında boşluk olan tümleyen iki sinyal türetir. Kapalıyken sinyaller değişmeden geçer (s. 1236).</li>
+</ul>
+<p>Denetim bloğu çıkışların pinlere verilip verilmeyeceğini (PWMENABLE), terslenmesini (PWMINVERT), hata durumunu ve üreteçlerin eşzamanlanmasını yönetir (s. 1231). Üreteç n'nin A çıkışı MnPWM(2n), B çıkışı MnPWM(2n+1) pinine gider: üreteç 0 → MnPWM0/1, üreteç 3 → MnPWM6/7 (s. 1266). Taban adresler PWM0 için <code>0x4002.8000</code>, PWM1 için <code>0x4002.9000</code>'dür. Üreteç n'nin register'ları 0x040 + n × 0x40 ofsetinden başlar (s. 1240).</p>
+<p><b>Register adları.</b> Veri sayfası üreteç register'larını PWMnLOAD, PWMnCMPA, PWMnGENA biçiminde adlandırır. Buradaki n <b>üretecin</b> numarasıdır, modülün değil: üreteç 0'ın register'ları PWM0LOAD, PWM0CTL, PWM0GENA'dır ve iki modülde de aynı adı taşır (s. 1266, s. 1278). <code>inc/tm4c123gh6pm.h</code>'deki makrolarda önce modül, sonra üreteç gelir: modül 0'ın üreteç 0'ı için PWM0LOAD = <code>PWM0_0_LOAD_R</code> (<code>0x4002.8050</code>), modül 1'in üreteç 2'si için PWM2LOAD = <code>PWM1_2_LOAD_R</code>. Modül düzeyindeki register'lar (PWMENABLE, PWMINVERT) için makro <code>PWM0_ENABLE_R</code>, <code>PWM1_ENABLE_R</code> biçimindedir. Bu not metinde veri sayfası adlarını (gerektiğinde kısaca LOAD, CMPA, GENA), kodda makroları kullanır.</p>
+<figure><img class="fig" src="../img/pwm-modul-blok.svg" alt="PWM modülü blok şeması: sistem saati USEPWMDIV seçici ve PWMDIV bölücüden geçip PWM saati olur; iki modülün her birinde dört üreteç; üreteç içinde sayaç, karşılaştırıcı A ve B, GENA/GENB sinyal üreteci ve ölü bant üreteci; çıkış denetimi PWMENABLE ve PWMINVERT; LaunchPad pinleri PB6/PB7, PD0/PD1 (PB6/PB7'ye R9/R10 ile bağlı) ve PF1–PF3 RGB LED"><figcaption><b>Şekil 2.</b> PWM saat yolu, modül ve üreteç yapısı (veri sayfası Şekil 20-1 ve 20-2, s. 1232'ye dayalı). PWM bölücüsü iki modülde ortaktır (s. 255). LaunchPad'de PD0/PD1, PB6/PB7'ye 0 Ω dirençlerle bağlıdır.</figcaption></figure>
+
+<h3 id="gptm-farki">GPTM'nin PWM kipinden farkı</h3>
+<p>Genel amaçlı zamanlayıcılar da PWM üretebilir (<a href="../timer/#kipler">Zamanlayıcı notu, kipler</a>). İkisi farklı işler için tasarlanmıştır:</p>
+<table>
+<thead><tr><th></th><th>GPTM PWM kipi</th><th>PWM modülü</th></tr></thead>
+<tbody>
+<tr><td>Sayaç</td><td>24 ya da 48 bit, yalnız aşağı sayma (s. 716)</td><td>16 bit, aşağı ya da yukarı/aşağı (s. 1234)</td></tr>
+<tr><td>Çıkış</td><td>Zamanlayıcı yarısı başına bir CCP pini</td><td>Üreteç başına aynı frekansta iki çıkış, modül başına 8</td></tr>
+<tr><td>Hizalama</td><td>Kenara hizalı</td><td>Sola, sağa, merkez hizalı</td></tr>
+<tr><td>Motor sürmeye yönelik</td><td>Yok</td><td>Ölü bant, hata girişi, eşzamanlı güncelleme, ADC tetikleme (s. 1230–1231)</td></tr>
+</tbody></table>
+<p>Tek bir LED için ikisi de yeter. Yarım köprü, üç fazlı evirici ya da birbirine kilitli çok sayıda kanal gerektiğinde PWM modülü kullanılır.</p>
+
+<h3 id="pinler">LaunchPad'de PWM pinleri</h3>
+<p>PWM sinyalleri GPIO pinlerinin alternatif işlevleridir. Pin AFSEL ile çevre birimine verilir, PCTL'nin ilgili alanına tablodaki kod yazılır (Tablo 20-1 s. 1233, Tablo 23-5 s. 1351). Değerler TivaWare <code>driverlib/pin_map.h</code>'nin TM4C123GH6PM bölümüyle aynıdır (ör. <code>GPIO_PB6_M0PWM0</code> = 0x00011804: Port B, bit ofseti 0x18, kod 4).</p>
+<table>
+<thead><tr><th>Pin</th><th>Sinyal (PCTL)</th><th>Modül / üreteç / çıkış</th><th>LaunchPad'de</th></tr></thead>
+<tbody>
+<tr><td>PB6</td><td>M0PWM0 (4)</td><td>PWM0 / 0 / A</td><td>PD0'a R9 ile bağlı. Ders kodları</td></tr>
+<tr><td>PB7</td><td>M0PWM1 (4)</td><td>PWM0 / 0 / B</td><td>PD1'e R10 ile bağlı. Ders kodları</td></tr>
+<tr><td>PD0</td><td>M1PWM0 (5), M0PWM6 (4)</td><td>PWM1 / 0 / A</td><td>J3.03, Lab 15'in servo pini</td></tr>
+<tr><td>PD1</td><td>M1PWM1 (5), M0PWM7 (4)</td><td>PWM1 / 0 / B</td><td>J3.04</td></tr>
+<tr><td>PF1</td><td>M1PWM5 (5)</td><td>PWM1 / 2 / B</td><td>RGB LED, kırmızı</td></tr>
+<tr><td>PF2</td><td>M1PWM6 (5)</td><td>PWM1 / 3 / A</td><td>RGB LED, mavi</td></tr>
+<tr><td>PF3</td><td>M1PWM7 (5)</td><td>PWM1 / 3 / B</td><td>RGB LED, yeşil</td></tr>
+<tr><td>PF0</td><td>M1PWM4 (5)</td><td>PWM1 / 2 / A</td><td>SW2. Kilitli pin, önce LOCK/CR</td></tr>
+</tbody></table>
+<div class="box warn"><span class="box-title">PB6–PD0 ve PB7–PD1 kısa devresi</span>
+<p>LaunchPad'de PB6 ile PD0 R9, PB7 ile PD1 R10 üzerinden (0 Ω) birbirine bağlıdır (kullanıcı kılavuzu Tablo 2-5, s. 10). Kılavuz bunu bağlantı olarak verir. Buradan çıkan sonuç şudur: PB6/PB7'de PWM üretilirken PD0/PD1 çıkış yapılmamalıdır, yoksa iki çıkış aynı düğümü birbirine karşı sürer. Her çiftte (PB6/PD0, PB7/PD1) yalnız bir pin sürülmelidir. Reset'ten sonra PD0/PD1 sayısal girişi kapalı GPIO'dur, kendi hâline bırakılırsa sorun yoktur. Bu yüzden PB6'daki sinyal J3.03'te (PD0) de görülür. Tersi de geçerlidir: Lab 15'te PD0 sürülürken PB6 boş kalmalıdır.</p></div>
+<p>RGB LED'in renkleri ve pinleri kullanıcı kılavuzu Tablo 2-2'dedir (s. 9). LED'ler PF1–PF3 üzerinden transistörlerle (Q1–Q3, şema s. 20) sürülür ve yüksek etkindir: görev oranı arttıkça LED parlar.</p>
+
+<h3 id="saat">Saat: PWM bölücüsü ve saat geçidi</h3>
+<p>PWM saatinin kaynağı ya doğrudan sistem saati ya da bölünmüş sistem saatidir (§20.3.1, s. 1234). Seçim, RCC register'ındadır (<code>0x400F.E060</code>, s. 254–255):</p>
+<table>
+<thead><tr><th>Alan</th><th>Bitler</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>USEPWMDIV</td><td>20</td><td>0: PWM saati = sistem saati. 1: PWM saati = PWMDIV bölücüsünün çıkışı. Bölücü iki modül için ortaktır</td></tr>
+<tr><td>PWMDIV</td><td>19:17</td><td>0 → ÷2, 1 → ÷4, 2 → ÷8, 3 → ÷16, 4 → ÷32, 5, 6, 7 → ÷64. Reset değeri 7</td></tr>
+</tbody></table>
+<p>RCC'nin reset değeri <code>0x078E.3AD1</code>'dir: USEPWMDIV = 0, PWMDIV = 7 (s. 254). TivaWare'de <code>SysCtlPWMClockSet(SYSCTL_PWMDIV_n)</code> bu iki alanı tek yazmada değiştirir (<code>sysctl.c</code>, satır 3163). <code>SYSCTL_PWMDIV_1</code> = 0'dır, yani USEPWMDIV = 0: bölme yoktur. <code>SYSCTL_PWMDIV_2</code> = <code>0x0010.0000</code>'dir (USEPWMDIV = 1, PWMDIV = 0). <code>SYSCTL_PWMDIV_64</code> = <code>0x001A.0000</code>'dir (<code>sysctl.h</code>, satır 207–213).</p>
+<p><b>Modül saati.</b> PWM modülleri açılmadan register'larına erişilirse veri yolu hatası (bus fault) oluşur (s. 354). İki yol vardır:</p>
+<ul>
+<li><b>RCGCPWM</b> (<code>0x400F.E640</code>, s. 354): bit 0 PWM0, bit 1 PWM1. Veri sayfası bu register'ın kullanılmasını ister. Hazır olmayı <b>PRPWM</b> (<code>0x400F.EA40</code>, s. 420) gösterir: bit, modül saatlenip reset'ten çıkınca 1 olur.</li>
+<li><b>RCGC0</b> (<code>0x400F.E100</code>, s. 456–457): eski yazılımlar için. Bit 20 (PWM0) yazılınca RCGCPWM.R0 da yazılır. RCGC0'da PWM1 için bit yoktur. PF1–PF3 ve PD0'daki M1 sinyalleri için RCGCPWM gerekir.</li>
+</ul>
+<p>Saat açıldıktan sonra register'lara erişmeden önce en az 3 sistem saati çevrimi beklenmelidir (s. 1240, s. 456). Bunun en sağlam yolu PRPWM'deki bitin kendisini beklemektir. TivaWare'de karşılığı <code>SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1)</code> ve <code>SysCtlPeripheralReady(SYSCTL_PERIPH_PWM1)</code>'dir. Saat ve PLL için <a href="../saat-pll/">Sistem Saati ve PLL notu</a>.</p>
+
+<h2 id="uretec">3. Üreteç nasıl çalışır?</h2>
+<p><b>Amaç:</b> sayaçtan çıkış sinyaline giden yolu adım adım izleyip LOAD, CMPA ve GENA değerlerini hesaplayabilmek.</p>
+
+<h3 id="sayac">Sayaç kipleri ve olaylar</h3>
+<p>Sayacın kipi PWMnCTL'nin (üreteç 0 için PWM0CTL) MODE bitiyle (bit 1) seçilir (s. 1270):</p>
+<ul>
+<li><b>Aşağı sayma</b> (MODE = 0): LOAD → 0, sonra yeniden LOAD. Sıfır olayının hemen ardından LOAD olayı gelir (§20.3.2, s. 1234). Bir periyot LOAD + 1 tıktır. Sola ya da sağa hizalı sinyaller için kullanılır.</li>
+<li><b>Yukarı/aşağı sayma</b> (MODE = 1): 0 → LOAD → 0. Bir periyot 2 × LOAD tıktır. Merkez hizalı sinyaller için kullanılır.</li>
+</ul>
+<p>Sayaç dört (yukarı/aşağıda altı) <b>olay</b> üretir, her biri bir tık (bir PWM saati çevrimi) genişliğinde bir darbedir (§20.3.3–20.3.4, s. 1234–1235):</p>
+<ul>
+<li><b>Sıfır olayı</b>: sayaç 0. <b>LOAD olayı</b>: sayaç = LOAD.</li>
+<li><b>CMPA↓</b>, <b>CMPB↓</b>: sayaç aşağı sayarken CMPA'ya / CMPB'ye eşit.</li>
+<li><b>CMPA↑</b>, <b>CMPB↑</b>: yalnız yukarı/aşağı kipte, sayaç yukarı sayarken.</li>
+</ul>
+<div class="box ok"><span class="box-title">Veri sayfasının iki kuralı (s. 1234–1235, s. 1280, s. 1282)</span>
+<ol>
+<li><b>Çakışma:</b> bir karşılaştırma olayı sıfır ya da LOAD olayıyla aynı tıka düşerse sıfır/LOAD eylemi uygulanır, karşılaştırma eylemi yok sayılır. CMPA ve CMPB olayları çakışırsa pwmA'ya yalnız A, pwmB'ye yalnız B uygulanır.</li>
+<li><b>CMP &gt; LOAD:</b> karşılaştırıcı değeri LOAD'dan büyükse o karşılaştırıcı hiç olay üretmez.</li>
+</ol>
+<p>Bu iki kural, <a href="#uc-durumlar">%0 ve %100</a> durumlarını belirler.</p></div>
+<figure><img class="fig" src="../img/pwm-sayac-olaylar.svg" alt="Aşağı sayma kipinde testere dişi sayaç: LOAD 319'dan 0'a iner; CMPB 79 ve CMPA 239 yatay çizgileri; LOAD, sıfır, CMPA↓ ve CMPB↓ olay noktaları; pwmA GENA 0x8C ile LOAD'da yükselir CMPA'da düşer, yüzde 25; pwmB GENB 0x80C ile LOAD'da yükselir CMPB'de düşer, yüzde 75; PWM saati 8 MHz, periyot 40 mikrosaniye"><figcaption><b>Şekil 3.</b> <a href="#ornek-apisiz">5.1</a>'deki ayar: PWM saati 8 MHz, LOAD = 319, periyot 320 tık = 40 µs (25 kHz). pwmA (GENA = 0x8C) LOAD'da yükselir, CMPA = 239'da düşer: 80 tık, %25. pwmB (GENB = 0x80C) CMPB = 79'da düşer: 240 tık, %75 (veri sayfası Şekil 20-3, s. 1235'e dayalı).</figcaption></figure>
+
+<h3 id="gen">GENA ve GENB: olaya eylem atamak</h3>
+<p>PWMnGENA (üreteç 0 için PWM0GENA) pwmA'yı, PWMnGENB pwmB'yi üretir. Her olay için 2 bitlik bir eylem alanı vardır (s. 1282–1287):</p>
+<table>
+<thead><tr><th>Bitler</th><th>Alan</th><th>Olay</th></tr></thead>
+<tbody>
+<tr><td>1:0</td><td>ACTZERO</td><td>sıfır olayı: sayaç = 0</td></tr>
+<tr><td>3:2</td><td>ACTLOAD</td><td>LOAD olayı: sayaç = LOAD</td></tr>
+<tr><td>5:4</td><td>ACTCMPAU</td><td>CMPA↑: sayaç = CMPA, yukarı sayarken (yalnız MODE = 1)</td></tr>
+<tr><td>7:6</td><td>ACTCMPAD</td><td>CMPA↓: sayaç = CMPA, aşağı sayarken</td></tr>
+<tr><td>9:8</td><td>ACTCMPBU</td><td>CMPB↑: sayaç = CMPB, yukarı sayarken (yalnız MODE = 1)</td></tr>
+<tr><td>11:10</td><td>ACTCMPBD</td><td>CMPB↓: sayaç = CMPB, aşağı sayarken</td></tr>
+</tbody></table>
+<p>Eylem kodu: <b>0</b> hiçbir şey yapma, <b>1</b> tersle, <b>2</b> düşüğe sür, <b>3</b> yükseğe sür. GENA'da CMPB olayları da kullanılabilir, yani pwmA'nın iki kenarını iki farklı karşılaştırıcı belirleyebilir. Veri sayfası örneğinin değerlerini bit bit çözelim:</p>
+<pre><code class="language-plaintext">GENA = 0x08C = 0000 1000 1100   ACTCMPAD (7:6) = 2 düşük, ACTLOAD (3:2) = 3 yüksek
+GENB = 0x80C = 1000 0000 1100   ACTCMPBD (11:10) = 2 düşük, ACTLOAD (3:2) = 3 yüksek</code></pre>
+<p>İkisinde de çıkış periyot başında (LOAD) yükselir, sayaç karşılaştırıcı değerine inince düşer. TivaWare'in <code>PWMGenConfigure</code>'ı aşağı sayma kipinde tam bu değerleri, yukarı/aşağı kipte <code>ACTCMPAU_ONE | ACTCMPAD_ZERO</code> = 0x0B0 ve GENB'de 0xB00 yazar (<code>pwm.c</code>, satır 232–254).</p>
+
+<h3 id="formuller">Frekans ve görev oranı formülleri</h3>
+<table>
+<thead><tr><th>Kip, GENA</th><th>Frekans</th><th>Görev oranı</th></tr></thead>
+<tbody>
+<tr><td>Aşağı, 0x8C (sola hizalı)</td><td>f<sub>PWM</sub> / (LOAD + 1)</td><td>(LOAD − CMPA) / (LOAD + 1)</td></tr>
+<tr><td>Aşağı, 0xC8 (sağa hizalı)</td><td>f<sub>PWM</sub> / (LOAD + 1)</td><td>(CMPA + 1) / (LOAD + 1)</td></tr>
+<tr><td>Yukarı/aşağı, 0xB0 (merkez hizalı)</td><td>f<sub>PWM</sub> / (2 × LOAD)</td><td>(LOAD − CMPA) / LOAD</td></tr>
+</tbody></table>
+<p>f<sub>PWM</sub> PWM saatidir. Formüller üç ayarda da yalnız 1 ≤ CMPA ≤ LOAD − 1 için geçerlidir. CMPA = 0, CMPA = LOAD ve CMPA &gt; LOAD formülün öngörmediği sonuç verir (<a href="#uc-durumlar">aşağıda</a>). <b>Örnek</b> (16 MHz, ÷2): f<sub>PWM</sub> = 8 MHz. 25 kHz için periyot 8&nbsp;000&nbsp;000 / 25&nbsp;000 = 320 tık, LOAD = 319. %25 için yüksek süre 80 tık: CMPA = 319 − 80 = 239. %75 için CMPB = 319 − 240 = 79. Veri sayfasının 20 MHz örneğinde f<sub>PWM</sub> = 10 MHz, periyot 400 tık: LOAD = 0x18F (399), CMPA = 0x12B (299), CMPB = 0x63 (99) (s. 1239–1240). Formül iki örnekte de aynı sonucu verir.</p>
+
+<h3 id="hizalama">Hizalama: darbe periyodun neresinde?</h3>
+<p>Aynı görev oranı farklı GENA değerleriyle periyodun başına, sonuna ya da ortasına konabilir. Tek bir LED için fark etmez. Birden çok kanal aynı anda anahtarlandığında (köprü sürme, akım ölçümünü kenarlardan uzağa koyma) önemlidir. Veri sayfası aşağı saymayı sola/sağa, yukarı/aşağıyı merkez hizalı sinyaller için önerir (s. 1234).</p>
+<table>
+<thead><tr><th>GENA</th><th>Kip</th><th>Eylemler</th><th>Sonuç (LOAD = 319)</th></tr></thead>
+<tbody>
+<tr><td>0x08C</td><td>Aşağı</td><td>LOAD olayında yüksek, CMPA↓ düşük</td><td>Sola hizalı. CMPA = 239 → %25</td></tr>
+<tr><td>0x0C8</td><td>Aşağı</td><td>LOAD olayında düşük, CMPA↓ yüksek</td><td>Sağa hizalı. CMPA = 79 → 80 tık, %25</td></tr>
+<tr><td>0x070</td><td>Aşağı</td><td>CMPA↑ yüksek (aşağı saymada hiç olmaz), CMPA↓ tersle</td><td>Her periyotta bir tersleme: %50, 12,5 kHz. CMPA yalnız fazı kaydırır</td></tr>
+<tr><td>0x0B0</td><td>Yukarı/aşağı</td><td>CMPA↑ yüksek, CMPA↓ düşük</td><td>Merkez hizalı. CMPA = 239 → 2 × 80 = 160 tık / 638 tık ≈ %25, ≈ 12,5 kHz</td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/pwm-hizalama.svg" alt="Aynı sayaç üzerinde dört GENA ayarının dalga biçimleri: 0x8C sola hizalı yüzde 25; 0xC8 ve CMPA 79 ile sağa hizalı yüzde 25; aşağı saymada 0x70 her periyotta terslenir ve iki periyotta bir tam kare dalga verir; yukarı/aşağı kipte 0xB0 darbeyi periyodun ortasına koyar"><figcaption><b>Şekil 4.</b> Dört GENA ayarı. 0x70'in yukarı sayma alanı aşağı sayma kipinde hiç tetiklenmez, geriye yalnız tersleme kalır. Merkez hizalı darbe sayacın tepe noktasının (LOAD) çevresindedir. (d)'de LOAD aynı kaldığı için periyot 2 × 319 = 638 tıktır. TivaWare yukarı/aşağı kipte bu ayarı (0xB0) varsayılan yapar.</figcaption></figure>
+<p>Aynı LOAD ile yukarı/aşağı kipte frekans yarıya iner (Şekil 4'te ≈ 12,5 kHz). 25 kHz için LOAD = 160 alınır ve görev oranı 1/160'lık adımlarla değişir. Merkez hizalamanın bedeli çözünürlüğün yarıya inmesidir.</p>
+
+<h3 id="uc-durumlar">Uç durumlar: %0 ve %100</h3>
+<p>0x8C ile LOAD = 319'da CMPA'nın uç değerleri iki kurala göre şöyle davranır (s. 1235, s. 1280, s. 1282):</p>
+<table>
+<thead><tr><th>CMPA</th><th>Ne olur?</th><th>Görev oranı</th></tr></thead>
+<tbody>
+<tr><td>320 ve üstü (&gt; LOAD)</td><td>CMPA↓ olayı hiç yok. LOAD'da yükselen çıkışı düşüren olmaz</td><td>%100</td></tr>
+<tr><td>319 (= LOAD)</td><td>CMPA↓, LOAD olayıyla çakışır. LOAD eylemi (yüksek) kazanır</td><td>%100</td></tr>
+<tr><td>1 … 318</td><td>Normal: yüksek süre 319 − CMPA tık</td><td>%99,4 … %0,3</td></tr>
+<tr><td>0</td><td>CMPA↓, sıfır olayıyla çakışır. ACTZERO = 0 (hiçbir şey) uygulanır, düşürme yok sayılır</td><td>%100</td></tr>
+</tbody></table>
+<p>Sonuç: <b>0x8C ile CMPA yazarak %0 elde edilemez.</b> En düşük görev oranı CMPA = 318'deki 1 tıktır. %0 için çıkış PWMENABLE'da kapatılır: kapalı çıkışın yerine 0 değeri geçer (s. 1247). Ya da GENA geçici olarak değiştirilir (ör. ACTLOAD = 2). %100 için CMPA &gt; LOAD yazmak açık bir yoldur. Aynı tuzak TivaWare'de de vardır: <code>PWMPulseWidthSet(…, 0)</code> CMP = LOAD yazar ve çıkış %100 olur. <a href="#ornek-tarama">5.2</a> ve <a href="#ornek-apili">5.3</a> bunu ele alır.</p>
+<p><b>Öteki ayarlarda</b> aynı iki kural farklı sonuç verir (s. 1235, s. 1282):</p>
+<ul>
+<li><b>Sağa hizalı (0xC8):</b> durum tersine döner. CMPA = 0 (sıfır olayıyla çakışır, ACTZERO = 0), CMPA = LOAD (LOAD olayı düşük sürer) ve CMPA &gt; LOAD (olay yok) çıkışı hiç yükseltmez: %0. En uzun darbe CMPA = LOAD − 1'deki 319 tıktır (%99,7). Bu ayarla %100 elde edilemez.</li>
+<li><b>Yukarı/aşağı, merkez hizalı (0xB0):</b> CMPA = 0 ya da CMPA = LOAD iken hem CMPA↑ hem CMPA↓ sıfır/LOAD olayıyla çakışıp yok sayılır. CMPA &gt; LOAD'da hiç olay yoktur. ACTZERO ve ACTLOAD = 0 olduğundan çıkış son düzeyinde kalır: önceki değer ne bıraktıysa %0 ya da %100. TivaWare yukarı/aşağı kipte <code>PWMPulseWidthSet(…, 0)</code> ile CMP = LOAD yazar ve tam bu duruma düşer.</li>
+</ul>
+
+<h3 id="guncelleme">Çalışırken değer güncelleme</h3>
+<p>PWMnCTL'deki güncelleme bitleri, yeni yazılan bir değerin ne zaman etkili olacağını seçer (s. 1267–1269, §20.3.7 s. 1237):</p>
+<ul>
+<li><b>LOAD, CMPA, CMPB</b> (LOADUPD, CMPAUPD, CMPBUPD = bit 3, 4, 5): 0 → <b>yerel eşzamanlı</b>: yeni değer sayaç bir sonraki kez 0'a ulaşınca kullanılır. 1 → küresel eşzamanlı: PWMCTL üzerinden eşzamanlı güncelleme istenene kadar bekler. Bu üç register'ın "hemen" seçeneği yoktur.</li>
+<li><b>GENA, GENB</b> ve ölü bant register'ları (GENAUPD, GENBUPD …): 0 → hemen, 2 → yerel, 3 → küresel.</li>
+</ul>
+<p>Veri sayfasının 20.4 örneği 6. adımda "immediate updates" der ve PWM0CTL'ye 0 yazar (s. 1239). Bu ifade GENA/GENB için doğrudur. LOAD ve CMPA/CMPB için 0 yerel eşzamanlı demektir. TivaWare'deki <code>PWM_GEN_MODE_NO_SYNC</code> (= 0) sabitinin "Immediate updates" yorumu da aynı şekilde gevşektir (<code>pwm.h</code>, satır 63). Yerel eşzamanlama işe yarar: CMPA periyodun ortasında değiştirilse bile o periyot eski değerle biter, aşırı kısa ya da uzun darbe çıkmaz (s. 1237). Güncelleme gerçekleşmeden register yeniden yazılırsa önceki değer hiç kullanılmaz; yalnız son yazılan değer alınır (s. 1280).</p>
+
+<h3 id="cikis">Çıkış denetimi ve diğer özellikler</h3>
+<ul>
+<li><b>PWMENABLE</b> (ofset 0x008, s. 1247): bit k, MnPWMk'yi pine verir. 0 iken pine 0 değeri gider, üreteç çalışmaya devam eder.</li>
+<li><b>PWMINVERT</b> (0x00C, s. 1249): bit k çıkışı tersler. Kapalı çıkışlar da terslenir, kapalı bir çıkış böylece 1 verebilir.</li>
+<li><b>Ölü bant</b> (PWMnDBCTL, s. 1236): açıksa pwmB kaybolur, pwmA'dan yükselen kenarı geciktirilmiş pwmA' ve terslenip geciktirilmiş pwmB' üretilir. Yarım köprüde iki anahtarın aynı anda iletime girmesini önler.</li>
+<li><b>Hata girişi</b> (MnFAULTn, s. 1238): dış bir hata sinyali çıkışları güvenli değere çeker.</li>
+<li><b>Kesme ve ADC tetikleme</b> (PWMnINTEN, s. 1236–1237): aynı olaylar kesme ya da ADC örnekleme tetiği üretebilir.</li>
+<li><b>Eşzamanlama</b> (PWMSYNC, s. 1237): birden çok üretecin sayacını tek yazmayla sıfırlar.</li>
+<li><b>Hata ayıklama</b> (PWMnCTL.DEBUG, bit 2): 0 iken işlemci kesme noktasında durunca sayaç bir sonraki sıfırda durur (s. 1270).</li>
+<li><b>ENABLE = 0</b> sayacı (PWMnCOUNT) sıfırlamaz. Temiz bir yeniden başlatma için modül SRPWM ile reset edilir (s. 1270, s. 1279, s. 330).</li>
+</ul>
+
+<h2 id="baslatma">4. Başlatma adımları</h2>
+<p><b>Amaç:</b> veri sayfası 20.4'ün adımlarını LaunchPad'in reset sonrasındaki 16 MHz saatine uyarlamak.</p>
+<p>Veri sayfası 20.4 (s. 1239–1240), üreteç 0'da 25 kHz, MnPWM0'da %25 ve MnPWM1'de %75 için 11 adım verir ve 20 MHz sistem saati varsayar. Ders kodları ve bu notun API'siz örnekleri aynı adımları 16 MHz PIOSC ile uygular: PWM saati 8 MHz, periyot 320 tık. Tablo ve kod yorumları aynı numaraları kullanır.</p>
+<table>
+<thead><tr><th>Adım</th><th>İş</th><th>Veri sayfası (20 MHz)</th><th>Bu not (16 MHz, PB6/PB7)</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>PWM modül saati</td><td>RCGC0 = <code>0x0010.0000</code></td><td>RCGCPWM.R0 = 1, PRPWM.R0 beklenir</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0)</code></td></tr>
+<tr><td>2</td><td>GPIO port saati</td><td>RCGC2</td><td>RCGCGPIO.R1 = 1, PRGPIO.R1 beklenir</td><td><code>SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB)</code></td></tr>
+<tr><td>3</td><td>Alternatif işlev</td><td>GPIOAFSEL</td><td>AFSEL |= 0xC0, DEN |= 0xC0 (DEN 20.4'te yok ama gerekir)</td><td><code>GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_6 | GPIO_PIN_7)</code></td></tr>
+<tr><td>4</td><td>Pin çoklayıcı</td><td>GPIOPCTL</td><td>PMC6 = PMC7 = 4 → <code>0x4400.0000</code></td><td><code>GPIOPinConfigure(GPIO_PB6_M0PWM0)</code>, <code>(GPIO_PB7_M0PWM1)</code></td></tr>
+<tr><td>5</td><td>PWM saati</td><td>USEPWMDIV = 1, PWMDIV = 0 (÷2): 10 MHz</td><td>Aynı: 8 MHz</td><td><code>SysCtlPWMClockSet(SYSCTL_PWMDIV_2)</code></td></tr>
+<tr><td>6</td><td>Üreteç kipi ve eylemler</td><td>CTL = 0, GENA = 0x8C, GENB = 0x80C</td><td>Aynı</td><td><code>PWMGenConfigure(PWM0_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC)</code></td></tr>
+<tr><td>7</td><td>Periyot</td><td>LOAD = 0x18F (400 − 1)</td><td>LOAD = 319 (320 − 1)</td><td><code>PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, 320)</code></td></tr>
+<tr><td>8</td><td>A darbesi, %25</td><td>CMPA = 0x12B (299)</td><td>CMPA = 239</td><td><code>PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, 80)</code></td></tr>
+<tr><td>9</td><td>B darbesi, %75</td><td>CMPB = 0x63 (99)</td><td>CMPB = 79</td><td><code>PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 240)</code></td></tr>
+<tr><td>10</td><td>Sayacı başlat</td><td>CTL = 1</td><td>CTL = 1 (ENABLE)</td><td><code>PWMGenEnable(PWM0_BASE, PWM_GEN_0)</code></td></tr>
+<tr><td>11</td><td>Çıkışları aç</td><td>ENABLE = 0x3</td><td>ENABLE = 0x3</td><td><code>PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT | PWM_OUT_1_BIT, true)</code></td></tr>
+</tbody></table>
+<p>Veri sayfası 1. ve 2. adımda eski RCGC0/RCGC2 register'larını anar. Bu not yeni RCGCPWM/RCGCGPIO ile PR register'larını kullanır (<a href="#saat">Bölüm 2</a>). GPIODIR ayarlanmaz: AFSEL = 1 olan pinin yönünü çevre birimi belirler. PB6/PB7'nin analog işlevi olmadığı için AMSEL de gerekmez (kullanıcı kılavuzu Tablo 2-4/2-5).</p>
+
+<h3 id="api-esleme">TivaWare fonksiyonlarının register karşılığı</h3>
+<table>
+<thead><tr><th>Fonksiyon</th><th>Yaptığı (TivaWare 2.1.4)</th></tr></thead>
+<tbody>
+<tr><td><code>SysCtlPWMClockSet(cfg)</code></td><td>RCC'de USEPWMDIV ve PWMDIV'i temizler, <code>cfg</code>'yi yazar (<code>sysctl.c</code>, satır 3163)</td></tr>
+<tr><td><code>GPIOPinTypePWM(port, pinler)</code></td><td>Yön donanımda (AFSEL = 1), 2 mA standart pad, DEN = 1 (<code>gpio.c</code>, satır 1932–1948). Kilitli PF0'ı açmaz</td></tr>
+<tr><td><code>PWMGenConfigure(base, gen, cfg)</code></td><td>CTL'nin kip ve güncelleme alanlarını <code>cfg</code> ile değiştirir. Aşağı saymada GENA = 0x8C, GENB = 0x80C, yukarı/aşağıda 0xB0, 0xB00 yazar (<code>pwm.c</code>, satır 200–255)</td></tr>
+<tr><td><code>PWMGenPeriodSet(base, gen, p)</code></td><td>Aşağı saymada LOAD = p − 1, yukarı/aşağıda LOAD = p / 2 (satır 302, 311). Yani <b>periyot tık olarak verilir</b>, −1'i fonksiyon yapar</td></tr>
+<tr><td><code>PWMPulseWidthSet(base, çıkış, g)</code></td><td>Yukarı/aşağıda g'yi ikiye böler. <code>ASSERT(g &lt; LOAD)</code>, sonra CMP = LOAD − g. Çift çıkış CMPA'ya, tek çıkış CMPB'ye (satır 447–497)</td></tr>
+<tr><td><code>PWMGenEnable</code>, <code>PWMOutputState</code></td><td>CTL |= ENABLE (satır 394). ENABLE register'ında bitleri kurar ya da siler (satır 726–749)</td></tr>
+</tbody></table>
+<p><code>ASSERT</code>'ler yalnız <code>DEBUG</code> tanımlıyken derlenir. TivaWare 2.1.4'ün hazır kütüphanelerinde (<code>ccs/Debug/driverlib.lib</code> dahil) <code>__error__</code> başvurusu yoktur, yani ASSERT derlenmemiştir. Ders projelerinin bağladığı 2.2.0.295 <code>driverlib.lib</code>'de de denetim büyük olasılıkla yoktur: sınır dışı bir genişlik sessizce yanlış bir CMP değerine dönüşür (<a href="#ders-oornek">Bölüm 7</a>).</p>
+
+<h2 id="ornekler">5. Örnekler</h2>
+<p>Örnekler TivaWare 2.1.4 başlıklarıyla clang <code>-Wall</code> altında uyarısız derlenir. 5.1 ve 5.2 yalnız <code>inc/tm4c123gh6pm.h</code> kullanır. PB6/PB7'de LED yoktur: sinyali görmek için osiloskop, mantık analizörü ya da bir direnç (ör. 330 Ω) üzerinden bağlanmış bir LED gerekir. Kartta ek donanımsız deneme için <a href="#ornek-apili">5.3</a> ve <a href="#ti">Bölüm 6</a>.</p>
+
+<h3 id="ornek-apisiz">5.1 PB6 %25, PB7 %75, 25 kHz <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> veri sayfası 20.4'ü 16 MHz'te, yeni saat geçidi register'ları ve maskeli yazmalarla uygulamak.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: pwm_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// PWM0 üreteç 0: PB6 (M0PWM0) %25, PB7 (M0PWM1) %75, 25 kHz.
+// Sistem saati: reset sonrası PIOSC, 16 MHz. PWM saati 16 / 2 = 8 MHz.
+// Adım numaraları veri sayfası 20.4 (s. 1239–1240) ile aynıdır.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define PWM_LOAD  319u   // 8 MHz / 25 kHz = 320 tık; aşağı saymada LOAD = 320 - 1
+#define PWM_CMPA  239u   // PB6: LOAD'dan CMPA'ya 319 - 239 = 80 tık yüksek -&gt; %25
+#define PWM_CMPB   79u   // PB7: 319 - 79 = 240 tık yüksek -&gt; %75
+
+int main(void)
+{
+    // 1. PWM0 modülünün saati (eski yol: SYSCTL_RCGC0_R |= 0x00100000)
+    SYSCTL_RCGCPWM_R |= SYSCTL_RCGCPWM_R0;
+    while ((SYSCTL_PRPWM_R &amp; SYSCTL_PRPWM_R0) == 0) { }   // yalnız R0'a bak
+
+    // 2. Port B'nin saati (eski yol: RCGC2)
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R1) == 0) { }
+
+    // 3. PB6 ve PB7 alternatif işleve; Port B'nin diğer bitleri korunur
+    GPIO_PORTB_AFSEL_R |= 0xC0;
+    GPIO_PORTB_DEN_R   |= 0xC0;
+
+    // 4. PCTL: PMC6 = PMC7 = 4 (M0PWM0, M0PWM1); önce alanları temizle
+    GPIO_PORTB_PCTL_R = (GPIO_PORTB_PCTL_R &amp; ~0xFF000000u) | 0x44000000u;
+
+    // 5. PWM saati = sistem saati / 2: USEPWMDIV = 1, PWMDIV = 0, tek yazmada
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_PWMDIV_M)
+                 | SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_2;
+
+    // 6. Üreteç 0 durdurulur: aşağı sayma, LOAD/CMP yerel eşzamanlı
+    PWM0_0_CTL_R  = 0;
+    PWM0_0_GENA_R = 0x08C;   // ACTLOAD = 3 (yüksek), ACTCMPAD = 2 (düşük)
+    PWM0_0_GENB_R = 0x80C;   // ACTLOAD = 3 (yüksek), ACTCMPBD = 2 (düşük)
+
+    // 7. Periyot
+    PWM0_0_LOAD_R = PWM_LOAD;
+
+    // 8. ve 9. Darbe genişlikleri
+    PWM0_0_CMPA_R = PWM_CMPA;
+    PWM0_0_CMPB_R = PWM_CMPB;
+
+    // 10. Sayacı başlat
+    PWM0_0_CTL_R = PWM_0_CTL_ENABLE;
+
+    // 11. pwmA' ve pwmB' pinlere: bit 0 = M0PWM0 (PB6), bit 1 = M0PWM1 (PB7)
+    PWM0_ENABLE_R = 0x03;
+
+    while (1) { }   // PWM donanımda üretilir, işlemci boşta
+}</code></pre>
+<p><b>Kodun ayrıntıları:</b></p>
+<ul>
+<li>PRPWM'de yalnız R0 biti denetlenir. Register'ın tamamını 1 ile karşılaştırmak PWM1 de açıkken takılır (<a href="#ders-hafta0dpwm">Bölüm 7</a>).</li>
+<li>AFSEL ve DEN <code>|=</code> ile, PCTL maske + değer ile yazılır: Port B'nin başka pinleri (ör. I2C0'ın PB2/PB3'ü) bozulmaz.</li>
+<li>RCC tek yazmada değişir. Ders kodlarındaki iki ayrı yazmada arada kısa bir süre ÷64 seçili kalır (<a href="#ders-ortak">Bölüm 7</a>).</li>
+</ul>
+<p><b>Beklenen davranış:</b> osiloskopta PB6'da 40 µs periyotlu, 10 µs yüksek bir sinyal, PB7'de aynı periyotta 30 µs yüksek bir sinyal görülür. İki sinyalin yükselen kenarları çakışır (ikisi de LOAD'da yükselir, Şekil 3). R9/R10 nedeniyle aynı sinyaller J3.03/J3.04'te (PD0/PD1) de görülür.</p>
+
+<h3 id="ornek-tarama">5.2 Görev oranını %0–%100 taramak <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> görev oranını çalışırken değiştirmek ve uç durumları veri sayfasının kurallarına göre doğru üretmek.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: pwm_tarama.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// PB6 (M0PWM0) görev oranını %0 -&gt; %100 -&gt; %0 tarar, 25 kHz.
+// 16 MHz PIOSC, PWM saati 8 MHz, periyot 320 tık (LOAD = 319), GENA = 0x8C.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define PERIYOT 320u                 // tık
+#define LOAD    (PERIYOT - 1u)       // 319
+
+// SysTick ile ms bekleme (16 MHz, yoklamalı; SysTick notundaki yöntem)
+static void bekle_ms(uint32_t ms)
+{
+    NVIC_ST_RELOAD_R  = 16000u - 1u;   // 1 ms
+    NVIC_ST_CURRENT_R = 0;
+    NVIC_ST_CTRL_R    = 0x05;          // ENABLE = 1, CLK_SRC = sistem saati
+    while (ms--) {
+        while ((NVIC_ST_CTRL_R &amp; 0x10000u) == 0) { }   // COUNT bayrağı
+    }
+    NVIC_ST_CTRL_R = 0;
+}
+
+// Görev oranını yüzde olarak ayarlar (0..100)
+static void pwm_yuzde(uint32_t yuzde)
+{
+    uint32_t yuksek = (yuzde * PERIYOT) / 100u;   // yüksek kalınacak tık
+
+    if (yuksek == 0u) {                 // %0: CMPA ile elde edilemez
+        PWM0_ENABLE_R &amp;= ~0x01u;        // çıkış kapalı -&gt; pin 0 (s. 1247)
+        return;
+    }
+    if (yuksek &gt;= LOAD) {               // 319 ya da 320 tık
+        PWM0_0_CMPA_R = PERIYOT;        // CMPA &gt; LOAD: olay yok -&gt; hep yüksek
+    } else {
+        PWM0_0_CMPA_R = LOAD - yuksek;  // 1..318: yüksek süre = LOAD - CMPA
+    }
+    PWM0_ENABLE_R |= 0x01u;
+}
+
+int main(void)
+{
+    uint32_t y;
+
+    SYSCTL_RCGCPWM_R |= SYSCTL_RCGCPWM_R0;                    // 1
+    while ((SYSCTL_PRPWM_R &amp; SYSCTL_PRPWM_R0) == 0) { }
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;                  // 2
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R1) == 0) { }
+    GPIO_PORTB_AFSEL_R |= 0x40;                               // 3: yalnız PB6
+    GPIO_PORTB_DEN_R   |= 0x40;
+    GPIO_PORTB_PCTL_R = (GPIO_PORTB_PCTL_R &amp; ~0x0F000000u) | 0x04000000u;  // 4
+    SYSCTL_RCC_R = (SYSCTL_RCC_R &amp; ~SYSCTL_RCC_PWMDIV_M)      // 5: /2
+                 | SYSCTL_RCC_USEPWMDIV | SYSCTL_RCC_PWMDIV_2;
+    PWM0_0_CTL_R  = 0;                                        // 6
+    PWM0_0_GENA_R = 0x08C;
+    PWM0_0_LOAD_R = LOAD;                                     // 7
+    pwm_yuzde(0);                                             // 8: %0 ile başla
+    PWM0_0_CTL_R = PWM_0_CTL_ENABLE;                          // 10
+
+    while (1) {
+        for (y = 0; y &lt;= 100u; y++) { pwm_yuzde(y); bekle_ms(20); }  // ~2 s artış
+        for (y = 100; y &gt; 0u; y--)  { pwm_yuzde(y); bekle_ms(20); }  // ~2 s azalış
+    }
+}</code></pre>
+<p><b>Nasıl çalışır?</b> <code>pwm_yuzde</code> istenen yüzdeyi yüksek tık sayısına çevirir. 1–318 tık için CMPA = 319 − tık yazılır. 319 ve 320 tık için CMPA = 320 (&gt; LOAD) yazılır. (CMPA = 0 da %100 verirdi; formülün öngördüğü 319/320 değil.) %0 için çıkış PWMENABLE'dan kapatılır. CMPA yerel eşzamanlı güncellendiği için yeni değer bir sonraki sıfırda, yani en geç 40 µs sonra etkili olur. Periyot ortasında yazmak bozuk darbe üretmez. Tek istisna ilk açılıştır: etkin CMP reset değeri 0'dır ve ilk yazılan değer bir sonraki sıfırda alınır, bu yüzden en çok bir periyot %100 çıkabilir. Bu süre gözle fark edilmez. Bekleme SysTick ile yapılır (<a href="../systick/">SysTick notu</a>): döngü sayan bir gecikmenin süresi derleyiciye bağlıdır.</p>
+<p><b>Beklenen davranış:</b> PB6'ya bağlı LED yaklaşık 2 s'de sönükten tam parlaklığa çıkar, 2 s'de söner. Göz parlaklığı doğrusal algılamadığı için değişim düşük görev oranlarında daha belirgindir.</p>
+
+<h3 id="ornek-apili">5.3 RGB LED'de renk geçişi <span class="tag api">API'li</span></h3>
+<p><b>Amaç:</b> TivaWare ile PWM1'in iki üretecini kurup kartın RGB LED'inin üç rengini ayrı ayrı sürmek.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: pwm_rgb_apili.c</span><span class="tag api">API'li · 16 MHz</span></div><pre><code class="language-c">// LaunchPad RGB LED'i PWM ile: PF1 kırmızı (M1PWM5), PF3 yeşil (M1PWM7),
+// PF2 mavi (M1PWM6). 16 MHz, PWM saati 16 MHz, 1 kHz. TivaWare ile.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/pwm.h"
+
+#define PERIYOT 16000u   // 16 MHz / 1 kHz; PWMGenPeriodSet LOAD = 15 999 yazar
+
+// Kanal sırası: kırmızı, yeşil, mavi
+static const uint32_t cikis[3] = { PWM_OUT_5, PWM_OUT_7, PWM_OUT_6 };
+static const uint32_t cbit[3]  = { PWM_OUT_5_BIT, PWM_OUT_7_BIT, PWM_OUT_6_BIT };
+
+// Parlaklık binde olarak (0..1000)
+static void kanal_ayarla(uint32_t k, uint32_t binde)
+{
+    uint32_t genislik = (PERIYOT * binde) / 1000u;   // yüksek tık sayısı
+
+    if (genislik == 0u) {
+        // Genişlik 0 verilseydi CMP = LOAD olurdu: LOAD olayı kazanır, LED tam yanar.
+        PWMOutputState(PWM1_BASE, cbit[k], false);   // %0: çıkış kapalı
+        return;
+    }
+    if (genislik &gt; PERIYOT - 2u) {
+        genislik = PERIYOT - 2u;   // ASSERT(genislik &lt; LOAD) sınırı: en çok %99,99
+    }
+    PWMPulseWidthSet(PWM1_BASE, cikis[k], genislik);   // CMP = LOAD - genislik
+    PWMOutputState(PWM1_BASE, cbit[k], true);
+}
+
+int main(void)
+{
+    uint32_t k, b;
+
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+                   SYSCTL_XTAL_16MHZ);                 // 16 MHz kristal, PLL yok
+    SysCtlPWMClockSet(SYSCTL_PWMDIV_1);                // USEPWMDIV = 0: PWM saati = 16 MHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM1) ||
+           !SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+
+    GPIOPinConfigure(GPIO_PF1_M1PWM5);                 // PCTL = 5
+    GPIOPinConfigure(GPIO_PF2_M1PWM6);
+    GPIOPinConfigure(GPIO_PF3_M1PWM7);
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);
+
+    // Üreteç 2: M1PWM4/5, üreteç 3: M1PWM6/7. GENA = 0x8C, GENB = 0x80C yazılır.
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_3, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, PERIYOT);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, PERIYOT);
+
+    kanal_ayarla(0, 1000);                             // kırmızıdan başla
+    kanal_ayarla(1, 0);
+    kanal_ayarla(2, 0);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_2);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_3);
+
+    while (1) {
+        // Renk çemberi: kırmızı -&gt; yeşil -&gt; mavi -&gt; kırmızı, her geçiş 1 s
+        for (k = 0; k &lt; 3u; k++) {
+            for (b = 0; b &lt;= 1000u; b += 10u) {
+                kanal_ayarla(k, 1000u - b);            // bu kanal söner
+                kanal_ayarla((k + 1u) % 3u, b);        // sonraki kanal yanar
+                SysCtlDelay(16000000u / 3u / 100u);    // ~10 ms (3 çevrim/döngü)
+            }
+        }
+    }
+}</code></pre>
+<p><b>Kodun ayrıntıları:</b></p>
+<ul>
+<li>Kırmızı (M1PWM5) üreteç 2'nin B çıkışı, mavi ve yeşil (M1PWM6/7) üreteç 3'ün A ve B çıkışıdır. Bu yüzden iki üreteç kurulur. Üreteç 2'nin A çıkışı (M1PWM4, PF0) açılmaz.</li>
+<li><code>PWMGenPeriodSet(…, 16000)</code> LOAD = 15&nbsp;999 yazar: 16 MHz / 16&nbsp;000 = 1 kHz.</li>
+<li><code>PWMPulseWidthSet</code> CMP = LOAD − genişlik yazar ve genişliğin LOAD'dan küçük olmasını ister. Genişlik 0 olursa CMP = LOAD olur ve LED tam yanar (<a href="#uc-durumlar">Bölüm 3</a>). <code>kanal_ayarla</code> 0'da çıkışı kapatır, üst sınırı 15&nbsp;998'e (%99,99) kırpar. 5.2'deki gibi, açılışta etkin CMP reset değeri 0 olduğundan ilk periyot (1 ms) %100 çıkabilir, etkisi görülmez.</li>
+</ul>
+<p><b>Beklenen davranış:</b> LED kırmızıdan sarı üzerinden yeşile, camgöbeği üzerinden maviye, mor üzerinden yeniden kırmızıya her geçiş yaklaşık 1 s sürecek biçimde döner.</p>
+
+<h2 id="ti">6. TI Workbook Lab 15 uyarlaması <span class="tag ti">TI Lab 15</span></h2>
+<p><b>Amaç:</b> Lab 15'in servo sinyalini hesaplarıyla incelemek ve LaunchPad'de servosuz gözlenebilir bir uyarlamasını çalıştırmak.</p>
+<p>Lab 15, bir RC servoyu PD0'dan (M1PWM0) sürer (Workbook s. 15-7 – 15-17). Servo 50–60 Hz'lik bir sinyal bekler. 1 ms ve 2 ms'lik darbeler hareket sınırları, 1,5 ms orta konumdur (s. 15-8). Lab'ın hesabı:</p>
+<table>
+<thead><tr><th>Büyüklük</th><th>Lab 15'te</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td>Sistem saati</td><td><code>SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL</code></td><td>40 MHz</td></tr>
+<tr><td>PWM saati</td><td><code>SysCtlPWMClockSet(SYSCTL_PWMDIV_64)</code></td><td>40 MHz / 64 = 625 kHz (1,6 µs/tık)</td></tr>
+<tr><td>Periyot</td><td><code>ui32Load = 625&nbsp;000 / 55 − 1</code></td><td>11&nbsp;362. <code>PWMGenPeriodSet</code> LOAD = 11&nbsp;361 yazar</td></tr>
+<tr><td>Darbe</td><td><code>ui8Adjust * ui32Load / 1000</code></td><td>56 → 636 tık ≈ 1,02 ms; 83 → 943 ≈ 1,51 ms; 111 → 1261 ≈ 2,02 ms</td></tr>
+<tr><td>Düğmeler</td><td>SW1 (PF4) azaltır, SW2 (PF0) artırır</td><td>Her döngüde ±1, döngü <code>SysCtlDelay(100000)</code></td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/pwm-servo.svg" alt="Lab 15 servo zamanlaması: 40 MHz bölü 64 eşittir 625 kHz PWM saati; 55 Hz, yaklaşık 18,2 ms periyot; ayar değeri 56, 83 ve 111 için yaklaşık 1,0, 1,5 ve 2,0 ms darbe; SW1 darbeyi kısaltır, SW2 uzatır"><figcaption><b>Şekil 5.</b> Lab 15'in servo sinyali: 625 kHz PWM saati, 55 Hz (≈ 18,2 ms). Ayar değeri 56–111 arasında, darbe ≈ 1,0–2,0 ms. Ölçek: darbeler periyodun yalnız %5,6–%11,1'idir.</figcaption></figure>
+<div class="box warn"><span class="box-title">Lab metnindeki iki küçük kusur</span>
+<ul>
+<li><b>Periyot bir tık kısa:</b> <code>ui32Load</code>'a −1 zaten uygulanmıştır, <code>PWMGenPeriodSet</code> bir kez daha 1 çıkarır (<code>pwm.c</code>, satır 311). Periyot 11&nbsp;363 yerine 11&nbsp;362 tık olur: 18,179 ms, 55,008 Hz. Fark 1,6 µs'dir, servonun 50–60 Hz aralığı yanında önemsizdir. Ama TivaWare'e periyodun kendisinin verildiğini gösteren iyi bir örnektir.</li>
+<li><b>"Asenkron" yükleme değil:</b> Workbook 19. adımda darbe genişliğinin çıkıştan bağımsız, asenkron yüklendiğini söyler (s. 15-16). <code>PWM_GEN_MODE_DOWN</code> ile CMPAUPD = 0'dır. Yani CMPA yerel eşzamanlıdır: yeni değer bir sonraki sıfırda alınır (s. 1269), periyot ortasında darbe bozulmaz.</li>
+<li><b>Çözünürlük 18,2 µs:</b> Workbook periyodun binde birini "1.82µS" diye yazar (s. 15-14). 18,2 ms / 1000 = 18,2 µs'dir. Lab'ın kendi sonucu (83 × 18,2 µs ≈ 1,51 ms) da bunu doğrular.</li>
+</ul></div>
+<p><b>Donanım.</b> Lab servoyu J3'ün 1–3. pinlerine takar: J3.01 = 5 V, J3.02 = toprak, J3.03 = PD0 (s. 15-9 – 15-10, kullanıcı kılavuzu Tablo 2-5). Servo USB'nin 5 V'unu kullanır. Servonun ani akımları USB beslemesini zorlayabilir. Ayrı bir 5 V kaynak ve ortak toprak daha güvenlidir. PD0, PB6'ya R9 ile bağlı olduğu için PB6 bu sırada boş kalmalıdır.</p>
+<p><b>Uyarlama seçimi.</b> Servo ya da mantık analizörü olmadan Lab'ın sinyali görülemez. Uyarlama aynı hesabı iki üretece uygular: PD0'daki M1PWM0 Lab'daki gibi kalır (servo ya da analizör takılabilir), aynı sinyal M1PWM5 ile PF1'deki kırmızı LED'e de verilir. Böylece kartta ek donanım olmadan SW1/SW2 ile parlaklığın değiştiği görülür. Darbe periyodun %5,6–%11,1'i olduğu için LED sönük yanar ve 55 Hz'te belirgin biçimde titreşebilir. Bu, servo sinyalinin bir parlaklık sinyali olmadığını da gösterir. Lab'dan farklar: <code>ROM_</code> çağrıları yerine <code>driverlib</code> çağrıları, periyot −1'siz verilir, modüller <code>SysCtlPeripheralReady</code> ile beklenir.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: lab15_launchpad.c</span><span class="tag ti">TI uyarlaması · 40 MHz</span></div><pre><code class="language-c">// TI Workbook Lab 15 uyarlaması: servo sinyali (55 Hz, 1,0–2,0 ms darbe)
+// PD0 (M1PWM0) ve aynısı PF1 (M1PWM5, kırmızı LED). SW1 kısaltır, SW2 uzatır.
+// 40 MHz (PLL), PWM saati 40 MHz / 64 = 625 kHz.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/pwm.h"
+
+#define PWM_FREKANS 55u
+
+static void genislik_yaz(uint32_t g)
+{
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, g);   // PD0: CMPA = LOAD - g
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5, g);   // PF1: CMPB = LOAD - g
+}
+
+int main(void)
+{
+    uint32_t periyot;
+    uint32_t ayar = 83u;   // 83 / 1000 periyot ~ 1,51 ms: orta konum
+
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
+                   SYSCTL_XTAL_16MHZ);                     // 40 MHz
+    SysCtlPWMClockSet(SYSCTL_PWMDIV_64);                   // 625 kHz
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM1) ||
+           !SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD) ||
+           !SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+
+    // PD0, PB6'ya R9 ile bağlı: PB6 bu programda giriş (reset) kalır.
+    GPIOPinConfigure(GPIO_PD0_M1PWM0);
+    GPIOPinConfigure(GPIO_PF1_M1PWM5);
+    GPIOPinTypePWM(GPIO_PORTD_BASE, GPIO_PIN_0);
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1);
+
+    // SW2 = PF0 kilitlidir: LOCK/CR ile aç, sonra SW1/SW2 girişleri çekme dirençli
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4,
+                     GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    // Periyot tık olarak verilir; LOAD = periyot - 1'i TivaWare yazar
+    periyot = (SysCtlClockGet() / 64u) / PWM_FREKANS;      // 625 000 / 55 = 11 363
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_0, periyot);        // LOAD = 11 362
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, periyot);
+
+    genislik_yaz(ayar * periyot / 1000u);                  // 943 tık = 1,509 ms
+    PWMOutputState(PWM1_BASE, PWM_OUT_0_BIT | PWM_OUT_5_BIT, true);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_0);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_2);
+
+    while (1) {
+        if ((GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) == 0) &amp;&amp; (ayar &gt; 56u)) {
+            ayar--;                                        // SW1: alt sınır ~1,0 ms
+        }
+        if ((GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0) == 0) &amp;&amp; (ayar &lt; 111u)) {
+            ayar++;                                        // SW2: üst sınır ~2,0 ms
+        }
+        genislik_yaz(ayar * periyot / 1000u);              // 636..1261 tık
+        SysCtlDelay(100000);                               // 300 000 çevrim = 7,5 ms
+    }
+}</code></pre>
+<p><b>Beklenen davranış:</b> açılışta kırmızı LED sönük yanar (943 tık). SW2 basılı tutulursa yaklaşık 28 döngüde (≈ 0,2 s) üst sınıra (1261 tık) çıkar ve LED biraz parlar. SW1 basılı tutulursa 636 tıka iner. Mantık analizöründe PD0'da 18,18 ms periyot ve 1,02–2,02 ms darbe görülür. PF0 kilidinin açılması için <a href="../gpio/">GPIO notu</a>.</p>
+
+<h2 id="ders-kodlari">7. Ders kodları üzerinden inceleme</h2>
+<p>Derste kullanılan altı register düzeyi proje (<code>pwm_01</code>, <code>hafta0dpwm</code>, <code>hafta0dpwm2</code>, <code>hafta0dpwm3_ilkbuolsun</code>, <code>hafta0dpwm4_ikibuolsun</code>, <code>hafta0dpwm4_ucbuolsun</code>) ve derste kullanılan iki TivaWare örneği (<code>pd1_pwm</code>, <code>pwm_oornek</code>) vardır. Register kodları veri sayfası 20.4'ün metnini yorum olarak taşır ve 16 MHz PIOSC ile çalışır: PWM saati 8 MHz, LOAD = 319, 25 kHz. Kodlar olduğu gibi gösterilir, satır numaraları orijinal dosyalara göredir.</p>
+<p>Derleme (clang, <code>-Wall</code>, TivaWare 2.1.4; projeler TivaWare 2.2.0.295 ile hazırlanmış ve <code>driverlib.lib</code>'i bağlar): register kodlarının her biri <code>delay</code> için bir "set but not used" uyarısı verir, <code>pwm_01</code> ayrıca satır 76'daki kullanılmayan <code>a</code> için. İki TivaWare örneği uyarısız derlenir.</p>
+<table>
+<thead><tr><th>Proje</th><th>Pin</th><th>GENA / GENB</th><th>CMPA / CMPB</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td><code>pwm_01</code></td><td>PB6, PB7</td><td>0x8C / 0x80C</td><td>239 / 79</td><td>25 kHz, %25 ve %75, sola hizalı</td></tr>
+<tr><td><code>hafta0dpwm</code></td><td>PB6, PB7</td><td>0xC8 / 0x80C</td><td>79 / 79</td><td>PB6 %25 sağa hizalı, PB7 %75 sola hizalı</td></tr>
+<tr><td><code>hafta0dpwm2</code></td><td>PB6, PB7</td><td>0x8C / 0x80C</td><td>320…0 tarama / 79</td><td>PB6 tarama (~3,2 s), PB7 %75</td></tr>
+<tr><td><code>hafta0dpwm3_ilkbuolsun</code></td><td>PB6</td><td>0x8C</td><td>320…0 tarama</td><td>hafta0dpwm2'nin yalnız PB6'lı hâli</td></tr>
+<tr><td><code>hafta0dpwm4_ikibuolsun</code></td><td>PB6</td><td>0x70</td><td>79</td><td>12,5 kHz, %50</td></tr>
+<tr><td><code>hafta0dpwm4_ucbuolsun</code></td><td>PB6</td><td>0xC8</td><td>79</td><td>%25 sağa hizalı</td></tr>
+<tr><td><code>pd1_pwm</code></td><td>PD1 (M1PWM1)</td><td>0x80C (TivaWare)</td><td>CMPB = 499</td><td>3,2 kHz, %50</td></tr>
+<tr><td><code>pwm_oornek</code></td><td>PF1–PF3</td><td>0x8C / 0x80C</td><td>219'dan başlar</td><td>50 kHz, %31'den başlayan parlaklık döngüsü</td></tr>
+</tbody></table>
+
+<h3 id="ders-pwm01">pwm_01: veri sayfası örneği, 16 MHz'e uyarlanmış</h3>
+<div class="code-head"><span class="file">pwm_01/main.c, satır 54–87 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">//    6. Configure the PWM generator for countdown mode with immediate updates to the parameters.
+//    Write the PWM0CTL register with a value of 0x0000.0000.
+//    Write the PWM0GENA register with a value of 0x0000.008C.
+//    Write the PWM0GENB register with a value of 0x0000.080C.
+
+    PWM0_0_CTL_R = 0x00000000;
+            // PWM Register control UPDATE Immediate Local Sync
+            // Counter counts Down PWM Disable
+    PWM0_0_GENA_R |= 0x0000008C;      // Settings for pwmA 10001100
+    PWM0_0_GENB_R |= 0x0000080C;      // Settings for pwmB 1000 0000 1100
+//    7. Set the period. For a 25-KHz frequency, the period = 1/25,000, or 40 microseconds. The PWM
+//    clock source is 10 MHz; the system clock divided by 2. Thus there are 400 clock ticks per period.
+//    Use this value to set the PWM0LOAD register. In Count-Down mode, set the LOAD field in the
+//    PWM0LOAD register to the requested period minus one.
+//    Write the PWM0LOAD register with a value of 0x0000.018F.
+
+    PWM0_0_LOAD_R = 320-1;
+//    8. Set the pulse width of the MnPWM0 pin for a 25% duty cycle.
+//    Write the PWM0CMPA register with a value of 0x0000.012B.
+    PWM0_0_CMPA_R = 240-1;
+//    9. Set the pulse width of the MnPWM1 pin for a 75% duty cycle.
+//    Write the PWM0CMPB register with a value of 0x0000.0063
+    uint32_t a= 80-1;
+    PWM0_0_CMPB_R = 80-1;
+
+//    10. Start the timers in PWM generator 0.
+//    Write the PWM0CTL register with a value of 0x0000.0001
+
+    PWM0_0_CTL_R = 0x00000001;
+
+//    11. Enable PWM outputs.
+//    Write the PWMENABLE register with a value of 0x0000.0003
+
+    PWM0_ENABLE_R=0x03; // PWM_ENABLE_PWM0EN|PWM_ENABLE_PWM1EN</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: pwm_01</span>
+<ul>
+<li><b>Yorumlar 20 MHz'e, kod 16 MHz'e göre (satır 15–17, 64–75):</b> yorumlar veri sayfasından kopyalanmıştır: "20 MHz", "10 MHz", "400 clock ticks", 0x18F, 0x12B, 0x63. Kod 320 − 1, 240 − 1 ve 80 − 1 yazar. <b>Kodun sonucu doğrudur:</b> 8 MHz / 320 = 25 kHz, PB6 (319 − 239) / 320 = %25, PB7 (319 − 79) / 320 = %75. Yalnız yorumlar okuyanı yanıltır.</li>
+<li><b>Satır 60:</b> "UPDATE Immediate Local Sync" iki ayrı kipi birleştirir. CTL = 0'da LOAD/CMP yerel eşzamanlı, GENA/GENB hemen güncellenir (<a href="#guncelleme">Bölüm 3</a>).</li>
+<li><b>Satır 76:</b> <code>uint32_t a</code> kullanılmaz. Satır 89–95'teki yoruma alınmış tarama için bırakılmıştır.</li>
+</ul>
+<p>Doğru olan: adım sırası, GENA/GENB değerleri (yazma biçimi <code>|=</code>, <a href="#ders-ortak">ortak kutu</a>), LOAD = periyot − 1, CMPB'nin %75 için hesabı, ENABLE = 0x03.</p></div>
+
+<h3 id="ders-hafta0dpwm">hafta0dpwm ve hafta0dpwm4_ucbuolsun: sağa hizalı PB6</h3>
+<div class="code-head"><span class="file">hafta0dpwm/main.c, satır 17–22 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">//    1. Enable the PWM clock by writing a value of 0x0010.0000 to the RCGC0 register in the System
+//    Control module (see page 456).
+    SYSCTL_RCGC0_R|=0X00100000; // SYSCTL_RCGC0_PWM0;// pwm0 modulu aktif
+    //delay = SYSCTL_RCGC0_R; // birazcık gecikme yap
+    // çevre birimi aktif olana kadar bekle // bunun kodunu yazıcam acıklayacam
+    while (!(SYSCTL_PRPWM_R==1));</code></pre>
+<div class="code-head"><span class="file">hafta0dpwm/main.c, satır 56–74 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">      PWM0_0_CTL_R = 0x00000000; //PWM0_CTL_R=0x00; // saymıyor disable pwm0
+      PWM0_0_GENA_R |= 0x000000c8; // right align
+      PWM0_0_GENB_R |= 0x0000080C;
+
+      //7.
+      PWM0_0_LOAD_R = 320-1;
+
+      //8
+      int a=80-1;
+      PWM0_0_CMPA_R = a;// %25 DUTY
+
+      //9
+      PWM0_0_CMPB_R = 80-1; // %75 PB7
+
+      // 10 STARTT
+      PWM0_0_CTL_R = PWM_0_CTL_ENABLE; //0x00000001; // PWM0_CTL_R=0x01;
+
+      // 11 ENABLE OUTPUT
+      PWM0_ENABLE_R=0x03;</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0dpwm, hafta0dpwm4_ucbuolsun</span>
+<ul>
+<li><b>Hazır beklemesi tam eşitlikle (hafta0dpwm satır 22):</b> <code>while (!(SYSCTL_PRPWM_R==1));</code> PRPWM'in tamamını 1 ile karşılaştırır. Bu programda yalnız PWM0 açıldığı için PRPWM = 1 olur ve döngü çıkar. Ama PWM1 de açıksa PRPWM = 3 olur ve döngü hiç bitmez. Doğrusu <code>while ((SYSCTL_PRPWM_R &amp; 0x01) == 0);</code>. Yine de bu satır, diğer kodlardaki <code>delay = SYSCTL_RCGC0_R;</code> sahte okumasından daha doğru bir yaklaşımdır: veri sayfası saat açıldıktan sonra 3 çevrim beklemeyi ister (s. 1240), PRPWM ise modülün gerçekten hazır olduğunu gösterir (s. 420). RCGC0'a yazmak RCGCPWM.R0'ı da yazdığı için PRPWM bu yolla da güncellenir (s. 354).</li>
+<li><b>GENA = 0xC8 doğru (satır 57, ucbuolsun satır 54):</b> ACTLOAD = 2 (düşük), ACTCMPAD = 3 (yüksek). CMPA = 79 ile çıkış sayaç 79'dan 0'a inerken yüksektir: 80 tık, %25, periyodun sonunda. "right align" yorumu doğrudur. hafta0dpwm satır 54'teki "0x0000.008C -&gt; pb6" yorumu veri sayfasından kalmadır.</li>
+<li><b>PB6 ile PB7 tam tümleyen:</b> CMPA = CMPB = 79 ve eylemler ters olduğu için PB7 sayaç 79'a inince düşer, PB6 aynı tıkta yükselir. İki sinyal, aralarında ölü bant olmadan birbirinin tersidir.</li>
+<li><b>GENA/GENB'ye <code>|=</code> (satır 57–58):</b> reset'te 0 oldukları için çalışır. Register'da eski bir değer kalmışsa (ör. aynı programda GENA yeniden kurulursa) alanlar birleşir: 0x8C | 0xC8 = 0xCC iki olayda da yüksek sürer ve çıkış hep 1 kalır. GENA'ya <code>=</code> ile yazılmalıdır.</li>
+</ul></div>
+
+<h3 id="ders-tarama">hafta0dpwm2 ve hafta0dpwm3_ilkbuolsun: görev oranı taraması</h3>
+<div class="code-head"><span class="file">hafta0dpwm2/main.c, satır 53–80 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">      PWM0_0_CTL_R = 0x00000000; //PWM0_CTL_R=0x00;
+      PWM0_0_GENA_R |= 0x0000008C;
+      PWM0_0_GENB_R |= 0x0000080C;
+
+      //7.
+      PWM0_0_LOAD_R = 320-1;
+
+      //8
+      int a=320-1;
+      PWM0_0_CMPA_R = a;//240-1;// %25 DUTY
+
+      //9
+      PWM0_0_CMPB_R = 80-1; // %75 PB7
+
+      // 10 STARTT
+      PWM0_0_CTL_R = 0x00000001; // PWM0_CTL_R=0x01;
+
+      // 11 ENABLE OUTPUT
+      PWM0_ENABLE_R=0x03;
+
+      while(1){
+          PWM0_0_CMPA_R = a;
+          a--;
+          Delay_ms(10);
+          if (a&lt;0){
+              a=320;
+          }</code></pre>
+<div class="code-head"><span class="file">hafta0dpwm3_ilkbuolsun/main.c, satır 53–55 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">      PWM0_0_CTL_R = 0x00000000;   // Disable PWM Generator, and set to count-down mode
+      PWM0_0_GENA_R |= 0x0000008C; // ACTCMPAD = Action for Comparator A Down = 0x2 Drive pwmA Low.
+                                   // ACTZERO == 0x3 Drive pwmA High</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0dpwm2, hafta0dpwm3_ilkbuolsun</span>
+<ul>
+<li><b>Yanlış alan adı (hafta0dpwm3 satır 55):</b> "ACTZERO == 0x3" yazılmış. 0x8C'de 3 olan alan ACTLOAD'dır (bit 3:2). ACTZERO (bit 1:0) = 0'dır. Satır 54'teki "ACTCMPAD = 0x2 Drive pwmA Low" doğrudur.</li>
+<li><b>Taramanın uçları (hafta0dpwm2 satır 61–79, hafta0dpwm3 satır 62–80):</b> CMPA 319'dan 0'a iner, sonra <code>a=320</code> ile 320'den yeniden başlar. 320 &gt; LOAD olduğundan karşılaştırma olayı yoktur, 319 LOAD olayıyla, 0 sıfır olayıyla çakışır: üçünde de çıkış %100'dür (<a href="#uc-durumlar">Bölüm 3</a>). CMPA 318 → 1 arasında görev oranı %0,3'ten %99,4'e çıkar. PB6'ya bağlı bir LED yaklaşık 3,2 s'de (321 adım × 10 ms) parlar, üç adım tam yanar, sonra birden neredeyse söner. %0'a hiç inilmez. <code>a=320</code> zararsızdır ama gereksizdir: 319 da aynı sonucu verir.</li>
+<li><b>"%25 DUTY" yorumu (hafta0dpwm2 satır 62, hafta0dpwm3 satır 63):</b> yorum, yoruma alınmış <code>240-1</code> değerine aittir. Kod 319 ile, yani %100 ile başlar.</li>
+<li><b>PB7 boşta (hafta0dpwm3):</b> AFSEL = 0xC0 PB7'yi de alternatif işleve verir ama PCTL'de yalnız PB6'ya 4 yazılır (satır 38). PB7'nin PMC alanı 0 kalır, pine bir çevre birimi bağlanmaz. Zararsızdır. Aynısı ikibuolsun ve ucbuolsun'da da vardır.</li>
+</ul>
+<p>Doğru olan: CMPA'nın yerel eşzamanlı güncellenmesi sayesinde döngüdeki yazmalar bozuk darbe üretmez. PB7'nin %75'i sabit kalır.</p></div>
+
+<h3 id="ders-hizalama">hafta0dpwm4_ikibuolsun: "center galiba"</h3>
+<div class="code-head"><span class="file">hafta0dpwm4_ikibuolsun/main.c, satır 53–62 (derste kullanılan kod)</span><span class="tag reg">API'siz</span></div><pre><code class="language-c">      PWM0_0_CTL_R = 0x00000000;   // Disable PWM Generator, and set to count-down mode
+      PWM0_0_GENA_R |= 0x70; // center galiba
+     // PWM0_0_GENB_R |= 0x0000080C;
+
+      //7.
+      PWM0_0_LOAD_R = 320-1;
+
+      //8
+      int a=80-1;
+      PWM0_0_CMPA_R = a;//240-1;// %25 DUTY</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: hafta0dpwm4_ikibuolsun</span>
+<ul>
+<li><b>Merkez hizalı değil, yarı frekanslı kare dalga (satır 54):</b> 0x70 = ACTCMPAU 3 (yüksek), ACTCMPAD 1 (tersle). CTL = 0, yani aşağı sayma kipindedir. Yukarı sayma olayı bu kipte hiç oluşmaz (s. 1283). Geriye yalnız "CMPA↓ tersle" kalır: çıkış her periyotta bir kez terslenir. Sonuç CMPA'dan bağımsız olarak %50 görev oranlı, 8 MHz / 640 = 12,5 kHz'lik bir kare dalgadır. CMPA yalnız kenarların zamanını kaydırır.</li>
+<li><b>Merkez hizalama için</b> CTL'de MODE = 1 gerekir (satır 53 ve 68'de 0x2 ve 0x3). O zaman 0x70 da işe yarar: CMPA↑ yüksek, CMPA↓ tersle (düşük). TivaWare'in varsayılanı 0xB0'dır. LOAD = 319 ile frekans 8 MHz / 638 ≈ 12,5 kHz olur, CMPA = 79 ile görev oranı (319 − 79) / 319 ≈ %75. Aynı 25 kHz için LOAD = 160 (<a href="#hizalama">Bölüm 3</a>).</li>
+</ul></div>
+
+<h3 id="ders-ortak">Register kodlarının ortak noktaları</h3>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: altı register projesi</span>
+<ul>
+<li><b><code>GPIO_PORTB_AFSEL_R= 0xc0;</code> atama (hafta0dpwm satır 32, diğerlerinde satır 29, pwm_01 satır 32):</b> Port B'nin diğer AFSEL bitlerini siler. Reset'ten sonra Port B'nin AFSEL'i 0 olduğundan (Tablo 10-7, s. 671) bu programlarda zararsızdır. Aynı projede I2C0 (PB2/PB3) önce kurulmuş olsaydı I2C bozulurdu. <code>|=</code> kullanılmalıdır.</li>
+<li><b>RCC iki yazmada (ör. pwm_01 satır 51–52):</b> önce USEPWMDIV = 1 yapılır, PWMDIV henüz reset değeri 7'dedir (÷64, s. 255). İkinci yazma ÷2'yi seçer. Üreteç bu sırada çalışmadığı için zararsızdır. Tek yazma daha temizdir (<a href="#ornek-apisiz">5.1</a>).</li>
+<li><b>GENA/GENB'ye <code>|=</code> (pwm_01 satır 62–63, hafta0dpwm satır 57–58, hafta0dpwm2 satır 54–55, hafta0dpwm3, ikibuolsun ve ucbuolsun satır 54):</b> register'lar reset'te 0 olduğu için çalışır. Eski bir değer kalırsa alanlar birleşir (<a href="#ders-hafta0dpwm">hafta0dpwm kutusu</a>). <code>=</code> ile yazılmalıdır.</li>
+<li><b>Sahte okuma ile bekleme (ör. pwm_01 satır 23):</b> <code>delay = SYSCTL_RCGC0_R;</code> pratikte 3 çevrim beklemeyi sağlar, belgelenmiş yol PR register'larıdır.</li>
+<li><b><code>Delay_ms</code>'deki 3180 (dosyaların başında, satır 4–11):</b> 1 ms'yi 16 MHz'te belirli bir derleyici ve optimizasyon düzeyi için verir. Değişkenler <code>volatile</code> olmadığından optimizasyon açılınca döngü tamamen silinebilir. Süre gereken yerde SysTick ya da bir zamanlayıcı kullanılmalıdır.</li>
+<li><b><code>AMSEL &amp;= 0x00</code> (hafta0dpwm'de yoruma alınmış, satır 37):</b> Port B'nin bütün analog seçimlerini siler. PB6/PB7'nin analog işlevi olmadığından gereksizdir ama zararsızdır.</li>
+</ul></div>
+
+<h3 id="ders-pd1">pd1_pwm: TivaWare, PD1</h3>
+<div class="code-head"><span class="file">pd1_pwm, satır 19–41 (derste kullanılan TivaWare örneği)</span><span class="tag api">API'li</span></div><pre><code class="language-c">    //40 000 000
+   SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_OSC |   SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+
+   //PWM saat bölücüsü şu anda 1'e bölündü
+   SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
+
+   // Enable the peripherals used by this program.
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1);  //The Tiva Launchpad has two modules (0 and 1).
+
+    GPIOPinConfigure(GPIO_PD1_M1PWM1);// modül 1 pwm1 DATASHEETTEN BAK pd1 pinidir.
+
+    GPIOPinTypePWM(GPIO_PORTD_BASE, GPIO_PIN_1);
+
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN );
+
+    //Set the Period 1000 PWM KARE DALGASI
+    // (1/40 000 000)*1000 Saniyelik peryot
+    // 40MHZ/1000 hz yani 40khz frekans
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_0, 1000);
+
+    //Set PWM duty-50% (Period /2)
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1,500);</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: pd1_pwm</span>
+<ul>
+<li><b>Saat 40 MHz değil 3,2 MHz (satır 19–20):</b> <code>SYSCTL_USE_OSC</code> PLL'yi kullanmaz. 16 MHz ana osilatör <code>SYSCTL_SYSDIV_5</code> (= <code>0x0240.0000</code>, USESYSDIV dahil) ile 5'e bölünür: 3,2 MHz. 40 MHz için <code>SYSCTL_USE_PLL</code> gerekir (Lab 15'teki gibi). Saat yolları için <a href="../saat-pll/">Sistem Saati ve PLL notu</a>.</li>
+<li><b>Frekans 40 kHz değil 3,2 kHz (satır 35–38):</b> <code>SYSCTL_PWMDIV_1</code> ile PWM saati 3,2 MHz'tir, periyot 1000 tık (LOAD = 999): 3,2 kHz. Yorumdaki hesap (40 MHz / 1000 = 40 kHz) ancak 40 MHz'te doğru olurdu. Ayrıca 1000 bir frekans ("1000 hz") değil, tık sayısıdır.</li>
+<li><b>%50 doğru (satır 40–41):</b> <code>PWM_OUT_1</code> B çıkışıdır, CMPB = 999 − 500 = 499, yüksek süre 500 tık.</li>
+<li><b>PD1, PB7'ye R10 ile bağlıdır:</b> PB7 bu programda reset'teki giriş hâlinde kalır, çakışma yoktur. Sinyal PB7 pininde de görülür.</li>
+</ul></div>
+
+<h3 id="ders-oornek">pwm_oornek: TivaWare, RGB LED</h3>
+<div class="code-head"><span class="file">pwm_oornek, satır 41–75 (derste kullanılan TivaWare örneği)</span><span class="tag api">API'li</span></div><pre><code class="language-c">    //Set the Period
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, 320);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, 320);
+
+    //Set PWM duty-50% (Period /2)
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5,100);
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,100);
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,100);
+
+    // Enable the PWM generator
+    PWMGenEnable(PWM1_BASE, PWM_GEN_2);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_3);
+
+    // Turn on the Output pins
+    PWMOutputState(PWM1_BASE, PWM_OUT_5_BIT | PWM_OUT_6_BIT | PWM_OUT_7_BIT, true);
+
+    //Fade
+    bool fadeUp = true;
+    unsigned long increment = 10;
+    unsigned long pwmNow = 100;
+    while(1)
+    {
+        delayMS(20);
+        if (fadeUp) {
+            pwmNow += increment;
+            if (pwmNow &gt;= 320) { fadeUp = false; }
+        }
+        else {
+            pwmNow -= increment;
+            if (pwmNow &lt;= 10) { fadeUp = true; }
+        }
+        PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5,pwmNow);
+        PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,pwmNow);
+        PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,pwmNow);
+    }</code></pre>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: pwm_oornek</span>
+<ul>
+<li><b>%50 değil %31 (satır 45–48):</b> sistem ve PWM saati 16 MHz'tir (satır 20, 23), periyot 320 tık: 50 kHz. Genişlik 100 tık: 100 / 320 = %31,25. %50 için 160 gerekirdi.</li>
+<li><b>Sınır dışı genişlik (satır 65–66, 72–74):</b> <code>pwmNow</code> 10'ar artarak 320'ye ulaşır ve bu değer <code>PWMPulseWidthSet</code>'e verilir. Fonksiyon <code>ASSERT(320 &lt; 319)</code> ister (<code>pwm.c</code> satır 479). <code>DEBUG</code>'sız kütüphanede denetim yoktur ve CMP = 319 − 320 = <code>0xFFFF.FFFF</code> yazılır. 16 bitlik alanda bu 0xFFFF'tir, LOAD'dan büyüktür: karşılaştırma olayı yoktur, çıkış bir adım (20 ms) boyunca %100 olur. Görünür etkisi küçüktür (310'da zaten %96,9). Doğrusu üst sınırı 318 tutmaktır.</li>
+<li><b>Alt uç:</b> en küçük değer 10 tıktır (%3,1), LED hiç sönmez. 0'a inilseydi CMP = LOAD olur ve LED tam yanardı (<a href="#uc-durumlar">Bölüm 3</a>).</li>
+<li><b><code>PWM_GEN_MODE_NO_SYNC</code> (satır 38–39):</b> CMP değerleri yine de yerel eşzamanlı güncellenir (<a href="#guncelleme">Bölüm 3</a>).</li>
+</ul>
+<p>Doğru olan: üreteç-çıkış eşleşmesi (satır 36–37 yorumları), pin yapılandırması, PWM1'in açılması, üç kanalın aynı anda güncellenmesi. Bu notun <a href="#ornek-apili">5.3</a>'ü aynı donanımın sınırları ele alan sürümüdür.</p></div>
+
+<h2 id="hatalar">8. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>LOAD'a periyodun kendisini yazmak:</b> aşağı saymada LOAD = periyot − 1. <code>PWMGenPeriodSet</code>'e ise periyot verilir, −1'i fonksiyon yapar.</li>
+<li><b>PWM saatini unutmak:</b> PWMDIV reset'te ÷64'tür ama USEPWMDIV = 0 iken kullanılmaz. Hesap hangi saate göre yapıldıysa RCC ona göre yazılır.</li>
+<li><b>PCTL'ye yanlış kod:</b> M0 sinyalleri 4, M1 sinyalleri 5. PD0/PD1'de ikisi de vardır.</li>
+<li><b>Genişlik 0 ile %0 beklemek:</b> 0x8C'de CMPA = LOAD ya da 0 çıkışı %100 yapar. %0 için PWMENABLE.</li>
+<li><b><code>PWMPulseWidthSet</code>'e periyot kadar genişlik vermek:</b> sınır LOAD − 1'dir.</li>
+<li><b>Yukarı sayma eylemini aşağı sayma kipinde kullanmak:</b> ACTCMPAU/ACTCMPBU yalnız MODE = 1'de çalışır.</li>
+<li><b>Yeni CMPA'nın hemen etkili olmasını beklemek:</b> CTL = 0'da bile CMPA bir sonraki sıfırda alınır.</li>
+<li><b>PRPWM'i tam eşitlikle beklemek</b>, <b>AFSEL'e <code>=</code> ile yazmak</b>, <b>GENA'ya <code>|=</code> ile yazmak.</b></li>
+<li><b>PB6/PB7 ile PD0/PD1'i birlikte sürmek</b> (R9/R10).</li>
+<li><b>PWM1'i RCGC0 ile açmaya çalışmak:</b> RCGC0'da yalnız PWM0 biti vardır.</li>
+<li><b>Hata ayıklayıcıda durunca çıkışın donmasına şaşırmak:</b> DEBUG = 0 iken sayaç durur.</li>
+</ol></div>
+
+<h2 id="alistirmalar">9. Alıştırmalar</h2>
+<ol>
+<li><b>LOAD ve CMPA hesabı:</b> sistem saati 40 MHz. M0PWM0'da GENA = 0x8C ile 20 kHz, %30 isteniyor. PWM saati ÷2 ve bölücüsüz için LOAD ve CMPA nedir?
+<details><summary>Cevap</summary><p>÷2: PWM saati 20 MHz, periyot 20&nbsp;000&nbsp;000 / 20&nbsp;000 = 1000 tık, LOAD = 999. Yüksek süre 300 tık: CMPA = 999 − 300 = 699. Bölücüsüz: 40 MHz / 20 kHz = 2000 tık, LOAD = 1999, CMPA = 1999 − 600 = 1399. İkisi de 16 bite sığar. Bölücüsüz seçenek iki kat çözünürlük verir.</p></details></li>
+<li><b>Servo için bölücü:</b> sistem saati 40 MHz, servo 50 Hz. LOAD'ı 16 bite sığdıran en küçük PWMDIV hangisidir? 1–2 ms aralığı kaç tıka karşılık gelir? Lab 15'in ÷64'üyle karşılaştırın.
+<details><summary>Cevap</summary><p>Periyot tıkı 40&nbsp;000&nbsp;000 / (bölen × 50) ≤ 65&nbsp;536 olmalı: bölen ≥ 12,2. ÷8 ile 100&nbsp;000 tık sığmaz, ÷16 ile 50&nbsp;000 tık sığar (LOAD = 49&nbsp;999). PWM saati 2,5 MHz: 1 ms = 2500 tık, 1–2 ms aralığı 2500 adım. Lab 15'te 625 kHz ile 1 ms = 625 tık, aralık 625 adım. Lab ayrıca ayarı binde bir periyotluk adımlarla yaptığı için yalnız 56 farklı değer kullanır.</p></details></li>
+<li><b>GENA çözme:</b> GENA = 0x0B0 aşağı sayma kipinde ne üretir? Yukarı/aşağı kipte, PWM saati 8 MHz, LOAD = 160, CMPA = 120 için frekans ve görev oranı nedir?
+<details><summary>Cevap</summary><p>0xB0: ACTCMPAD = 2 (düşük), ACTCMPAU = 3 (yüksek). Aşağı saymada yukarı olayı yoktur. Çıkışı yükselten bir eylem kalmaz, çıkış hep 0'dır. Yukarı/aşağıda: f = 8&nbsp;000&nbsp;000 / (2 × 160) = 25 kHz. Çıkış sayaç 120'yi yukarı geçince yükselir, aşağı inerken 120'de düşer: 2 × (160 − 120) = 80 tık, 80 / 320 = %25, darbe periyodun ortasında.</p></details></li>
+<li><b>Tarama uçları:</b> <code>hafta0dpwm2</code>'de CMPA = 320, 319, 318, 160, 1 ve 0 iken PB6'nın görev oranı nedir? LED en sönük hangi değerde yanar?
+<details><summary>Cevap</summary><p>320: %100 (CMPA &gt; LOAD, olay yok). 319: %100 (LOAD ile çakışma, LOAD kazanır). 318: 1/320 = %0,31. 160: (319 − 160) / 320 = 159 / 320 ≈ %49,7. 1: 318 / 320 ≈ %99,4. 0: %100 (sıfır ile çakışma, ACTZERO = 0, düşürme yok sayılır). En sönük CMPA = 318'de.</p></details></li>
+<li><b>TivaWare sınırları:</b> <code>PWMGenConfigure(PWM1_BASE, PWM_GEN_3, PWM_GEN_MODE_DOWN)</code> ve <code>PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, 1000)</code>'den sonra <code>PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7, g)</code> g = 0, 500, 998 ve 1000 için hangi register'a ne yazar? PF3'teki yeşil LED'in görev oranı nedir?
+<details><summary>Cevap</summary><p>LOAD = 999. <code>PWM_OUT_7</code> üreteç 3'ün B çıkışıdır: CMPB yazılır, GENB = 0x80C. g = 0: CMPB = 999 = LOAD, LOAD olayı kazanır: %100. g = 500: CMPB = 499, %50. g = 998: CMPB = 1, 998 / 1000 = %99,8. g = 1000: <code>ASSERT(1000 &lt; 999)</code> bozulur. Denetim yoksa CMPB = 0xFFFF.FFFF, alan 0xFFFF &gt; LOAD: olay yok, %100. Doğru %0 için <code>PWMOutputState(PWM1_BASE, PWM_OUT_7_BIT, false)</code>.</p></details></li>
+</ol>
+
+<h2 id="kaynakca">10. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): s. 254–255 (RCC), 330 (SRPWM), 354 (RCGCPWM), 420 (PRPWM), 456–457 (RCGC0), 671 (Tablo 10-7), 716 (GPTM PWM kipi); Bölüm 20 PWM s. 1230–1320 (§20.3 s. 1234–1239, §20.4 s. 1239–1240, register'lar s. 1244–1320 (kullanılanlar s. 1244–1287)); Tablo 23-5 s. 1351.</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı: Bölüm 15 PWM, Lab 15, s. 15-1 – 15-17.</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/pwm.c</code>, <code>driverlib/pwm.h</code>, <code>driverlib/sysctl.c</code>, <code>driverlib/sysctl.h</code>, <code>driverlib/gpio.c</code>, <code>driverlib/pin_map.h</code>, <code>inc/tm4c123gh6pm.h</code> (satır numaraları metinde). TivaWare ve belgeler ti.com'dan indirilebilir.</li>
+<li>EK-TM4C123GXL LaunchPad kullanıcı kılavuzu (SPMU296): Tablo 2-2 (s. 9), Tablo 2-4 ve 2-5 (s. 10), şema.</li>
+<li>Ders örnek kodları (EEM 431, PWM): <code>pwm_01</code>, <code>hafta0dpwm</code>, <code>hafta0dpwm2</code>, <code>hafta0dpwm3_ilkbuolsun</code>, <code>hafta0dpwm4_ikibuolsun</code>, <code>hafta0dpwm4_ucbuolsun</code>; derste kullanılan TivaWare örnekleri <code>pd1_pwm</code>, <code>pwm_oornek</code>.</li>
+<li>İlgili notlar: <a href="../gpio/">1. GPIO</a>, <a href="../timer/">6. Zamanlayıcılar</a>, <a href="../saat-pll/">4. Sistem Saati ve PLL</a>, <a href="../systick/">5. SysTick</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 12. PWM. TI belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

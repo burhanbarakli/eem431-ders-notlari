@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 670" class="pwmh-svg" role="img" aria-labelledby="pwmh-title pwmh-desc">
+<title id="pwmh-title">Aynı sayaçla dört GENA ayarı: sola, sağa, ters çevirme ve merkez hizalı</title>
+<desc id="pwmh-desc">Sayaç LOAD = 319, PWM saati 8 MHz (1 tık = 125 ns). Üstte aşağı sayma (MODE = 0): periyot 320 tık = 40 µs. (a) GENA = 0x8C, CMPA = 239: LOAD’da yüksek, CMPA aşağıda düşük; darbe periyodun başında, 80 tık, sola hizalı %25. (b) GENA = 0xC8, CMPA = 79: LOAD’da düşük, CMPA aşağıda yüksek; darbe periyodun sonunda, 80 tık, sağa hizalı %25. (c) GENA = 0x70, CMPA = 79: ACTCMPAU = 3 ama aşağı sayma kipinde CMPA yukarı olayı hiç oluşmaz; yalnız ACTCMPAD = 1 (ters çevir) çalışır. Çıkış her periyotta bir kez ters döner: %50 görev oranı, periyot 640 tık = 80 µs, 12,5 kHz; CMPA yalnız kenarların yerini belirler (başlangıç düzeyi düşük varsayıldı). Altta yukarı/aşağı sayma (MODE = 1), aynı LOAD = 319: sayaç 0’dan 319’a çıkar, 0’a iner; periyot 2 × 319 = 638 tık ≈ 79,8 µs. (d) GENA = 0xB0, CMPA = 239: CMPA yukarıda yüksek, CMPA aşağıda düşük; darbe tepe noktasına göre ortalanır, 2 × (319 − 239) = 160 tık = 20 µs, ≈ %25. Bu, TivaWare PWMGenConfigure’ün yukarı/aşağı kipte GENA’ya yazdığı değerdir.</desc>
+<style>
+.pwmh-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.pwmh-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.pwmh-svg .pwmh-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.pwmh-svg .pwmh-b{font-weight:700}
+.pwmh-svg .pwmh-s12{font-size:12px}
+.pwmh-svg .pwmh-s13{font-size:13px}
+.pwmh-svg .pwmh-s16{font-size:16px}
+.pwmh-svg .pwmh-mut{fill:var(--fig-muted,#76746c)}
+.pwmh-svg .pwmh-acc{fill:var(--fig-accent,#b4481f)}
+.pwmh-svg .pwmh-blu{fill:var(--fig-blue,#1f5fa8)}
+.pwmh-svg .pwmh-dota{fill:var(--fig-accent,#b4481f)}
+.pwmh-svg .pwmh-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.pwmh-svg .pwmh-grid{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:.8;stroke-dasharray:2 4}
+.pwmh-svg .pwmh-wva{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:2.2;stroke-linejoin:round}
+.pwmh-svg .pwmh-wvs{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.2;stroke-linejoin:round}
+</style>
+<text class="pwmh-s16 pwmh-b" x="16" y="29">Hizalama: aynı sayaç, dört GENA ayarı</text>
+<text x="16" y="50"><tspan class="pwmh-m12 pwmh-mut">LOAD</tspan><tspan class="pwmh-s13 pwmh-mut"> = 319 · PWM saati 8 MHz (1 tık = 125 ns) · zaman ölçeği tüm satırlarda aynı</tspan></text>
+<text x="16" y="78"><tspan class="pwmh-s13 pwmh-b">Aşağı sayma (</tspan><tspan class="pwmh-m12 pwmh-b">MODE</tspan><tspan class="pwmh-s13 pwmh-b"> = 0): periyot </tspan><tspan class="pwmh-m12 pwmh-b">LOAD</tspan><tspan class="pwmh-s13 pwmh-b"> + 1 = 320 tık = 40 µs, 25 kHz</tspan></text>
+<path class="pwmh-grid" d="M110,96.0 L710.0,96.0"/>
+<text class="pwmh-m12" x="102" y="100" text-anchor="end">319</text>
+<path class="pwmh-grid" d="M110,116.06269592476488 L710.0,116.06269592476488"/>
+<text class="pwmh-m12" x="102" y="120.063" text-anchor="end">239 (a)</text>
+<path class="pwmh-grid" d="M110,156.18808777429467 L710.0,156.18808777429467"/>
+<text class="pwmh-m12" x="102" y="160.188" text-anchor="end">79 (b, c)</text>
+<path class="pwmh-grid" d="M110,176.0 L710.0,176.0"/>
+<text class="pwmh-m12" x="102" y="180" text-anchor="end">0</text>
+<path class="pwmh-grid" d="M110.0,92 L110.0,372"/>
+<path class="pwmh-grid" d="M260.0,92 L260.0,372"/>
+<path class="pwmh-grid" d="M410.0,92 L410.0,372"/>
+<path class="pwmh-grid" d="M560.0,92 L560.0,372"/>
+<path class="pwmh-grid" d="M710.0,92 L710.0,372"/>
+<path class="pwmh-grid" d="M147.5,116.06269592476488 L147.5,372"/>
+<path class="pwmh-grid" d="M222.5,156.18808777429467 L222.5,372"/>
+<path class="pwmh-wvs" d="M110.0,96.0 L260.0,176.0 L260.0,96.0 L410.0,176.0 L410.0,96.0 L560.0,176.0 L560.0,96.0 L710.0,176.0 L710.0,96.0"/>
+<circle class="pwmh-dota" cx="147.5" cy="116.063" r="3.8"/>
+<circle class="pwmh-dota" cx="222.5" cy="156.188" r="3.8"/>
+<circle class="pwmh-dota" cx="297.5" cy="116.063" r="3.8"/>
+<circle class="pwmh-dota" cx="372.5" cy="156.188" r="3.8"/>
+<circle class="pwmh-dota" cx="447.5" cy="116.063" r="3.8"/>
+<circle class="pwmh-dota" cx="522.5" cy="156.188" r="3.8"/>
+<circle class="pwmh-dota" cx="597.5" cy="116.063" r="3.8"/>
+<circle class="pwmh-dota" cx="672.5" cy="156.188" r="3.8"/>
+<text x="16" y="206" xml:space="preserve"><tspan class="pwmh-s13 pwmh-b">(a) </tspan><tspan class="pwmh-m12 pwmh-b">GENA</tspan><tspan class="pwmh-s13 pwmh-b"> = 0x8C, </tspan><tspan class="pwmh-m12 pwmh-b">CMPA</tspan><tspan class="pwmh-s13 pwmh-b"> = 239</tspan><tspan class="pwmh-s13 pwmh-b"> → sola hizalı %25</tspan><tspan class="pwmh-s12">   </tspan><tspan class="pwmh-s12 pwmh-mut">LOAD: yüksek · CMPA↓: düşük</tspan></text>
+<path class="pwmh-wva" d="M110.0,240 L110.0,240 L110.0,216 L147.5,216 L147.5,240 L260.0,240 L260.0,216 L297.5,216 L297.5,240 L410.0,240 L410.0,216 L447.5,216 L447.5,240 L560.0,240 L560.0,216 L597.5,216 L597.5,240 L710.0,240"/>
+<path class="pwmh-wm" d="M112.0,243 L112.0,248 L145.5,248 L145.5,243"/>
+<text class="pwmh-s12 pwmh-b" x="155.5" y="252">80 tık</text>
+<text x="16" y="270" xml:space="preserve"><tspan class="pwmh-s13 pwmh-b">(b) </tspan><tspan class="pwmh-m12 pwmh-b">GENA</tspan><tspan class="pwmh-s13 pwmh-b"> = 0xC8, </tspan><tspan class="pwmh-m12 pwmh-b">CMPA</tspan><tspan class="pwmh-s13 pwmh-b"> = 79</tspan><tspan class="pwmh-s13 pwmh-b"> → sağa hizalı %25</tspan><tspan class="pwmh-s12">   </tspan><tspan class="pwmh-s12 pwmh-mut">LOAD: düşük · CMPA↓: yüksek</tspan></text>
+<path class="pwmh-wva" d="M110.0,304 L222.5,304 L222.5,280 L260.0,280 L260.0,304 L372.5,304 L372.5,280 L410.0,280 L410.0,304 L522.5,304 L522.5,280 L560.0,280 L560.0,304 L672.5,304 L672.5,280 L710.0,280 L710.0,304 L710.0,304"/>
+<path class="pwmh-wm" d="M224.5,307 L224.5,312 L258.0,312 L258.0,307"/>
+<text class="pwmh-s12 pwmh-b" x="214.5" y="316" text-anchor="end">80 tık</text>
+<text x="16" y="334" xml:space="preserve"><tspan class="pwmh-s13 pwmh-b">(c) </tspan><tspan class="pwmh-m12 pwmh-b">GENA</tspan><tspan class="pwmh-s13 pwmh-b"> = 0x70, </tspan><tspan class="pwmh-m12 pwmh-b">CMPA</tspan><tspan class="pwmh-s13 pwmh-b"> = 79</tspan><tspan class="pwmh-s13 pwmh-b"> → %50, 12,5 kHz</tspan><tspan class="pwmh-s12">   </tspan><tspan class="pwmh-s12 pwmh-mut">CMPA↓: ters çevir (</tspan><tspan class="pwmh-m12 pwmh-mut">ACTCMPAD</tspan><tspan class="pwmh-s12 pwmh-mut"> = 1) · CMPA↑ olayı aşağı sayarken yok</tspan></text>
+<path class="pwmh-wva" d="M110.0,368 L222.5,368 L222.5,344 L372.5,344 L372.5,368 L522.5,368 L522.5,344 L672.5,344 L672.5,368 L710.0,368"/>
+<text class="pwmh-s12 pwmh-mut" x="114" y="362">başta düşük</text>
+<path class="pwmh-wm" d="M224.5,371 L224.5,376 L520.5,376 L520.5,371"/>
+<text class="pwmh-s12 pwmh-b" x="372.5" y="392" text-anchor="middle">640 tık = 80 µs (iki sayaç periyodu)</text>
+<path class="pwmh-wm" d="M16,410 L744,410"/>
+<text x="16" y="436"><tspan class="pwmh-s13 pwmh-b">Yukarı/aşağı sayma (</tspan><tspan class="pwmh-m12 pwmh-b">MODE</tspan><tspan class="pwmh-s13 pwmh-b"> = 1), aynı </tspan><tspan class="pwmh-m12 pwmh-b">LOAD</tspan><tspan class="pwmh-s13 pwmh-b">: periyot 2 × </tspan><tspan class="pwmh-m12 pwmh-b">LOAD</tspan><tspan class="pwmh-s13 pwmh-b"> = 638 tık ≈ 79,8 µs, ≈ 12,5 kHz</tspan></text>
+<path class="pwmh-grid" d="M110,456.0 L710.0,456.0"/>
+<text class="pwmh-m12" x="102" y="460" text-anchor="end">319</text>
+<path class="pwmh-grid" d="M110,476.0626959247649 L710.0,476.0626959247649"/>
+<text class="pwmh-m12" x="102" y="480.063" text-anchor="end">239</text>
+<path class="pwmh-grid" d="M110,536.0 L710.0,536.0"/>
+<text class="pwmh-m12" x="102" y="540" text-anchor="end">0</text>
+<path class="pwmh-grid" d="M110.0,452 L110.0,608"/>
+<path class="pwmh-grid" d="M409.0625,452 L409.0625,608"/>
+<path class="pwmh-grid" d="M708.125,452 L708.125,608"/>
+<path class="pwmh-grid" d="M259.53125,452 L259.53125,608"/>
+<path class="pwmh-grid" d="M558.59375,452 L558.59375,608"/>
+<path class="pwmh-wvs" d="M110.0,536.0 L259.53125,456.0 L409.0625,536.0 L558.59375,456.0 L708.125,536.0"/>
+<circle class="pwmh-dota" cx="222.031" cy="476.063" r="3.8"/>
+<circle class="pwmh-dota" cx="521.094" cy="476.063" r="3.8"/>
+<circle class="pwmh-dota" cx="297.031" cy="476.063" r="3.8"/>
+<circle class="pwmh-dota" cx="596.094" cy="476.063" r="3.8"/>
+<text class="pwmh-s12 pwmh-b pwmh-acc" x="215.031" y="469.063" text-anchor="end">CMPA↑</text>
+<text class="pwmh-s12 pwmh-b pwmh-acc" x="304.031" y="469.063">CMPA↓</text>
+<text x="16" y="562" xml:space="preserve"><tspan class="pwmh-s13 pwmh-b">(d) </tspan><tspan class="pwmh-m12 pwmh-b">GENA</tspan><tspan class="pwmh-s13 pwmh-b"> = 0xB0, </tspan><tspan class="pwmh-m12 pwmh-b">CMPA</tspan><tspan class="pwmh-s13 pwmh-b"> = 239</tspan><tspan class="pwmh-s13 pwmh-b"> → merkez hizalı</tspan><tspan class="pwmh-s12">   </tspan><tspan class="pwmh-s12 pwmh-mut">CMPA↑: yüksek · CMPA↓: düşük · </tspan><tspan class="pwmh-m12 pwmh-blu">PWMGenConfigure</tspan><tspan class="pwmh-s12 pwmh-mut"> varsayılanı</tspan></text>
+<path class="pwmh-wva" d="M110.0,596 L222.03125,596 L222.03125,572 L297.03125,572 L297.03125,596 L521.09375,596 L521.09375,572 L596.09375,572 L596.09375,596 L710.0,596"/>
+<path class="pwmh-wm" d="M224.03125,599 L224.03125,604 L295.03125,604 L295.03125,599"/>
+<text class="pwmh-s12 pwmh-b" x="305.031" y="608">2 × (319 − 239) = 160 tık = 20 µs ≈ %25</text>
+<path class="pwmh-wm" d="M110,630 L710.0,630"/>
+<path class="pwmh-wm" d="M110.0,626 L110.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="110" y="650" text-anchor="middle">0</text>
+<path class="pwmh-wm" d="M185.0,626 L185.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="185" y="650" text-anchor="middle">20</text>
+<path class="pwmh-wm" d="M260.0,626 L260.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="260" y="650" text-anchor="middle">40</text>
+<path class="pwmh-wm" d="M335.0,626 L335.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="335" y="650" text-anchor="middle">60</text>
+<path class="pwmh-wm" d="M410.0,626 L410.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="410" y="650" text-anchor="middle">80</text>
+<path class="pwmh-wm" d="M485.0,626 L485.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="485" y="650" text-anchor="middle">100</text>
+<path class="pwmh-wm" d="M560.0,626 L560.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="560" y="650" text-anchor="middle">120</text>
+<path class="pwmh-wm" d="M635.0,626 L635.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="635" y="650" text-anchor="middle">140</text>
+<path class="pwmh-wm" d="M710.0,626 L710.0,634"/>
+<text class="pwmh-m12 pwmh-mut" x="710" y="650" text-anchor="middle">160</text>
+<text class="pwmh-s12 pwmh-mut" x="102" y="650" text-anchor="end">t (µs)</text>
+</svg>
