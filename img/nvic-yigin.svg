@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 672" class="nvy-svg" role="img" aria-labelledby="nvy-title nvy-desc">
+<title id="nvy-title">İstisna yığın çerçevesi ve EXC_RETURN</title>
+<desc id="nvy-desc">Veri sayfası Şekil 2-7’ye dayalı. Yukarısı yüksek adres; yığın aşağı doğru büyür. Girişten sonra SP çerçevenin en düşük adresini, yani R0’ı gösterir. FPU bağlamı yokken çerçeve 8 kelimedir (32 bayt): SP+0x00 R0, +0x04 R1, +0x08 R2, +0x0C R3, +0x10 R12, +0x14 LR, +0x18 PC (dönüş adresi), +0x1C xPSR. FPU bağlamı varken ardından S0–S15 (+0x20 … +0x5C), FPSCR (+0x60) ve ayrılmış bir kelime (+0x64) gelir: toplam 26 kelime (104 bayt). Çerçevenin üstüne, SP’yi 8 bayta hizalamak için isteğe bağlı bir dolgu kelimesi eklenebilir (kesikli); eklendiyse yığındaki xPSR’nin bit 9’u 1 olur (CFGCTRL.STKALIGN = 1, reset değeri). Girişte LR’ye EXC_RETURN yazılır (değerler notta). ISR bu değeri PC’ye yüklediğinde (BX LR, POP {…, PC}) dönüş başlar.</desc>
+<defs>
+<marker id="nvy-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvy-head" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.nvy-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.nvy-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.nvy-svg .nvy-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.nvy-svg .nvy-b{font-weight:700}
+.nvy-svg .nvy-s12{font-size:12px}
+.nvy-svg .nvy-s13{font-size:13px}
+.nvy-svg .nvy-s16{font-size:16px}
+.nvy-svg .nvy-mut{fill:var(--fig-muted,#76746c)}
+.nvy-svg .nvy-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvy-svg .nvy-head{fill:var(--fig-stroke,#2b2b29)}
+.nvy-svg .nvy-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.nvy-svg .nvy-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvy-svg .nvy-cellb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.2;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvy-svg .nvy-cellg{fill:var(--fig-green,#2f7d4f);fill-opacity:.22;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvy-svg .nvy-cellm{fill:var(--fig-muted,#76746c);fill-opacity:.3;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvy-svg .nvy-cello{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-dasharray:5 3}
+.nvy-svg .nvy-wthin{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1;stroke-opacity:.6}
+</style>
+<text class="nvy-s16 nvy-b" x="16" y="29">Yığın çerçevesi ve EXC_RETURN</text>
+<text class="nvy-s13 nvy-mut" x="16" y="50">Veri sayfası Şekil 2-7’ye dayalı. Yukarısı yüksek adres; yığın aşağı doğru büyür.</text>
+<rect class="nvy-cellb" x="72" y="583" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="596" text-anchor="middle">R0</text>
+<text class="nvy-m12 nvy-mut" x="66" y="596" text-anchor="end">+0x00</text>
+<rect class="nvy-cellb" x="72" y="566" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="579" text-anchor="middle">R1</text>
+<rect class="nvy-cellb" x="72" y="549" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="562" text-anchor="middle">R2</text>
+<text class="nvy-m12 nvy-mut" x="66" y="562" text-anchor="end">+0x08</text>
+<rect class="nvy-cellb" x="72" y="532" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="545" text-anchor="middle">R3</text>
+<rect class="nvy-cellb" x="72" y="515" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="528" text-anchor="middle">R12</text>
+<text class="nvy-m12 nvy-mut" x="66" y="528" text-anchor="end">+0x10</text>
+<rect class="nvy-cellb" x="72" y="498" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="511" text-anchor="middle">LR</text>
+<rect class="nvy-cellb" x="72" y="481" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="494" text-anchor="middle">PC (dönüş adresi)</text>
+<text class="nvy-m12 nvy-mut" x="66" y="494" text-anchor="end">+0x18</text>
+<rect class="nvy-cellb" x="72" y="464" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="477" text-anchor="middle">xPSR</text>
+<text class="nvy-m12 nvy-mut" x="66" y="477" text-anchor="end">+0x1C</text>
+<rect class="nvy-cellg" x="72" y="447" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="460" text-anchor="middle">S0</text>
+<text class="nvy-m12 nvy-mut" x="66" y="460" text-anchor="end">+0x20</text>
+<rect class="nvy-cellg" x="72" y="430" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="443" text-anchor="middle">S1</text>
+<rect class="nvy-cellg" x="72" y="413" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="426" text-anchor="middle">S2</text>
+<text class="nvy-m12 nvy-mut" x="66" y="426" text-anchor="end">+0x28</text>
+<rect class="nvy-cellg" x="72" y="396" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="409" text-anchor="middle">S3</text>
+<rect class="nvy-cellg" x="72" y="379" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="392" text-anchor="middle">S4</text>
+<text class="nvy-m12 nvy-mut" x="66" y="392" text-anchor="end">+0x30</text>
+<rect class="nvy-cellg" x="72" y="362" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="375" text-anchor="middle">S5</text>
+<rect class="nvy-cellg" x="72" y="345" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="358" text-anchor="middle">S6</text>
+<text class="nvy-m12 nvy-mut" x="66" y="358" text-anchor="end">+0x38</text>
+<rect class="nvy-cellg" x="72" y="328" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="341" text-anchor="middle">S7</text>
+<rect class="nvy-cellg" x="72" y="311" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="324" text-anchor="middle">S8</text>
+<text class="nvy-m12 nvy-mut" x="66" y="324" text-anchor="end">+0x40</text>
+<rect class="nvy-cellg" x="72" y="294" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="307" text-anchor="middle">S9</text>
+<rect class="nvy-cellg" x="72" y="277" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="290" text-anchor="middle">S10</text>
+<text class="nvy-m12 nvy-mut" x="66" y="290" text-anchor="end">+0x48</text>
+<rect class="nvy-cellg" x="72" y="260" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="273" text-anchor="middle">S11</text>
+<rect class="nvy-cellg" x="72" y="243" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="256" text-anchor="middle">S12</text>
+<text class="nvy-m12 nvy-mut" x="66" y="256" text-anchor="end">+0x50</text>
+<rect class="nvy-cellg" x="72" y="226" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="239" text-anchor="middle">S13</text>
+<rect class="nvy-cellg" x="72" y="209" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="222" text-anchor="middle">S14</text>
+<text class="nvy-m12 nvy-mut" x="66" y="222" text-anchor="end">+0x58</text>
+<rect class="nvy-cellg" x="72" y="192" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="205" text-anchor="middle">S15</text>
+<rect class="nvy-cellg" x="72" y="175" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="188" text-anchor="middle">FPSCR</text>
+<text class="nvy-m12 nvy-mut" x="66" y="188" text-anchor="end">+0x60</text>
+<rect class="nvy-cellm" x="72" y="158" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="171" text-anchor="middle">ayrılmış</text>
+<text class="nvy-m12 nvy-mut" x="66" y="171" text-anchor="end">+0x64</text>
+<rect class="nvy-cello" x="72" y="141" width="128" height="17" rx="0"/>
+<text class="nvy-s12 nvy-mut" x="136" y="154" text-anchor="middle">dolgu (hizalama)</text>
+<rect class="nvy-cellf" x="72" y="124" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="136" y="137" text-anchor="middle">önceki içerik …</text>
+<text class="nvy-s13 nvy-b" x="72" y="98">FPU bağlamı varken</text>
+<text class="nvy-s12 nvy-mut" x="72" y="114">26 kelime = 104 bayt</text>
+<rect class="nvy-cellb" x="320" y="583" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="596" text-anchor="middle">R0</text>
+<rect class="nvy-cellb" x="320" y="566" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="579" text-anchor="middle">R1</text>
+<rect class="nvy-cellb" x="320" y="549" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="562" text-anchor="middle">R2</text>
+<rect class="nvy-cellb" x="320" y="532" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="545" text-anchor="middle">R3</text>
+<rect class="nvy-cellb" x="320" y="515" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="528" text-anchor="middle">R12</text>
+<rect class="nvy-cellb" x="320" y="498" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="511" text-anchor="middle">LR</text>
+<rect class="nvy-cellb" x="320" y="481" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="494" text-anchor="middle">PC (dönüş adresi)</text>
+<rect class="nvy-cellb" x="320" y="464" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="477" text-anchor="middle">xPSR</text>
+<rect class="nvy-cello" x="320" y="447" width="128" height="17" rx="0"/>
+<text class="nvy-s12 nvy-mut" x="384" y="460" text-anchor="middle">dolgu (hizalama)</text>
+<rect class="nvy-cellf" x="320" y="430" width="128" height="17" rx="0"/>
+<text class="nvy-s12" x="384" y="443" text-anchor="middle">önceki içerik …</text>
+<text class="nvy-s13 nvy-b" x="320" y="404">FPU bağlamı yokken</text>
+<text class="nvy-s12 nvy-mut" x="320" y="420">8 kelime = 32 bayt</text>
+<path class="nvy-w" d="M246,132.5 L201,132.5" marker-end="url(#nvy-arr)"/>
+<text class="nvy-s12 nvy-b" x="250" y="136.5">eski SP</text>
+<path class="nvy-w" d="M246,591.5 L201,591.5" marker-end="url(#nvy-arr)"/>
+<text class="nvy-s12 nvy-b" x="250" y="595.5">yeni SP</text>
+<path class="nvy-w" d="M494,438.5 L449,438.5" marker-end="url(#nvy-arr)"/>
+<text class="nvy-s12 nvy-b" x="498" y="442.5">eski SP</text>
+<text class="nvy-s12 nvy-mut" x="498" y="457.5">girişten önceki son kelime</text>
+<path class="nvy-w" d="M494,591.5 L449,591.5" marker-end="url(#nvy-arr)"/>
+<text class="nvy-s12 nvy-b" x="498" y="595.5">yeni SP</text>
+<text class="nvy-s12 nvy-mut" x="498" y="610.5">→ R0, en düşük adres</text>
+<path class="nvy-wthin" d="M72,608 L448,608"/>
+<text class="nvy-s12 nvy-mut" x="16" y="628">ofsetler yeni SP’ye göre; iki çerçevede ilk 8 kelime aynı yerde</text>
+<rect class="nvy-cellb" x="16" y="639" width="14" height="14" rx="2"/>
+<text class="nvy-s12" x="36" y="650">tamsayı bağlamı</text>
+<rect class="nvy-cellg" x="140" y="639" width="14" height="14" rx="2"/>
+<text class="nvy-s12" x="160" y="650">FPU bağlamı</text>
+<rect class="nvy-cellm" x="250" y="639" width="14" height="14" rx="2"/>
+<text class="nvy-s12" x="270" y="650">ayrılmış</text>
+<rect class="nvy-cello" x="334" y="639" width="14" height="14" rx="2"/>
+<text x="354" y="650"><tspan class="nvy-s12 nvy-b nvy-mut">kesikli</tspan><tspan class="nvy-s12"> = isteğe bağlı</tspan></text>
+<rect class="nvy-code" x="500" y="96" width="244" height="296" rx="8"/>
+<text x="512" y="120"><tspan class="nvy-s12 nvy-b">Girişte: </tspan><tspan class="nvy-m12">LR ← EXC_RETURN</tspan></text>
+<text x="512" y="138"><tspan class="nvy-s12 nvy-mut">(değerler notta, Tablo 2-10)</tspan></text>
+<text x="512" y="164"><tspan class="nvy-s12 nvy-b">Dönüş: </tspan><tspan class="nvy-s12">ISR EXC_RETURN’ü PC’ye</tspan></text>
+<text x="512" y="182"><tspan class="nvy-s12">yükler (</tspan><tspan class="nvy-m12">BX LR</tspan><tspan class="nvy-s12"> ya da</tspan></text>
+<text x="512" y="200"><tspan class="nvy-m12">POP {…, PC}</tspan><tspan class="nvy-s12">); donanım çerçeveyi</tspan></text>
+<text x="512" y="218"><tspan class="nvy-s12">geri alır.</tspan></text>
+<text x="512" y="244"><tspan class="nvy-s12 nvy-b">Dolgu: </tspan><tspan class="nvy-s12">CFGCTRL.STKALIGN = 1</tspan></text>
+<text x="512" y="262"><tspan class="nvy-s12">(reset) ile SP 8 bayta hizalanır;</tspan></text>
+<text x="512" y="280"><tspan class="nvy-s12">dolgu eklendiyse yığındaki</tspan></text>
+<text x="512" y="298"><tspan class="nvy-s12">xPSR’nin bit 9’u 1 olur.</tspan></text>
+<text x="512" y="324"><tspan class="nvy-s12 nvy-b">FPU: </tspan><tspan class="nvy-s12">tembel yığınlama (FPCC.LSPEN</tspan></text>
+<text x="512" y="342"><tspan class="nvy-s12">= 1, reset) yalnız yer ayırır;</tspan></text>
+<text x="512" y="360"><tspan class="nvy-s12">S0–S15 ve FPSCR, ISR FPU</tspan></text>
+<text x="512" y="378"><tspan class="nvy-s12">kullanırsa yazılır.</tspan></text>
+</svg>

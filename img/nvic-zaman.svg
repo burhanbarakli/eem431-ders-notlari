@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 642" class="nvz-svg" role="img" aria-labelledby="nvz-title nvz-desc">
+<title id="nvz-title">Önalma, kuyruk zincirleme ve geç gelen kesme</title>
+<desc id="nvz-desc">Üç zaman çizelgesi, öncelikler Örnek 10.1’deki gibi: Port F 1, Timer0A 5 (küçük sayı daha öncelikli). Üç şerit: Port F ISR’si, Timer0A ISR’si, ana program. Gri kutular donanım geçişidir; çevrim sayıları Workbook bölüm 4’ten. (a) Önalma: ana program çalışırken Timer0A isteği gelir, 12 çevrimde yığınlanır, Timer0A ISR’si başlar; Port F isteği gelince yeniden 12 çevrimde yığınlanır, Port F ISR’si çalışır, dönüşte (POP) Timer0A ISR’si kaldığı yerden sürer, onun dönüşünde ana programa geçilir. (b) Kuyruk zincirleme: Port F ISR’si çalışırken Timer0A isteği gelir ve bekler; Port F bitince geri yükleme ve yeniden yığınlama yapılmadan 6 çevrimde Timer0A ISR’sine geçilir. (c) Geç gelen: Timer0A isteği için yığınlama sürerken Port F isteği gelir; yığınlama kesilmeden tamamlanır (toplam 12 çevrim), vektör Port F’ye çevrilir ve önce Port F ISR’si çalışır, ardından 6 çevrimlik zincirleme ile bekleyen Timer0A ISR’si çalışır. Zaman ekseni ölçekli değildir.</desc>
+<defs>
+<pattern id="nvz-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path class="nvz-hatchl" d="M0,0 L0,7"/></pattern>
+<marker id="nvz-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvz-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvz-arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvz-headb" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvz-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvz-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.nvz-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.nvz-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.nvz-svg .nvz-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.nvz-svg .nvz-b{font-weight:700}
+.nvz-svg .nvz-s12{font-size:12px}
+.nvz-svg .nvz-s13{font-size:13px}
+.nvz-svg .nvz-s16{font-size:16px}
+.nvz-svg .nvz-mut{fill:var(--fig-muted,#76746c)}
+.nvz-svg .nvz-acc{fill:var(--fig-accent,#b4481f)}
+.nvz-svg .nvz-blu{fill:var(--fig-blue,#1f5fa8)}
+.nvz-svg .nvz-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvz-svg .nvz-heada{fill:var(--fig-accent,#b4481f)}
+.nvz-svg .nvz-headm{fill:var(--fig-muted,#76746c)}
+.nvz-svg .nvz-headb{fill:var(--fig-blue,#1f5fa8)}
+.nvz-svg .nvz-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.nvz-svg .nvz-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.nvz-svg .nvz-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.nvz-svg .nvz-trans{fill:var(--fig-muted,#76746c);fill-opacity:.22;stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvz-svg .nvz-segb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.16;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.5}
+.nvz-svg .nvz-sega{fill:var(--fig-accent,#b4481f);fill-opacity:.16;stroke:var(--fig-accent,#b4481f);stroke-width:1.5}
+.nvz-svg .nvz-segs{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.3}
+.nvz-svg .nvz-under{fill:var(--fig-fill,#ffffff);stroke:none}
+.nvz-svg .nvz-hatch{fill:url(#nvz-hatch);stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.nvz-svg .nvz-hatchl{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-opacity:.55}
+.nvz-svg .nvz-halo{paint-order:stroke;stroke:var(--fig-fill,#ffffff);stroke-width:4px;stroke-linejoin:round}
+.nvz-svg .nvz-wthin{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1;stroke-opacity:.6}
+</style>
+<text class="nvz-s16 nvz-b" x="16" y="29">Önalma, kuyruk zincirleme, geç gelen</text>
+<text class="nvz-s13 nvz-mut" x="16" y="50">Öncelikler Örnek 10.1’deki gibi: Port F 1, Timer0A 5. Zaman ekseni ölçekli değil.</text>
+<rect class="nvz-trans" x="16" y="61" width="14" height="14" rx="2"/>
+<text x="36" y="72"><tspan class="nvz-s12 nvz-b">gri</tspan><tspan class="nvz-s12"> = donanım geçişi; sayı = çevrim (Workbook)</tspan></text>
+<rect class="nvz-hatch" x="318" y="61" width="28" height="14" rx="2"/>
+<text class="nvz-s12" x="352" y="72">bekliyor</text>
+<rect class="nvz-sega" x="420" y="61" width="14" height="14" rx="2"/>
+<text class="nvz-s12" x="440" y="72">Port F ISR</text>
+<rect class="nvz-segb" x="516" y="61" width="14" height="14" rx="2"/>
+<text class="nvz-s12" x="536" y="72">Timer0A ISR</text>
+<rect class="nvz-segs" x="620" y="61" width="14" height="14" rx="2"/>
+<text class="nvz-s12" x="640" y="72">ana program</text>
+<text x="16" y="104" xml:space="preserve"><tspan class="nvz-s13 nvz-b">(a) Önalma (preemption)</tspan><tspan class="nvz-s12 nvz-mut">   Port F, Timer0A ISR’sini keser; dönüşte Timer0A kaldığı yerden sürer</tspan></text>
+<text class="nvz-s12" x="126" y="158" text-anchor="end">Port F ISR (1)</text>
+<path class="nvz-wthin" d="M136,154 L742,154"/>
+<text class="nvz-s12" x="126" y="188" text-anchor="end">Timer0A ISR (5)</text>
+<path class="nvz-wthin" d="M136,184 L742,184"/>
+<text class="nvz-s12" x="126" y="218" text-anchor="end">ana program</text>
+<path class="nvz-wthin" d="M136,214 L742,214"/>
+<rect class="nvz-under" x="136" y="203" width="54" height="22" rx="3"/>
+<rect class="nvz-segs" x="136" y="203" width="54" height="22" rx="3"/>
+<rect class="nvz-under" x="190" y="173" width="50" height="52" rx="3"/>
+<rect class="nvz-trans" x="190" y="173" width="50" height="52" rx="3"/>
+<text class="nvz-mono nvz-b" x="215" y="199" text-anchor="middle">12</text>
+<text class="nvz-s12" x="215" y="214" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="240" y="173" width="112" height="22" rx="3"/>
+<rect class="nvz-segb" x="240" y="173" width="112" height="22" rx="3"/>
+<text class="nvz-s12" x="296" y="188" text-anchor="middle">Timer0A ISR</text>
+<rect class="nvz-under" x="352" y="143" width="50" height="52" rx="3"/>
+<rect class="nvz-trans" x="352" y="143" width="50" height="52" rx="3"/>
+<text class="nvz-mono nvz-b" x="377" y="169" text-anchor="middle">12</text>
+<text class="nvz-s12" x="377" y="184" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="402" y="143" width="110" height="22" rx="3"/>
+<rect class="nvz-sega" x="402" y="143" width="110" height="22" rx="3"/>
+<text class="nvz-s12" x="457" y="158" text-anchor="middle">Port F ISR</text>
+<rect class="nvz-under" x="512" y="143" width="44" height="52" rx="3"/>
+<rect class="nvz-trans" x="512" y="143" width="44" height="52" rx="3"/>
+<text class="nvz-s12" x="534" y="173" text-anchor="middle">POP</text>
+<rect class="nvz-under" x="556" y="173" width="84" height="22" rx="3"/>
+<rect class="nvz-segb" x="556" y="173" width="84" height="22" rx="3"/>
+<text class="nvz-s12" x="598" y="188" text-anchor="middle">sürer</text>
+<rect class="nvz-under" x="640" y="173" width="44" height="52" rx="3"/>
+<rect class="nvz-trans" x="640" y="173" width="44" height="52" rx="3"/>
+<text class="nvz-s12" x="662" y="203" text-anchor="middle">POP</text>
+<rect class="nvz-under" x="684" y="203" width="58" height="22" rx="3"/>
+<rect class="nvz-segs" x="684" y="203" width="58" height="22" rx="3"/>
+<path class="nvz-wb" d="M190,118 L190,141" marker-end="url(#nvz-arrb)"/>
+<text class="nvz-s12 nvz-b nvz-blu" x="184" y="130" text-anchor="end">Timer0A isteği</text>
+<path class="nvz-wa" d="M352,118 L352,141" marker-end="url(#nvz-arra)"/>
+<text class="nvz-s12 nvz-b nvz-acc" x="358" y="130">Port F isteği</text>
+<text x="16" y="254" xml:space="preserve"><tspan class="nvz-s13 nvz-b">(b) Kuyruk zincirleme (tail-chaining)</tspan><tspan class="nvz-s12 nvz-mut">   Timer0A bekler; Port F bitince POP + PUSH yerine doğrudan geçiş</tspan></text>
+<text class="nvz-s12" x="126" y="308" text-anchor="end">Port F ISR (1)</text>
+<path class="nvz-wthin" d="M136,304 L742,304"/>
+<text class="nvz-s12" x="126" y="338" text-anchor="end">Timer0A ISR (5)</text>
+<path class="nvz-wthin" d="M136,334 L742,334"/>
+<text class="nvz-s12" x="126" y="368" text-anchor="end">ana program</text>
+<path class="nvz-wthin" d="M136,364 L742,364"/>
+<rect class="nvz-under" x="136" y="353" width="54" height="22" rx="3"/>
+<rect class="nvz-segs" x="136" y="353" width="54" height="22" rx="3"/>
+<rect class="nvz-under" x="190" y="293" width="50" height="82" rx="3"/>
+<rect class="nvz-trans" x="190" y="293" width="50" height="82" rx="3"/>
+<text class="nvz-mono nvz-b" x="215" y="334" text-anchor="middle">12</text>
+<text class="nvz-s12" x="215" y="349" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="240" y="293" width="200" height="22" rx="3"/>
+<rect class="nvz-sega" x="240" y="293" width="200" height="22" rx="3"/>
+<text class="nvz-s12" x="340" y="308" text-anchor="middle">Port F ISR</text>
+<rect class="nvz-under" x="312" y="325" width="128" height="18" rx="2"/>
+<rect class="nvz-hatch" x="312" y="325" width="128" height="18" rx="2"/>
+<text class="nvz-s12 nvz-b nvz-halo" x="376" y="338" text-anchor="middle">bekliyor</text>
+<rect class="nvz-under" x="440" y="293" width="46" height="52" rx="3"/>
+<rect class="nvz-trans" x="440" y="293" width="46" height="52" rx="3"/>
+<text class="nvz-mono nvz-b" x="463" y="319" text-anchor="middle">6</text>
+<text class="nvz-s12" x="463" y="334" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="486" y="323" width="140" height="22" rx="3"/>
+<rect class="nvz-segb" x="486" y="323" width="140" height="22" rx="3"/>
+<text class="nvz-s12" x="556" y="338" text-anchor="middle">Timer0A ISR</text>
+<rect class="nvz-under" x="626" y="323" width="44" height="52" rx="3"/>
+<rect class="nvz-trans" x="626" y="323" width="44" height="52" rx="3"/>
+<text class="nvz-s12" x="648" y="353" text-anchor="middle">POP</text>
+<rect class="nvz-under" x="670" y="353" width="72" height="22" rx="3"/>
+<rect class="nvz-segs" x="670" y="353" width="72" height="22" rx="3"/>
+<path class="nvz-wa" d="M190,268 L190,291" marker-end="url(#nvz-arra)"/>
+<text class="nvz-s12 nvz-b nvz-acc" x="184" y="280" text-anchor="end">Port F isteği</text>
+<path class="nvz-wb" d="M312,268 L312,291" marker-end="url(#nvz-arrb)"/>
+<text class="nvz-s12 nvz-b nvz-blu" x="318" y="280">Timer0A isteği</text>
+<text x="16" y="404" xml:space="preserve"><tspan class="nvz-s13 nvz-b">(c) Geç gelen (late-arriving)</tspan><tspan class="nvz-s12 nvz-mut">   yığınlama sürerken gelen Port F önce çalışır; yığınlama yeniden başlamaz</tspan></text>
+<text class="nvz-s12" x="126" y="458" text-anchor="end">Port F ISR (1)</text>
+<path class="nvz-wthin" d="M136,454 L742,454"/>
+<text class="nvz-s12" x="126" y="488" text-anchor="end">Timer0A ISR (5)</text>
+<path class="nvz-wthin" d="M136,484 L742,484"/>
+<text class="nvz-s12" x="126" y="518" text-anchor="end">ana program</text>
+<path class="nvz-wthin" d="M136,514 L742,514"/>
+<rect class="nvz-under" x="136" y="503" width="54" height="22" rx="3"/>
+<rect class="nvz-segs" x="136" y="503" width="54" height="22" rx="3"/>
+<rect class="nvz-under" x="190" y="475" width="210" height="18" rx="2"/>
+<rect class="nvz-hatch" x="190" y="475" width="210" height="18" rx="2"/>
+<text class="nvz-s12 nvz-b nvz-halo" x="320" y="488" text-anchor="middle">bekliyor</text>
+<rect class="nvz-under" x="190" y="443" width="50" height="82" rx="3"/>
+<rect class="nvz-trans" x="190" y="443" width="50" height="82" rx="3"/>
+<text class="nvz-mono nvz-b" x="215" y="484" text-anchor="middle">12</text>
+<text class="nvz-s12" x="215" y="499" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="240" y="443" width="160" height="22" rx="3"/>
+<rect class="nvz-sega" x="240" y="443" width="160" height="22" rx="3"/>
+<text class="nvz-s12" x="320" y="458" text-anchor="middle">Port F ISR</text>
+<rect class="nvz-under" x="400" y="443" width="46" height="52" rx="3"/>
+<rect class="nvz-trans" x="400" y="443" width="46" height="52" rx="3"/>
+<text class="nvz-mono nvz-b" x="423" y="469" text-anchor="middle">6</text>
+<text class="nvz-s12" x="423" y="484" text-anchor="middle">çevrim</text>
+<rect class="nvz-under" x="446" y="473" width="140" height="22" rx="3"/>
+<rect class="nvz-segb" x="446" y="473" width="140" height="22" rx="3"/>
+<text class="nvz-s12" x="516" y="488" text-anchor="middle">Timer0A ISR</text>
+<rect class="nvz-under" x="586" y="473" width="44" height="52" rx="3"/>
+<rect class="nvz-trans" x="586" y="473" width="44" height="52" rx="3"/>
+<text class="nvz-s12" x="608" y="503" text-anchor="middle">POP</text>
+<rect class="nvz-under" x="630" y="503" width="112" height="22" rx="3"/>
+<rect class="nvz-segs" x="630" y="503" width="112" height="22" rx="3"/>
+<path class="nvz-wb" d="M190,418 L190,441" marker-end="url(#nvz-arrb)"/>
+<text class="nvz-s12 nvz-b nvz-blu" x="184" y="430" text-anchor="end">Timer0A isteği</text>
+<path class="nvz-wa" d="M212,418 L212,441" marker-end="url(#nvz-arra)"/>
+<text class="nvz-s12 nvz-b nvz-acc" x="218" y="430">Port F isteği</text>
+<path class="nvz-wm" d="M136,544 L742,544" marker-end="url(#nvz-arrm)"/>
+<text class="nvz-s12 nvz-mut" x="738" y="562" text-anchor="end">zaman</text>
+<rect class="nvz-code" x="16" y="574" width="728" height="52" rx="8"/>
+<text x="28" y="594"><tspan class="nvz-s12 nvz-b">12 çevrim: </tspan><tspan class="nvz-s12">girişte 8 kelime yığınlanır, vektör aynı anda okunur. </tspan><tspan class="nvz-s12 nvz-b">6 çevrim: </tspan><tspan class="nvz-s12">zincirlemede yığın hiç açılmaz.</tspan></text>
+<text class="nvz-s12" x="28" y="613">Geç gelende yığınlanan kelimeler iki istek için de aynıdır; yalnız okunacak vektör değişir.</text>
+</svg>

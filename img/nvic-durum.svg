@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 708" class="nvd-svg" role="img" aria-labelledby="nvd-title nvd-desc">
+<title id="nvd-title">Bir kesmenin durumları; darbe ve seviye kesmesi</title>
+<desc id="nvd-desc">Üstte durum makinesi. Etkin değil (inactive: PEND 0, ACTIVE 0) → istek (hat, PEND ya da SWTRIG yazımı) → Bekliyor (pending: PEND 1, ACTIVE 0) → giriş (öncelik yeterli) → Etkin (active: PEND 0, ACTIVE 1) → dönüş, hat 0 ve yeni darbe yoksa → Etkin değil; dönüşte seviye hattı hâlâ 1 ise doğrudan Bekliyor’a döner. Etkin iken yeni darbe ya da PEND yazımı gelirse (seviye kesmesi ISR sürerken bekler duruma geçmez) Etkin ve bekliyor (active and pending: PEND 1, ACTIVE 1) olur; dönüşte Bekliyor’a geçer ve ISR’ye yeniden girilir. Bekliyor durumundan UNPEND yazımıyla (isteğe bağlı, kesikli) Etkin değil’e dönülebilir. Altta iki zaman satırı. (a) Darbe kesmesi: ilk darbe bekleme bitini kurar, girişte bit silinir; ISR sürerken gelen iki darbe tek bir bekleme olarak kilitlenir, dönüşte ISR bir kez daha çalışır, sonra etkin değil olur. (b) Seviye kesmesi, kaynak bayrağı ISR’de temizlenmiyor: hat 1 kalır, her dönüşte NVIC hattı yeniden örnekler ve kesme hemen bekliyor olur; ISR sonsuza dek tekrarlanır, ana program ilerlemez.</desc>
+<defs>
+<pattern id="nvd-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path class="nvd-hatchl" d="M0,0 L0,7"/></pattern>
+<marker id="nvd-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvd-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvd-arrm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvd-headm" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.nvd-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.nvd-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.nvd-svg .nvd-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.nvd-svg .nvd-b{font-weight:700}
+.nvd-svg .nvd-s12{font-size:12px}
+.nvd-svg .nvd-s13{font-size:13px}
+.nvd-svg .nvd-s16{font-size:16px}
+.nvd-svg .nvd-mut{fill:var(--fig-muted,#76746c)}
+.nvd-svg .nvd-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.nvd-svg .nvd-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvd-svg .nvd-head{fill:var(--fig-stroke,#2b2b29)}
+.nvd-svg .nvd-headm{fill:var(--fig-muted,#76746c)}
+.nvd-svg .nvd-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.nvd-svg .nvd-wmd{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.3;stroke-dasharray:4 3}
+.nvd-svg .nvd-wvs{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.2;stroke-linejoin:round}
+.nvd-svg .nvd-hatch{fill:url(#nvd-hatch);stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.nvd-svg .nvd-hatchl{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.2;stroke-opacity:.55}
+.nvd-svg .nvd-halo{paint-order:stroke;stroke:var(--fig-fill,#ffffff);stroke-width:4px;stroke-linejoin:round}
+.nvd-svg .nvd-actv{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:2.4}
+.nvd-svg .nvd-actvs{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:2.4}
+</style>
+<text class="nvd-s16 nvd-b" x="16" y="29">Bir kesmenin durumları</text>
+<text class="nvd-s13 nvd-mut" x="16" y="50">Durum, IRQ’nun PEND ve ACTIVE bitlerinde görülür (PEND0–4, ACTIVE0–4). Veri sayfası s.124–125.</text>
+<rect class="nvd-hatch" x="16" y="62" width="26" height="14" rx="2"/>
+<text x="48" y="73"><tspan class="nvd-s12 nvd-b">taralı</tspan><tspan class="nvd-s12"> = bekliyor (Şekil 5 ile aynı)</tspan></text>
+<rect class="nvd-actv" x="236" y="62" width="26" height="14" rx="2"/>
+<text x="268" y="73"><tspan class="nvd-s12 nvd-b">kalın kenar</tspan><tspan class="nvd-s12"> = etkin</tspan></text>
+<path class="nvd-wmd" d="M390,69 L420,69"/>
+<text x="426" y="73"><tspan class="nvd-s12 nvd-b nvd-mut">kesikli</tspan><tspan class="nvd-s12"> = isteğe bağlı</tspan></text>
+<rect class="nvd-box" x="24" y="134" width="170" height="62" rx="8"/>
+<text class="nvd-s13 nvd-b" x="109" y="154" text-anchor="middle">Etkin değil</text>
+<text class="nvd-s12" x="109" y="170" text-anchor="middle">(inactive)</text>
+<text class="nvd-m12" x="109" y="188" text-anchor="middle">PEND 0 · ACTIVE 0</text>
+<rect class="nvd-hatch" x="296" y="134" width="170" height="62" rx="8"/>
+<text class="nvd-s13 nvd-b nvd-halo" x="381" y="154" text-anchor="middle">Bekliyor</text>
+<text class="nvd-s12 nvd-halo" x="381" y="170" text-anchor="middle">(pending)</text>
+<text class="nvd-m12 nvd-halo" x="381" y="188" text-anchor="middle">PEND 1 · ACTIVE 0</text>
+<rect class="nvd-actv" x="566" y="134" width="170" height="62" rx="8"/>
+<text class="nvd-s13 nvd-b" x="651" y="154" text-anchor="middle">Etkin</text>
+<text class="nvd-s12" x="651" y="170" text-anchor="middle">(active)</text>
+<text class="nvd-m12" x="651" y="188" text-anchor="middle">PEND 0 · ACTIVE 1</text>
+<rect class="nvd-hatch" x="296" y="272" width="170" height="62" rx="8"/>
+<rect class="nvd-actvs" x="296" y="272" width="170" height="62" rx="8"/>
+<text class="nvd-s13 nvd-b nvd-halo" x="381" y="292" text-anchor="middle">Etkin ve bekliyor</text>
+<text class="nvd-s12 nvd-halo" x="381" y="308" text-anchor="middle">(active and pending)</text>
+<text class="nvd-m12 nvd-halo" x="381" y="326" text-anchor="middle">PEND 1 · ACTIVE 1</text>
+<path class="nvd-w" d="M194,165.0 L295,165.0" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s13 nvd-b" x="245" y="157" text-anchor="middle">istek</text>
+<text class="nvd-s12 nvd-mut" x="245" y="183" text-anchor="middle">hat ya da</text>
+<text class="nvd-s12 nvd-mut" x="245" y="198" text-anchor="middle">PEND, SWTRIG</text>
+<path class="nvd-w" d="M466,150 L565,150" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s13 nvd-b" x="516" y="144" text-anchor="middle">giriş</text>
+<text class="nvd-s12 nvd-mut" x="516" y="166" text-anchor="middle">öncelik yeterli</text>
+<path class="nvd-w" d="M566,180 L467,180" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s12 nvd-b" x="516" y="198" text-anchor="middle">dönüş, seviye</text>
+<text class="nvd-s12 nvd-b" x="516" y="213" text-anchor="middle">hattı hâlâ 1</text>
+<path class="nvd-w" d="M651.0,134 L651.0,110 L109.0,110 L109.0,133" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s13 nvd-b" x="380" y="104" text-anchor="middle">dönüş, hat 0 ve yeni darbe yok</text>
+<path class="nvd-w" d="M651.0,196 L651.0,303.0 L467,303.0" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s12 nvd-b" x="661" y="220">ISR sürerken</text>
+<text class="nvd-s12 nvd-b" x="661" y="235">yeni darbe</text>
+<text class="nvd-s12 nvd-b" x="661" y="250">ya da PEND</text>
+<text class="nvd-s12 nvd-b" x="661" y="265">yazımı</text>
+<path class="nvd-w" d="M381.0,272 L381.0,197" marker-end="url(#nvd-arr)"/>
+<text class="nvd-s13 nvd-b" x="389" y="246">dönüş</text>
+<text class="nvd-s12 nvd-mut" x="389" y="261">→ yeniden giriş</text>
+<path class="nvd-wmd" d="M322,196 L322,246 L109.0,246 L109.0,197" marker-end="url(#nvd-arrm)"/>
+<text class="nvd-s12 nvd-mut" x="225.5" y="240" text-anchor="middle">UNPEND yazımı</text>
+<text class="nvd-s13 nvd-b" x="16" y="382">(a) Darbe kesmesi</text>
+<text class="nvd-s12 nvd-mut" x="145" y="382">ISR sürerken gelen iki darbe tek bekleme olarak kilitlenir</text>
+<text class="nvd-m12" x="118" y="408" text-anchor="end">hat</text>
+<text class="nvd-m12" x="118" y="444" text-anchor="end">PEND</text>
+<text class="nvd-m12" x="118" y="480" text-anchor="end">ISR</text>
+<path class="nvd-wvs" d="M130,412 L160,412 L160,396 L170,396 L170,412 L270,412 L270,396 L280,396 L280,412 L330,412 L330,396 L340,396 L340,412 L742,412"/>
+<text class="nvd-m12 nvd-mut" x="176" y="408">1</text>
+<text class="nvd-m12 nvd-mut" x="286" y="408">2</text>
+<text class="nvd-m12 nvd-mut" x="346" y="408">3</text>
+<path class="nvd-wvs" d="M130,448 L162,448 L162,432 L210,432 L210,448 L272,448 L272,432 L440,432 L440,448 L742,448"/>
+<rect class="nvd-actv" x="210" y="464" width="222" height="22" rx="4"/>
+<text class="nvd-s12" x="321" y="480" text-anchor="middle">ISR</text>
+<rect class="nvd-actv" x="440" y="464" width="160" height="22" rx="4"/>
+<text class="nvd-s12" x="520" y="480" text-anchor="middle">ISR</text>
+<text class="nvd-s12 nvd-mut" x="436" y="502" text-anchor="middle">tek ek giriş</text>
+<text class="nvd-s12 nvd-mut" x="612" y="480">sonra etkin değil</text>
+<text class="nvd-s13 nvd-b" x="16" y="532">(b) Seviye kesmesi</text>
+<text class="nvd-s12 nvd-mut" x="152" y="532">kaynak bayrağı ISR’de temizlenmiyor: hat 1 kalır</text>
+<text class="nvd-m12" x="118" y="558" text-anchor="end">hat</text>
+<text class="nvd-m12" x="118" y="594" text-anchor="end">PEND</text>
+<text class="nvd-m12" x="118" y="630" text-anchor="end">ISR</text>
+<path class="nvd-wvs" d="M130,562 L160,562 L160,546 L742,546"/>
+<path class="nvd-wvs" d="M130,598 L162,598 L162,582 L210,582 L210,598 L330,598 L330,582 L340,582 L340,598 L460,598 L460,582 L470,582 L470,598 L590,598 L590,582 L600,582 L600,598 L712,598"/>
+<rect class="nvd-actv" x="210" y="614" width="120" height="22" rx="4"/>
+<text class="nvd-s12" x="270" y="630" text-anchor="middle">ISR</text>
+<rect class="nvd-actv" x="340" y="614" width="120" height="22" rx="4"/>
+<text class="nvd-s12" x="400" y="630" text-anchor="middle">ISR</text>
+<rect class="nvd-actv" x="470" y="614" width="120" height="22" rx="4"/>
+<text class="nvd-s12" x="530" y="630" text-anchor="middle">ISR</text>
+<rect class="nvd-actv" x="600" y="614" width="100" height="22" rx="4"/>
+<text class="nvd-s12" x="650" y="630" text-anchor="middle">ISR</text>
+<text class="nvd-s13 nvd-b" x="722" y="630" text-anchor="middle">…</text>
+<rect class="nvd-code" x="130" y="648" width="612" height="44" rx="8"/>
+<text x="142" y="666"><tspan class="nvd-s12 nvd-b">Her dönüşte NVIC hattı örnekler, 1 görünce kesme yeniden bekler: ana program hiç ilerlemez.</tspan></text>
+<text class="nvd-s12" x="142" y="683">Bayrak ISR’nin başında silinirse hat düşer ve dönüşte kesme etkin değil olur.</text>
+</svg>

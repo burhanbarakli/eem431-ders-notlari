@@ -19,6 +19,7 @@ Site: https://burhanbarakli.github.io/eem431-ders-notlari/
 | `watchdog/` | 10. Watchdog zamanlayıcısı |
 | `i2c/` | 11. I2C |
 | `pwm/` | 12. PWM |
+| `nvic/` | 13. NVIC ve kesme önceliği |
 | `img/` | Şekiller (SVG; sayfaya satır içi gömülür, koyu temaya uyar) |
 | `assets/` | Ortak stil ve betik |
 

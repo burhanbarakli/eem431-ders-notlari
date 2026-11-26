@@ -1,0 +1,879 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NVIC ve Kesme Önceliği — EEM 431 Ders Notu</title>
+<meta name="description" content="TM4C123GH6PM LaunchPad'de NVIC: istisna, kesme ve vektör numaraları, NVIC ve SCB register'ları, öncelik ve gruplama, kesme durumları, iç içe kesme, kuyruk zincirleme, yığın çerçevesi ve EXC_RETURN, PRIMASK/FAULTMASK/BASEPRI, yazılımla tetikleme, hata istisnaları, API'siz ve TivaWare örnekleri, TI interrupts uyarlaması, ders kodları.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Source+Sans+3:wght@400;600;700&amp;family=Source+Serif+4:wght@700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js" defer></script>
+<script src="../assets/site.js" defer></script></head>
+<body><header class="topbar"><a class="brand" href="../">EEM 431 Ders Notları</a><span class="crumb">/ 13. NVIC ve Kesme Önceliği</span><span class="spacer"></span><button class="theme-btn" type="button">Tema</button></header>
+<div class="layout"><nav class="toc" aria-label="İçindekiler"><h2>İçindekiler</h2><ol>
+<li><a href="#amac">0. Amaç</a></li>
+<li><a href="#numaralar">1. İstisna, kesme, vektör</a></li>
+<li><a href="#yapi">2. Genel yapı</a></li>
+<li><a href="#durumlar">3. Kesmenin durumları</a></li>
+<li><a href="#registerlar">4. Register'lar</a></li>
+<li><a href="#oncelik">5. Öncelik</a></li>
+<li><a href="#ic-ice">6. İç içe kesme ve gecikme</a></li>
+<li><a href="#maskeleme">7. PRIMASK, FAULTMASK, BASEPRI</a></li>
+<li><a href="#hatalar-fault">8. Hata istisnaları</a></li>
+<li><a href="#baslatma">9. Kurulum adımları</a></li>
+<li><a href="#ornekler">10. Örnekler</a><ol>
+  <li><a href="#ornek-oncelik">10.1 Öncelik, API'siz</a></li>
+  <li><a href="#ornek-basepri">10.2 Yazılım kesmesi, BASEPRI</a></li>
+  <li><a href="#ornek-apili">10.3 Öncelik, API'li</a></li>
+  <li><a href="#ornek-fault">10.4 HardFault/BusFault</a></li></ol></li>
+<li><a href="#ti">11. TI interrupts uyarlaması</a></li>
+<li><a href="#ders-kodlari">12. Ders kodlarında NVIC</a></li>
+<li><a href="#sik-hatalar">13. Sık yapılan hatalar</a></li>
+<li><a href="#alistirmalar">14. Alıştırmalar</a></li>
+<li><a href="#kaynaklar">15. Kaynaklar</a></li>
+</ol></nav>
+<main>
+<p class="meta">EEM 431 İleri Mikroişlemciler · Sakarya Üniversitesi EEE · TM4C123GH6PM / EK-TM4C123GXL</p>
+<h1>NVIC ve Kesme Önceliği</h1>
+<p class="lead">Önceki notlarda her çevre birimi için tek bir kesme kurduk ve öncelik hiç ayarlamadık. İki kesme aynı anda geldiğinde hangisinin önce çalışacağına, bir işleyicinin ötekini kesip kesemeyeceğine ve bunun kaç çevrim sürdüğüne NVIC (Nested Vectored Interrupt Controller, iç içe vektörlü kesme denetleyicisi) karar verir. Bu not NVIC'in kendisini anlatır: numaralandırma, NVIC ve SCB (sistem denetim bloğu) register'ları, öncelik ve gruplama, bekleyen ve etkin durumlar, iç içe kesme, yığın çerçevesi, maskeleme, yazılımla tetikleme ve hata istisnaları.</p>
+
+<h2 id="amac">0. Amaç ve öğrenme kazanımları</h2>
+<div class="box goal"><span class="box-title">Amaç</span>
+<p><b>Bu notun amacı</b>, birden çok kesmeli bir programda öncelikleri bilinçli vermeyi, iç içe kesmeyi ve kuyruk zincirlemeyi anlamayı, kritik bölgeyi doğru maskeyle korumayı ve bir HardFault'un nedenini register'lardan okumayı hem register düzeyinde (API'siz) hem TivaWare ile (API'li) yapabilmektir. Bu notun sonunda öğrenci:</p>
+<ol>
+<li>Vektör numarası, IRQ numarası ve ofseti birbirinden hesaplar. TivaWare'in <code>INT_…</code> sabitlerinin vektör numarası olduğunu bilir.</li>
+<li>NVIC'in EN, DIS, PEND, UNPEND, ACTIVE, PRI, SWTRIG register'larını ve SCB'nin INTCTRL, VTABLE, APINT, SYSPRI, SYSHNDCTRL ve hata register'larını kullanır.</li>
+<li>Bayt değeri ile öncelik numarasını ayırır (0xA0 = 5), PRIGROUP'u ve eşit öncelik kuralını açıklar.</li>
+<li>Önalma, kuyruk zincirleme ve geç gelen kesmeyi, yığın çerçevesini ve EXC_RETURN'ü açıklar.</li>
+<li>PRIMASK, FAULTMASK ve BASEPRI arasında seçim yapar, iç içe güvenli kritik bölge yazar.</li>
+<li>Saatsiz çevre birimine erişimden doğan HardFault'u FAULTSTAT, HFAULTSTAT ve FAULTADDR ile çözümler.</li>
+<li>TI'ın <code>interrupts</code> örneğini UART'sız çalıştırır, ders kodlarındaki NVIC kullanımını değerlendirir.</li>
+</ol></div>
+<p>Kesmenin temel yolu (bayrak → maske → EN → PRIMASK → vektör → ISR → bayrak temizleme) tekrar edilmez: <a href="../timer/#kesme">Zamanlayıcılar notu, 2. bölüm</a>, <a href="../gpio-kesme/">GPIO kesmeleri</a>, <a href="../systick/">SysTick</a>.</p>
+
+<h2 id="numaralar">1. İstisna numarası, kesme numarası, vektör</h2>
+<p><b>Amaç:</b> aynı kesmeyi gösteren üç sayıyı karıştırmamak.</p>
+<p>Normal akışı kesen her olay bir <b>istisnadır</b> (exception). Çevre birimlerinden gelenlere <b>kesme</b> (IRQ) denir (s. 102–103). Her istisnanın bir <b>vektör numarası</b> vardır. Bu, istisna numarasıdır: IPSR'de ve INTCTRL'nin VECACT alanında okunan değer (s. 162). 0 numaralı giriş ilk yığın işaretçisidir, 1–15 sistem istisnaları, 16 ve sonrası kesmelerdir. Kesmelerin bir de <b>IRQ numarası</b> vardır: NVIC register'larındaki bit sırası (Tablo 2-9, s. 104–106).</p>
+<pre><code class="language-plaintext">vektör no = IRQ + 16          ofset = 4 × vektör no          adres = VTABLE + ofset
+Timer0A : IRQ 19 -> vektör 35 -> ofset 0x08C -> EN0 bit 19, PRI4 bit 31:29
+Port F  : IRQ 30 -> vektör 46 -> ofset 0x0B8 -> EN0 bit 30, PRI7 bit 23:21</code></pre>
+<p>Veri sayfası da VECACT'tan 16 çıkarılınca EN, DIS, PEND, UNPEND ve PRI'de kullanılacak numaranın bulunduğunu söyler (s. 162). TM4C123GH6PM'de 78 kesme vardır (s. 101, s. 124). IRQ numaraları 0–138'e dağılmıştır, aradakiler ayrılmıştır. Workbook s. 4-3'te "71 kesme" yazar. Bu not veri sayfasını esas alır.</p>
+<div class="box ok"><span class="box-title">TivaWare'in INT_ sabitleri vektör numarasıdır</span>
+<p><code>inc/hw_ints.h</code>'de <code>INT_TIMER0A_TM4C123</code> = 35, <code>INT_GPIOF_TM4C123</code> = 46 (satır 83, 95). Sistem istisnaları için <code>FAULT_NMI</code> = 2 … <code>FAULT_SYSTICK</code> = 15 (satır 49–57). TivaWare 16'yı kendisi çıkarır: <code>IntEnable</code> register'ı <code>(n − 16) / 32</code>, biti <code>(n − 16) &amp; 31</code> ile bulur (<code>interrupt.c</code>, satır 653–654), <code>IntTrigger</code> SWTRIG'e <code>n − 16</code> yazar (satır 1052). Register düzeyinde IRQ numarası kullanılır: <code>NVIC_EN0_R = 1u &lt;&lt; 19</code>.</p></div>
+<table>
+<thead><tr><th>Vektör</th><th>İstisna</th><th>Ofset</th><th>Öncelik</th><th>Açma / tetikleme</th><th>Öncelik alanı</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>İlk SP değeri</td><td>0x000</td><td>–</td><td>Reset'te MSP'ye (ana yığın işaretçisi) yüklenir</td><td>–</td></tr>
+<tr><td>1</td><td>Reset</td><td>0x004</td><td>−3</td><td>Açılış, reset</td><td>sabit</td></tr>
+<tr><td>2</td><td>NMI</td><td>0x008</td><td>−2</td><td>Hep açık; INTCTRL.NMISET</td><td>sabit</td></tr>
+<tr><td>3</td><td>HardFault</td><td>0x00C</td><td>−1</td><td>Hep açık</td><td>sabit</td></tr>
+<tr><td>4</td><td>MemManage</td><td>0x010</td><td>0–7</td><td>SYSHNDCTRL.MEM (bit 16)</td><td>SYSPRI1 7:5</td></tr>
+<tr><td>5</td><td>BusFault</td><td>0x014</td><td>0–7</td><td>SYSHNDCTRL.BUS (bit 17)</td><td>SYSPRI1 15:13</td></tr>
+<tr><td>6</td><td>UsageFault</td><td>0x018</td><td>0–7</td><td>SYSHNDCTRL.USAGE (bit 18)</td><td>SYSPRI1 23:21</td></tr>
+<tr><td>11</td><td>SVCall</td><td>0x02C</td><td>0–7</td><td>SVC komutu</td><td>SYSPRI2 31:29</td></tr>
+<tr><td>12</td><td>Debug Monitor</td><td>0x030</td><td>0–7</td><td>Hata ayıklayıcı</td><td>SYSPRI3 7:5</td></tr>
+<tr><td>14</td><td>PendSV</td><td>0x038</td><td>0–7</td><td>INTCTRL.PENDSV</td><td>SYSPRI3 23:21</td></tr>
+<tr><td>15</td><td>SysTick</td><td>0x03C</td><td>0–7</td><td>STCTRL.INTEN</td><td>SYSPRI3 31:29</td></tr>
+</tbody></table>
+<p>Kaynak: Tablo 2-8 (s. 103–104), SYSPRI1–3 (s. 170–172), SYSHNDCTRL (s. 173). 7–10 ve 13 ayrılmıştır. Sistem istisnalarının EN0–EN4'te biti yoktur. Bu notta ve ders kodlarında geçen kesmeler:</p>
+<table>
+<thead><tr><th>Kaynak</th><th>IRQ</th><th>Vektör</th><th>Ofset</th><th>EN biti</th><th>PRI alanı</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>GPIO Port A / B / C</td><td>0 / 1 / 2</td><td>16 / 17 / 18</td><td>0x040 / 044 / 048</td><td>EN0 0 / 1 / 2</td><td>PRI0 7:5 / 15:13 / 23:21</td><td><code>INT_GPIOA/B/C</code></td></tr>
+<tr><td>UART0</td><td>5</td><td>21</td><td>0x054</td><td>EN0 5</td><td>PRI1 15:13</td><td><code>INT_UART0</code></td></tr>
+<tr><td>ADC0 SS1 / SS3</td><td>15 / 17</td><td>31 / 33</td><td>0x07C / 0x084</td><td>EN0 15 / 17</td><td>PRI3 31:29 / PRI4 15:13</td><td><code>INT_ADC0SS1/3</code></td></tr>
+<tr><td>Watchdog 0 ve 1</td><td>18</td><td>34</td><td>0x088</td><td>EN0 18</td><td>PRI4 23:21</td><td><code>INT_WATCHDOG</code></td></tr>
+<tr><td>Timer0A</td><td>19</td><td>35</td><td>0x08C</td><td>EN0 19</td><td>PRI4 31:29</td><td><code>INT_TIMER0A</code></td></tr>
+<tr><td>GPIO Port F</td><td>30</td><td>46</td><td>0x0B8</td><td>EN0 30</td><td>PRI7 23:21</td><td><code>INT_GPIOF</code></td></tr>
+<tr><td>UART2 (10.2)</td><td>33</td><td>49</td><td>0x0C4</td><td>EN1 1</td><td>PRI8 15:13</td><td><code>INT_UART2</code></td></tr>
+<tr><td>Hibernation</td><td>43</td><td>59</td><td>0x0EC</td><td>EN1 11</td><td>PRI10 31:29</td><td><code>INT_HIBERNATE</code></td></tr>
+<tr><td>PWM1 Fault (son)</td><td>138</td><td>154</td><td>0x268</td><td>EN4 10</td><td>PRI34 23:21</td><td><code>INT_PWM1_FAULT</code></td></tr>
+</tbody></table>
+<figure><img class="fig" src="../img/nvic-vektor.svg" alt="Vektör tablosu: 0x000 ilk SP, 0x004 Reset, 0x008 NMI, 0x00C HardFault, sistem istisnaları 0x03C SysTick'e kadar, 0x040 IRQ 0, 0x08C Timer0A, 0x0B8 Port F, son giriş 0x268; yanında VTABLE ve SRAM kopyası"><figcaption><b>Şekil 1.</b> Vektör tablosunun bellekteki yerleşimi ve VTABLE. Reset'te VTABLE = 0, tablo flash'ın başındadır. <code>IntRegister</code> ilk çağrıda (1) 155 girişi SRAM'deki 1 KB hizalı <code>g_pfnRAMVectors</code> dizisine kopyalar, (2) VTABLE'ı oraya çevirir, (3) istenen girişi yazar (<code>interrupt.c</code>, satır 321–348)</figcaption></figure>
+
+<h2 id="yapi">2. Genel yapı</h2>
+<p><b>Amaç:</b> NVIC'in yerini ve bir isteğin çekirdeğe hangi koşullarda ulaştığını görmek.</p>
+<p>NVIC çekirdeğin parçasıdır. Register'ları özel çevre birimi veriyolundadır: NVIC 0xE000.E100–0xE000.E4EF ve 0xE000.EF00 (SWTRIG), SCB (System Control Block, sistem denetim bloğu) 0xE000.E008–0xE000.E00F (ACTLR) ve 0xE000.ED00–0xE000.ED3F (Tablo 3-1, s. 122). NVIC'in saat geçidi yoktur: bir çevre biriminin saati kapalıyken de onun NVIC bitleri yazılabilir (10.2). NVIC ve SCB register'ları yalnız ayrıcalıklı kipte erişilebilir (s. 142, s. 156). Reset'ten sonra işlemci ayrıcalıklı Thread kipinde ve MSP ile çalışır; PSP (süreç yığın işaretçisi) yalnız Thread kipinde seçilebilir, işleyiciler her zaman Handler kipinde ve MSP ile çalışır (s. 73–74, CONTROL s. 88–89). Ders projeleri bunu değiştirmez.</p>
+<p>Her çevre biriminin NVIC'e giden <b>tek</b> hattı vardır. Bir portun sekiz pini ya da bir zamanlayıcının bütün olayları bu hatta VEYA'lanır, işleyici kaynağı MIS'ten okur. NVIC her hat için izin (EN), bekleme (PEND), etkinlik (ACTIVE) biti ve bir öncelik baytı (PRI) tutar. Bir istisna şu koşullar birlikte sağlanınca alınır (s. 109):</p>
+<ol>
+<li>Bekliyordur ve (kesmeyse) EN biti 1'dir. İzinsiz kesme bekler ama hiç etkinleşmez (s. 142).</li>
+<li>Bekleyenler arasında en yüksek önceliklidir.</li>
+<li>Önceliği <b>geçerli yürütme önceliğinden</b> yüksektir. Thread kipinde maske yoksa bu en düşük düzeydir, bir işleyici çalışırken onun önceliğidir. PRIMASK, FAULTMASK ve BASEPRI geçerli önceliği yükseltir. Önceliği yetmeyen istisna bekler.</li>
+</ol>
+<figure><img class="fig" src="../img/nvic-genel.svg" alt="Kaynaktan çekirdeğe: çevre birimi hatları (Port F IRQ 30, Timer0A IRQ 19), NVIC'te EN, PEND, ACTIVE, PRI, en yüksek öncelikli bekleyenin seçimi, PRIMASK, BASEPRI, FAULTMASK geçitleri, çekirdek ve vektör tablosu; altta SCB'den gelen sistem istisnaları"><figcaption><b>Şekil 2.</b> Bir isteğin yolu, 10.1'deki an: Timer0A işleyicisi etkin (mavi), Port F isteği bekliyor (turuncu). Çevre birimi kesmeleri NVIC'ten, sistem istisnaları (SysTick, PendSV, SVCall, hatalar) SCB'den (INTCTRL, SYSPRI, SYSHNDCTRL) gelir. Kazanan istek maskelerden geçerse çekirdek yığınlama yapar ve vektör tablosundan adresi okur.</figcaption></figure>
+<p>Çekirdek isteği alınca durumu yığına yazar ve aynı anda vektörü okur (s. 101, s. 110). R0–R3, R12 ve LR donanımca saklandığı için işleyici sıradan bir C fonksiyonudur, özel anahtar sözcük gerekmez.</p>
+
+<h2 id="durumlar">3. Bir kesmenin durumları</h2>
+<p><b>Amaç:</b> bekleme ve etkinlik bitlerinin ne zaman değiştiğini anlamak.</p>
+<p>Her istisna dört durumdan birindedir (s. 102): <b>etkin değil</b>, <b>bekliyor</b> (pending), <b>etkin</b> (active: işleyicisi çalışıyor ya da başka bir işleyici onu kesmiş) ve <b>etkin ve bekliyor</b> (işleyici çalışırken aynı kaynaktan yeni istek gelmiş). Kesme, NVIC hattı 1 görürken ve kesme etkin değilken, hatta yükselen kenar görünce ya da yazılım PEND'e veya SWTRIG'e yazınca bekler duruma geçer (s. 124). NVIC istekleri <b>kilitler</b>: bekleme biti işleyiciye girilene ya da UNPEND'e 1 yazılana kadar 1 kalır (s. 124–125). Girişte bekleme biti silinir, etkinlik biti kurulur.</p>
+<ul>
+<li><b>Seviye kesmesi:</b> kaynak isteği hizmet görene kadar tutar. Dönüşte NVIC hattı yeniden örnekler, hat hâlâ 1 ise işleyiciye hemen yeniden girilir (s. 125). Hat işleyici boyunca 1 kalırsa PEND 0 kalır, dönüşte hat yeniden örneklenir ve kesme Etkin'den doğrudan Bekliyor'a geçer. Bayrak başta temizlenir ve olay işleyici sürerken yeniden gelirse yükselen kenar PEND'i kurar, dönüşte bir kez daha girilir (s. 124–125). TM4C çevre birimlerinin hattı MIS bitinden türer, bayrak temizlenene kadar 1 kalır. Bayrağı temizlemeyen işleyici sonsuz kez çalışır.</li>
+<li><b>Darbe kesmesi:</b> hat en az bir çevrim 1 olur ve kilitlenir. İşleyici sürerken yeni darbe gelirse durum "etkin ve bekliyor" olur, dönüşte bir kez daha girilir (s. 124–125). Birden çok darbe tek bekleme bitinde birleşir.</li>
+</ul>
+<figure><img class="fig" src="../img/nvic-durum.svg" alt="Durum makinesi: etkin değil, bekliyor, etkin, etkin ve bekliyor; yanında darbe ve seviye kesmesi zaman satırları"><figcaption><b>Şekil 3.</b> Kesmenin dört durumu (s. 102, s. 124–125). Taralı kutu bekliyor durumudur (Şekil 5'teki bekliyor çubuğuyla aynı), kalın kenarlı kutu etkin durumudur; etkin ve bekliyor ikisini birlikte taşır. Kesikli ok isteğe bağlı UNPEND yazımıdır. Darbe kesmesinde işleyici sürerken gelen darbeler tek bekleme olarak kilitlenir ve bir ek giriş doğurur. Seviye kesmesinde bayrak temizlenmezse hat 1 kalır ve dönüşte kesme doğrudan Etkin'den Bekliyor'a geçer.</figcaption></figure>
+<div class="box warn"><span class="box-title">Bayrağı işleyicinin başında temizleyin (s. 101)</span>
+<p>Kaynağı temizleyen yazmanın NVIC'e ulaşması birkaç çevrim sürebilir. Temizleme son komutsa işleyici biter, NVIC hattı hâlâ 1 görür ve işleyiciye yanlışlıkla bir kez daha girilir. Çözüm: bayrağı başta temizlemek ya da ardından bir okuma veya yazma yaparak yazma tamponunu boşaltmak. Ayrıntı: <a href="../timer/#kesme">Zamanlayıcılar notu</a>.</p></div>
+<p>İki sonuç: (1) Çevre birimi maskesi açık, NVIC izni kapalı bir kesme bekleme bitini 1 yapar ve öyle bırakır. Bayrağı yoklayan program doğru çalışır, ama sonradan <code>IntEnable</code> çağrılırsa eski istek yüzünden işleyiciye hemen bir kez girilir (Bölüm 12). Önce UNPEND (<code>IntPendClear</code>) yazılır. (2) PEND ve SWTRIG, çevre birimi yapılandırılmadan, saati bile açılmadan kesme üretir. Kesme izinliyse ve önceliği yetiyorsa işleyici çalışır (s. 146, s. 156).</p>
+
+<h2 id="registerlar">4. Register'lar</h2>
+<p><b>Amaç:</b> NVIC ve SCB register'larını ve yazma kurallarını tanımak.</p>
+<p>Taban 0xE000.E000'dir. Kodda <code>inc/tm4c123gh6pm.h</code>'deki <code>NVIC_…_R</code> makroları kullanılır (Tablo 3-8, s. 134–136):</p>
+<table>
+<thead><tr><th>Register</th><th>Ofset</th><th>Tür, reset</th><th>Görevi</th><th>s.</th></tr></thead>
+<tbody>
+<tr><td>EN0–EN4</td><td>0x100–0x110</td><td>RW, 0</td><td>Okuma: izinli mi. 1 yazmak izin verir, 0 etkisiz</td><td>142–143</td></tr>
+<tr><td>DIS0–DIS4</td><td>0x180–0x190</td><td>RW, 0</td><td>1 yazmak izni kaldırır</td><td>144–145</td></tr>
+<tr><td>PEND0–PEND4</td><td>0x200–0x210</td><td>RW, 0</td><td>1 yazmak kesmeyi bekletir (izinsiz olsa da). Okuma: bekliyor mu</td><td>146–147</td></tr>
+<tr><td>UNPEND0–UNPEND4</td><td>0x280–0x290</td><td>RW, 0</td><td>1 yazmak bekleme bitini siler, etkinliğe dokunmaz</td><td>148–149</td></tr>
+<tr><td>ACTIVE0–ACTIVE4</td><td>0x300–0x310</td><td>RO, 0</td><td>Etkin ya da etkin ve bekliyor. Elle yazılmaz</td><td>150–151</td></tr>
+<tr><td>PRI0–PRI34</td><td>0x400–0x488</td><td>RW, 0</td><td>Kesme başına bir bayt, yalnız bit 7:5. Bayt erişimli</td><td>152–155</td></tr>
+<tr><td>SWTRIG</td><td>0xF00</td><td>WO</td><td>INTID (bit 7:0) = IRQ numarası: o kesme bekler</td><td>156</td></tr>
+<tr><td>INTCTRL</td><td>0xD04</td><td>RW, 0</td><td>NMISET, PENDSV/UNPENDSV, PENDSTSET/CLR, ISRPEND, VECPEND, RETBASE, VECACT</td><td>160–162</td></tr>
+<tr><td>VTABLE</td><td>0xD08</td><td>RW, 0</td><td>Vektör tablosu adresi, 1024 bayt hizalı</td><td>163</td></tr>
+<tr><td>APINT</td><td>0xD0C</td><td>RW, 0xFA05.0000</td><td>VECTKEY, PRIGROUP (bit 10:8), SYSRESREQ</td><td>164–165</td></tr>
+<tr><td>CFGCTRL</td><td>0xD14</td><td>RW, 0x0000.0200</td><td>STKALIGN, BFHFNMIGN, DIV0, UNALIGNED, MAINPEND</td><td>168–169</td></tr>
+<tr><td>SYSPRI1–3</td><td>0xD18–0xD20</td><td>RW, 0</td><td>Sistem istisnası öncelikleri</td><td>170–172</td></tr>
+<tr><td>SYSHNDCTRL</td><td>0xD24</td><td>RW, 0</td><td>MEM/BUS/USAGE izinleri, bekleme ve etkinlik bitleri</td><td>173–176</td></tr>
+<tr><td>FAULTSTAT, HFAULTSTAT</td><td>0xD28, 0xD2C</td><td>RW1C, 0</td><td>Hata nedenleri (Bölüm 8)</td><td>177–183</td></tr>
+<tr><td>MMADDR, FAULTADDR</td><td>0xD34, 0xD38</td><td>RW, –</td><td>MemManage / BusFault adresi</td><td>184–185</td></tr>
+</tbody></table>
+<p><b>Yazma-1.</b> EN, DIS, PEND ve UNPEND'e 0 yazmak hiçbir şey yapmaz (s. 142–148). <code>NVIC_EN0_R = 1u &lt;&lt; 30;</code> yalnız kesme 30'a izin verir, diğerlerini kapatmaz. <code>|=</code> gereksiz ama zararsızdır: okunan değer izinli bitlerdir, onlara yeniden 1 yazmak bir şey değiştirmez. İzni kaldırmanın tek yolu DIS'e 1 yazmaktır, <code>NVIC_EN0_R &amp;= ~(1u &lt;&lt; 30)</code> etkisizdir.</p>
+<pre><code class="language-plaintext">EN, DIS, PEND, UNPEND, ACTIVE : register n / 32,  bit n % 32
+PRI                           : register n / 4,   alan n % 4,  kaydırma 8·(n % 4) + 5
+IRQ 33 (UART2): EN1 bit 1;  PRI8 alan 1 -> bit 15:13;  öncelik 6 -> 6 &lt;&lt; 13</code></pre>
+<p><b>INTCTRL</b> hata ayıklamada işe yarar: VECACT (bit 7:0) çalışan istisnanın, VECPEND (bit 19:12) en yüksek öncelikli bekleyenin numarasıdır. ISRPEND (bit 22) bekleyen kesme var mı, RETBASE (bit 11) kesilmiş başka işleyici var mı gösterir. VECPEND BASEPRI ve FAULTMASK'i hesaba katar, PRIMASK'i katmaz (s. 162). NMI, PendSV ve SysTick buradan yazılımla bekletilir. Bir çiftin (PENDSV/UNPENDSV, PENDSTSET/PENDSTCLR) ikisine birden 1 yazmanın sonucu öngörülemez (s. 160).</p>
+<p><b>APINT</b>'e yazarken bit 31:16'ya 0x05FA anahtarı (VECTKEY) yazılır, yoksa yazma yok sayılır. Okunduğunda bu alan 0xFA05'tir (s. 164). VECTRESET ve VECTCLRACT 0 yazılır, SYSRESREQ = 1 sistemi reset'ler. <b>CFGCTRL</b>'de STKALIGN reset'te 1'dir: girişte yığın 8 bayta hizalanır (s. 168). DIV0 ve UNALIGNED sıfıra bölme ve hizasız erişimde UsageFault'u açar. MAINPEND (ARM belgelerinde USERSETMPEND) ayrıcalıksız kodun SWTRIG'e yazmasına izin verir (s. 156, s. 169). Ders projeleri ayrıcalıklı çalıştığı için gerekmez.</p>
+<p><b>VTABLE</b> reset'te 0'dır. Yeni adres 0x0000.0400–0x3FFF.FC00 aralığında ve 1024 bayta hizalı olmalıdır (s. 107, s. 163). TivaWare'in SRAM tablosu bu yüzden 1024 hizalı tanımlanır ve 155 giriştir (<code>interrupt.c</code>, satır 172–185). <code>IntRegister</code> hizayı <code>ASSERT</code> ile denetler. VTABLE bu tabloyu göstermiyorsa eskisini kopyalayıp VTABLE'ı çevirir, sonra girişi yazar (satır 321–348). <code>IntUnregister</code> girişe <code>interrupt.c</code>'nin kendi sonsuz döngüsünü (<code>_IntDefaultHandler</code>) koyar.</p>
+
+<h2 id="oncelik">5. Öncelik</h2>
+<p><b>Amaç:</b> öncelik alanını, gruplamayı ve eşit öncelik kuralını doğru kullanmak.</p>
+<p>Öncelik 3 bittir: 0–7, <b>küçük sayı yüksek önceliktir</b> (s. 107, s. 124). Alan baytın bit 7:5'idir, bit 4:0 0 okunur. Reset'te bütün ayarlanabilir öncelikler 0'dır (s. 101). Öncelik ayarlanmamış bir programda bu yüzden <b>hiçbir kesme ötekini kesemez</b>. Reset (−3), NMI (−2) ve HardFault (−1) sabittir ve her zaman 0'ın üstündedir. Veri sayfası öncelik 0'ı bu üçünden sonraki "dördüncü öncelik" diye anar (s. 101).</p>
+<div class="box ok"><span class="box-title">Bayt değeri ve öncelik numarası</span>
+<p>Öncelik 5 baytın üst üç bitine yazılır: 5 &lt;&lt; 5 = 0xA0. Register düzeyinde alanın konumu kullanılır: <code>NVIC_PRI4_R = (NVIC_PRI4_R &amp; ~0xE0000000) | (5u &lt;&lt; 29)</code>. <code>IntPrioritySet(n, b)</code> ise <b>bayt değeri</b> alır ve olduğu gibi yazar (<code>interrupt.c</code>, satır 539–542): <code>IntPrioritySet(INT_TIMER0A, 0xA0)</code> öncelik 5'tir. <code>IntPrioritySet(INT_TIMER0A, 5)</code> bayt 0x05 yazar, bit 7:5 = 0'dır, kesme <b>en yüksek</b> önceliği alır. <code>IntPriorityGet</code> baytı döndürür. Fonksiyon 4–15 numaralarında SYSPRI1–3'ü yazar (satır 75–83'teki tablo).</p></div>
+<p><b>Eşit öncelik.</b> Çalışan işleyiciyle aynı öncelikteki istisna, numarası ne olursa olsun onu kesmez, bekler (s. 108). Aynı öncelikte birden çok istisna birlikte bekliyorsa numarası küçük olan önce alınır: Timer0A (IRQ 19) ile Port F (IRQ 30) ikisi de 5 ise önce Timer0A.</p>
+<p><b>Gruplama.</b> APINT'in PRIGROUP alanı öncelik alanını üstte <b>grup önceliği</b> (önalma önceliği: çalışan işleyiciyi kesebilme), altta <b>alt öncelik</b> olarak böler. Bir işleyiciyi yalnız grup önceliği daha yüksek olan kesebilir. Alt öncelik yalnız aynı gruptaki bekleyenlerin sırasını belirler. İkisi de eşitse IRQ numarası küçük olan önce gelir (s. 108). Tablo 3-9 (s. 164):</p>
+<table>
+<thead><tr><th>PRIGROUP</th><th>İkili nokta</th><th>Grup</th><th>Alt öncelik</th><th>Grup × alt</th><th><code>IntPriorityGroupingSet(b)</code></th></tr></thead>
+<tbody>
+<tr><td>0–4</td><td>bxxx.</td><td>[7:5]</td><td>yok</td><td>8 × 1</td><td>b = 3–7 (PRIGROUP 4…0 yazar, hepsi aynı bölünme)</td></tr>
+<tr><td>5</td><td>bxx.y</td><td>[7:6]</td><td>[5]</td><td>4 × 2</td><td>b = 2</td></tr>
+<tr><td>6</td><td>bx.yy</td><td>[7]</td><td>[6:5]</td><td>2 × 4</td><td>b = 1</td></tr>
+<tr><td>7</td><td>b.yyy</td><td>yok</td><td>[7:5]</td><td>1 × 8 (önalma yok)</td><td>b = 0</td></tr>
+</tbody></table>
+<p>APINT reset'te 0xFA05.0000'dır: PRIGROUP = 0, üç bitin hepsi grup önceliğidir. 4 × 2 için <code>NVIC_APINT_R = 0x05FA0000 | (5u &lt;&lt; 8);</code> yazılır. <code>NVIC_APINT_R |= 5u &lt;&lt; 8;</code> çalışmaz: okunan üst yarı 0xFA05'tir, anahtar olarak geçmez. <code>IntPriorityGroupingSet(b)</code>'nin parametresi PRIGROUP değil <b>önalma bit sayısıdır</b>. Fonksiyon PRIGROUP'u <code>g_pui32Priority[b]</code> tablosundan alıp anahtarla yazar (<code>interrupt.c</code>, satır 62–67, 431). Açıklaması 3–7'nin aynı etkiyi verdiğini söyler (satır 403–405). Reset'te <code>IntPriorityGroupingGet()</code> 7, <code>IntPriorityGroupingSet(3)</code>'ten sonra 3 döndürür. İkisi de aynı bölünmedir.</p>
+<p><b>Sistem istisnaları</b> SYSPRI1–3'tedir: MEM 7:5, BUS 15:13, USAGE 23:21; SVC 31:29; DEBUG 7:5, PENDSV 23:21, TICK 31:29 (s. 170–172). Örnek: <a href="../systick/">SysTick notu</a>.</p>
+<figure><img class="fig" src="../img/nvic-oncelik.svg" alt="PRIn register'ı: dört bayt, her baytta yalnız bit 7:5; PRI7'de IRQ 30 bit 23:21, PRI4'te IRQ 19 bit 31:29; altında PRIGROUP'a göre grup ve alt öncelik bölünmesi"><figcaption><b>Şekil 4.</b> PRIn register'ı ve PRIGROUP bölünmesi (s. 152–153, Tablo 3-9 s. 164). Yalnız bit 7:5 uygulanmıştır, bit 4:0 okununca 0 gelir. Turuncu kutu GPIO Port F'nin, mavi kutu Timer0A'nın öncelik baytıdır (10.1'deki değerler). PRIGROUP satırında kalın kenarlı gri bitler grup (önalma), yeşil bitler alt önceliktir; koyu dikey çizgi ikili noktadır.</figcaption></figure>
+
+<h2 id="ic-ice">6. İç içe kesme ve gecikme</h2>
+<p><b>Amaç:</b> önalmayı, kuyruk zincirlemeyi ve geç gelen kesmeyi görmek, yığına ne yazıldığını bilmek.</p>
+<ul>
+<li><b>Önalma</b> (preemption): çalışan işleyiciden yüksek grup öncelikli istisna gelirse işleyici kesilir. İkisi de etkindir, iç içedir (s. 108).</li>
+<li><b>Kuyruk zincirleme</b> (tail-chaining): işleyici biterken yeterli öncelikte bekleyen varsa yığından geri yükleme atlanır, doğrudan yeni işleyiciye geçilir (s. 108).</li>
+<li><b>Geç gelen</b> (late-arriving): yığınlama sürerken daha yüksek öncelikli istek gelirse yığınlama aynen sürer (veri aynıdır) ama vektör olarak yenisi okunur. Bu, ilk işleyicinin ilk komutu yürütmeye girene kadar mümkündür. Geç gelen işleyici bitince ilk istek kuyruk zincirlemeyle alınır (s. 108–109).</li>
+</ul>
+<p><b>Gecikme.</b> Workbook yığınlamanın 12, kuyruk zincirlemenin 6 çevrim sürdüğünü "deterministik, her zaman" diye sunar (s. 4-3 – 4-6). Veri sayfası çevrim sayısı vermez, yalnız vektör okumasının yığınlamayla paralel yapıldığını belirtir (s. 101, s. 110). ARM belgelerine göre bunlar sıfır bekleme durumlu bellekte geçerli en kısa sürelerdir. Ayrıca işlemci istekten sonra bir komut daha bitirebilir (s. 103), bellek bekleme durumları ve FPU bağlamı süreyi uzatabilir.</p>
+<figure><img class="fig" src="../img/nvic-zaman.svg" alt="Üç zaman çizelgesi: önalma (Timer0A öncelik 5, Port F öncelik 1, 12 çevrim), kuyruk zincirleme (6 çevrim), geç gelen kesme"><figcaption><b>Şekil 5.</b> (a) Önalma, (b) kuyruk zincirleme, (c) geç gelen kesme. Öncelikler 10.1 ile aynıdır: Timer0A 5, Port F 1. Gri kutular donanım geçişleri, taralı çubuklar bekleyen isteklerdir; eksen ölçekli değildir. Çevrim sayıları Workbook s. 4-3 – 4-6'dandır.</figcaption></figure>
+<p><b>Yığın çerçevesi.</b> Girişte o anki yığına (Thread'de MSP ya da PSP, Handler'da MSP) düşük adresten yükseğe R0, R1, R2, R3, R12, LR, PC (kesilen programın sıradaki komutu) ve xPSR yazılır: 8 kelime, 32 bayt. Ardından SP, R0'ı gösterir (Şekil 2-7, s. 110). FPU bağlamı etkinse üstüne S0–S15, FPSCR ve bir ayrılmış kelime eklenir: 26 kelime, 104 bayt. STKALIGN = 1 olduğundan SP 8 bayta hizalı değilse bir dolgu kelimesi konur, yığınlanan xPSR'nin bit 9'u bunu kaydeder (s. 168).</p>
+<p><b>EXC_RETURN.</b> Girişte LR'ye özel bir değer yazılır. İşleyici sonunda bu değer <code>BX LR</code>, <code>POP {…, PC}</code> ya da <code>LDR</code> ile PC'ye yüklenince dönüş başlar (s. 110–111). Bit 31:5 1'dir, alt bitler dönülecek kipi, yığını ve FPU bağlamını belirtir (Tablo 2-10, s. 111):</p>
+<table>
+<thead><tr><th>EXC_RETURN</th><th>Dönüş</th><th>Çerçeve, sonra kullanılan yığın</th></tr></thead>
+<tbody>
+<tr><td>0xFFFF.FFF1</td><td>Handler kipine (kesilen işleyiciye)</td><td>FPU'suz, MSP</td></tr>
+<tr><td>0xFFFF.FFF9</td><td>Thread kipine</td><td>FPU'suz, MSP (ders projelerinde görülen)</td></tr>
+<tr><td>0xFFFF.FFFD</td><td>Thread kipine</td><td>FPU'suz, PSP</td></tr>
+<tr><td>0xFFFF.FFE1 / E9 / ED</td><td>Aynı sırayla</td><td>FPU bağlamlı; MSP / MSP / PSP</td></tr>
+</tbody></table>
+<p>Geçersiz EXC_RETURN UsageFault'tur (INVPC, s. 178). İşleyicide LR'de 0xFFFF.FFF9 görmek ana programın, 0xFFFF.FFF1 başka bir işleyicinin kesildiğini gösterir.</p>
+<figure><img class="fig" src="../img/nvic-yigin.svg" alt="Yığın çerçevesi: R0, R1, R2, R3, R12, LR, PC, xPSR; FPU'lu durumda S0–S15, FPSCR, ayrılmış; kesikli isteğe bağlı hizalama kelimesi; EXC_RETURN değerleri"><figcaption><b>Şekil 6.</b> Yığın çerçevesi (Şekil 2-7, s. 110). Mavi tamsayı bağlamı, yeşil FPU bağlamı, gri ayrılmış kelime. Kesikli kutu isteğe bağlı hizalama dolgusudur. Yukarısı yüksek adrestir.</figcaption></figure>
+<p><b>FPU ve tembel yığınlama (lazy stacking).</b> FPU reset'te kapalıdır, CPAC'ta CP10/CP11 izni verilerek açılır (s. 133, s. 195; <code>FPUEnable</code>). FPCC reset'te 0xC000.0000'dır: ASPEN = 1 (FPU kullanılınca CONTROL.FPCA kurulur, FPU bağlamı girişte saklanır) ve LSPEN = 1 (s. 196). Tembel yığınlamada çerçevede yer ayrılır, değerler ancak işleyici kayan nokta komutu çalıştırırsa yazılır (s. 133). <code>FPULazyStackingEnable()</code> bu iki biti yeniden 1 yapar, yani reset değerini yazar. Ders projelerinin hepsi CCS'de FPv4SPD16 desteğiyle derlenir. Startup dosyalarının <code>ResetISR</code> yorumuna göre CCS'in başlangıç rutini <code>_c_int00</code> FPU'yu da açar (ör. <code>hafta0c_seriodevi2</code> startup dosyası satır 240–245, TivaWare <code>interrupts/startup_ccs.c</code> satır 244–249). Bu yüzden CCS projelerinde <code>FPUEnable()</code> gereksiz ama zararsızdır. GCC gibi başka araç zincirlerinde açıkça çağrılmalıdır. FPU kapalıyken çalışan kayan nokta komutu NOCP UsageFault üretir, UsageFault kapalıysa bu HardFault'a yükselir (s. 113, s. 178, s. 195).</p>
+
+<h2 id="maskeleme">7. Maskeleme: PRIMASK, FAULTMASK, BASEPRI</h2>
+<p><b>Amaç:</b> üç maskeyi ayırt etmek ve iç içe çağrılabilen kritik bölge yazmak.</p>
+<p>Üçü de çekirdek register'ıdır, bellek adresi yoktur. Yalnız ayrıcalıklı kipte MSR/MRS ya da CPS ile erişilir, reset değerleri 0'dır (s. 85–87):</p>
+<table>
+<thead><tr><th>Register</th><th>Etkisi</th><th>Geçebilenler</th><th>Komut</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>PRIMASK = 1</td><td>Ayarlanabilir öncelikli bütün istisnalar maskelenir (s. 85)</td><td>Reset, NMI, HardFault</td><td><code>CPSID I</code> / <code>CPSIE I</code></td><td><code>IntMasterDisable</code> / <code>Enable</code></td></tr>
+<tr><td>FAULTMASK = 1</td><td>NMI dışında hepsi, HardFault dahil (s. 86)</td><td>Reset, NMI</td><td><code>CPSID F</code> / <code>CPSIE F</code></td><td>yok</td></tr>
+<tr><td>BASEPRI (bit 7:5)</td><td>Önceliği bu değere eşit ya da düşük olanlar. <b>0: maske yok</b> (s. 87)</td><td>Daha yüksek öncelikliler</td><td><code>MSR BASEPRI, Rn</code></td><td><code>IntPriorityMaskSet</code> / <code>Get</code></td></tr>
+</tbody></table>
+<p>FAULTMASK, NMI dışındaki her işleyiciden çıkışta kendiliğinden silinir (s. 86). BASEPRI = 0x20 öncelik 1–7'yi, 0xE0 yalnız 7'yi maskeler. Öncelik 0'ı BASEPRI hiç maskeleyemez. BASEPRI'nin üstünlüğü seçici olmasıdır: düşük öncelikli bir işleyiciyle paylaşılan veri korunurken zamana duyarlı yüksek öncelikli kesmeler çalışır (10.2). PRIMASK her şeyi bekletir. Uyku açısından: PRIMASK = 1 iken WFI'dan izinli bir kesmeyle uyanılır, ama işleyici PRIMASK silinene kadar çalışmaz (s. 115).</p>
+<div class="box ok"><span class="box-title">IntMasterDisable önceki durumu döndürür</span>
+<p><code>IntMasterDisable()</code> ve <code>IntMasterEnable()</code>, <code>CPUcpsid()</code> ve <code>CPUcpsie()</code>'yi çağırır (<code>interrupt.c</code>, satır 216, 254). Bunlar önce <code>MRS R0, PRIMASK</code> ile eski değeri alır, sonra CPS'yi çalıştırır (<code>cpu.c</code>, CCS bölümü satır 111–112, 271–272). <code>true</code>: kesmeler zaten kapalıydı. İç içe çağrılabilen bölgede koşulsuz <code>IntMasterEnable()</code> dıştaki bölgeyi erken açar:</p>
+<pre><code class="language-c">bool onceden_kapali = IntMasterDisable();
+/* ... paylaşılan veriye erişim ... */
+if (!onceden_kapali)
+{
+    IntMasterEnable();          // yalnız biz kapattıysak aç
+}</code></pre>
+<p>BASEPRI'de de eski değer <code>IntPriorityMaskGet()</code> ile saklanıp çıkışta geri yazılır (10.2'deki <code>kritik_gir</code>/<code>kritik_cik</code>).</p></div>
+<div class="box warn"><span class="box-title">IntPriorityMaskSet de bayt değeri ister</span>
+<p><code>IntPriorityMaskSet(x)</code>, <code>x</code>'i doğrudan BASEPRI'ye yazar (<code>interrupt.c</code>, satır 983). Açıklamadaki "4 maskesi 0–3'e izin verir" cümlesi (satır 959) düzey numarasından söz eder, ama parametre bayttır: <code>IntPriorityMaskSet(4)</code> yalnız ayrılmış bir bite yazar, alan 0 kalır ve <b>hiçbir şey maskelenmez</b>. Öncelik 4–7 için 0x80 yazılır. Açıklamanın kendi örneği de 0x80'dir.</p></div>
+
+<h2 id="hatalar-fault">8. Hata istisnaları</h2>
+<p><b>Amaç:</b> HardFault'un nereden geldiğini bulmak.</p>
+<p>Hatalar istisnaların alt kümesidir: veriyolu hatası (komut, veri, vektör okuması), tanımsız komut, XN bölgeden komut, MPU ihlali (s. 111–112). Dört işleyici vardır: HardFault, MemManage, BusFault, UsageFault. Son üçünün önceliği SYSPRI1'den verilir, SYSHNDCTRL'den ayrı ayrı açılır ve <b>reset'te üçü de kapalıdır</b>. Bir ders projesinde oluşan her hata bu yüzden HardFault'a gider.</p>
+<p><b>Yükselme</b> (escalation): ayarlanabilir öncelikli bir hata şu durumlarda HardFault olur (s. 113): işleyicisi kapalıysa; hata işleyicisi kendi türünden ya da eşit/düşük öncelikli bir hata üretirse; bir işleyici, kendi önceliğinden yüksek olmayan bir hata üretirse. HardFault'u yalnız Reset ve NMI keser. NMI ya da HardFault işleyicisinde HardFault olursa işlemci <b>kilitlenir</b> (lockup) ve reset, NMI ya da hata ayıklayıcı gerekir (s. 113).</p>
+<table>
+<thead><tr><th>Bit</th><th>Anlamı</th></tr></thead>
+<tbody>
+<tr><td>FAULTSTAT.PRECISE (bit 9)</td><td>Kesin veri veriyolu hatası. Yığınlanan PC hatalı komuttur, adres FAULTADDR'a yazılır</td></tr>
+<tr><td>FAULTSTAT.IMPRE (bit 10)</td><td>Kesin olmayan hata: PC hatalı komutla ilgili değildir, adres yazılmaz, asenkrondur</td></tr>
+<tr><td>IBUS, BUSTKE, BSTKE, BLSPERR (bit 8, 11, 12, 13)</td><td>Komut okuma, geri yükleme, yığınlama, tembel FPU saklama sırasında hata. Adres yazılmaz</td></tr>
+<tr><td>FAULTSTAT.BFARV (bit 15)</td><td>FAULTADDR geçerli</td></tr>
+<tr><td>UNDEF, INVSTAT, INVPC, NOCP, UNALIGN, DIV0 (bit 16–19, 24–25)</td><td>UsageFault nedenleri</td></tr>
+<tr><td>HFAULTSTAT.FORCED (bit 30) / VECT (bit 1)</td><td>Bir hata yükseldi (diğer register'lara bak) / vektör okuma hatası</td></tr>
+</tbody></table>
+<p>Kaynak: Tablo 2-11 (s. 112), FAULTSTAT (s. 177–182), HFAULTSTAT (s. 183), FAULTADDR (s. 185). Veri sayfası geçerlilik bitine FAULTSTAT'ta BFARV, FAULTADDR'da FAULTADDRV der, aynı bittir. Önce FAULTADDR okunup saklanır, sonra BFARV denetlenir, çünkü araya giren bir hata adresi değiştirebilir (s. 177). Yükselmiş bir bus fault'ta HardFault işleyicisi BFARV'yi silmelidir (s. 179). Bitler 1 yazılarak silinir.</p>
+<p><b>En sık örnek: saatsiz çevre birimi.</b> Saati kapalı bir modülün register'larına erişim bus fault üretir (ör. RCGCGPIO, s. 340). BusFault kapalı olduğu için hata HardFault'a yükselir (FORCED), program startup'taki <code>FaultISR</code> döngüsünde "donar". Okuma kesin hatadır: PRECISE, BFARV ve FAULTADDR'da modülün adresi. Yazma yazma tamponuna alınabildiği için çoğu zaman kesin olmayan hata görünür (IMPRE, adres yok). ACTLR.DISWBUF = 1 tamponu kapatır ve bütün bus fault'ları kesin yapar, ama yavaşlatır (s. 157–158). 10.4 ikisini de gösterir.</p>
+<p><b>Yığından PC.</b> İşleyicinin ilk komutunda MSP çerçeveyi gösterir: MSP + 24 yığınlanan PC (kesin hatada hatalı komut), MSP + 20 kesilen koddaki LR (s. 110).</p>
+<p><b>İşleyicisi bağlanmamış kesme.</b> Startup tablosundaki boş girişler <code>IntDefaultHandler</code> sonsuz döngüsünü gösterir. İzni verilip ISR'si bağlanmayan kesmenin ilk isteğinde program orada kalır. Durdurup VECACT (ya da IPSR) okunur, 16 çıkarılınca IRQ bulunur (s. 162).</p>
+
+<h2 id="baslatma">9. Kurulum adımları ve TivaWare karşılıkları</h2>
+<p><b>Amaç:</b> her kesme için aynı sırayla izlenecek genel kontrol listesi.</p>
+<ol>
+<li>Çevre biriminin saatini aç, hazır olmasını bekle (RCGCx, PRx).</li>
+<li>Çevre birimini yapılandır. Kesme maskesi (IM) bu sırada kapalı kalır.</li>
+<li>Çevre birimindeki eski bayrağı temizle (ICR, <code>=</code> ile).</li>
+<li>İşleyiciyi vektör tablosuna bağla: startup dosyası ya da <code>IntRegister</code>.</li>
+<li>Gerekirse PRIGROUP'u yaz (APINT, anahtarla), sonra önceliği ver (PRIn ya da SYSPRIn).</li>
+<li>İsteğe bağlı: NVIC'te kalmış eski isteği sil (UNPEND).</li>
+<li>Çevre birimi kesme maskesini aç (IM).</li>
+<li>NVIC'te izin ver (ENn, yazma-1).</li>
+<li>Maskeleri denetle: PRIMASK = 0 (reset değeri), BASEPRI = 0 ya da istenen eşik.</li>
+<li>Çevre birimini başlat (ör. TAEN).</li>
+</ol>
+<p>Adım 4, 7 ve 8'den önce gelir, yoksa arada gelen istek <code>IntDefaultHandler</code>'a düşer. Öncelik çalışırken de değiştirilebilir (s. 124), ama izinden önce vermek daha anlaşılırdır.</p>
+<table>
+<thead><tr><th>Adım</th><th>Register düzeyi</th><th>TivaWare</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>SYSCTL_RCGCTIMER_R |= …</code>, PRTIMER beklenir</td><td><code>SysCtlPeripheralEnable</code>, <code>SysCtlPeripheralReady</code></td></tr>
+<tr><td>2–3</td><td>Çevre birimi register'ları, <code>…_ICR_R = bayrak</code></td><td><code>TimerConfigure</code>, <code>GPIOIntTypeSet</code>, <code>TimerIntClear</code>, <code>GPIOIntClear</code></td></tr>
+<tr><td>4</td><td>Startup: <code>extern</code> bildirimi + tablo satırı</td><td><code>IntRegister</code>, <code>TimerIntRegister</code>, <code>GPIOIntRegister</code> (son ikisi adım 8'i de yapar)</td></tr>
+<tr><td>5</td><td><code>NVIC_APINT_R = 0x05FA0000 | (g &lt;&lt; 8)</code>; <code>NVIC_PRIk_R</code> alanı</td><td><code>IntPriorityGroupingSet(b)</code>; <code>IntPrioritySet(INT_x, bayt)</code></td></tr>
+<tr><td>6</td><td><code>NVIC_UNPENDk_R = 1u &lt;&lt; (n % 32)</code></td><td><code>IntPendClear(INT_x)</code></td></tr>
+<tr><td>7</td><td><code>…_IMR_R |= …</code>, <code>…_IM_R |= …</code></td><td><code>TimerIntEnable</code>, <code>GPIOIntEnable</code></td></tr>
+<tr><td>8</td><td><code>NVIC_ENk_R = 1u &lt;&lt; (n % 32)</code></td><td><code>IntEnable(INT_x)</code></td></tr>
+<tr><td>9</td><td><code>CPSIE I</code>; BASEPRI</td><td><code>IntMasterEnable()</code>; <code>IntPriorityMaskSet(bayt)</code></td></tr>
+<tr><td>10</td><td><code>TIMER0_CTL_R |= TIMER_CTL_TAEN</code></td><td><code>TimerEnable</code></td></tr>
+</tbody></table>
+<p>Sistem istisnalarında adım 8 SysTick'te STCTRL.INTEN, hatalarda SYSHNDCTRL'dir. TivaWare'de ikisi de <code>IntEnable(FAULT_…)</code> ile yapılır (<code>interrupt.c</code>, satır 620–647).</p>
+
+<h2 id="ornekler">10. Örnekler</h2>
+<p>Örnekler bu not için hazırlanmıştır ve <code>clang -target armv7em-none-eabi -fsyntax-only -Wall -I&lt;TivaWare&gt; -DPART_TM4C123GH6PM -DTARGET_IS_TM4C123_RB1</code> ile uyarısız derlenir (10.2 ve 10.4'teki seçeneklerin iki değeri de denendi). Saat PIOSC'tir (16 MHz). PF1 kırmızı, PF2 mavi, PF3 yeşil LED, PF4 SW1'dir.</p>
+
+<h3 id="ornek-oncelik">10.1 İki öncelik, iç içe kesme <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> Timer0A (öncelik 5) uzun bir işleyici çalıştırırken SW1'in (Port F, öncelik 1) onu kesmesini görmek. Startup'a vektör 35 (<code>Timer 0 subtimer A</code>) ve vektör 46 (<code>GPIO Port F</code>) satırları ile <code>extern</code> bildirimleri eklenir (<a href="../timer/#kesme">Zamanlayıcılar notu</a>).</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: nvic_oncelik_apisiz.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı: iç içe kesme, API'siz. 16 MHz PIOSC.
+// Timer0A (IRQ 19, öncelik 5): her 2 s'de mavi LED 1 s yanar, işleyici bekler.
+// SW1 (PF4, IRQ 30, öncelik 1): kırmızı LED'i hemen tersler (önalma).
+// Yeşil: son basış Timer0A işleyicisini kesti mi (ACTIVE0 bit 19)?
+// Startup: vektör 35 -&gt; Timer0A_Isleyici, vektör 46 -&gt; PortF_Isleyici.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define KIRMIZI 0x02u   // PF1
+#define MAVI    0x04u   // PF2
+#define YESIL   0x08u   // PF3
+#define SW1     0x10u   // PF4
+
+#define ONCELIK_TIMER0A 5u   // PRI4 bit 31:29, bayt değeri 0xA0
+#define ONCELIK_PORTF   1u   // PRI7 bit 23:21, bayt değeri 0x20
+
+// Bit maskeli adresleme: okuma-değiştirme-yazma yok (iki işleyici aynı porta yazar)
+#define LED(m, v)  (GPIO_PORTF_DATA_BITS_R[(m)] = (v))
+
+void Timer0A_Isleyici(void)
+{
+    TIMER0_ICR_R = TIMER_ICR_TATOCINT;      // bayrak en başta temizlenir (s. 101)
+    LED(MAVI, MAVI);
+    NVIC_ST_CURRENT_R = 0;                  // SysTick'i baştan başlat, COUNT = 0
+    while ((NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT) == 0) { }  // ~1 s meşgul bekle
+    LED(MAVI, 0);
+}
+
+void PortF_Isleyici(void)
+{
+    GPIO_PORTF_ICR_R = SW1;                 // W1C: = ile yazılır
+    LED(KIRMIZI, GPIO_PORTF_DATA_R ^ KIRMIZI);
+    // Timer0A etkinse (ACTIVE0 bit 19) bu işleyici onu kesmiştir.
+    LED(YESIL, (NVIC_ACTIVE0_R &amp; (1u &lt;&lt; 19)) ? YESIL : 0);
+}
+
+int main(void)
+{
+    // Saatler
+    SYSCTL_RCGCGPIO_R  |= SYSCTL_RCGCGPIO_R5;
+    SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R0;
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }
+    while ((SYSCTL_PRTIMER_R &amp; SYSCTL_PRTIMER_R0) == 0) { }
+
+    // Port F: PF1-3 çıkış, PF4 pull-up'lı giriş
+    GPIO_PORTF_DIR_R = (GPIO_PORTF_DIR_R | 0x0Eu) &amp; ~SW1;
+    GPIO_PORTF_DEN_R |= 0x1Eu;
+    GPIO_PORTF_PUR_R |= SW1;
+
+    // SysTick: kesmesiz kronometre, 16 000 000 tık = 1 s
+    NVIC_ST_CTRL_R    = 0;
+    NVIC_ST_RELOAD_R  = 16000000u - 1u;
+    NVIC_ST_CURRENT_R = 0;
+    NVIC_ST_CTRL_R    = NVIC_ST_CTRL_CLK_SRC | NVIC_ST_CTRL_ENABLE;
+
+    // Kaynak 1: PF4 düşen kenar
+    GPIO_PORTF_IM_R  &amp;= ~SW1;               // ayar sırasında maske kapalı
+    GPIO_PORTF_IS_R  &amp;= ~SW1;               // kenar
+    GPIO_PORTF_IBE_R &amp;= ~SW1;               // tek kenar
+    GPIO_PORTF_IEV_R &amp;= ~SW1;               // düşen
+    GPIO_PORTF_ICR_R  = SW1;                // eski bayrak
+    GPIO_PORTF_IM_R  |= SW1;
+
+    // Kaynak 2: Timer0A, 32 bit periyodik, 2 s
+    TIMER0_CTL_R   = 0;
+    TIMER0_CFG_R   = TIMER_CFG_32_BIT_TIMER;
+    TIMER0_TAMR_R  = TIMER_TAMR_TAMR_PERIOD;
+    TIMER0_TAILR_R = 32000000u - 1u;
+    TIMER0_ICR_R   = TIMER_ICR_TATOCINT;
+    TIMER0_IMR_R  |= TIMER_IMR_TATOIM;
+
+    // NVIC: önce öncelik, sonra izin. PRI alanında yalnız bit 7:5 vardır.
+    NVIC_PRI4_R = (NVIC_PRI4_R &amp; ~NVIC_PRI4_INT19_M) | (ONCELIK_TIMER0A &lt;&lt; 29);
+    NVIC_PRI7_R = (NVIC_PRI7_R &amp; ~NVIC_PRI7_INT30_M) | (ONCELIK_PORTF &lt;&lt; 21);
+    NVIC_EN0_R = (1u &lt;&lt; 19) | (1u &lt;&lt; 30);   // yazma-1: diğer bitler etkilenmez
+
+    // PRIMASK reset'te 0'dır; CPSIE gerekmez.
+    TIMER0_CTL_R |= TIMER_CTL_TAEN;
+
+    while (1)
+    {
+    }
+}</code></pre>
+<p><b>Beklenen davranış:</b> mavi LED 1 s yanar, 1 s söner. Mavi yanarken SW1'e basılınca kırmızı hemen terslenir ve yeşil yanar: Port F işleyicisinde ACTIVE0'ın bit 19'u da 1'dir, Timer0A kesilmiştir (Şekil 5a). Mavi sönükken basılırsa yeşil söner. Mavinin süresi değişmez, Timer0A kaldığı yerden sürer. Kontak sıçraması kırmızıyı bazen birden çok kez tersletir (<a href="../gpio-kesme/">GPIO kesmeleri</a>).</p>
+<p><b>Öncelikler eşitse</b> (<code>ONCELIK_PORTF</code> = 5): mavi yanarken basılan SW1 bekler, kırmızı mavi söndüğü anda kuyruk zincirlemeyle terslenir (s. 108; mekanizma Şekil 5b'deki gibidir, orada roller terstir). Yeşil hep sönüktür. İkisi birlikte beklerse önce IRQ numarası küçük olan Timer0A çalışır. <code>ONCELIK_PORTF</code> 6–7 ya da PRIGROUP 7 de aynı sonucu verir. LED'ler bit maskeli adreslemeyle yazılır: okuma-değiştirme-yazma olsaydı Port F işleyicisi Timer0A'nın okuması ile yazması arasına girdiğinde kırmızının değişimi kaybolabilirdi.</p>
+
+<h3 id="ornek-basepri">10.2 Yazılım kesmesi ve BASEPRI ile kritik bölge <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> kullanılmayan bir kesme hattını yazılım kesmesi yapmak ve yalnız düşük öncelikli kesmeleri engelleyen kritik bölge yazmak. LaunchPad'de kullanılmayan UART2'nin hattı (IRQ 33) seçildi, EN1/PRI8 indekslemesini de gösterir. UART2'nin saati açılmaz: bekleme biti NVIC'tedir. İşleyici UART2 register'larına dokunmaz, dokunsa bus fault olurdu. Startup: vektör 46 <code>PortF_Isleyici</code>, vektör 49 (<code>UART2 Rx and Tx</code>) <code>Yazilim_Isleyici</code>. BASEPRI ve PRIMASK'a C'den yalnız MSR/CPS ile erişilir. Derleyiciden bağımsız kalmak için <code>driverlib/cpu.c</code>'nin tek komutluk sarmalayıcıları kullanıldı (ders projeleri <code>driverlib.lib</code>'i bağlar).</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: yazilim_kesme_basepri.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı: yazılım kesmesi ve BASEPRI ile kritik bölge. 16 MHz.
+// UART2'nin hattı (IRQ 33) UART2 açılmadan yazılım kesmesi olur (öncelik 6,
+// yeşil LED). SW1 (öncelik 1) kırmızıyı tersler. 3 s'lik döngüde 1 s kritik
+// bölge (mavi): BASEPRI = 0x60 öncelik 3-7'yi maskeler. PRIMASK_ILE 1: SW1 de bekler.
+// Startup: vektör 46 -&gt; PortF_Isleyici, vektör 49 -&gt; Yazilim_Isleyici.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/tm4c123gh6pm.h"
+#include "driverlib/cpu.h"   // BASEPRI/PRIMASK bellekte değil: MSR/CPS komutu gerekir
+
+#define PRIMASK_ILE  0
+
+#define KIRMIZI 0x02u
+#define MAVI    0x04u
+#define YESIL   0x08u
+#define SW1     0x10u
+#define LED(m, v)  (GPIO_PORTF_DATA_BITS_R[(m)] = (v))
+
+#define YAZILIM_IRQ  33u   // UART2: EN1 bit 1, PRI8 bit 15:13
+#define ESIK         3u    // BASEPRI = 3 &lt;&lt; 5 = 0x60: öncelik 3-7 maskeli
+
+volatile uint64_t g_sayac;     // 32 bitlik çekirdekte iki komutla okunur
+volatile uint32_t g_bekliyor;  // kritik bölgede PEND1 bit 1 (beklenen 1)
+
+void Yazilim_Isleyici(void)
+{
+    // Çevre birimi bayrağı yok: bekleme biti girişte kendiliğinden silinir.
+    g_sayac++;
+    LED(YESIL, GPIO_PORTF_DATA_R ^ YESIL);
+}
+
+void PortF_Isleyici(void)
+{
+    GPIO_PORTF_ICR_R = SW1;
+    LED(KIRMIZI, GPIO_PORTF_DATA_R ^ KIRMIZI);
+}
+
+static uint32_t kritik_gir(void)
+{
+#if PRIMASK_ILE
+    return CPUcpsid();                  // önceki PRIMASK döner (1: zaten kapalıydı)
+#else
+    uint32_t eski = CPUbasepriGet();
+    CPUbasepriSet(ESIK &lt;&lt; 5);           // yalnız düşük öncelikliler maskelenir
+    return eski;
+#endif
+}
+
+static void kritik_cik(uint32_t eski)
+{
+#if PRIMASK_ILE
+    if (eski == 0)
+    {
+        CPUcpsie();                     // iç içe çağrıda dıştakini bozma
+    }
+#else
+    CPUbasepriSet(eski);                // 0: maske yok
+#endif
+}
+
+static void yarim_saniye(uint32_t n)
+{
+    while (n--)
+    {
+        while ((NVIC_ST_CTRL_R &amp; NVIC_ST_CTRL_COUNT) == 0) { }
+    }
+}
+
+int main(void)
+{
+    uint32_t tur = 0;
+    uint32_t eski;
+    uint64_t kopya;
+
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;    // UART2'nin saati AÇILMAZ
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }
+    GPIO_PORTF_DIR_R = (GPIO_PORTF_DIR_R | 0x0Eu) &amp; ~SW1;
+    GPIO_PORTF_DEN_R |= 0x1Eu;
+    GPIO_PORTF_PUR_R |= SW1;
+    GPIO_PORTF_IM_R  &amp;= ~SW1;
+    GPIO_PORTF_IS_R  &amp;= ~SW1;
+    GPIO_PORTF_IBE_R &amp;= ~SW1;
+    GPIO_PORTF_IEV_R &amp;= ~SW1;
+    GPIO_PORTF_ICR_R  = SW1;
+    GPIO_PORTF_IM_R  |= SW1;
+
+    NVIC_ST_CTRL_R    = 0;                       // kesmesiz 0,5 s kronometre
+    NVIC_ST_RELOAD_R  = 8000000u - 1u;
+    NVIC_ST_CURRENT_R = 0;
+    NVIC_ST_CTRL_R    = NVIC_ST_CTRL_CLK_SRC | NVIC_ST_CTRL_ENABLE;
+
+    NVIC_PRI7_R = (NVIC_PRI7_R &amp; ~NVIC_PRI7_INT30_M) | (1u &lt;&lt; 21);  // Port F: 1
+    NVIC_PRI8_R = (NVIC_PRI8_R &amp; ~NVIC_PRI8_INT33_M) | (6u &lt;&lt; 13);  // IRQ 33: 6
+    NVIC_EN0_R = 1u &lt;&lt; 30;                       // IRQ 30 -&gt; EN0 bit 30
+    NVIC_EN1_R = 1u &lt;&lt; (YAZILIM_IRQ - 32);       // IRQ 33 -&gt; EN1 bit 1
+
+    while (1)
+    {
+        yarim_saniye(1);
+        NVIC_SW_TRIG_R = YAZILIM_IRQ;            // IRQ numarası yazılır, vektör değil
+        // Eşdeğeri: NVIC_PEND1_R = 1u &lt;&lt; (YAZILIM_IRQ - 32);
+
+        if ((++tur &amp; 3u) == 0)                   // her 4. turda kritik bölge
+        {
+            eski = kritik_gir();
+            LED(MAVI, MAVI);
+            kopya = g_sayac;                     // yarım okunmuş değer olamaz
+            NVIC_SW_TRIG_R = YAZILIM_IRQ;        // istek gelir ama bekler
+            g_bekliyor = (NVIC_PEND1_R &gt;&gt; 1) &amp; 1u;
+            yarim_saniye(2);                     // SW1 burada da çalışır (BASEPRI)
+            LED(MAVI, 0);
+            kritik_cik(eski);                    // bekleyen yazılım kesmesi şimdi çalışır
+            (void)kopya;
+        }
+    }
+}</code></pre>
+<p><b>Beklenen davranış:</b> döngü 3 s'dir (dört 0,5 s'lik tur + 1 s kritik bölge). Yeşil her turda terslenir. Mavi 1 s yanar, 2 s söner; bu sürede yeşil durur ve kritik bölgedeki istek bekler (<code>g_bekliyor</code> = 1). BASEPRI 0'a dönünce yeşil hemen terslenir. SW1 mavi yanarken de kırmızıyı hemen tersler: öncelik 1, eşik 3'ten yüksektir. <code>PRIMASK_ILE</code> 1 ise SW1 de bekler. Kritik bölge 64 bitlik <code>g_sayac</code>'ı korur: iki 32 bitlik okuma arasına işleyici girerse yarısı eski, yarısı yeni değer okunabilir.</p>
+<p>Aynı bekleme bitini kurmanın yolları: <code>NVIC_SW_TRIG_R = 33</code> (IRQ numarası, s. 156), <code>NVIC_PEND1_R = 1u &lt;&lt; 1</code> (s. 146), TivaWare'de <code>IntTrigger(INT_UART2)</code> ya da <code>IntPendSet(INT_UART2)</code> (vektör 49).</p>
+
+<h3 id="ornek-apili">10.3 Aynı düzen, TivaWare ile <span class="tag api">API'li</span></h3>
+<p><b>Amaç:</b> 10.1'i TivaWare ile yazmak. Startup değişmez: <code>*IntRegister</code> tabloyu SRAM'e kopyalar ve <code>IntEnable</code>'ı da çağırır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: nvic_oncelik_apili.c</span><span class="tag api">API'li · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı: 10.1'in TivaWare hâli. 16 MHz PIOSC.
+// Timer0A öncelik 5 (0xA0), Port F öncelik 1 (0x20). Startup değişmez.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_nvic.h"
+#include "inc/hw_types.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"
+#include "driverlib/systick.h"
+#include "driverlib/interrupt.h"
+
+#define KIRMIZI GPIO_PIN_1
+#define MAVI    GPIO_PIN_2
+#define YESIL   GPIO_PIN_3
+#define SW1     GPIO_PIN_4
+
+static void bir_saniye_bekle(void)          // SysTick kesmesiz: COUNT bayrağı okunur
+{
+    HWREG(NVIC_ST_CURRENT) = 0;                              // COUNT = 0
+    while ((HWREG(NVIC_ST_CTRL) &amp; NVIC_ST_CTRL_COUNT) == 0) { }
+}
+
+void Timer0A_Isleyici(void)
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);          // en başta
+    GPIOPinWrite(GPIO_PORTF_BASE, MAVI, MAVI);
+    bir_saniye_bekle();                                      // bilerek uzun
+    GPIOPinWrite(GPIO_PORTF_BASE, MAVI, 0);
+}
+
+void PortF_Isleyici(void)
+{
+    GPIOIntClear(GPIO_PORTF_BASE, SW1);
+    GPIOPinWrite(GPIO_PORTF_BASE, KIRMIZI,
+                 GPIOPinRead(GPIO_PORTF_BASE, KIRMIZI) ^ KIRMIZI);
+    // ACTIVE0 için TivaWare fonksiyonu yoktur; register doğrudan okunur.
+    GPIOPinWrite(GPIO_PORTF_BASE, YESIL,
+                 (HWREG(NVIC_ACTIVE0) &amp; (1u &lt;&lt; (INT_TIMER0A - 16))) ? YESIL : 0);
+}
+
+int main(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER0)) { }
+
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, KIRMIZI | MAVI | YESIL);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, SW1);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, SW1, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    SysTickPeriodSet(16000000);              // RELOAD = 16 000 000 - 1
+    SysTickEnable();                         // kesme açılmaz (SysTickIntEnable yok)
+
+    // Gruplama: 3 bitin hepsi önalma (reset değeri de budur). Parametre
+    // önalma bit sayısıdır; 3-7 aynı sonucu verir (interrupt.c).
+    IntPriorityGroupingSet(3);
+
+    GPIOIntDisable(GPIO_PORTF_BASE, SW1);
+    GPIOIntTypeSet(GPIO_PORTF_BASE, SW1, GPIO_FALLING_EDGE);
+    GPIOIntClear(GPIO_PORTF_BASE, SW1);
+    IntPrioritySet(INT_GPIOF, 1 &lt;&lt; 5);       // bayt değeri 0x20 = öncelik 1
+    GPIOIntRegister(GPIO_PORTF_BASE, PortF_Isleyici);   // IntEnable(INT_GPIOF) da yapar
+    GPIOIntEnable(GPIO_PORTF_BASE, SW1);
+
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 32000000 - 1);     // 2 s
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    IntPrioritySet(INT_TIMER0A, 5 &lt;&lt; 5);     // 0xA0 = öncelik 5; "5" yazmak 0 olurdu
+    TimerIntRegister(TIMER0_BASE, TIMER_A, Timer0A_Isleyici);  // IntEnable(INT_TIMER0A) da yapar
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+    IntMasterEnable();                       // PRIMASK reset'te 0; niyeti gösterir
+    TimerEnable(TIMER0_BASE, TIMER_A);
+
+    while (1)
+    {
+    }
+}</code></pre>
+<p>Davranış 10.1 ile aynıdır. <code>IntPrioritySet</code>'e 0x20 ve 0xA0 bayt değerleri verilir. <code>IntPriorityGroupingSet(3)</code> reset durumunu açıkça yazar. Öncelik <code>*IntRegister</code>'dan, yani izinden önce verilir. <code>*IntRegister</code> 8. adımı da yaptığı için 10.3'te 7 ile 8 yer değiştirir; bayraklar temizlendiğinden zararsızdır. ACTIVE için TivaWare fonksiyonu yoktur, <code>HWREG(NVIC_ACTIVE0)</code> okunur.</p>
+
+<h3 id="ornek-fault">10.4 HardFault ve BusFault'u yakalamak <span class="tag reg">API'siz</span></h3>
+<p><b>Amaç:</b> bilerek bus fault oluşturup nedenini register'lardan okumak. Startup'ta <code>FaultISR</code> (vektör 3) yerine <code>HardFault_Isleyici</code>, vektör 5'teki (<code>The bus fault handler</code>) <code>IntDefaultHandler</code> yerine <code>BusFault_Isleyici</code> yazılır.</p>
+<div class="code-head"><span class="file">bu not için hazırlandı: hata_yakala.c</span><span class="tag reg">API'siz · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı: saatsiz porta erişim -&gt; BusFault/HardFault. 16 MHz.
+// Yeşil üç kez yanıp söner, sonra saati açılmamış Port B'nin DIR'ine erişilir.
+// Kırmızı = HardFault, mavi = BusFault işleyicisi, yeşil = FAULTADDR geçerli.
+// Startup: vektör 3 -&gt; HardFault_Isleyici, vektör 5 -&gt; BusFault_Isleyici.
+#include &lt;stdint.h&gt;
+#include "inc/tm4c123gh6pm.h"
+
+#define BUSFAULT_AYRI  0   // 1: SYSHNDCTRL.BUS = 1, BusFault kendi işleyicisine gider
+#define YAZMA_ILE      0   // 1: okuma yerine yazma (yazma tamponu -&gt; kesin olmayan hata)
+
+#define KIRMIZI 0x02u
+#define MAVI    0x04u
+#define YESIL   0x08u
+#define LED(m, v)  (GPIO_PORTF_DATA_BITS_R[(m)] = (v))
+
+#define HATALI_ADRES  0x40005400u   // GPIO_PORTB_DIR_R
+
+volatile uint32_t g_faultstat, g_hfaultstat, g_faultaddr;   // hata ayıklayıcıda izle
+
+static void hata_oku(uint32_t led)
+{
+    g_faultaddr = NVIC_FAULT_ADDR_R;         // önce adres, sonra geçerlilik (s. 177)
+    g_faultstat = NVIC_FAULT_STAT_R;
+    g_hfaultstat = NVIC_HFAULT_STAT_R;
+
+    LED(led, led);
+    if ((g_faultstat &amp; NVIC_FAULT_STAT_BFARV) &amp;&amp; (g_faultaddr == HATALI_ADRES))
+    {
+        LED(YESIL, YESIL);
+    }
+    NVIC_FAULT_STAT_R = g_faultstat;         // RW1C: okunan bitleri temizle
+    NVIC_HFAULT_STAT_R = g_hfaultstat;
+    while (1)
+    {
+        // Dönülürse hatalı komut yeniden çalışır: burada kalınır.
+    }
+}
+
+void HardFault_Isleyici(void)
+{
+    hata_oku(KIRMIZI);   // beklenen: HFAULTSTAT.FORCED = 1, FAULTSTAT = 0x8200
+}
+
+void BusFault_Isleyici(void)
+{
+    hata_oku(MAVI);      // yalnız BUSFAULT_AYRI = 1 iken gelinir
+}
+
+static void gecikme(volatile uint32_t n)
+{
+    while (n--) { }
+}
+
+int main(void)
+{
+    uint32_t i;
+
+    SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;    // yalnız Port F; Port B KAPALI
+    while ((SYSCTL_PRGPIO_R &amp; SYSCTL_PRGPIO_R5) == 0) { }
+    GPIO_PORTF_DIR_R |= 0x0Eu;
+    GPIO_PORTF_DEN_R |= 0x0Eu;
+
+#if BUSFAULT_AYRI
+    NVIC_SYS_HND_CTRL_R |= NVIC_SYS_HND_CTRL_BUS;   // okuma-değiştirme-yazma (s. 173)
+#endif
+
+    for (i = 0; i &lt; 6; i++)                  // "program çalışıyor"
+    {
+        LED(YESIL, (i &amp; 1u) ? 0 : YESIL);
+        gecikme(800000);
+    }
+
+#if YAZMA_ILE
+    GPIO_PORTB_DIR_R = 0x01u;                // saatsiz modüle yazma
+#else
+    GPIO_PORTB_DIR_R |= 0x01u;               // önce okuma: kesin (precise) hata
+#endif
+
+    while (1)
+    {
+        // Buraya gelinmemeli.
+    }
+}</code></pre>
+<table>
+<thead><tr><th>Seçenek</th><th>İşleyici, LED</th><th>FAULTSTAT</th><th>HFAULTSTAT</th><th>FAULTADDR</th></tr></thead>
+<tbody>
+<tr><td>Varsayılan (okuma)</td><td>HardFault: kırmızı + yeşil</td><td>0x0000.8200 (BFARV, PRECISE)</td><td>0x4000.0000 (FORCED)</td><td>0x4000.5400</td></tr>
+<tr><td><code>BUSFAULT_AYRI</code> 1</td><td>BusFault: mavi + yeşil</td><td>0x0000.8200</td><td>0</td><td>0x4000.5400</td></tr>
+<tr><td><code>YAZMA_ILE</code> 1</td><td>HardFault: kırmızı</td><td>0x0000.0400 (IMPRE)</td><td>0x4000.0000</td><td>geçersiz</td></tr>
+</tbody></table>
+<p>Değerler veri sayfasından çıkarılan beklenen değerlerdir (s. 113, s. 179–180, s. 183). <code>|=</code> önce bir okuma yaptırdığı için varsayılan durum kesin hatadır, yığınlanan PC bu <code>LDR</code>'yi gösterir. BusFault ayrı açılınca yükselme olmaz: kendi işleyicisi çalışır, önceliği SYSPRI1.BUS'tan ayarlanabilir. Yazmada FAULTADDR yazılmaz, yığınlanan PC hatalı komuttan sonrasını gösterir (s. 180). İşleyiciler dönmez: kesin hatada dönülürse aynı komut yeniden çalışır. Gerçek üründe hata işleyicisi durumu kaydedip sistemi reset'ler (APINT.SYSRESREQ).</p>
+
+<h2 id="ti">11. TI interrupts örneğinin uyarlaması <span class="tag ti">TivaWare örneği</span></h2>
+<p>TivaWare 2.1.4'teki <code>examples/boards/ek-tm4c123gxl/interrupts/interrupts.c</code> önalma ve kuyruk zincirlemeyi üç denemeyle gösterir. GPIO Port A, B, C'nin kesme hatlarını kullanır ama portların kesmelerini kurmaz: kesmeler SWTRIG ile üretilir. İşleyiciler startup tablosundadır (<code>startup_ccs.c</code>, satır 90–92).</p>
+<ul>
+<li><code>IntGPIOc</code> PE3'ü 1 yapar, ACTIVE0 ve PEND0'ı UART'a yazar, B'yi tetikler (satır 262), 2 s bekler, sıra numarasını kaydeder, PE3'ü 0 yapar. <code>IntGPIOb</code> aynısını PE2 ile yapar ve A'yı tetikler (satır 217). <code>IntGPIOa</code> PE1 ile yalnız bekler.</li>
+<li><code>main</code> 16 MHz kristale geçer, SysTick'i kesmesiz 1 s periyotla çalıştırır (bekleme için yoklanır), <code>IntMasterEnable</code> ve üç <code>IntEnable</code> çağırır (satır 383–390), sonra her denemede öncelikleri yazıp C'yi tetikler.</li>
+<li><b>Eşit</b> (üçü 0x00, satır 400–402) ve <b>azalan</b> (A 0x80, B 0x40, C 0x00, satır 444–446) denemede tetiklenen kesme çalışanı kesemez, kuyruk zincirlemeyle sonra çalışır: C = 1, B = 2, A = 3. <b>Artan</b> denemede (A 0x00, B 0x40, C 0x80, satır 488–490) her tetikleme önalma yapar: A = 1, B = 2, C = 3. Sonuç UART'a "Pass/Fail" yazılır.</li>
+</ul>
+<p>LaunchPad'de bunu izlemek için osiloskop ve seri terminal gerekir. Uyarlamada değişenler:</p>
+<table>
+<thead><tr><th>Orijinal</th><th>Uyarlama</th><th>Neden</th></tr></thead>
+<tbody>
+<tr><td>PE1, PE2, PE3</td><td>PF1, PF2, PF3 (RGB LED)</td><td>Pin numaraları aynı. İşleyici süresince LED yanar, iç içelik gözle görülür</td></tr>
+<tr><td>UART, <code>DisplayIntStatus</code>, "Pass/Fail"</td><td><code>Kaydet()</code> → <code>g_kayit[]</code>; her denemeden sonra 0,3 s yeşil (doğru) ya da kırmızı (yanlış), sonunda sürekli</td><td>Seri bağlantı gerekmez, durum hata ayıklayıcıda okunur</td></tr>
+<tr><td>Startup tablosu, <code>ROM_…</code></td><td><code>IntRegister</code>, driverlib çağrıları</td><td>Startup değişmez; notun diğer kodlarıyla aynı</td></tr>
+<tr><td>Üç tekrarlanan blok</td><td><code>Dene()</code></td><td>Kısalık; öncelikler ve beklenen sıra aynı</td></tr>
+</tbody></table>
+<div class="code-head"><span class="file">bu not için hazırlandı: interrupts_launchpad.c</span><span class="tag ti">TI uyarlaması · 16 MHz</span></div><pre><code class="language-c">// Bu not için hazırlandı: TivaWare 2.1.4 ek-tm4c123gxl/interrupts uyarlaması.
+// UART yok. İşleyici süresince LED yanar: PF1 kırmızı = A, PF2 mavi = B,
+// PF3 yeşil = C (orijinalde PE1-PE3). GPIO A/B/C portları hiç açılmaz.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_nvic.h"
+#include "inc/hw_types.h"
+#include "driverlib/fpu.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/systick.h"
+
+#define LED_A GPIO_PIN_1
+#define LED_B GPIO_PIN_2
+#define LED_C GPIO_PIN_3
+
+volatile uint32_t g_ui32Index;
+volatile uint32_t g_ui32GPIOa, g_ui32GPIOb, g_ui32GPIOc;
+volatile uint8_t  g_kayit[16];   // UART çıktısı yerine: (PEND0 &amp; 7) &lt;&lt; 4 | (ACTIVE0 &amp; 7)
+volatile uint32_t g_kayitNo;
+
+// Orijinaldeki gibi: SysTick 1 s periyotla serbest sayar, yoklanır.
+static void Delay(uint32_t ui32Seconds)
+{
+    while (ui32Seconds--)
+    {
+        while (SysTickValueGet() &gt; 1000) { }
+        while (SysTickValueGet() &lt; 1000) { }
+    }
+}
+
+// DisplayIntStatus yerine: etkin ve bekleyen kesmeleri kaydet.
+static void Kaydet(void)
+{
+    if (g_kayitNo &lt; sizeof(g_kayit))
+    {
+        g_kayit[g_kayitNo++] = (uint8_t)(((HWREG(NVIC_PEND0) &amp; 7) &lt;&lt; 4) |
+                                         (HWREG(NVIC_ACTIVE0) &amp; 7));
+    }
+}
+
+void IntGPIOa(void)
+{
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A, LED_A);
+    Kaydet();
+    Delay(2);
+    g_ui32GPIOa = g_ui32Index++;
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A, 0);
+}
+
+void IntGPIOb(void)
+{
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_B, LED_B);
+    Kaydet();
+    HWREG(NVIC_SW_TRIG) = INT_GPIOA - 16;    // A'yı tetikle (IRQ numarası)
+    Kaydet();
+    Delay(2);
+    g_ui32GPIOb = g_ui32Index++;
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_B, 0);
+}
+
+void IntGPIOc(void)
+{
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_C, LED_C);
+    Kaydet();
+    HWREG(NVIC_SW_TRIG) = INT_GPIOB - 16;    // B'yi tetikle
+    Kaydet();
+    Delay(2);
+    g_ui32GPIOc = g_ui32Index++;
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_C, 0);
+}
+
+// Bir deneme: öncelikleri yaz, C'yi tetikle, sırayı denetle.
+static bool Dene(uint8_t pa, uint8_t pb, uint8_t pc, uint32_t a, uint32_t b, uint32_t c)
+{
+    bool tamam;
+
+    IntPrioritySet(INT_GPIOA, pa);
+    IntPrioritySet(INT_GPIOB, pb);
+    IntPrioritySet(INT_GPIOC, pc);
+    g_ui32GPIOa = g_ui32GPIOb = g_ui32GPIOc = 0;
+    g_ui32Index = 1;
+    g_kayitNo = 0;
+
+    HWREG(NVIC_SW_TRIG) = INT_GPIOC - 16;    // üçü de bitene dek ana program bekler
+    Kaydet();
+
+    tamam = (g_ui32GPIOa == a) &amp;&amp; (g_ui32GPIOb == b) &amp;&amp; (g_ui32GPIOc == c);
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A | LED_C, tamam ? LED_C : LED_A);
+    SysCtlDelay(SysCtlClockGet() / 10);      // ~0,3 s (döngü 3 çevrim)
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A | LED_C, 0);
+    Delay(2);
+    return tamam;
+}
+
+int main(void)
+{
+    uint32_t ui32Error = 0;
+
+    FPULazyStackingEnable();                 // FPCC.ASPEN|LSPEN (reset değeri de 1)
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+                   SYSCTL_XTAL_16MHZ);       // 16 MHz kristal, orijinaldeki gibi
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)) { }
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, LED_A | LED_B | LED_C);
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A | LED_B | LED_C, 0);
+
+    SysTickPeriodSet(SysCtlClockGet());      // 1 s, kesmesiz
+    SysTickEnable();
+
+    IntRegister(INT_GPIOA, IntGPIOa);        // orijinalde startup_ccs.c tablosu
+    IntRegister(INT_GPIOB, IntGPIOb);
+    IntRegister(INT_GPIOC, IntGPIOc);
+
+    IntMasterEnable();
+    IntEnable(INT_GPIOA);
+    IntEnable(INT_GPIOB);
+    IntEnable(INT_GPIOC);
+
+    if (!Dene(0x00, 0x00, 0x00, 3, 2, 1)) ui32Error |= 1;   // eşit: kuyruk zincirleme
+    if (!Dene(0x80, 0x40, 0x00, 3, 2, 1)) ui32Error |= 2;   // azalan: kuyruk zincirleme
+    if (!Dene(0x00, 0x40, 0x80, 1, 2, 3)) ui32Error |= 4;   // artan: önalma
+
+    IntDisable(INT_GPIOA);
+    IntDisable(INT_GPIOB);
+    IntDisable(INT_GPIOC);
+    IntMasterDisable();
+
+    // Sonuç: hepsi doğruysa yeşil, değilse kırmızı sürekli yanar.
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_A | LED_C, ui32Error ? LED_A : LED_C);
+    while (1)
+    {
+    }
+}</code></pre>
+<p><b>Beklenen davranış:</b> eşit ve azalan denemede LED'ler <b>sırayla</b> yanar: yeşil (C), mavi (B), kırmızı (A). Artan denemede <b>üst üste</b> yanar: yeşil, yeşil + mavi, üçü birden; önce kırmızı, sonra mavi, en son yeşil söner. Her denemeden sonra kısa yeşil, en sonda sürekli yeşil doğru sırayı gösterir. <code>Delay(n)</code> n − 1 ile n saniye arası bekler (orijinal açıklama, satır 105–107). Beklenen <code>g_kayit</code>: eşit ve azalan denemede 0x04, 0x24, 0x02, 0x12, 0x01, 0x00 (her işleyici yalnız kendi biti etkinken başlar, tetiklediği bekler); artan denemede 0x04, 0x06, 0x07, 0x06, 0x04, 0x00 (etkin bitler birikir).</p>
+<p><b>Orijinaldeki küçük kusurlar:</b> satır 360'taki yorum "PB0-PB2" der, kod PE1–PE3'ü kurar. Satır 418'deki yorum "LCD" der, yazılan yer UART'tır; benioku dosyası da kartta olmayan bir "ekrandan" söz eder. <code>ROM_FPULazyStackingEnable()</code> (satır 339) zararsızdır, FPCC'nin reset değerini yeniden yazar (s. 196).</p>
+
+<h2 id="ders-kodlari">12. Ders kodlarında NVIC</h2>
+<p>Bütün <code>.c</code> ve <code>*startup_ccs.c</code> dosyaları tarandı. Satır numaraları orijinal dosyalara göredir. <b>Hiçbir ders kodu öncelik (PRIn, SYSPRIn, <code>IntPrioritySet</code>), PEND/UNPEND, SWTRIG, BASEPRI, gruplama ya da <code>IntMasterDisable</code>/CPSID kullanmaz.</b> Projelerin hepsi tek kesmelidir ya da kesmeleri varsayılan öncelik 0'dadır: hiçbiri iç içe kesme yaşamaz.</p>
+<table>
+<thead><tr><th>Proje (konu)</th><th>Kesme (IRQ / vektör)</th><th>Nasıl açılmış</th></tr></thead>
+<tbody>
+<tr><td><code>bb1</code>, <code>hafta06GpioApsiziKEsme</code> (GPIO kesme)</td><td>Port F (30 / 46)</td><td>Startup + <code>NVIC_EN0_R = 0x40000000</code> (151; 84)</td></tr>
+<tr><td><code>hafta04_kesmeli_apili</code></td><td>Port F</td><td><code>IntMasterEnable</code> (60), <code>IntEnable</code> (61), <code>GPIOIntRegister</code> (67), <code>NVIC_EN0_R</code> (72)</td></tr>
+<tr><td>2017 ve 2019 GPIO kesme örnekleri (int1–int5), gpio07–gpio09, 008_main_interrupt; uyku projeleri <code>hafta0B01Sleep</code>, <code>0b021</code>, <code>hafta0csleep1ogr</code></td><td>Port F</td><td><code>IntMasterEnable</code> + <code>GPIOIntRegister</code> + <code>IntEnable(INT_GPIOF)</code></td></tr>
+<tr><td><code>Gpio_interrupt</code>, <code>Gpio_interrupt_2</code> (LM4F120)</td><td>Port F</td><td>Startup + <code>IntEnable</code> + <code>IntMasterEnable</code></td></tr>
+<tr><td><code>0b3</code> (Hibernate)</td><td>Hibernation (43 / 59)</td><td><code>HibernateIntRegister</code> (37)</td></tr>
+<tr><td><code>systick01kesmeliApisiz</code>, <code>hafta07systicnoapiwithint</code>, <code>hafta07systickapiwithint</code>, <code>systickapikesmeli</code></td><td>SysTick (– / 15)</td><td>Startup + INTEN (38; 46) ya da <code>SysTickIntEnable</code>; sonuncusu <code>SysTickIntRegister</code></td></tr>
+<tr><td><code>bb3</code> (Timer)</td><td>Timer0A (19 / 35)</td><td>Startup + <code>NVIC_EN0_R=0x00080000</code> (66)</td></tr>
+<tr><td><code>bb4</code>, <code>hafta06TimerKesmeliApili</code>, <code>hafta07TimerKesmeliApili16bit</code>, <code>TimerKesmeliApili16bit</code>, 2017 zamanlayıcı örnekleri</td><td>Timer0A</td><td><code>IntMasterEnable</code> + <code>IntEnable</code> + <code>TimerIntRegister</code></td></tr>
+<tr><td><code>hafta08adc2</code>; ADC örnekleri 2–4</td><td>ADC0 SS3 (17 / 33); SS1 (15 / 31)</td><td><code>IntEnable</code> + <code>ADCIntRegister</code> + <code>IntMasterEnable</code></td></tr>
+<tr><td><code>hafta0A_seriport_KESME</code></td><td>UART0 (5 / 21)</td><td><code>IntEnable</code> + <code>UARTIntRegister</code> (38)</td></tr>
+<tr><td>seri2, seri2_2</td><td>UART0</td><td><code>IntEnable</code>; ISR hiçbir yere bağlanmamış (klasörde startup dosyası yok), seri2_2 derlenmez (<a href="../uart/">UART notu</a>)</td></tr>
+<tr><td><code>watchdogapisiz</code></td><td>WDT (18 / 34)</td><td>Startup + <code>NVIC_EN0_R|=(1&lt;&lt;18)</code> (68)</td></tr>
+<tr><td><code>wachdogapili</code>, <code>wachdogapili2</code></td><td>WDT</td><td><code>WatchdogIntRegister</code> (82; 39); <code>IntEnable</code> yorumda</td></tr>
+<tr><td><code>0btimerapikesmesiz</code>, <code>hafta0c_seriodevi</code>, <code>hafta0c_seriodevi2</code></td><td>Timer0A</td><td>Yalnız <code>TimerIntEnable</code> (154; 170; 231), NVIC kapalı, MIS yoklanır</td></tr>
+</tbody></table>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: IntMasterEnable</span>
+<p>Ders kodlarında 37 <code>IntMasterEnable()</code> geçer, 34'ü etkin, 3'ü yorumdadır. PRIMASK reset'te 0'dır (s. 85) ve hiçbir proje kesmeleri kapatmaz: bu çağrılar <b>gereksizdir ama zararsızdır</b>. Kanıt projelerin kendisinde: çağrı <code>hafta07systickapiwithint</code>'te (satır 43) ve <code>wachdogapili</code>'de (satır 51) yorumdadır, iki proje de kesmeyle çalışır. API'siz projeler (bb1, bb3, watchdogapisiz) çağrıyı hiç yazmaz. Program başında, kesmeler kurulmadan çağrılması da (ör. <code>hafta04_kesmeli_apili</code>, satır 60) sorun değildir: EN ve IM henüz 0'dır. Niyeti göstermek için bırakılabilir.</p></div>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: EN0 yazımları ve çift izin</span>
+<p>EN0'a <code>=</code> ile yazmak (<code>bb1</code> 151, <code>hafta06GpioApsiziKEsme</code> 84, <code>hafta04_kesmeli_apili</code> 72, <code>bb3</code> 66) yazma-1 anlamı sayesinde doğrudur. <code>watchdogapisiz</code>'deki <code>NVIC_EN0_R|=(1&lt;&lt;18)</code> (satır 68) da hata değildir: okunan izinli bitlere yeniden 1 yazmak bir şey değiştirmez, <code>|=</code> yalnız gereksiz bir okuma ekler. <code>bb1</code>'deki "burada bir de priority kısmı olması gerekir" yorumu (satır 154) gereksizdir: tek kesmede varsayılan 0 yeterlidir. <code>*IntRegister</code> fonksiyonları <code>IntEnable</code>'ı kendisi çağırdığı için (<code>gpio.c</code>, <code>timer.c</code>, <code>adc.c</code>, <code>uart.c</code>, <code>watchdog.c</code>, <code>hibernate.c</code>) API'li projelerdeki ayrı <code>IntEnable(INT_…)</code> da gereksiz ama zararsızdır. Sıra sakıncası ve <code>hafta04_kesmeli_apili</code>'deki üçlü izin <a href="../gpio-kesme/">GPIO kesmeleri notunda</a> anlatılmıştır.</p></div>
+<div class="box warn"><span class="box-title">Ders kodu hakkında: yoklamalı ödevler ve bekleyen bit</span>
+<p><code>0btimerapikesmesiz</code> (154), <code>hafta0c_seriodevi</code> (170) ve <code>hafta0c_seriodevi2</code> (231) GPTMIMR'ı açar, NVIC iznini vermez ve zaman aşımını <code>TimerIntStatus(TIMER0_BASE, true)</code> ile MIS'ten yoklar. Bu çalışır: izinsiz kesme etkinleşmez (s. 142). Ama ilk zaman aşımında PEND0 bit 19 1 olur ve bayrak temizlense de öyle kalır (s. 124–125). Program sonradan <code>IntEnable(INT_TIMER0A)</code>'ya geçirilirse işleyiciye hemen bir kez girilir. Yalnız yoklama için IM gerekmez, RIS okunur (<code>TimerIntStatus(…, false)</code>); kesmeye geçerken önce <code>IntPendClear</code>.</p></div>
+<p><code>hafta0c_seriodevi2</code>'deki <code>FPULazyStackingEnable()</code> reset değerini yazar, <code>FPUEnable()</code> (satır 215–216) ise CCS'in <code>_c_int00</code>'ı FPU'yu zaten açtığı için gereksiz ama zararsızdır (Bölüm 6). <code>FaultISR</code> ve <code>IntDefaultHandler</code> döngüleri için <a href="../timer/#kesme">Zamanlayıcılar notu</a>.</p>
+
+<h2 id="sik-hatalar">13. Sık yapılan hatalar</h2>
+<div class="box warn"><span class="box-title">Kontrol listesi</span>
+<ol>
+<li><b>Önceliği numara olarak vermek:</b> <code>IntPrioritySet(INT_TIMER0A, 5)</code> bayt 0x05 yazar, kesme en yüksek önceliği (0) alır. Doğrusu <code>5 &lt;&lt; 5</code> = 0xA0. Register düzeyinde alanın kaydırması unutulursa (<code>NVIC_PRI4_R |= 5</code>) öncelik IRQ 16'nın ayrılmış bitlerine gider.</li>
+<li><b>Vektör ile IRQ'yu karıştırmak:</b> <code>NVIC_EN0_R = 1 &lt;&lt; INT_TIMER0A</code> (35) yanlıştır. <code>NVIC_SW_TRIG_R = INT_GPIOF</code> (46) Port F'yi değil IRQ 46'yı (µDMA Software) tetikler. Register'a IRQ, TivaWare'e <code>INT_…</code> verilir.</li>
+<li><b>EN'e 0 yazarak kapatmaya çalışmak:</b> <code>NVIC_EN0_R &amp;= ~bit</code> etkisizdir. DIS'e 1 yazılır (<code>IntDisable</code>).</li>
+<li><b>Varsayılan önceliklerle iç içe kesme beklemek:</b> reset'te hepsi 0'dır, hiçbiri ötekini kesmez. Uzun bir işleyici, eşit öncelikli bütün kesmeleri geciktirir.</li>
+<li><b>BASEPRI'ye düzey numarası yazmak:</b> <code>IntPriorityMaskSet(4)</code> hiçbir şeyi maskelemez (Bölüm 7). 0x80 yazılır. BASEPRI = 0 "maske yok" demektir.</li>
+<li><b>APINT'e anahtarsız ya da <code>|=</code> ile yazmak:</b> okunan 0xFA05 anahtar olarak geçmez, yazma yok sayılır. <code>0x05FA0000 | (g &lt;&lt; 8)</code> yazılır.</li>
+<li><b>İç içe kritik bölgede koşulsuz <code>IntMasterEnable</code>:</b> dıştaki bölge erken açılır. <code>IntMasterDisable</code>'ın dönüş değeri saklanır.</li>
+<li><b>Bayrağı işleyicinin son satırında temizlemek:</b> işleyiciye bir kez daha girilebilir (s. 101). Bayrak başta temizlenir.</li>
+<li><b>Saati açılmamış modüle erişmek:</b> bus fault → HardFault → <code>FaultISR</code> döngüsü. FAULTSTAT/FAULTADDR okunarak bulunur (10.4). Saat açıldıktan sonra PRx de beklenir.</li>
+<li><b>İşleyiciyi bağlamadan izin vermek:</b> ilk istekte <code>IntDefaultHandler</code>. INTCTRL.VECACT − 16 hangi kesme olduğunu söyler.</li>
+<li><b>Eski bekleme bitini unutmak:</b> yoklamadan kesmeye geçerken ya da bir kesmeyi yeniden açarken PEND'de kalmış istek işleyiciyi hemen çalıştırır. Önce çevre birimi bayrağı, sonra <code>IntPendClear</code>.</li>
+<li><b>RAM vektör tablosunu hizasız yerleştirmek:</b> VTABLE 1024 bayt hizası ister (s. 163). Ders projelerindeki <code>.vtable</code> bağlayıcı satırı silinmemelidir.</li>
+</ol></div>
+
+<h2 id="alistirmalar">14. Alıştırmalar</h2>
+<ol>
+<li><b>İndeksler:</b> Timer2A ve UART1 için IRQ, vektör, ofset, EN register'ı ve biti, PRI register'ı ve bit alanı nedir? Timer2A'ya öncelik 3 veren register satırını ve TivaWare çağrısını yazın.
+<details><summary>Cevap</summary><p>Timer2A: IRQ 23, vektör 39, ofset 0x09C, EN0 bit 23, PRI5 alan 3 → bit 31:29. UART1: IRQ 6, vektör 22, ofset 0x058, EN0 bit 6, PRI1 alan 2 → bit 23:21. <code>NVIC_PRI5_R = (NVIC_PRI5_R &amp; ~0xE0000000) | (3u &lt;&lt; 29);</code> ve <code>IntPrioritySet(INT_TIMER2A, 0x60);</code></p></details></li>
+<li><b>Gruplama:</b> <code>IntPriorityGroupingSet(2)</code> çağrıldı. A = 0x40, B = 0x60, C = 0x80. A çalışırken B gelirse, B çalışırken C gelirse ne olur? B ve C aynı anda beklerse hangisi önce çalışır? APINT'e hangi değer yazılmıştır?
+<details><summary>Cevap</summary><p>b = 2 → PRIGROUP 5: grup biti [7:6], alt öncelik [5]. A = 0b010 → grup 1, alt 0; B = 0b011 → grup 1, alt 1; C = 0b100 → grup 2, alt 0. A çalışırken B gelir: grup eşit, kesmez, bekler. B çalışırken C gelir: C'nin grubu daha düşük öncelikli (2 &gt; 1), kesmez. B ve C birlikte beklerse grubu yüksek olan B önce. APINT'e 0x05FA.0500 yazılır, okunduğunda 0xFA05.0500.</p></details></li>
+<li><b>Sıra tahmini:</b> 11'deki uyarlamada <code>Dene(0x40, 0x40, 0x00, …)</code> çağrılırsa (A ve B eşit, C en yüksek) <code>g_ui32GPIOa/b/c</code> ne olur, LED'ler nasıl yanar?
+<details><summary>Cevap</summary><p>C (0x00) çalışırken B'yi tetikler, B düşük öncelikli: bekler. C biter (c = 1), kuyruk zincirlemeyle B. B, A'yı tetikler, A eşit öncelikli: bekler. B biter (b = 2), sonra A (a = 3). LED'ler sırayla yanar: yeşil, mavi, kırmızı.</p></details></li>
+<li><b>Hata çözümleme:</b> bir programda <code>FaultISR</code>'de durdunuz. FAULTSTAT = 0x0000.0400, HFAULTSTAT = 0x4000.0000, FAULTADDR = 0xE000.EDF8. Ne olmuştur, FAULTADDR'a güvenilir mi, nedeni nasıl ararsınız?
+<details><summary>Cevap</summary><p>IMPRE: kesin olmayan veri veriyolu hatası, büyük olasılıkla saatsiz bir modüle yazma. FORCED: BusFault kapalı olduğu için HardFault'a yükseldi. BFARV = 0, FAULTADDR geçersizdir. Yığınlanan PC hatalı yazmadan birkaç komut sonrasını gösterir. Geçici olarak ACTLR.DISWBUF = 1 yazılırsa hata kesinleşir: PC hatalı komutu, FAULTADDR adresi gösterir (s. 158).</p></details></li>
+<li><b>Tasarım (çözümü verilmemiştir):</b> 10.2'yi TivaWare ile yeniden yazın: yazılım kesmesi için <code>IntTrigger</code>, kritik bölge için <code>IntPriorityMaskGet</code>/<code>IntPriorityMaskSet</code> kullanın. SW2 (PF0) her basışta BASEPRI eşiğini 0x20, 0x40, …, 0xE0, 0 arasında döndürsün. Hangi eşiklerde SW1'in de beklediğini, hangilerinde yazılım kesmesinin hiç beklemediğini gözleyip açıklayın. PF0'ın kilidini açmayı unutmayın.</li>
+</ol>
+
+<h2 id="kaynaklar">15. Kaynaklar</h2>
+<ul>
+<li>Texas Instruments, <em>Tiva TM4C123GH6PM Microcontroller Data Sheet</em> (SPMS376E, Haziran 2014): s. 73–74 ve 85–89 (kipler, PRIMASK, FAULTMASK, BASEPRI, CONTROL); s. 101–113 (istisna modeli, Tablo 2-8 – 2-12, Şekil 2-6 ve 2-7, hata işleme); s. 115; s. 122–125 ve 133–136 (NVIC, FPU, Tablo 3-1 ve 3-8); s. 142–185 (NVIC ve SCB register'ları, Tablo 3-9 s. 164); s. 195–196 (CPAC, FPCC); s. 340 (RCGCGPIO).</li>
+<li>Texas Instruments, <em>Getting Started with the Tiva TM4C123G LaunchPad Workshop</em>, öğrenci kitapçığı: Bölüm 4 "Interrupts and the Timers", s. 4-1 – 4-8 (NVIC, 12/6 çevrim, kuyruk zincirleme, geç gelen kesme, vektör tablosu).</li>
+<li>TivaWare C Series 2.1.4.178 kaynak kodu: <code>driverlib/interrupt.c</code>, <code>interrupt.h</code>, <code>cpu.c</code>, <code>fpu.c</code>, <code>gpio.c</code>, <code>timer.c</code>, <code>adc.c</code>, <code>uart.c</code>, <code>watchdog.c</code>, <code>hibernate.c</code>, <code>systick.c</code>, <code>inc/hw_ints.h</code>, <code>inc/hw_nvic.h</code>, <code>inc/tm4c123gh6pm.h</code>, <code>examples/boards/ek-tm4c123gxl/interrupts/</code> (<code>interrupts.c</code>, <code>startup_ccs.c</code>, <code>readme.txt</code>). Satır numaraları metinde.</li>
+<li>ARM, <em>Cortex-M4 Devices Generic User Guide</em> (ARM DUI 0553A): CPS ve MSR/MRS komutları, NVIC ve SCB'nin genel tanımı. Veri sayfası bu belgeye başvurur.</li>
+<li>ARM, <em>ARMv7-M Architecture Reference Manual</em> (ARM DDI 0403): istisna modeli, EXC_RETURN, tembel FPU saklaması.</li>
+<li>ARM, <em>Cortex-M4 Technical Reference Manual</em> (ARM DDI 0439).</li>
+<li>ARM, <em>Application Note 298: Cortex-M4(F) Lazy Stacking and Context Switching</em>.</li>
+<li>Ders örnek kodları (EEM 431): GPIO kesme, SysTick, Timer, ADC, UART, uyku, watchdog konularındaki kesmeli projeler ve ödevler (Bölüm 12'deki tablo).</li>
+<li>İlgili notlar: <a href="../timer/#kesme">6. Zamanlayıcılar</a>, <a href="../gpio-kesme/">2. GPIO Kesmeleri</a>, <a href="../systick/">5. SysTick</a>, <a href="../uyku-hibernate/">9. Uyku Modları</a>, <a href="../watchdog/">10. Watchdog</a>. Önceki not: <a href="../pwm/">12. PWM</a> · <a href="../">Ana sayfa</a>.</li>
+</ul>
+<footer>EEM 431 İleri Mikroişlemciler ders notu · 13. NVIC ve Kesme Önceliği. TI ve ARM belgelerinden alınan bilgiler özetlenmiş ve kaynak gösterilmiştir; ayrıntı için ilgili datasheet ve kılavuzlara başvurun.</footer>
+</main></div></body></html>

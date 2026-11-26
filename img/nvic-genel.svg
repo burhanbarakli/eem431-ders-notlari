@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 684" class="nvg-svg" role="img" aria-labelledby="nvg-title nvg-desc">
+<title id="nvg-title">NVIC: çevre biriminden çekirdeğe kesme yolu</title>
+<desc id="nvg-desc">Örnek an (Örnek 10.1): Timer0A ISR’si (IRQ 19, öncelik 5) çalışırken GPIO Port F isteği (IRQ 30, öncelik 1) gelir. Solda çevre birimleri: her biri kendi RIS ve IM bitlerinden MIS üretir ve tek bir kesme hattıyla NVIC’e bağlanır; TM4C123GH6PM’de 78 kesme vardır. Ortada NVIC: her IRQ için EN, PEND, ACTIVE bitleri ve PRI alanı. Satır 19: EN0 bit 19 = 1, PEND = 0, ACTIVE = 1, PRI4 bit 31:29 = 5. Satır 30: EN0 bit 30 = 1, PEND = 1, ACTIVE = 0, PRI7 bit 23:21 = 1. Seçici, EN = 1 ve PEND = 1 olanlar arasından en küçük öncelik numarasını (eşitlikte en küçük IRQ numarasını) seçer; burada tek bekleyen IRQ 30 kazanır. Karşılaştırma: bekleyen öncelik 1, geçerli yürütme önceliği 5’ten küçük olduğu için önalma olur. Geçerli yürütme önceliğini çekirdekteki etkin işleyici ve PRIMASK, BASEPRI, FAULTMASK maskeleri belirler. Çekirdek istisna girişinde sekiz kelimeyi (FPU bağlamı varsa 26) yığına iter, aynı anda vektör tablosundan VTABLE + 0x0B8 adresini okur, LR’ye EXC_RETURN yazar, PEND 30 sıfırlanır ve ACTIVE 30 kurulur; ardından Port F ISR’si çalışır. Altta sistem istisnaları: SysTick, PendSV, SVCall, Debug Monitor ve hata istisnaları SCB register’ları (INTCTRL, SYSPRI1–3, SYSHNDCTRL) üzerinden aynı seçiciye gelir; EN0–4, PEND0–4 ve PRI0–34’te bitleri yoktur. Reset, NMI ve HardFault sabit önceliklidir (−3, −2, −1).</desc>
+<defs>
+<marker id="nvg-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvg-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvg-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvg-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.nvg-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.nvg-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.nvg-svg .nvg-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.nvg-svg .nvg-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.nvg-svg .nvg-b{font-weight:700}
+.nvg-svg .nvg-s12{font-size:12px}
+.nvg-svg .nvg-s13{font-size:13px}
+.nvg-svg .nvg-s16{font-size:16px}
+.nvg-svg .nvg-mut{fill:var(--fig-muted,#76746c)}
+.nvg-svg .nvg-acc{fill:var(--fig-accent,#b4481f)}
+.nvg-svg .nvg-blu{fill:var(--fig-blue,#1f5fa8)}
+.nvg-svg .nvg-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.nvg-svg .nvg-boxm{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvg-svg .nvg-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvg-svg .nvg-pill{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.2}
+.nvg-svg .nvg-hl{fill:var(--fig-accent,#b4481f);fill-opacity:.14;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.nvg-svg .nvg-head{fill:var(--fig-stroke,#2b2b29)}
+.nvg-svg .nvg-heada{fill:var(--fig-accent,#b4481f)}
+.nvg-svg .nvg-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.nvg-svg .nvg-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.nvg-svg .nvg-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvg-svg .nvg-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvg-svg .nvg-cellb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.2;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvg-svg .nvg-cella{fill:var(--fig-accent,#b4481f);fill-opacity:.2;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvg-svg .nvg-segb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.16;stroke:var(--fig-blue,#1f5fa8);stroke-width:1.5}
+.nvg-svg .nvg-sega{fill:var(--fig-accent,#b4481f);fill-opacity:.16;stroke:var(--fig-accent,#b4481f);stroke-width:1.5}
+</style>
+<text class="nvg-s16 nvg-b" x="16" y="29">NVIC: çevre biriminden çekirdeğe</text>
+<text class="nvg-s13 nvg-mut" x="16" y="50">Örnek an (Örnek 10.1): Timer0A ISR’si çalışırken Port F isteği gelir.</text>
+<rect class="nvg-sega" x="470" y="39" width="12" height="12" rx="2"/>
+<text x="487" y="50"><tspan class="nvg-s13 nvg-b nvg-acc">turuncu</tspan><tspan class="nvg-s13"> = Port F isteği</tspan></text>
+<rect class="nvg-segb" x="612" y="39" width="12" height="12" rx="2"/>
+<text x="629" y="50"><tspan class="nvg-s13 nvg-b nvg-blu">mavi</tspan><tspan class="nvg-s13"> = etkin Timer0A</tspan></text>
+<rect class="nvg-boxm" x="16" y="68" width="190" height="374" rx="10"/>
+<text class="nvg-s13 nvg-b" x="28" y="88">Çevre birimleri</text>
+<text class="nvg-s12 nvg-mut" x="28" y="104">her biri tek kesme hattı</text>
+<rect class="nvg-boxm" x="28" y="116" width="166" height="62" rx="8"/>
+<text class="nvg-s13 nvg-b" x="40" y="135">Timer0A</text>
+<text class="nvg-m12" x="40" y="152">RIS &amp; IMR → MIS</text>
+<text x="40" y="169"><tspan class="nvg-s12">hat → </tspan><tspan class="nvg-m12 nvg-b">IRQ 19</tspan></text>
+<rect class="nvg-box" x="28" y="196" width="166" height="62" rx="8"/>
+<text class="nvg-s13 nvg-b" x="40" y="215">GPIO Port F</text>
+<text class="nvg-m12" x="40" y="232">RIS &amp; IM → MIS</text>
+<text x="40" y="249"><tspan class="nvg-s12">hat → </tspan><tspan class="nvg-m12 nvg-b">IRQ 30</tspan></text>
+<rect class="nvg-boxm" x="28" y="276" width="166" height="48" rx="8"/>
+<text class="nvg-s12 nvg-mut" x="111" y="296" text-anchor="middle">… diğer kaynaklar</text>
+<text class="nvg-s12 nvg-mut" x="111" y="313" text-anchor="middle">toplam 78 kesme</text>
+<rect class="nvg-code" x="220" y="68" width="300" height="374" rx="10"/>
+<text x="232" y="88"><tspan class="nvg-s13 nvg-b">NVIC</tspan><tspan class="nvg-s12 nvg-mut"> · </tspan><tspan class="nvg-m12 nvg-mut">0xE000.E100</tspan><tspan class="nvg-s12 nvg-mut"> …</tspan></text>
+<rect class="nvg-cellf" x="232" y="98" width="36" height="22" rx="0"/>
+<text class="nvg-m12 nvg-b" x="250" y="114" text-anchor="middle">IRQ</text>
+<rect class="nvg-cellf" x="268" y="98" width="46" height="22" rx="0"/>
+<text class="nvg-m12 nvg-b" x="291" y="114" text-anchor="middle">EN0</text>
+<rect class="nvg-cellf" x="314" y="98" width="52" height="22" rx="0"/>
+<text class="nvg-m12 nvg-b" x="340" y="114" text-anchor="middle">PEND0</text>
+<rect class="nvg-cellf" x="366" y="98" width="66" height="22" rx="0"/>
+<text class="nvg-m12 nvg-b" x="399" y="114" text-anchor="middle">ACTIVE0</text>
+<rect class="nvg-cellf" x="432" y="98" width="74" height="22" rx="0"/>
+<text class="nvg-m12 nvg-b" x="469" y="114" text-anchor="middle">PRI</text>
+<rect class="nvg-cell" x="232" y="120" width="36" height="42" rx="0"/>
+<text class="nvg-mono nvg-b" x="250" y="146" text-anchor="middle">19</text>
+<rect class="nvg-cell" x="268" y="120" width="46" height="42" rx="0"/>
+<text class="nvg-mono" x="291" y="138" text-anchor="middle">1</text>
+<text class="nvg-s12 nvg-mut" x="291" y="154" text-anchor="middle">bit 19</text>
+<rect class="nvg-cell" x="314" y="120" width="52" height="42" rx="0"/>
+<text class="nvg-mono" x="340" y="138" text-anchor="middle">0</text>
+<text class="nvg-s12 nvg-mut" x="340" y="154" text-anchor="middle">bit 19</text>
+<rect class="nvg-cellb" x="366" y="120" width="66" height="42" rx="0"/>
+<text class="nvg-mono nvg-b nvg-blu" x="399" y="138" text-anchor="middle">1</text>
+<text class="nvg-s12 nvg-mut" x="399" y="154" text-anchor="middle">bit 19</text>
+<rect class="nvg-cellb" x="432" y="120" width="74" height="42" rx="0"/>
+<text class="nvg-mono nvg-b nvg-blu" x="469" y="138" text-anchor="middle">5</text>
+<text class="nvg-s12 nvg-mut" x="469" y="154" text-anchor="middle">PRI4 31:29</text>
+<rect class="nvg-cell" x="232" y="162" width="36" height="42" rx="0"/>
+<text class="nvg-mono nvg-b" x="250" y="188" text-anchor="middle">30</text>
+<rect class="nvg-cell" x="268" y="162" width="46" height="42" rx="0"/>
+<text class="nvg-mono" x="291" y="180" text-anchor="middle">1</text>
+<text class="nvg-s12 nvg-mut" x="291" y="196" text-anchor="middle">bit 30</text>
+<rect class="nvg-cella" x="314" y="162" width="52" height="42" rx="0"/>
+<text class="nvg-mono nvg-b nvg-acc" x="340" y="180" text-anchor="middle">1</text>
+<text class="nvg-s12 nvg-mut" x="340" y="196" text-anchor="middle">bit 30</text>
+<rect class="nvg-cell" x="366" y="162" width="66" height="42" rx="0"/>
+<text class="nvg-mono" x="399" y="180" text-anchor="middle">0</text>
+<text class="nvg-s12 nvg-mut" x="399" y="196" text-anchor="middle">bit 30</text>
+<rect class="nvg-cella" x="432" y="162" width="74" height="42" rx="0"/>
+<text class="nvg-mono nvg-b nvg-acc" x="469" y="180" text-anchor="middle">1</text>
+<text class="nvg-s12 nvg-mut" x="469" y="196" text-anchor="middle">PRI7 23:21</text>
+<text class="nvg-s12 nvg-mut" x="232" y="222">her IRQ için aynı dört alan:</text>
+<text class="nvg-s12 nvg-mut" x="232" y="238">EN0–4 · PEND0–4 · ACTIVE0–4 · PRI0–34</text>
+<rect class="nvg-box" x="232" y="260" width="274" height="76" rx="8"/>
+<text class="nvg-s13 nvg-b" x="244" y="279">En yüksek öncelikli bekleyen</text>
+<text class="nvg-s12" x="244" y="296">EN = 1, PEND = 1 olanlardan en küçük</text>
+<text class="nvg-s12" x="244" y="311">öncelik numarası; eşitse küçük IRQ no</text>
+<text x="244" y="328"><tspan class="nvg-s12 nvg-b">kazanan: </tspan><tspan class="nvg-m12 nvg-b nvg-acc">IRQ 30</tspan><tspan class="nvg-s12"> (tek bekleyen)</tspan></text>
+<path class="nvg-wa" d="M484,204 L484,259" marker-end="url(#nvg-arra)"/>
+<rect class="nvg-hl" x="232" y="356" width="274" height="74" rx="8"/>
+<text class="nvg-s13 nvg-b" x="244" y="375">Önalma koşulu</text>
+<text class="nvg-s12" x="244" y="393">bekleyen öncelik &lt; geçerli yürütme önceliği</text>
+<text x="244" y="412"><tspan class="nvg-m12 nvg-b nvg-acc">1 &lt; 5</tspan><tspan class="nvg-s12"> → evet: Timer0A ISR’si kesilir</tspan></text>
+<path class="nvg-wa" d="M369,336 L369,355" marker-end="url(#nvg-arra)"/>
+<path class="nvg-w" d="M194,147 L208,147 L208,141 L231,141" marker-end="url(#nvg-arr)"/>
+<path class="nvg-wa" d="M194,227 L212,227 L212,183 L231,183" marker-end="url(#nvg-arra)"/>
+<rect class="nvg-boxm" x="534" y="68" width="210" height="600" rx="10"/>
+<text class="nvg-s13 nvg-b" x="546" y="88">Cortex-M4F çekirdeği</text>
+<rect class="nvg-box" x="546" y="98" width="186" height="196" rx="8"/>
+<text class="nvg-s13 nvg-b" x="558" y="117">Geçerli yürütme önceliği</text>
+<text x="558" y="135"><tspan class="nvg-s12">etkin: Timer0A ISR → </tspan><tspan class="nvg-m12 nvg-b nvg-blu">5</tspan></text>
+<text class="nvg-s12 nvg-mut" x="558" y="151">etkin yoksa: en düşük</text>
+<text class="nvg-s12 nvg-b" x="558" y="173">maskeler bunu yükseltir:</text>
+<text class="nvg-m12" x="558" y="193">PRIMASK = 1</text>
+<text class="nvg-s12 nvg-mut" x="558" y="208">0–7 öncelikli hepsi bekler</text>
+<text class="nvg-m12" x="558" y="227">BASEPRI = n ≠ 0</text>
+<text class="nvg-s12 nvg-mut" x="558" y="242">öncelik ≥ n olanlar bekler</text>
+<text class="nvg-m12" x="558" y="261">FAULTMASK = 1</text>
+<text class="nvg-s12 nvg-mut" x="558" y="276">NMI dışında hepsi bekler</text>
+<path class="nvg-w" d="M576,294 L576,374 L507,374" marker-end="url(#nvg-arr)"/>
+<rect class="nvg-hl" x="546" y="386" width="186" height="112" rx="8"/>
+<text class="nvg-s13 nvg-b" x="558" y="405">İstisna girişi</text>
+<text class="nvg-s12" x="558" y="423">8 kelime (FPU’lu 26) yığına</text>
+<text class="nvg-s12" x="558" y="439">aynı anda vektör okunur</text>
+<text x="558" y="455"><tspan class="nvg-s12">LR ← </tspan><tspan class="nvg-m12">EXC_RETURN</tspan></text>
+<text class="nvg-m12" x="558" y="473">PEND 30 → 0</text>
+<text class="nvg-m12" x="558" y="489">ACTIVE 30 → 1</text>
+<path class="nvg-wa" d="M506,412 L545,412" marker-end="url(#nvg-arra)"/>
+<rect class="nvg-box" x="546" y="520" width="186" height="66" rx="8"/>
+<text x="558" y="539"><tspan class="nvg-s13 nvg-b">Vektör tablosu</tspan><tspan class="nvg-s12 nvg-mut"> (bellek)</tspan></text>
+<text class="nvg-m12" x="558" y="557">VTABLE + 4 × 46</text>
+<text class="nvg-m12" x="558" y="575">= VTABLE + 0x0B8</text>
+<path class="nvg-wa" d="M639,498 L639,519" marker-end="url(#nvg-arra)"/>
+<rect class="nvg-hl" x="546" y="606" width="186" height="48" rx="8"/>
+<text class="nvg-s13 nvg-b" x="558" y="626">PC ← işleyici adresi</text>
+<text class="nvg-s12" x="558" y="643">Port F ISR’si çalışır</text>
+<path class="nvg-wa" d="M639,586 L639,605" marker-end="url(#nvg-arra)"/>
+<rect class="nvg-code" x="16" y="456" width="504" height="212" rx="10"/>
+<text x="28" y="476"><tspan class="nvg-s13 nvg-b">Sistem istisnaları</tspan><tspan class="nvg-s12 nvg-mut"> · SCB </tspan><tspan class="nvg-m12 nvg-mut">0xE000.ED00</tspan><tspan class="nvg-s12 nvg-mut"> …</tspan></text>
+<rect class="nvg-pill" x="28" y="488" width="74.1" height="24" rx="12"/>
+<text x="35" y="505"><tspan class="nvg-s12">SysTick </tspan><tspan class="nvg-m12 nvg-b">15</tspan></text>
+<rect class="nvg-pill" x="106.1" y="488" width="68" height="24" rx="12"/>
+<text x="113.1" y="505"><tspan class="nvg-s12">PendSV </tspan><tspan class="nvg-m12 nvg-b">14</tspan></text>
+<rect class="nvg-pill" x="178.1" y="488" width="61.9" height="24" rx="12"/>
+<text x="185.1" y="505"><tspan class="nvg-s12">Debug </tspan><tspan class="nvg-m12 nvg-b">12</tspan></text>
+<rect class="nvg-pill" x="244" y="488" width="68" height="24" rx="12"/>
+<text x="251" y="505"><tspan class="nvg-s12">SVCall </tspan><tspan class="nvg-m12 nvg-b">11</tspan></text>
+<rect class="nvg-pill" x="316" y="488" width="54.7" height="24" rx="12"/>
+<text x="323" y="505"><tspan class="nvg-s12">Usage </tspan><tspan class="nvg-m12 nvg-b">6</tspan></text>
+<rect class="nvg-pill" x="374.7" y="488" width="42.5" height="24" rx="12"/>
+<text x="381.7" y="505"><tspan class="nvg-s12">Bus </tspan><tspan class="nvg-m12 nvg-b">5</tspan></text>
+<rect class="nvg-pill" x="421.2" y="488" width="88.1" height="24" rx="12"/>
+<text x="428.2" y="505"><tspan class="nvg-s12">MemManage </tspan><tspan class="nvg-m12 nvg-b">4</tspan></text>
+<rect class="nvg-box" x="28" y="522" width="480" height="84" rx="8"/>
+<text class="nvg-m12 nvg-b" x="40" y="544">INTCTRL</text>
+<text class="nvg-s12" x="132" y="544">bekletme ve silme: PENDSTSET, PENDSV, NMISET …</text>
+<text class="nvg-m12 nvg-b" x="40" y="568">SYSPRI1–3</text>
+<text class="nvg-s12" x="132" y="568">sistem işleyicilerinin öncelik alanları (bit 7:5 …)</text>
+<text class="nvg-m12 nvg-b" x="40" y="592">SYSHNDCTRL</text>
+<text class="nvg-s12" x="132" y="592">MemManage, Bus, Usage açma; etkin ve bekleme bitleri</text>
+<rect class="nvg-box" x="28" y="618" width="480" height="38" rx="8"/>
+<text x="40" y="642" xml:space="preserve"><tspan class="nvg-s12 nvg-b">EN0–4, PEND0–4, PRI0–34’te bitleri yoktur.</tspan><tspan class="nvg-s12">  Reset −3, NMI −2, HardFault −1 sabit.</tspan></text>
+<path class="nvg-w" d="M226,456 L226,289 L231,289" marker-end="url(#nvg-arr)"/>
+</svg>

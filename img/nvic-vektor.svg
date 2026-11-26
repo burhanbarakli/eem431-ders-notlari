@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 610" class="nvv-svg" role="img" aria-labelledby="nvv-title nvv-desc">
+<title id="nvv-title">Vektör tablosunun bellekteki yerleşimi ve VTABLE</title>
+<desc id="nvv-desc">Solda Flash’ın başındaki vektör tablosu (0x0000.0000), her giriş 4 bayt: ofset 0x000 ilk yığın işaretçisi değeri, 0x004 Reset (vektör 1), 0x008 NMI (2), 0x00C HardFault (3), 0x010 MemManage (4), 0x014 BusFault (5), 0x018 UsageFault (6), 0x01C–0x028 ayrılmış (7–10), 0x02C SVCall (11), 0x030 Debug Monitor (12), 0x034 ayrılmış (13), 0x038 PendSV (14), 0x03C SysTick (15); 0x040 GPIO Port A (IRQ 0, vektör 16), … 0x08C Timer0A (IRQ 19, vektör 35), … 0x0B8 GPIO Port F (IRQ 30, vektör 46), … son giriş 0x268 PWM1 Fault (IRQ 138, vektör 154). Tablo 155 giriş, 620 bayttır. Sağda VTABLE register’ı (0xE000.ED08): reset değeri 0x0000.0000, yani Flash tablosu kullanılır. IntRegister ilk çağrıldığında 155 girişi SRAM’deki 1 KB hizalı g_pfnRAMVectors dizisine kopyalar (TI örneklerinde 0x2000.0000), VTABLE’ı bu diziye çevirir ve ilgili girişe yeni işleyicinin adresini yazar. Formüller: adres = VTABLE + 4 × vektör, vektör = IRQ + 16.</desc>
+<defs>
+<marker id="nvv-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvv-head" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvv-arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvv-heada" d="M0,0 L10,5 L0,10 z"/></marker>
+<marker id="nvv-arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="nvv-headb" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<style>
+.nvv-svg{font-family:"Source Sans 3",system-ui,sans-serif}
+.nvv-svg text{fill:var(--fig-stroke,#2b2b29);font-size:14px}
+.nvv-svg .nvv-mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+.nvv-svg .nvv-m12{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-variant-ligatures:none}
+.nvv-svg .nvv-b{font-weight:700}
+.nvv-svg .nvv-s12{font-size:12px}
+.nvv-svg .nvv-s13{font-size:13px}
+.nvv-svg .nvv-s16{font-size:16px}
+.nvv-svg .nvv-mut{fill:var(--fig-muted,#76746c)}
+.nvv-svg .nvv-acc{fill:var(--fig-accent,#b4481f)}
+.nvv-svg .nvv-blu{fill:var(--fig-blue,#1f5fa8)}
+.nvv-svg .nvv-num{fill:var(--fig-fill,#ffffff);font-weight:700;font-size:14px}
+.nvv-svg .nvv-box{fill:var(--fig-fill,#ffffff);stroke:var(--fig-stroke,#2b2b29);stroke-width:1.5}
+.nvv-svg .nvv-code{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1.2}
+.nvv-svg .nvv-circ{fill:var(--fig-accent,#b4481f)}
+.nvv-svg .nvv-head{fill:var(--fig-stroke,#2b2b29)}
+.nvv-svg .nvv-heada{fill:var(--fig-accent,#b4481f)}
+.nvv-svg .nvv-headb{fill:var(--fig-blue,#1f5fa8)}
+.nvv-svg .nvv-w{fill:none;stroke:var(--fig-stroke,#2b2b29);stroke-width:1.6}
+.nvv-svg .nvv-wa{fill:none;stroke:var(--fig-accent,#b4481f);stroke-width:1.8}
+.nvv-svg .nvv-wb{fill:none;stroke:var(--fig-blue,#1f5fa8);stroke-width:2}
+.nvv-svg .nvv-wm{fill:none;stroke:var(--fig-muted,#76746c);stroke-width:1.4}
+.nvv-svg .nvv-cell{fill:var(--fig-fill,#ffffff);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvv-svg .nvv-cellf{fill:var(--fig-fill-2,#efece4);stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvv-svg .nvv-cellb{fill:var(--fig-blue,#1f5fa8);fill-opacity:.2;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvv-svg .nvv-cella{fill:var(--fig-accent,#b4481f);fill-opacity:.2;stroke:var(--fig-muted,#76746c);stroke-width:1}
+.nvv-svg .nvv-cellm{fill:var(--fig-muted,#76746c);fill-opacity:.3;stroke:var(--fig-muted,#76746c);stroke-width:1}
+</style>
+<text class="nvv-s16 nvv-b" x="16" y="29">Vektör tablosu bellekte</text>
+<text class="nvv-s13 nvv-mut" x="16" y="50">Her giriş 4 bayt: 0. giriş ilk SP, ötekiler işleyici adresi (bit 0 = 1, Thumb). Satırlar ölçekli değil.</text>
+<text x="94" y="84"><tspan class="nvv-s13 nvv-b">Flash</tspan><tspan class="nvv-s12 nvv-mut"> · </tspan><tspan class="nvv-m12 nvv-mut">0x0000.0000</tspan></text>
+<text class="nvv-s12 nvv-mut" x="86" y="104" text-anchor="end">ofset</text>
+<text class="nvv-s12 nvv-mut" x="102" y="104">içerik</text>
+<text class="nvv-s12 nvv-mut" x="330" y="104" text-anchor="end">vektör</text>
+<rect class="nvv-cellf" x="94" y="110" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="126">ilk SP değeri (yığın tepesi)</text>
+<text class="nvv-m12" x="330" y="126" text-anchor="end">0</text>
+<text class="nvv-m12" x="86" y="125" text-anchor="end">0x000</text>
+<rect class="nvv-cell" x="94" y="132" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="148">Reset</text>
+<text class="nvv-m12" x="330" y="148" text-anchor="end">1</text>
+<text class="nvv-m12" x="86" y="147" text-anchor="end">0x004</text>
+<rect class="nvv-cell" x="94" y="154" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="170">NMI</text>
+<text class="nvv-m12" x="330" y="170" text-anchor="end">2</text>
+<text class="nvv-m12" x="86" y="169" text-anchor="end">0x008</text>
+<rect class="nvv-cell" x="94" y="176" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="192">HardFault</text>
+<text class="nvv-m12" x="330" y="192" text-anchor="end">3</text>
+<text class="nvv-m12" x="86" y="191" text-anchor="end">0x00C</text>
+<rect class="nvv-cell" x="94" y="198" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="214">MemManage</text>
+<text class="nvv-m12" x="330" y="214" text-anchor="end">4</text>
+<text class="nvv-m12" x="86" y="213" text-anchor="end">0x010</text>
+<rect class="nvv-cell" x="94" y="220" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="236">BusFault</text>
+<text class="nvv-m12" x="330" y="236" text-anchor="end">5</text>
+<text class="nvv-m12" x="86" y="235" text-anchor="end">0x014</text>
+<rect class="nvv-cell" x="94" y="242" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="258">UsageFault</text>
+<text class="nvv-m12" x="330" y="258" text-anchor="end">6</text>
+<text class="nvv-m12" x="86" y="257" text-anchor="end">0x018</text>
+<rect class="nvv-cellm" x="94" y="264" width="252" height="30.8" rx="0"/>
+<text class="nvv-s12" x="102" y="284.4">ayrılmış (4 giriş, …0x028)</text>
+<text class="nvv-m12" x="330" y="284.4" text-anchor="end">7–10</text>
+<text class="nvv-m12" x="86" y="283.4" text-anchor="end">0x01C</text>
+<rect class="nvv-cell" x="94" y="294.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="310.8">SVCall</text>
+<text class="nvv-m12" x="330" y="310.8" text-anchor="end">11</text>
+<text class="nvv-m12" x="86" y="309.8" text-anchor="end">0x02C</text>
+<rect class="nvv-cell" x="94" y="316.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="332.8">Debug Monitor</text>
+<text class="nvv-m12" x="330" y="332.8" text-anchor="end">12</text>
+<text class="nvv-m12" x="86" y="331.8" text-anchor="end">0x030</text>
+<rect class="nvv-cellm" x="94" y="338.8" width="252" height="22" rx="0"/>
+<text class="nvv-s12" x="102" y="354.8">ayrılmış</text>
+<text class="nvv-m12" x="330" y="354.8" text-anchor="end">13</text>
+<text class="nvv-m12" x="86" y="353.8" text-anchor="end">0x034</text>
+<rect class="nvv-cell" x="94" y="360.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="376.8">PendSV</text>
+<text class="nvv-m12" x="330" y="376.8" text-anchor="end">14</text>
+<text class="nvv-m12" x="86" y="375.8" text-anchor="end">0x038</text>
+<rect class="nvv-cell" x="94" y="382.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="398.8">SysTick</text>
+<text class="nvv-m12" x="330" y="398.8" text-anchor="end">15</text>
+<text class="nvv-m12" x="86" y="397.8" text-anchor="end">0x03C</text>
+<rect class="nvv-cell" x="94" y="412.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="428.8">GPIO Port A · IRQ 0</text>
+<text class="nvv-m12" x="330" y="428.8" text-anchor="end">16</text>
+<text class="nvv-m12" x="86" y="427.8" text-anchor="end">0x040</text>
+<rect class="nvv-cell" x="94" y="434.8" width="252" height="16" rx="0"/>
+<text class="nvv-s13 nvv-mut" x="220" y="446.8" text-anchor="middle">…</text>
+<rect class="nvv-cellb" x="94" y="450.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13 nvv-b nvv-blu" x="102" y="466.8">Timer0A · IRQ 19</text>
+<text class="nvv-m12" x="330" y="466.8" text-anchor="end">35</text>
+<text class="nvv-m12" x="86" y="465.8" text-anchor="end">0x08C</text>
+<rect class="nvv-cell" x="94" y="472.8" width="252" height="16" rx="0"/>
+<text class="nvv-s13 nvv-mut" x="220" y="484.8" text-anchor="middle">…</text>
+<rect class="nvv-cella" x="94" y="488.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13 nvv-b nvv-acc" x="102" y="504.8">GPIO Port F · IRQ 30</text>
+<text class="nvv-m12" x="330" y="504.8" text-anchor="end">46</text>
+<text class="nvv-m12" x="86" y="503.8" text-anchor="end">0x0B8</text>
+<rect class="nvv-cell" x="94" y="510.8" width="252" height="16" rx="0"/>
+<text class="nvv-s13 nvv-mut" x="220" y="522.8" text-anchor="middle">…</text>
+<rect class="nvv-cell" x="94" y="526.8" width="252" height="22" rx="0"/>
+<text class="nvv-s13" x="102" y="542.8">PWM1 Fault · IRQ 138</text>
+<text class="nvv-m12" x="330" y="542.8" text-anchor="end">154</text>
+<text class="nvv-m12" x="86" y="541.8" text-anchor="end">0x268</text>
+<text class="nvv-m12 nvv-mut" x="86" y="562.8" text-anchor="end">0x26C</text>
+<text class="nvv-s12 nvv-mut" x="102" y="565.8">155 giriş × 4 = 620 bayt</text>
+<path class="nvv-wm" d="M44,112 L38,112 L38,402.8 L44,402.8"/>
+<text class="nvv-s12 nvv-b" x="30" y="257.4" text-anchor="middle" transform="rotate(-90 30 257.4)">0: ilk SP · 1–15 sistem istisnaları</text>
+<path class="nvv-wm" d="M44,414.8 L38,414.8 L38,546.8 L44,546.8"/>
+<text class="nvv-s12 nvv-b" x="30" y="480.8" text-anchor="middle" transform="rotate(-90 30 480.79999999999995)">kesmeler · IRQ 0–138</text>
+<rect class="nvv-box" x="492" y="70" width="252" height="98" rx="8"/>
+<text x="504" y="90" xml:space="preserve"><tspan class="nvv-mono nvv-b">VTABLE</tspan><tspan class="nvv-m12 nvv-mut">  0xE000.ED08</tspan></text>
+<text class="nvv-s12 nvv-mut" x="504" y="107">bit 31:10 → tablo 1 KB sınırında olmalı</text>
+<text x="504" y="131"><tspan class="nvv-s12">reset: </tspan><tspan class="nvv-m12 nvv-b nvv-blu">0x0000.0000</tspan><tspan class="nvv-s12"> → Flash</tspan></text>
+<text x="504" y="153"><tspan class="nvv-s12">IntRegister sonrası: </tspan><tspan class="nvv-m12 nvv-b nvv-acc">&amp;g_pfnRAMVectors</tspan></text>
+<path class="nvv-wb" d="M491,121.0 L347,121.0" marker-end="url(#nvv-arrb)"/>
+<text x="500" y="232"><tspan class="nvv-s13 nvv-b">SRAM</tspan><tspan class="nvv-s12 nvv-mut"> · </tspan><tspan class="nvv-m12">g_pfnRAMVectors[155]</tspan></text>
+<text class="nvv-s12 nvv-mut" x="500" y="250">1 KB hizalı; TI örneklerinde 0x2000.0000</text>
+<rect class="nvv-cell" x="548" y="262" width="196" height="60" rx="0"/>
+<text class="nvv-m12" x="542" y="277" text-anchor="end">0x000</text>
+<text x="558" y="297" xml:space="preserve"><tspan class="nvv-m12 nvv-mut">… 0x03C</tspan><tspan class="nvv-s12 nvv-mut">   kopya</tspan></text>
+<rect class="nvv-cell" x="548" y="322" width="196" height="46" rx="0"/>
+<text class="nvv-m12" x="542" y="337" text-anchor="end">0x040</text>
+<text x="558" y="350" xml:space="preserve"><tspan class="nvv-m12 nvv-mut">… 0x0B4</tspan><tspan class="nvv-s12 nvv-mut">   kopya</tspan></text>
+<rect class="nvv-cella" x="548" y="368" width="196" height="26" rx="0"/>
+<text class="nvv-m12" x="542" y="383" text-anchor="end">0x0B8</text>
+<text class="nvv-m12 nvv-b nvv-acc" x="558" y="386">PortF_Isleyici</text>
+<rect class="nvv-cell" x="548" y="394" width="196" height="46" rx="0"/>
+<text class="nvv-m12" x="542" y="409" text-anchor="end">0x0BC</text>
+<text x="558" y="422" xml:space="preserve"><tspan class="nvv-m12 nvv-mut">… 0x268</tspan><tspan class="nvv-s12 nvv-mut">   kopya</tspan></text>
+<path class="nvv-wa" d="M730,168 L730,261" marker-end="url(#nvv-arra)"/>
+<circle class="nvv-circ" cx="716" cy="196" r="9"/>
+<text class="nvv-num" x="716" y="201" text-anchor="middle">2</text>
+<circle class="nvv-circ" cx="728" cy="381" r="9"/>
+<text class="nvv-num" x="728" y="386" text-anchor="middle">3</text>
+<path class="nvv-w" d="M347,292 L547,292" marker-end="url(#nvv-arr)"/>
+<circle class="nvv-circ" cx="370" cy="276" r="9"/>
+<text class="nvv-num" x="370" y="281" text-anchor="middle">1</text>
+<text class="nvv-s12" x="384" y="281">kopya: 155 kelime</text>
+<rect class="nvv-code" x="452" y="468" width="292" height="124" rx="8"/>
+<text class="nvv-m12 nvv-b" x="464" y="488">IntRegister(n, işleyici)</text>
+<circle class="nvv-circ" cx="476" cy="508" r="9"/>
+<text class="nvv-num" x="476" y="513" text-anchor="middle">1</text>
+<text class="nvv-s12" x="492" y="513">VTABLE ≠ dizi ise 155 girişi kopyalar</text>
+<circle class="nvv-circ" cx="476" cy="532" r="9"/>
+<text class="nvv-num" x="476" y="537" text-anchor="middle">2</text>
+<text class="nvv-s12" x="492" y="537">VTABLE ← g_pfnRAMVectors</text>
+<circle class="nvv-circ" cx="476" cy="556" r="9"/>
+<text class="nvv-num" x="476" y="561" text-anchor="middle">3</text>
+<text class="nvv-s12" x="492" y="561">giriş n ← işleyici adresi</text>
+<text class="nvv-s12 nvv-mut" x="464" y="582">GPIOIntRegister, TimerIntRegister … çağırır</text>
+</svg>
